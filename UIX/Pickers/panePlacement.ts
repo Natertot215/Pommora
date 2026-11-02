@@ -14,7 +14,9 @@ export type PanePos = {
   origin?: string
 }
 
-export type TriggerBox = Pick<DOMRect, 'left' | 'top' | 'bottom' | 'width' | 'height'>
+export type TriggerBox = Pick<DOMRect, 'left' | 'top' | 'bottom' | 'width'>
+
+export type PanePoint = { x: number; y: number; height?: number }
 
 /** KNOB — how far past the trigger's center the near edge and the Bloom's origin sit. */
 const ANCHOR_RESERVE = 30
@@ -34,9 +36,6 @@ export function sideFor(
   const other = side === 'up' ? 'down' : 'up'
   return height > room[side] && room[other] > room[side] ? other : side
 }
-
-export const crossing = (from: PickerDirection, height: number, t: TriggerBox): number =>
-  (from === 'down' ? 1 : -1) * (t.height + 2 * GAP + height)
 
 export function placePane({
   t,
@@ -64,10 +63,12 @@ export function placePane({
   const edge = (along: number, at: number): number =>
     clamp(at, CORNER_CLEAR, Math.max(CORNER_CLEAR, along - CORNER_CLEAR))
   const near = (x: number): string => `${edge(pw, x)}px ${side === 'up' ? ph : 0}px`
-  const fenced = (at: number): number =>
-    clamp(at, VIEWPORT_MARGIN, Math.max(VIEWPORT_MARGIN, view.h - VIEWPORT_MARGIN - ph))
-  const vertical =
-    side === 'up' ? { bottom: fenced(view.h - t.top + GAP) } : { top: fenced(t.bottom + GAP) }
+  const top = clamp(
+    side === 'up' ? t.top - GAP - ph : t.bottom + GAP,
+    VIEWPORT_MARGIN,
+    Math.max(VIEWPORT_MARGIN, view.h - VIEWPORT_MARGIN - ph),
+  )
+  const vertical = side === 'up' ? { bottom: view.h - top - ph } : { top }
   const center =
     centered ??
     (origin === 'center' || (origin === 'auto' && c - pw / 2 >= edgeL && c + pw / 2 <= edgeR))

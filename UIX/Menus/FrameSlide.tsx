@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from 'react'
 import { cx } from '../Utilities/cx'
+import { useLatest } from '../Utilities/stableApi'
 import { BASE_FEEL } from '../Animations/feel'
 import { useExitPresence, useHeld } from '../Animations/useExitPresence'
 import * as s from './frame-slide.css'
@@ -83,9 +84,10 @@ export function FrameSlide({
   }, [active])
 
   const grew = useContext(SlideGrowth)
+  const growth = useLatest(active === 'b' ? size.bh - size.ah : size.ah - size.bh)
   useLayoutEffect(() => {
-    if (navigating) grew?.(open ? size.bh - size.ah : size.ah - size.bh)
-  }, [navigating, active])
+    if (navigating) grew?.(growth.current)
+  }, [navigating, active, grew])
 
   const width = active === 'a' ? size.aw : size.bw
   const height = active === 'a' ? size.ah : size.bh

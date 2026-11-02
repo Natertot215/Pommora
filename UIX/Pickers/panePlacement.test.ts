@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { crossing, placePane, sideFor, type TriggerBox } from './panePlacement'
+import { placePane, sideFor, type TriggerBox } from './panePlacement'
 
 const view = { w: 1024, h: 768 }
 const pane = { w: 200, h: 120 }
@@ -8,7 +8,6 @@ const trigger = (center: number): TriggerBox => ({
   top: 100,
   bottom: 120,
   width: 40,
-  height: 20,
 })
 const place = (
   center: number,
@@ -74,8 +73,9 @@ describe('placePane', () => {
   })
 
   it('pins a pane taller than the window to the top margin', () => {
-    const { pos } = place(512, { pane: { w: 200, h: 900 } })
-    expect(pos.top).toBe(8)
+    const tallest = { w: 200, h: 900 }
+    expect(place(512, { pane: tallest }).pos.top).toBe(8)
+    expect(place(512, { pane: tallest, side: 'up' }).pos.bottom).toBe(-140)
   })
 })
 
@@ -90,12 +90,5 @@ describe('sideFor', () => {
 
   it('stays when the other side has less room', () => {
     expect(sideFor('down', 300, { down: 100, up: 50 })).toBe('down')
-  })
-})
-
-describe('crossing', () => {
-  it('starts the move on the side the pane left', () => {
-    expect(crossing('down', 120, trigger(512))).toBe(152)
-    expect(crossing('up', 120, trigger(512))).toBe(-152)
   })
 })

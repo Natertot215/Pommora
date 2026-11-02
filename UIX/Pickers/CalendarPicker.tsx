@@ -9,6 +9,7 @@ import { usePointerGesture } from '../Interactions/gesture'
 import { OverScroll } from '../Interactions/OverScroll'
 import { suppressReleaseClick } from '../Interactions/shared'
 import { PickerMenu } from './PickerMenu'
+import type { PanePoint } from './panePlacement'
 import { optionRing } from './picker-base.css'
 import { MenuItem } from '../Menus/MenuRows'
 import { cx } from '../Utilities/cx'
@@ -33,7 +34,7 @@ const DROPDOWN_MAX_HEIGHT = 136
 /** KNOB — the Month/Year buttons' inset; the pair reads as one title. */
 const TITLE_PAD_X = '2px'
 
-type Anchor = { x: number; y: number; height: number; el: HTMLElement }
+type Anchor = PanePoint & { el: HTMLElement }
 const anchorOf = (el: HTMLElement): Anchor => {
   const r = el.getBoundingClientRect()
   return { x: r.left + r.width / 2, y: r.top, height: r.height, el }

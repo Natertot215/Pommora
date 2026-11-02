@@ -20,10 +20,10 @@ import { useLatest } from '../Utilities/stableApi'
 import { BASE_FEEL } from '../Animations/feel'
 import { SlideGrowth } from '../Menus/FrameSlide'
 import {
-  crossing,
   placePane,
   roomAround,
   sideFor,
+  type PanePoint,
   type PanePos,
   type PickerDirection,
 } from './panePlacement'
@@ -98,7 +98,7 @@ export function PickerMenu({
   onExited?: () => void
   direction?: PickerDirection
   origin?: 'auto' | 'right' | 'center' | 'left'
-  at?: { x: number; y: number; height?: number }
+  at?: PanePoint
   centerX?: number
   bounds?: { left: number; right: number }
   bareSurface?: boolean
@@ -127,7 +127,7 @@ export function PickerMenu({
   useEffect(
     () => () => {
       // A pane nothing dismisses leaves with its host, as a pinned glance does with its tab, so only a dismissable one has a Bloom-out to lose.
-      if (import.meta.env.DEV && liveRef.current && onDismiss !== undefined)
+      if (import.meta.env.DEV && liveRef.current && dismissRef.current !== undefined)
         console.error(
           '[PickerMenu] unmounted while open/exiting — Bloom-out skipped. Mount persistently and ride `open`.',
         )
@@ -153,10 +153,10 @@ export function PickerMenu({
     const next = snapped(raw)
     setPosState((prev) => (samePos(prev, next) ? prev : next))
   }
-  const decidedDir = useRef<PickerDirection | null>(null)
+  const decidedSide = useRef<PickerDirection | null>(null)
   const decidedCenter = useRef<boolean | null>(null)
-  if (!open && decidedDir.current !== null) {
-    decidedDir.current = null
+  if (!open && decidedSide.current !== null) {
+    decidedSide.current = null
     decidedCenter.current = null
   }
 
@@ -178,8 +178,7 @@ export function PickerMenu({
   useLayoutEffect(() => {
     // Frozen through the Bloom-out: a detached or moved trigger must not re-measure to zeros and snap the fading pane away.
     if (!mounted || !open) return
-    const height = at?.height ?? 0
-    const point = at ? { left: at.x, top: at.y, bottom: at.y + height, width: 0, height } : null
+    const point = at ? { left: at.x, top: at.y, bottom: at.y + (at.height ?? 0), width: 0 } : null
     const trigger = triggerRef?.current ?? markerRef.current?.parentElement
     const rectOf = point ? () => point : trigger ? () => trigger.getBoundingClientRect() : null
     if (!rectOf) return
@@ -191,19 +190,16 @@ export function PickerMenu({
       const t = rectOf()
       const pane = paneBox.current
       const view = { w: window.innerWidth, h: window.innerHeight }
-      const held = decidedDir.current
+      const held = decidedSide.current
       let side = held ?? direction
       if (held === null || growth > 0) {
         const room = roomAround(t, view.h)
         side = sideFor(side, pane.h + growth, room)
         if (held === null) placeResize?.({ dir: side, room: room[side] })
-        else if (side !== held)
-          paneRef.current?.animate(
-            [{ transform: `translateY(${crossing(held, pane.h, t)}px)` }, { transform: 'none' }],
-            BASE_FEEL,
-          )
       }
-      decidedDir.current = side
+      const was =
+        held !== null && side !== held ? paneRef.current?.getBoundingClientRect().top : undefined
+      decidedSide.current = side
       const { pos: next, centered } = placePane({
         t,
         pane,
@@ -216,6 +212,13 @@ export function PickerMenu({
       })
       decidedCenter.current = centered
       setPos(next)
+      if (was !== undefined) {
+        const nextTop = next.top ?? view.h - next.bottom! - pane.h
+        paneRef.current?.animate(
+          [{ transform: `translateY(${was - nextTop}px)` }, { transform: 'none' }],
+          BASE_FEEL,
+        )
+      }
     }
     place.current = measure
     measure()
@@ -256,7 +259,7 @@ export function PickerMenu({
   useEffect(() => {
     const el = glassRef.current
     if (!open || !el || !resized(el, paneBox)) return
-    decidedDir.current = null
+    decidedSide.current = null
     decidedCenter.current = null
     place.current?.()
   }, [mounted, open])

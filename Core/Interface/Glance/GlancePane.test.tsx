@@ -580,7 +580,7 @@ describe('pinned panes (Task 10)', () => {
     expect(useSession.getState().pinnedGlances[0].pinId).toBe(locked)
   })
 
-  it('unpins instantly with no unmount-while-open warning; a plain menu still warns', () => {
+  it('unpins instantly with no unmount-while-open warning; a dismissable point pane still warns', () => {
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
     const warned = (): boolean =>
       spy.mock.calls.flat().some((a) => typeof a === 'string' && a.includes('unmounted while open'))
@@ -593,7 +593,7 @@ describe('pinned panes (Task 10)', () => {
     const ctlRoot = createRoot(ctlHost)
     act(() =>
       ctlRoot.render(
-        <PickerMenu open onDismiss={() => {}}>
+        <PickerMenu open onDismiss={() => {}} at={{ x: 0, y: 0 }}>
           x
         </PickerMenu>,
       ),

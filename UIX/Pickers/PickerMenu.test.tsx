@@ -581,12 +581,16 @@ describe('PickerMenu re-measure', () => {
   const realHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetHeight')
   const realObserver = globalThis.ResizeObserver
   const realAnimate = Element.prototype.animate
+  const realRect = Element.prototype.getBoundingClientRect
 
   beforeEach(() => {
     Object.defineProperty(HTMLElement.prototype, 'offsetHeight', {
       configurable: true,
       get: () => paneH,
     })
+    Element.prototype.getBoundingClientRect = function (this: HTMLElement): DOMRect {
+      return { top: Number.parseFloat(this.style.top) || 0 } as DOMRect
+    }
     globalThis.ResizeObserver = class {
       constructor(fire: () => void) {
         observers.push(fire)
@@ -605,6 +609,7 @@ describe('PickerMenu re-measure', () => {
     if (realHeight) Object.defineProperty(HTMLElement.prototype, 'offsetHeight', realHeight)
     globalThis.ResizeObserver = realObserver
     Element.prototype.animate = realAnimate
+    Element.prototype.getBoundingClientRect = realRect
   })
 
   function Slides(): React.JSX.Element {
@@ -636,12 +641,38 @@ describe('PickerMenu re-measure', () => {
     expect(layer().style.top).toBe('')
   })
 
+  it('starts a flip from where a fenced pane stood', async () => {
+    await open()
+    await open(500)
+    expect(layer().style.top).toBe('460px')
+    await act(async () => grew?.(100))
+    expect(layer().style.bottom).toBe('274px')
+    expect(animate).toHaveBeenCalledWith(
+      [{ transform: 'translateY(266px)' }, { transform: 'none' }],
+      BASE_FEEL,
+    )
+  })
+
   it('keeps its side through a shrink, even where the room no longer holds it', async () => {
     await open()
     await open(600)
     await act(async () => grew?.(-50))
     expect(layer().style.top).toBe('460px')
     expect(animate).not.toHaveBeenCalled()
+  })
+
+  it('offers a resizable pane no slide growth, so it never flips', async () => {
+    await render(
+      <PickerMenu
+        open
+        onDismiss={() => {}}
+        at={{ x: 400, y: 400, height: 20 }}
+        resize={{ size: {}, resizing: false, place: () => {}, edges: [] }}
+      >
+        <Slides />
+      </PickerMenu>,
+    )
+    expect(grew).toBeNull()
   })
 
   it('dismisses when its trigger leaves the page', async () => {

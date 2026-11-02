@@ -1,4 +1,5 @@
 import type { Size } from '@pommora/uix/Interactions/useResizable'
+import type { PanePoint } from '@pommora/uix/Pickers/panePlacement'
 import { type ReconcileIndex, reconcileHeld, reconcileWith } from './reconcileSelection'
 import { makeTabId } from '../Navigation/tabsModel'
 import type { Slice } from './sessionState'
@@ -8,7 +9,7 @@ export type PinnedGlance = {
   pinId: string
   tabId: string
   target: { kind: 'page'; id: string; path: string }
-  at: { x: number; y: number; height: number }
+  at: PanePoint
   size: Size
   locked: boolean
 }
