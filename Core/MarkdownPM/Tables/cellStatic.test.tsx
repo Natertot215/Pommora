@@ -192,7 +192,7 @@ describe('a resting cell draws a tag whole', () => {
     container = document.createElement('div')
     document.body.appendChild(container)
     root = createRoot(container)
-    await act(async () => root.render(renderCellContent('**y** <b>x</b>')))
+    await act(async () => root.render(renderCellContent('**y** <b>x</b>', () => undefined)))
     expect(container.textContent).toBe('y <b>x</b>')
     const tags = [...container.querySelectorAll('.md-html-tag')].map((el) => el.textContent)
     expect(tags).toEqual(['b', 'b'])

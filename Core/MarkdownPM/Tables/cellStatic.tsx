@@ -63,7 +63,7 @@ type Drawn = Token | { kind: 'section'; range: [number, number]; contentRange: [
 
 export function renderCellContent(
   text: string,
-  connections?: () => ConnectionsApi | undefined,
+  connections: () => ConnectionsApi | undefined,
   {
     around,
     headingLinkStyle = 'page-heading',
@@ -89,7 +89,7 @@ export function renderCellContent(
         ),
       ].sort((a, b) => a.range[0] - b.range[0])
     : held
-  const conn = connections?.()
+  const conn = connections()
   let key = 0
   const src = (s: number, e: number): { 'data-src': string } => ({
     'data-src': `${base + s},${base + e}`,
@@ -595,7 +595,7 @@ function StaticCellImpl({
 /** The link gestures a resting surface shares: a press outside the glance closes it, a link dwells into one, and a right-click on a link opens its menu — read-only unless `authoring` applies the pick, with `held` naming the page holding a value, which a bare `#Heading` answers to. */
 export function linkGestures(
   text: string,
-  connections: (() => ConnectionsApi | undefined) | undefined,
+  connections: () => ConnectionsApi | undefined,
   glance: EditorHost['glance'],
   held?: ConnPage,
   authoring?: {
@@ -604,7 +604,7 @@ export function linkGestures(
   },
 ) {
   const linkAt = (e: React.SyntheticEvent): RestingHit | null =>
-    cellLinkTarget(text, e.target, connections?.(), held)
+    cellLinkTarget(text, e.target, connections(), held)
   const dismiss = (e: React.SyntheticEvent): void => {
     if (!glance?.contains(e.currentTarget)) glance?.close()
   }
@@ -614,7 +614,7 @@ export function linkGestures(
     /** True when a link's menu opened. */
     onContextMenu: (e: React.MouseEvent): boolean => {
       dismiss(e)
-      const api = connections?.()
+      const api = connections()
       if (!api?.menu) return false
       const found = linkAt(e)
       if (!found) return false
