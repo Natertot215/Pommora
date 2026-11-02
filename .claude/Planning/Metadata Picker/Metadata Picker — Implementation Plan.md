@@ -21,7 +21,7 @@
 | 0 · Drives and Pins | 0 | 0 (the BASELINE head) |
 | 1 · Kit Imports | about −54; −54 built for the barrel | −54 (+101 / −155) |
 | 2 · The Pane Shell | about +79 (+195 / −116); +72 built | +32 (+326 / −294) |
-| 3 · Small Folds | about −16; −4 built | |
+| 3 · Small Folds | about −16; −4 built | +11 (+394 / −383) |
 | 4 · The Two Pickers | about −95; −96 (+386 / −482) built, and the back bar's label +1 | |
 | 5 · Settings Panes | about −70 (+46 / −116) | |
 | 6 · One Icon and Color Request | about −170 | |
@@ -231,13 +231,13 @@ The order is what makes each step land once. Phase 0 readies the drives and pins
   - [x] Task 2-6 · A list only closes
   - [x] Task 2-7 · Groups 18 and 19 open
   - [x] Review Checkpoint
-- [ ] **Phase 3** — Small Folds
-  - [ ] Task 3-1 · The Space chip
-  - [ ] Task 3-2 · `PickOption`'s `id`
-  - [ ] Task 3-3 · `direction="down"` and a duplicate import
-  - [ ] Task 3-4 · `connections` required
-  - [ ] Task 3-5 · The panel's commits
-  - [ ] Compaction Checkpoint
+- [x] **Phase 3** — Small Folds
+  - [x] Task 3-1 · The Space chip
+  - [x] Task 3-2 · `PickOption`'s `id`
+  - [x] Task 3-3 · `direction="down"` and a duplicate import
+  - [x] Task 3-4 · `connections` required
+  - [x] Task 3-5 · The panel's commits
+  - [x] Compaction Checkpoint
 - [ ] **Phase 4** — The Two Pickers
   - [ ] Task 4-1 · The two pickers, the seat, and the builder
   - [ ] Task 4-2 · Tests beside their modules
@@ -2693,3 +2693,4 @@ Each row's exact wording is in *Investigation · §What Becomes False*.
 #### Deviations
 
 - **Phase 2 Review (`2a8cae9a0`):** a flip starts from the pane's measured top rather than `crossing`, which assumed an unfenced old box and jumped by the fence's correction; `crossing` and `TriggerBox.height` left, and the fence holds a too-tall pane's top on both sides. Tasks 2-3 and 2-4's AFTERs show the forms the review replaced.
+- **Task 3-4 Carried Through (`76174426a`):** MarkdownPM's resting cells (`cellStatic.tsx`) took the `connections` getter as required too, since every caller passes one, matching `ValueContext` and `EditorHost`.
