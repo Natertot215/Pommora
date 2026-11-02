@@ -62,6 +62,21 @@ describe('placePane', () => {
     expect(pos.left).toBe(482)
     expect(pos.origin).toBe('30px 0px')
   })
+
+  it('hangs off the trigger when it fits', () => {
+    expect(place(512).pos.top).toBe(126)
+  })
+
+  it('fences a pane neither side holds', () => {
+    const tall = { w: 200, h: 700 }
+    expect(place(512, { pane: tall }).pos.top).toBe(60)
+    expect(place(512, { pane: tall, side: 'up' }).pos.bottom).toBe(60)
+  })
+
+  it('pins a pane taller than the window to the top margin', () => {
+    const { pos } = place(512, { pane: { w: 200, h: 900 } })
+    expect(pos.top).toBe(8)
+  })
 })
 
 describe('sideFor', () => {

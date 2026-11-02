@@ -61,7 +61,10 @@ export function placePane({
   const edge = (along: number, at: number): number =>
     clamp(at, CORNER_CLEAR, Math.max(CORNER_CLEAR, along - CORNER_CLEAR))
   const near = (x: number): string => `${edge(pw, x)}px ${side === 'up' ? ph : 0}px`
-  const vertical = side === 'up' ? { bottom: view.h - t.top + GAP } : { top: t.bottom + GAP }
+  const fenced = (at: number): number =>
+    clamp(at, VIEWPORT_MARGIN, Math.max(VIEWPORT_MARGIN, view.h - VIEWPORT_MARGIN - ph))
+  const vertical =
+    side === 'up' ? { bottom: fenced(view.h - t.top + GAP) } : { top: fenced(t.bottom + GAP) }
   const center =
     centered ??
     (origin === 'center' || (origin === 'auto' && c - pw / 2 >= edgeL && c + pw / 2 <= edgeR))
