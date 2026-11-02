@@ -227,10 +227,10 @@ export function PickerMenu({
       if (raf) return
       raf = requestAnimationFrame(() => {
         raf = 0
-        measure()
+        flushSync(measure)
       })
     }
-    const ro = new ResizeObserver(() => measure())
+    const ro = new ResizeObserver(() => flushSync(measure))
     if (trigger && !point) ro.observe(trigger)
     window.addEventListener('scroll', measureOnFrame, true)
     window.addEventListener('resize', measureOnFrame)

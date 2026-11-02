@@ -582,6 +582,7 @@ describe('PickerMenu re-measure', () => {
   const realObserver = globalThis.ResizeObserver
   const realAnimate = Element.prototype.animate
   const realRect = Element.prototype.getBoundingClientRect
+  const realFrame = globalThis.requestAnimationFrame
 
   beforeEach(() => {
     Object.defineProperty(HTMLElement.prototype, 'offsetHeight', {
@@ -610,6 +611,7 @@ describe('PickerMenu re-measure', () => {
     globalThis.ResizeObserver = realObserver
     Element.prototype.animate = realAnimate
     Element.prototype.getBoundingClientRect = realRect
+    globalThis.requestAnimationFrame = realFrame
   })
 
   function Slides(): React.JSX.Element {
@@ -622,6 +624,28 @@ describe('PickerMenu re-measure', () => {
         <Slides />
       </PickerMenu>,
     )
+  const openOn = async (top: number): Promise<{ top: number }> => {
+    const at = { top }
+    const trigger = document.body.appendChild(document.createElement('button'))
+    trigger.getBoundingClientRect = () =>
+      ({ top: at.top, bottom: at.top + 20, left: 400, right: 400, width: 0, height: 20 }) as DOMRect
+    const ref = { current: trigger }
+    await render(
+      <PickerMenu open onDismiss={() => {}} triggerRef={ref}>
+        <span data-id="body">BODY</span>
+      </PickerMenu>,
+    )
+    return at
+  }
+  const outsideAct = (fire: () => void): void => {
+    const flags = globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }
+    flags.IS_REACT_ACT_ENVIRONMENT = false
+    try {
+      fire()
+    } finally {
+      flags.IS_REACT_ACT_ENVIRONMENT = true
+    }
+  }
   const layer = (): HTMLElement => layerOf('body')
 
   it('flips past the room a slide grows into, playing the crossing, and holds that side', async () => {
@@ -657,10 +681,26 @@ describe('PickerMenu re-measure', () => {
     await open()
     expect(layer().style.top).toBe('426px')
     paneH = 400
-    ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = false
-    observers[0]?.()
-    ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
+    outsideAct(() => observers[0]?.())
     expect(layer().style.top).toBe('360px')
+  })
+
+  it('re-places for a moved trigger before the frame paints', async () => {
+    const at = await openOn(400)
+    expect(layer().style.top).toBe('426px')
+    at.top = 300
+    outsideAct(() => observers[1]?.())
+    expect(layer().style.top).toBe('326px')
+  })
+
+  it("re-places on a scroll's frame before it paints", async () => {
+    const frames: FrameRequestCallback[] = []
+    globalThis.requestAnimationFrame = (cb) => frames.push(cb)
+    const at = await openOn(400)
+    window.dispatchEvent(new Event('scroll'))
+    at.top = 300
+    outsideAct(() => frames[0]?.(0))
+    expect(layer().style.top).toBe('326px')
   })
 
   it('keeps its side through a shrink, even where the room no longer holds it', async () => {
