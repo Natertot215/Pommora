@@ -4,7 +4,7 @@ import { stringify } from 'yaml'
 import {
   activeTab, ask, blurField, boxOf, caretAtFieldEnd, check, chooseNative, click, closePanel, createPage, escapeAll, field, fieldValue, FM, frontmatter,
   frontRaw, hover, holds, labels, launch, META, mouseAt, mouseClick, must, NEXUS, openCollection, openField,
-  openPage, openPane, openPanel, overlaps, PAGE_VIEW, pageFile, pageIds, pagePath, PANE, PANE_VIEW, paneDoc, PEN,
+  openPage, openPane, openPanel, overlaps, PAGE_VIEW, pageFile, pageIds, pagePath, PANE, PANE_LAYER, PANE_VIEW, paneDoc, PEN,
   pickNative, popNative, portalOpen, pressKey, read, refusal, restore, results, row, sel, selectField, SET, settles, SHIFT, shot, sleep, typeText,
   until, writeBody,
 } from '../drive-harness.mjs'
@@ -291,7 +291,7 @@ async function penOn(cdp, scope, tag) {
   await shot(cdp, `${tag}-pen`)
   await mouseClick(cdp, `(${scope}).querySelector(${JSON.stringify(PEN)})`)
   const opened = await settles(() => portalOpen(cdp), 3000)
-  const a = await boxOf(cdp, sel('[data-picker-portal]:not([data-dismissal-shield])')).catch(() => null)
+  const a = await boxOf(cdp, sel(PANE_LAYER)).catch(() => null)
   const b = await boxOf(cdp, scope)
   // Anchored at the value: across its span, touching or within a few pixels of its box.
   const anchored = a && a.left < b.right && b.left < a.right && a.top < b.bottom + 8 && b.top - 8 < a.bottom

@@ -300,6 +300,7 @@ export async function viewFrame(cdp, frame) {
   await sleep(800)
 }
 export const PORTAL_ROWS = '[data-picker-portal] [role=button]'
+export const PANE_LAYER = '[data-picker-portal]:not([data-dismissal-shield])'
 export async function openCollection(cdp) {
   await click(cdp, `[...document.querySelectorAll('.row span')].findLast((e) => e.textContent.trim() === 'Collection A')`)
   await sleep(1200)

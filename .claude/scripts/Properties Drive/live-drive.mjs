@@ -6,7 +6,7 @@ import {
   FM, frontmatter, frontRaw, pageFile, pageIds, pagePath,
   ask, boxOf, chooseNative, click, closeSettings, createPage, DIALOG, doubleClick, escapeAll, field, inMain, labels, launch, META, mouseAt, mouseClick, must, NEXUS, notice,
   openCollection, openPage, openPane, openSettings, overlaps, pickNative, popNative, portalOpen, pressDialog, pressKey, read, relaunch, restore, ribbon, row, sel, selectField, SET,
-  holds, hover, item, PORTAL_ROWS, SETTINGS_BUTTON, SHIFT, settles, shot, sleep, tally, textEl, trashRowEl, typeText, until, viewFrame,
+  holds, hover, item, PANE_LAYER, PORTAL_ROWS, SETTINGS_BUTTON, SHIFT, settles, shot, sleep, tally, textEl, trashRowEl, typeText, until, viewFrame,
 } from '../drive-harness.mjs'
 import { parse } from 'yaml'
 
@@ -672,6 +672,38 @@ const headTexts = () => `[...document.querySelectorAll('.table-head > *')].map((
 const activate = (cdp, viewId) =>
   must('show the view', ask(cdp, 'mutate', { op: 'setActiveView', path: COLLECTION, kind: 'collection', viewId }))
 
+const HOME = { kind: 'homepage' }
+const HOMEPAGE_DIR = '.nexus/interface/homepage'
+const HOMEPAGE = `${HOMEPAGE_DIR}/homepage.json`
+/** Writes `defs` into the registry and assigns them to Collection A, saves `views`, and answers what puts the registry, the sidecar, and the homepage back. */
+async function seedCollection(cdp, defs, views) {
+  const kept = [REGISTRY_REL, SIDECAR_A, HOMEPAGE].map((rel) => [rel, read(rel)])
+  const tiles = new Set(readdirSync(join(NEXUS, HOMEPAGE_DIR)))
+  const file = JSON.parse(kept[0][1])
+  writeFileSync(REGISTRY, JSON.stringify({
+    ...file,
+    order: [...(file.order ?? []), ...defs.map((d) => d.id)],
+    defs: { ...file.defs, ...Object.fromEntries(defs.map((d) => [d.id, d])) },
+  }, null, 2))
+  await until('the definitions', async () => {
+    const held = (await config(cdp)).registry
+    return defs.every((d) => held.some((h) => h.id === d.id))
+  })
+  for (const d of defs)
+    await must(`assign ${d.label}`, ask(cdp, 'mutate', { op: 'assignProperty', containerPath: COLLECTION, propertyId: d.id }))
+  for (const view of views) await must(`save ${view.name}`, ask(cdp, 'views:save', COLLECTION, 'collection', view, {}))
+  return async (pages) => {
+    await escapeAll(cdp)
+    for (const title of pages) {
+      rmSync(join(NEXUS, pagePath(title)))
+      delete pageIds[title]
+    }
+    for (const [rel, text] of kept) writeFileSync(join(NEXUS, rel), text)
+    for (const name of readdirSync(join(NEXUS, HOMEPAGE_DIR))) if (!tiles.has(name)) rmSync(join(NEXUS, HOMEPAGE_DIR, name))
+    await until('the definitions leave', async () => !(await config(cdp)).registry.some((h) => h.id === defs[0].id))
+  }
+}
+
 async function group11(cdp) {
   const storedRegistry = readFileSync(REGISTRY, 'utf8')
   const storedSidecar = read(SIDECAR_A)
@@ -769,22 +801,12 @@ const drawn = async (cdp) => {
 const drawsAs = (cdp, titles) => settles(async () => JSON.stringify(await drawn(cdp)) === JSON.stringify(titles))
 
 async function group12(cdp) {
-  const sidecarPath = join(NEXUS, 'Collection A/_pagecollection.json')
-  const registry = readFileSync(REGISTRY, 'utf8')
-  const sidecar = readFileSync(sidecarPath, 'utf8')
   const defs = Object.values(KINDS)
-  const file = JSON.parse(registry)
-  writeFileSync(REGISTRY, JSON.stringify({
-    ...file,
-    order: [...file.order, ...defs.map((d) => d.id)],
-    defs: { ...file.defs, ...Object.fromEntries(defs.map((d) => [d.id, d])) },
-  }, null, 2))
-  await until('the three definitions', async () => {
-    const held = (await config(cdp)).registry
-    return defs.every((d) => held.some((h) => h.id === d.id))
-  })
-  for (const d of defs)
-    await must(`assign ${d.label}`, ask(cdp, 'mutate', { op: 'assignProperty', containerPath: 'Collection A', propertyId: d.id }))
+  const base = {
+    id: 'view_01KZPROPDRIVE00000KINDSTBL', name: 'Drive Kinds', type: 'table',
+    property_order: ['_title', ...defs.map((d) => d.id)], hidden_properties: [], filter_enabled: true,
+  }
+  const putBack = await seedCollection(cdp, defs, [base])
   await createPage(cdp, 'Kinds A', {
     [KINDS.score.id]: { kind: 'number', value: 5 },
     [KINDS.done.id]: { kind: 'checkbox', value: true },
@@ -796,12 +818,7 @@ async function group12(cdp) {
   })
   await createPage(cdp, 'Kinds C')
 
-  const base = {
-    id: 'view_01KZPROPDRIVE00000KINDSTBL', name: 'Drive Kinds', type: 'table',
-    property_order: ['_title', ...defs.map((d) => d.id)], hidden_properties: [], filter_enabled: true,
-  }
   const save = (patch) => must('save Drive Kinds', ask(cdp, 'views:save', 'Collection A', 'collection', base, patch))
-  await save({})
   await must('show Drive Kinds', ask(cdp, 'mutate', { op: 'setActiveView', path: 'Collection A', kind: 'collection', viewId: base.id }))
   await openCollection(cdp)
   const onlyKinds = { property_id: '_title', op: 'starts_with', value: 'Kinds ' }
@@ -821,11 +838,7 @@ async function group12(cdp) {
   item(12, 'K-2', 'a Select sort puts the empty row last in both directions', up && down, show({ ascending, descending: await drawn(cdp) }))
   await shot(cdp, 'g12-select-sort')
 
-  await escapeAll(cdp)
-  for (const title of KINDS_PAGES) rmSync(join(NEXUS, pagePath(title)))
-  writeFileSync(sidecarPath, sidecar)
-  writeFileSync(REGISTRY, registry)
-  await until('the definitions leave', async () => !(await config(cdp)).registry.some((h) => h.id === KINDS.score.id))
+  await putBack(KINDS_PAGES)
 }
 
 // ── Group 13 — The Filter's Clock ───────────────────────────────────────────
@@ -844,7 +857,7 @@ async function group13(cdp) {
   await viewFrame(cdp, 'Filter')
   await click(cdp, sel('[aria-label="Filter date"]'))
   await until('the filter date picker', () => portalOpen(cdp))
-  const pane = await cdp.evaluate(`document.querySelector('[data-picker-portal]:not([data-dismissal-shield])')?.textContent ?? ''`)
+  const pane = await cdp.evaluate(`${sel(PANE_LAYER)}?.textContent ?? ''`)
   item(13, 'J-1', "a filter's date picker opens on its column's 24-hour clock under a 12-hour Nexus, with no End Date", pane.includes('15:30') && !/\b(AM|PM)\b/.test(pane) && !pane.includes('End Date'), JSON.stringify(pane.slice(0, 160)))
   await shot(cdp, 'g13-filter-clock')
   await escapeAll(cdp)
@@ -884,9 +897,9 @@ const rowLabel = (id, name) =>
   `(() => { let el = document.querySelector('[data-property-row="${id}"]'); while (el && !el.textContent.includes(${JSON.stringify(name)})) el = el.parentElement; return el && [...el.querySelectorAll('span')].find((s) => s.children.length === 0 && s.textContent.trim() === ${JSON.stringify(name)}) })()`
 /** The first element of `scope`, or inside it, showing exactly `text`: a chip draws its label more than once, so a cell's own text repeats it. */
 const valueIn = (scope, text) => `[...document.querySelectorAll(${JSON.stringify(scope)})].flatMap((e) => [e, ...e.querySelectorAll('*')]).find((e) => e.getClientRects().length > 0 && e.textContent.trim() === ${JSON.stringify(text)})`
-const PANE = `document.querySelector('[data-picker-portal]:not([data-dismissal-shield])')`
+const PANE = sel(PANE_LAYER)
 const paneOpen = (cdp) => cdp.evaluate(`!!${PANE}`)
-const paneRows = (cdp) => cdp.evaluate(`[...document.querySelectorAll('[data-picker-portal]:not([data-dismissal-shield]) [role="button"]')].map((b) => b.textContent.trim())`)
+const paneRows = (cdp) => cdp.evaluate(`[...document.querySelectorAll('${PANE_LAYER} [role="button"]')].map((b) => b.textContent.trim())`)
 // Seat One holds every seat property, so the panel draws no Add Property for the harness's `openPanel` to wait on; its rows say it's open.
 const PANEL_ROWS = `!!document.querySelector('[data-property-row]')`
 async function seatPanel(cdp, open) {
@@ -899,22 +912,7 @@ async function showView(cdp, view) {
 }
 
 async function group14(cdp) {
-  const sidecarPath = join(NEXUS, 'Collection A/_pagecollection.json')
-  const registry = readFileSync(REGISTRY, 'utf8')
-  const sidecar = readFileSync(sidecarPath, 'utf8')
-  const defs = Object.values(SEAT)
-  const file = JSON.parse(registry)
-  writeFileSync(REGISTRY, JSON.stringify({
-    ...file,
-    order: [...file.order, ...defs.map((d) => d.id)],
-    defs: { ...file.defs, ...Object.fromEntries(defs.map((d) => [d.id, d])) },
-  }, null, 2))
-  await until('the seat definitions', async () => {
-    const held = (await config(cdp)).registry
-    return defs.every((d) => held.some((h) => h.id === d.id))
-  })
-  for (const d of defs)
-    await must(`assign ${d.label}`, ask(cdp, 'mutate', { op: 'assignProperty', containerPath: COLLECTION, propertyId: d.id }))
+  const putBack = await seedCollection(cdp, Object.values(SEAT), [SEAT_TABLE, SEAT_CARDS])
   await createPage(cdp, 'Seat One', {
     [SEAT.stage.id]: { kind: 'select', value: 'opt_drive_seat' },
     [SEAT.notes.id]: { kind: 'text', value: 'words' },
@@ -923,8 +921,6 @@ async function group14(cdp) {
     [SEAT.doc.id]: { kind: 'file', value: ['[[Drive.pdf]]'] },
   })
   await createPage(cdp, 'Seat Two', { [SEAT.stage.id]: { kind: 'select', value: 'opt_drive_seat' } })
-  for (const view of [SEAT_TABLE, SEAT_CARDS])
-    await must(`save ${view.name}`, ask(cdp, 'views:save', COLLECTION, 'collection', view, {}))
 
   const one = () => pageIds['Seat One']
   const surfaces = [
@@ -1005,12 +1001,8 @@ async function group14(cdp) {
   const { chosen } = await chooseNative(cdp, sidebarRow('Seat One'), ['Properties', SEAT.due.label])
   const calendar = await settles(() => cdp.evaluate(`!!document.querySelector('[data-picker-portal] [aria-label="Next month"]')`))
   item(14, 'X6', "a Date picked from the sidebar's Properties menu opens the calendar", chosen && calendar, show({ chosen, calendar }))
-  await escapeAll(cdp)
 
-  for (const title of SEAT_PAGES) rmSync(join(NEXUS, pagePath(title)))
-  writeFileSync(sidecarPath, sidecar)
-  writeFileSync(REGISTRY, registry)
-  await until('the seat definitions leave', async () => !(await config(cdp)).registry.some((h) => h.id === SEAT.stage.id))
+  await putBack(SEAT_PAGES)
 }
 
 // ── Group 15 — The Properties Pane (P17) ────────────────────────────────────
@@ -1059,7 +1051,7 @@ const backToList = async (cdp) => {
 async function pickIn(cdp, ariaLabel, option) {
   await click(cdp, liveEl(ariaLabel))
   await until(`the ${ariaLabel} picker`, () => portalOpen(cdp))
-  await click(cdp, `[...document.querySelectorAll('[data-picker-portal]:not([data-dismissal-shield]) [role=button]')].find((e) => e.textContent.trim() === ${JSON.stringify(option)})`)
+  await click(cdp, `[...document.querySelectorAll('${PANE_LAYER} [role=button]')].find((e) => e.textContent.trim() === ${JSON.stringify(option)})`)
   await sleep(600)
 }
 async function typeInto(cdp, ariaLabel, text) {
@@ -1143,39 +1135,6 @@ async function group15(cdp) {
 
 // ── Groups 18 and 19 — the Metadata Picker's Pane Shell ─────────────────────
 
-/** Writes `defs` into the registry and assigns them to Collection A, saves `views`, and answers what puts the registry, the sidecar, and the homepage back. */
-async function seedPanes(cdp, defs, views) {
-  const kept = [REGISTRY_REL, SIDECAR_A, HOMEPAGE].map((rel) => [rel, read(rel)])
-  const tiles = new Set(readdirSync(join(NEXUS, HOMEPAGE_DIR)))
-  const file = JSON.parse(kept[0][1])
-  writeFileSync(REGISTRY, JSON.stringify({
-    ...file,
-    order: [...(file.order ?? []), ...defs.map((d) => d.id)],
-    defs: { ...file.defs, ...Object.fromEntries(defs.map((d) => [d.id, d])) },
-  }, null, 2))
-  await until('the definitions', async () => {
-    const held = (await config(cdp)).registry
-    return defs.every((d) => held.some((h) => h.id === d.id))
-  })
-  for (const d of defs)
-    await must(`assign ${d.label}`, ask(cdp, 'mutate', { op: 'assignProperty', containerPath: COLLECTION, propertyId: d.id }))
-  for (const view of views) await must(`save ${view.name}`, ask(cdp, 'views:save', COLLECTION, 'collection', view, {}))
-  return async (pages) => {
-    await escapeAll(cdp)
-    await naturalWindow(cdp)
-    for (const title of pages) {
-      rmSync(join(NEXUS, pagePath(title)))
-      delete pageIds[title]
-    }
-    for (const [rel, text] of kept) writeFileSync(join(NEXUS, rel), text)
-    for (const name of readdirSync(join(NEXUS, HOMEPAGE_DIR))) if (!tiles.has(name)) rmSync(join(NEXUS, HOMEPAGE_DIR, name))
-    await until('the definitions leave', async () => !(await config(cdp)).registry.some((h) => h.id === defs[0].id))
-  }
-}
-
-const HOME = { kind: 'homepage' }
-const HOMEPAGE_DIR = '.nexus/interface/homepage'
-const HOMEPAGE = `${HOMEPAGE_DIR}/homepage.json`
 /** The first element `css` matches that the window shows: a tab kept alive behind the shown one draws its copies off to the left. */
 const shownEl = (css) => `[...document.querySelectorAll(${JSON.stringify(css)})].find((e) => e.getClientRects().length > 0 && e.getBoundingClientRect().left >= 0)`
 const VIEW_SETTINGS = shownEl('.tile button[aria-label="View settings"]')
@@ -1193,8 +1152,15 @@ async function homeTile(cdp, viewId) {
   await until('the View Tile', () => cdp.evaluate(`!!${VIEW_SETTINGS}`))
   await sleep(800)
 }
+async function tileFrame(cdp, frame) {
+  await mouseClick(cdp, VIEW_SETTINGS)
+  await until('the settings pane', () => portalOpen(cdp))
+  await sleep(600)
+  await mouseClick(cdp, liveRow(frame))
+  await sleep(900)
+}
 
-const LAYERS = `[...document.querySelectorAll('[data-picker-portal]:not([data-dismissal-shield])')]`
+const LAYERS = `[...document.querySelectorAll('${PANE_LAYER}')]`
 const TOP_LAYER = `${LAYERS}.at(-1)`
 const layerCount = (cdp) => cdp.evaluate(`${LAYERS}.length`)
 /** A pane's box and its side: a pane above its trigger is placed by its bottom edge, one below by its top. */
@@ -1289,7 +1255,7 @@ const PLACE_CARDS = {
 }
 
 async function group18(cdp) {
-  const putBack = await seedPanes(cdp, [...Object.values(PLACE), ...PLACE_FILLERS], [PLACE_TABLE, PLACE_CARDS])
+  const putBack = await seedCollection(cdp, [...Object.values(PLACE), ...PLACE_FILLERS], [PLACE_TABLE, PLACE_CARDS])
   await createPage(cdp, 'Place One', {
     [PLACE.due.id]: { kind: 'dateTime', value: '2026-10-22T09:30' },
     [PLACE.notes.id]: { kind: 'text', value: 'words' },
@@ -1351,7 +1317,6 @@ async function group18(cdp) {
   await scrollTo(cdp, cell(2), resting)
 
   // The calendar's height closed and with End Date on, then the window sized so the closed one fits below and the grown one doesn't.
-  await naturalWindow(cdp)
   await mouseClick(cdp, cell(1))
   await until('the calendar', () => cdp.evaluate(`!!${CAL}`))
   await sleep(600)
@@ -1411,17 +1376,20 @@ async function group18(cdp) {
   await roomBelow(cdp, value, Math.round(pane.height) + 6)
   await openPane(cdp, value)
   const lines = [await layerBox(cdp)]
+  const grew = []
   for (const word of ['two', 'three', 'four', 'five']) {
-    await pressKey(cdp, 'Enter', SHIFT)
+    grew.push(...(await framesOf(cdp, () => pressKey(cdp, 'Enter', SHIFT))))
     await typeText(cdp, word)
-    await sleep(500)
     lines.push(await layerBox(cdp))
   }
   const rises = lines.slice(1).filter((l, i) => l.top < lines[i].top).length
   item(18, 'MP-E-1', 'TextPane on a low card rises line by line, keeping its side and the window',
     lines.every((l) => l.side === 'down' && l.bottom <= l.view) && lines.slice(1).every((l, i) => l.top <= lines[i].top) && rises >= 2, show({ rises, lines }))
+  const overflow = Math.round(Math.max(0, ...grew.map((f) => Math.max(-f.top, f.bottom - f.view))))
+  item(18, 'MP-E-1', 'each Shift-Enter keeps TextPane inside the window on every frame', insideWindow(grew), show({ overflow, frames: grew }))
   await shot(cdp, 'g18-textpane-risen', TOP_LAYER)
 
+  await naturalWindow(cdp)
   await putBack(['Place One'])
 }
 
@@ -1464,9 +1432,11 @@ const PANES_TABLE = {
   id: 'view_01KZPROPERTIESDRIVE19TBL', name: 'Panes Table', type: 'table', hidden_properties: [],
   property_order: ['_title', PANES.due.id], filter: { match: 'all', rules: [{ property_id: '_title', op: 'is', value: 'Panes One' }] }, filter_enabled: true,
 }
+const TWO_RULES = { filter: { match: 'all', rules: [PANES_TABLE.filter.rules[0], { property_id: '_location', op: 'is', values: [] }] } }
+const fieldTrigger = (n) => `[...document.querySelectorAll('[aria-label="Filter property"]')].filter((e) => !e.closest('[inert]'))[${n}]`
 
 async function group19(cdp) {
-  const putBack = await seedPanes(cdp, Object.values(PANES), [PANES_TABLE])
+  const putBack = await seedCollection(cdp, Object.values(PANES), [PANES_TABLE])
   await createPage(cdp, 'Panes One', { [PANES.due.id]: { kind: 'dateTime', value: '2026-10-22T09:30' } })
   const cards = (await views(cdp)).find((v) => v.type === 'cards')
 
@@ -1478,19 +1448,23 @@ async function group19(cdp) {
   item(19, 'MP-E-3', "in the toolbar's Layout, a second press on Card Image opens its list", thenOpens(toolbar), show(toolbar))
   await escapeAll(cdp)
 
+  await must('the two filter rules', ask(cdp, 'views:save', COLLECTION, 'collection', cards, TWO_RULES))
   // The tile high in the window, so its Layout opens below with room for Card Scale's list beneath it, as the toolbar's does.
   await homeTile(cdp, cards.id)
   await scrollTo(cdp, VIEW_SETTINGS, 100)
-  await mouseClick(cdp, VIEW_SETTINGS)
-  await until('the settings pane', () => portalOpen(cdp))
-  await sleep(600)
-  await mouseClick(cdp, liveRow('Layout'))
-  await sleep(900)
+  await tileFrame(cdp, 'Layout')
   const tile = await pressBeside(cdp, liveEl('Card Scale'), liveEl('Card Image'))
   item(19, 'MP-E-3', "in a View Tile's Layout, a press on Card Image with Card Scale's list open lands on the list's shield and only closes it",
     onlyClosed(tile, 'shield'), show(tile))
   item(19, 'MP-E-3', "in a View Tile's Layout, a second press on Card Image opens its list", thenOpens(tile), show(tile))
   await shot(cdp, 'g19-tile-list-only-closes', TOP_LAYER)
+  await escapeAll(cdp)
+
+  await tileFrame(cdp, 'Filter')
+  const tileFields = await pressBeside(cdp, fieldTrigger(1), fieldTrigger(0))
+  item(19, 'MP-E-3', "in a View Tile's Filter, a press on the first rule's field with the second's list open lands on the list's own shield and only closes it",
+    onlyClosed(tileFields, 'shield'), show(tileFields))
+  item(19, 'MP-E-3', "in a View Tile's Filter, a second press on the first rule's field opens its list", thenOpens(tileFields), show(tileFields))
   await escapeAll(cdp)
 
   const popups = await inMain('__drive.seq')
@@ -1528,15 +1502,12 @@ async function group19(cdp) {
   item(19, 'MP-E-3', 'a double-click on Hour lands in its field with no list left open', typing && lists === 1, show({ typing, lists }))
   await escapeAll(cdp)
 
-  await must('the two filter rules', ask(cdp, 'views:save', COLLECTION, 'collection', PANES_TABLE, {
-    filter: { match: 'all', rules: [PANES_TABLE.filter.rules[0], { property_id: '_location', op: 'is', values: [] }] },
-  }))
+  await must('the two filter rules', ask(cdp, 'views:save', COLLECTION, 'collection', PANES_TABLE, TWO_RULES))
   await viewFrame(cdp, 'Filter')
-  const fieldTrigger = (n) => `[...document.querySelectorAll('[aria-label="Filter property"]')].filter((e) => !e.closest('[inert]'))[${n}]`
   const fields = await pressBeside(cdp, fieldTrigger(1), fieldTrigger(0))
-  item(19, 'MP-E-3', "a press on the first rule's field with the second's list open lands on the list's shield and only closes it",
+  item(19, 'MP-E-3', "control: in the toolbar's Filter, which draws no shield of its own, a press on the first rule's field with the second's list open only closes the list",
     onlyClosed(fields, 'shield'), show(fields))
-  item(19, 'MP-E-3', "a second press on the first rule's field opens its list", thenOpens(fields), show(fields))
+  item(19, 'MP-E-3', "control: in the toolbar's Filter, a second press on the first rule's field opens its list", thenOpens(fields), show(fields))
   const filterPanes = await layerCount(cdp)
   await mouseClick(cdp, `[...document.querySelectorAll('[aria-label="Filter values"]')].find((e) => !e.closest('[inert]'))`)
   await until('the location pane', async () => (await layerCount(cdp)) > filterPanes)
