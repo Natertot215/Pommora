@@ -219,16 +219,16 @@ The order is what makes each step land once. Phase 0 readies the drives and pins
   - [x] Task 0-3 · The harness additions
   - [x] Task 0-4 · The pins
   - [x] Task 0-5 · The baseline and all seven drives
-- [ ] **Phase 1** — Kit Imports
+- [x] **Phase 1** — Kit Imports
   - [x] Task 1-1 · The barrel leaves
   - [x] Task 1-2 · `ManageRow` and `PickerControl` swap folders
 - [ ] **Phase 2** — The Pane Shell
   - [x] Task 2-1 · One meaning per anchor prop, and the guard
   - [x] Task 2-2 · `panePlacement.ts`
   - [x] Task 2-3 · The fence
-  - [ ] Task 2-4 · The slide decides and the pane travels
-  - [ ] Task 2-5 · The trigger rule
-  - [ ] Task 2-6 · A list only closes
+  - [x] Task 2-4 · The slide decides and the pane travels
+  - [x] Task 2-5 · The trigger rule
+  - [x] Task 2-6 · A list only closes
   - [ ] Task 2-7 · Groups 18 and 19 open
   - [ ] Review Checkpoint
 - [ ] **Phase 3** — Small Folds
@@ -1211,7 +1211,6 @@ A press beside an open dropdown list inside a pane should only close that list (
 
 - `PickerMenu.test.tsx`: "a dropdown list shields the pane beneath it, so a press on that pane closes only the list": two shields drawn, `elementsFromPoint` stubbed as `MenuPresenter.test.tsx:86` does.
 - `CalendarPicker.test.tsx`: a press on a part while the other's list is open, with its release and click, closes the list and opens nothing.
-- `dismissalStack.test.tsx`, beside `:178`: a press past a list inside a pane swallows its release.
 
 `PickerMenu.test.tsx:190-227` logs at `pointerdown`, so only a real press proves E-3, which group 19 runs in Task 2-7. `:230` is `focus="keep"`'s carve-out and stays true.
 
