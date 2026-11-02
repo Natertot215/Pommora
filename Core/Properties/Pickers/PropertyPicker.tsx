@@ -25,9 +25,8 @@ import {
   MenuSeparator,
   MenuTopRow,
   menuDropLine,
-  pickRuns,
-  type PickRun,
-} from '@pommora/uix/Menus'
+} from '@pommora/uix/Menus/MenuRows'
+import { pickRuns, type PickRun } from '@pommora/uix/Menus/pickRuns'
 import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
 import { LineRow, LineZone, lineList } from '@pommora/uix/Interactions/drag'
 import { Reveal } from '@pommora/uix/Animations/Reveal'

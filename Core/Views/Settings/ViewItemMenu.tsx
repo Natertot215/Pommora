@@ -4,7 +4,7 @@ import type { SavedView } from '../views'
 import { reportRefusal } from '../../Interface/Notifications/notifications'
 import { deleteViewWithUndo } from '../deleteViewWithUndo'
 import { Icon } from '@pommora/uix/Symbols'
-import { AccessoryButton, MenuItem, MenuSeparator } from '@pommora/uix/Menus'
+import { AccessoryButton, MenuItem, MenuSeparator } from '@pommora/uix/Menus/MenuRows'
 import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
 import { dialer } from '../../Platform/dialer'
 

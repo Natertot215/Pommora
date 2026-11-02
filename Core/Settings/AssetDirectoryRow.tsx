@@ -1,6 +1,6 @@
 import { reportRefusal } from '../Interface/Notifications/notifications'
 import { PathField } from '@pommora/uix/Fields/PathField'
-import { MenuRowView } from '@pommora/uix/Menus'
+import { MenuRowView } from '@pommora/uix/Menus/MenuIndex'
 import { type RowOf, settingsRow } from './frames'
 import { useSession } from '../Session/store'
 import { dialer } from '../Platform/dialer'

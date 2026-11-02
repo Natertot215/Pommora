@@ -10,7 +10,7 @@ import {
   MenuItem,
   MenuScrollFrame,
   MenuSeparator,
-} from '@pommora/uix/Menus'
+} from '@pommora/uix/Menus/MenuRows'
 import { IconChoice } from '../Assets/IconChoice'
 import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
 import { PropertyPanel } from '../Properties/PropertyPanel'

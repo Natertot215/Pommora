@@ -1,14 +1,8 @@
 import { useMemo, useState } from 'react'
-import {
-  DisclosureRow,
-  MenuDesc,
-  MenuDropdown,
-  MenuScrollFrame,
-  itemEmphasized,
-  menuDropLine,
-  titleInput,
-  useDisclosureSet,
-} from '@pommora/uix/Menus'
+import { DisclosureRow, useDisclosureSet } from '@pommora/uix/Menus/DisclosureRow'
+import { MenuDropdown } from '@pommora/uix/Menus/MenuDropdown'
+import { MenuDesc, MenuScrollFrame, menuDropLine } from '@pommora/uix/Menus/MenuRows'
+import { itemEmphasized, titleInput } from '@pommora/uix/Menus/menu-row.css'
 import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
 import { useSession } from '../../Session/store'
 import {

@@ -10,7 +10,7 @@ import {
   stubPointerCapture,
   stubRect,
 } from '@pommora/uix/Utilities/pointerHarness'
-import { menuDropLine } from '@pommora/uix/Menus'
+import { menuDropLine } from '@pommora/uix/Menus/MenuRows'
 import { DragGroup, useLineRow, useLooseItem } from '@pommora/uix/Interactions/drag'
 import { TAB_FAMILY } from '../../Navigation/tabRows'
 import { SidebarDnd } from './sidebarDnd'

@@ -3,7 +3,7 @@ import type { RenameHost } from '../Session/editSlice'
 import { useEffect, useState } from 'react'
 import { useSession } from '../Session/store'
 import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
-import { titleInput } from '@pommora/uix/Menus'
+import { titleInput } from '@pommora/uix/Menus/menu-row.css'
 
 /** The fence resolves one winner, so a path visible on two surfaces (a set's sidebar row and its table band) mounts exactly one field. */
 export function RenamableTitle({

@@ -40,7 +40,7 @@ import {
   TIME_FORMAT_LABELS,
 } from '../Properties/displayLabels'
 import { TrashFrame } from '../Trash/TrashFrame'
-import type { MenuRow, Trailing } from '@pommora/uix/Menus'
+import type { MenuRow, Trailing } from '@pommora/uix/Menus/MenuIndex'
 import type { ReactNode } from 'react'
 import { askClearExclusions, askClearHistory } from '../Interface/Confirm/confirmations'
 import { dialer } from '../Platform/dialer'

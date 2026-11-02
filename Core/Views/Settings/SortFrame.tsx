@@ -1,13 +1,8 @@
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import type { PropertyDefinition } from '../../Properties/properties'
 import { LOCATION_SORT, type SavedView, type SortCriterion, VIEW_KINDS, viewOption } from '../views'
-import {
-  MenuRowView,
-  MenuScrollFrame,
-  MenuTopRow,
-  MenuSeparator,
-  pickerRow,
-} from '@pommora/uix/Menus'
+import { MenuRowView, pickerRow } from '@pommora/uix/Menus/MenuIndex'
+import { MenuScrollFrame, MenuTopRow, MenuSeparator } from '@pommora/uix/Menus/MenuRows'
 import { useSaveView } from '../viewWrite'
 import { resolveColumn } from '../Pipeline/columns'
 import { contextIdsOf } from '../../Contexts/contextIdentity'

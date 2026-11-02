@@ -1,14 +1,11 @@
 import { useState } from 'react'
+import { steppedRow, MenuIndex, type MenuSection, pickerRow } from '@pommora/uix/Menus/MenuIndex'
 import {
-  steppedRow,
   FooterIconButton,
   FooterLockButton,
   MenuFooting,
-  MenuIndex,
   MenuScrollFrame,
-  type MenuSection,
-  pickerRow,
-} from '@pommora/uix/Menus'
+} from '@pommora/uix/Menus/MenuRows'
 import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
 import { PANE_MIN_H, PANE_MIN_W } from '@pommora/uix/Menus/frame-slide.css'
 import { VIEW_SETTINGS_MAX_HEIGHT } from '@pommora/uix/Menus/frames.css'

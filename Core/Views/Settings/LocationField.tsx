@@ -4,13 +4,9 @@ import { Icon } from '@pommora/uix/Symbols'
 import { TokenField } from '@pommora/uix/Fields/TokenField'
 import { foldKey, matches, matchKey, matchQuery } from '../../Paths/caseFold'
 import { EntityIcon } from '../../Assets/EntityIcon'
-import {
-  DisclosureRow,
-  MenuDesc,
-  MenuScrollFrame,
-  pickRuns,
-  useDisclosureSet,
-} from '@pommora/uix/Menus'
+import { DisclosureRow, useDisclosureSet } from '@pommora/uix/Menus/DisclosureRow'
+import { MenuDesc, MenuScrollFrame } from '@pommora/uix/Menus/MenuRows'
+import { pickRuns } from '@pommora/uix/Menus/pickRuns'
 import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
 import { PICKER_MAX_HEIGHT, treePane } from '@pommora/uix/Pickers/picker-base.css'
 import { useKeepInView, usePaneCtl } from '@pommora/uix/Interactions/paneCtl'

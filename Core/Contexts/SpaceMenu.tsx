@@ -6,7 +6,7 @@ import {
   MenuItem,
   MenuScrollFrame,
   MenuSeparator,
-} from '@pommora/uix/Menus'
+} from '@pommora/uix/Menus/MenuRows'
 import { BoardLock } from '../Tiles/BoardLock'
 import { Icon } from '@pommora/uix/Symbols'
 import { ICON } from '@pommora/uix/Menus/frames.css'

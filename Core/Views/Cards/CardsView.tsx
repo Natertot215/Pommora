@@ -65,7 +65,7 @@ import {
   shownColumnsFor,
 } from './cardColumns'
 import { RenamableTitle } from '../../Interface/RenamableTitle'
-import { titleInput } from '@pommora/uix/Menus'
+import { titleInput } from '@pommora/uix/Menus/menu-row.css'
 import { popMenu } from '../../Actions/menuActions'
 import { cardMenuModel } from '../../Actions/cardMenu'
 import { useGhostFlip } from './useGhostFlip'

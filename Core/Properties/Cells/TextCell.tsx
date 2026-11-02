@@ -1,7 +1,7 @@
 import { useRef } from 'react'
 import { isSecondaryClick } from '@pommora/uix/Interactions/chords'
 import { overScrollEllipsis } from '@pommora/uix/Interactions/OverScroll'
-import { AccessoryButton } from '@pommora/uix/Menus'
+import { AccessoryButton } from '@pommora/uix/Menus/MenuRows'
 import { cx } from '@pommora/uix/Utilities/cx'
 import type { ConnPage } from '../../Connections/pageIndex'
 import { glanceHost } from '../../Interface/Glance/glanceAction'

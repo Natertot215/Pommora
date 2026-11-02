@@ -1,6 +1,6 @@
 import { useRef, type RefObject } from 'react'
 import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
-import { AccessoryButton } from '@pommora/uix/Menus'
+import { AccessoryButton } from '@pommora/uix/Menus/MenuRows'
 import type { ConnPage } from '../../Connections/pageIndex'
 import type { EditorHost } from '../../MarkdownPM/api'
 import type { PropertyValue } from '../propertyValue'

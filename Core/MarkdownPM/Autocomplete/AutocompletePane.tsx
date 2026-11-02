@@ -4,19 +4,14 @@ import { Icon } from '@pommora/uix/Symbols'
 import type { RememberedSize } from '@pommora/uix/Interactions/useResizable'
 import { PICKER_MAX_HEIGHT } from '@pommora/uix/Pickers/picker-base.css'
 import { type PaneBounds, usePaneResize } from '@pommora/uix/Pickers/usePaneResize'
-import {
-  DisclosureRow,
-  MenuItem,
-  MenuScrollFrame,
-  MenuTopRow,
-  itemEmphasized,
-} from '@pommora/uix/Menus'
+import { DisclosureRow } from '@pommora/uix/Menus/DisclosureRow'
+import { MenuItem, MenuScrollFrame, MenuTopRow } from '@pommora/uix/Menus/MenuRows'
 import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
 import { overScrollHost } from '@pommora/uix/Interactions/OverScroll'
 import { removeButton } from '@pommora/uix/Interactions/hover-remove.css'
 import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
-import { side } from '@pommora/uix/Menus/menu-row.css'
+import { side, itemEmphasized } from '@pommora/uix/Menus/menu-row.css'
 import { useKeepInView } from '@pommora/uix/Interactions/paneCtl'
 import { CaretPane, CLOSED_GEOMETRY } from '../Menus/caretPane'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'

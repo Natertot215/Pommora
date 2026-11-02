@@ -16,7 +16,7 @@ import {
   AccessoryButton,
   FootingCreate,
   menuDropLine,
-} from '@pommora/uix/Menus'
+} from '@pommora/uix/Menus/MenuRows'
 import { titleInput } from '@pommora/uix/Menus/menu-row.css'
 import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
 import { LayoutFrame } from './LayoutFrame'

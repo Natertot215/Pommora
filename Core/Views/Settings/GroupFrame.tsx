@@ -21,18 +21,16 @@ import {
   viewOption,
 } from '../views'
 import type { ResolvedColumn, ResolvedGroup } from '../viewRow'
+import { DisclosureRow, useDisclosureSet } from '@pommora/uix/Menus/DisclosureRow'
+import { MenuRowView, pickerRow } from '@pommora/uix/Menus/MenuIndex'
 import {
-  DisclosureRow,
   FootingItem,
-  MenuRowView,
   MenuSeparator,
   MenuTopRow,
   MenuScrollFrame,
   MenuFooting,
-  useDisclosureSet,
-  pickerRow,
   menuDropLine,
-} from '@pommora/uix/Menus'
+} from '@pommora/uix/Menus/MenuRows'
 import { LineRow, LineZone } from '@pommora/uix/Interactions/drag'
 import { EyeToggle } from '@pommora/uix/Elements/EyeToggle'
 import { revealDim } from '@pommora/uix/Interactions/hover-reveal.css'

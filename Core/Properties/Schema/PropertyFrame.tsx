@@ -17,10 +17,11 @@ import { useActiveView } from '../../Views/Host/useActiveView'
 import { useSaveView } from '../../Views/viewWrite'
 import { columnStylePatch, styleFor, useNexusForms } from '../../Views/Host/useColumnStyles'
 import { propertyColumn } from '../../Views/Pipeline/columns'
+import { DropOutline } from '@pommora/uix/Menus/DisclosureRow'
+import { MenuIndex } from '@pommora/uix/Menus/MenuIndex'
 import {
   MenuItem,
   MenuDesc,
-  MenuIndex,
   MenuTopRow,
   MenuScrollFrame,
   MenuFooting,
@@ -28,8 +29,7 @@ import {
   MenuSeparator,
   AccessoryButton,
   FootingCreate,
-  DropOutline,
-} from '@pommora/uix/Menus'
+} from '@pommora/uix/Menus/MenuRows'
 import { titleInput, actionRow } from '@pommora/uix/Menus/menu-row.css'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { useEntrance } from '@pommora/uix/Animations/useEntrance'

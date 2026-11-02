@@ -17,7 +17,8 @@ import { text } from '@pommora/uix/Theme'
 import { OptionDraft, OptionSlot } from './OptionSlot'
 import { type OptionStyleControl, useOptionEdit } from './useOptionEdit'
 import * as s from '@pommora/uix/Menus/frames.css'
-import { AccessoryButton, heading, menuDropLine } from '@pommora/uix/Menus'
+import { AccessoryButton, menuDropLine } from '@pommora/uix/Menus/MenuRows'
+import { heading } from '@pommora/uix/Menus/menu-row.css'
 
 export function OptionEditor({
   def,

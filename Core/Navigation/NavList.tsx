@@ -1,7 +1,7 @@
 import { Icon } from '@pommora/uix/Symbols'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
-import { MenuItem, menuDropLine } from '@pommora/uix/Menus'
+import { MenuItem, menuDropLine } from '@pommora/uix/Menus/MenuRows'
 import { overlay } from '@pommora/uix/Menus/menu-row.css'
 import { carries, LineRow, LineZone, lineList } from '@pommora/uix/Interactions/drag'
 import { isWindowTarget, type NavRef, type WindowTarget, type SelectTarget } from './navRef'

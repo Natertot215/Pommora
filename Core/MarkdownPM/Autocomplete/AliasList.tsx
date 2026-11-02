@@ -11,7 +11,7 @@ import {
   MenuScrollFrame,
   menuDropLine,
   RowRemove,
-} from '@pommora/uix/Menus'
+} from '@pommora/uix/Menus/MenuRows'
 import { titleInput } from '@pommora/uix/Menus/menu-row.css'
 import { type ListRow, useListEdit } from '@pommora/uix/Menus/useListEdit'
 import { Icon } from '@pommora/uix/Symbols'

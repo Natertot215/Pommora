@@ -1,6 +1,6 @@
 import { Button } from '@pommora/uix/Buttons/Button'
 import { useTimedLabel } from '@pommora/uix/Animations/useTimedLabel'
-import { MenuRowView } from '@pommora/uix/Menus'
+import { MenuRowView } from '@pommora/uix/Menus/MenuIndex'
 import { type RowOf, settingsRow } from './frames'
 
 export function ClearActionRow({ row }: { row: RowOf<'clear'> }): React.JSX.Element {

@@ -2,7 +2,6 @@
   "name": "@pommora/uix",
   "private": true,
   "exports": {
-    "./Menus": "./Menus/index.ts",
     "./Symbols": "./Symbols/index.tsx",
     "./Symbols/mark": "./Symbols/mark.ts",
     "./Theme": "./Theme/index.ts",

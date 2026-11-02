@@ -1,6 +1,8 @@
 import { Icon } from '@pommora/uix/Symbols'
 import { cx } from '@pommora/uix/Utilities/cx'
-import { DropOutline, MenuItem, titleInput } from '@pommora/uix/Menus'
+import { DropOutline } from '@pommora/uix/Menus/DisclosureRow'
+import { MenuItem } from '@pommora/uix/Menus/MenuRows'
+import { titleInput } from '@pommora/uix/Menus/menu-row.css'
 import type { HeldKind } from '../../Nexus/entities'
 import { RenamableTitle } from '../RenamableTitle'
 

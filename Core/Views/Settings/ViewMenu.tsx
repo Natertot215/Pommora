@@ -1,6 +1,6 @@
 import { reportRefusal } from '../../Interface/Notifications/notifications'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
-import { MenuDropdown } from '@pommora/uix/Menus'
+import { MenuDropdown } from '@pommora/uix/Menus/MenuDropdown'
 import { useSession } from '../../Session/store'
 import { containerSchema, topContainerOf } from '../../Nexus/treePatch'
 import { namesContainer } from '../../Nexus/entities'

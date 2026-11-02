@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { Icon } from '@pommora/uix/Symbols'
-import { menuDropLine } from '@pommora/uix/Menus'
+import { menuDropLine } from '@pommora/uix/Menus/MenuRows'
 import { carries, LineZone } from '@pommora/uix/Interactions/drag'
 import { selectTargetOf } from '../../Navigation/navRef'
 import { TAB_FAMILY } from '../../Navigation/tabRows'

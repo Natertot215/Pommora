@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useLineRow } from '@pommora/uix/Interactions/drag'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
-import { titleInput } from '@pommora/uix/Menus'
+import { titleInput } from '@pommora/uix/Menus/menu-row.css'
 import { ColorPicker } from '@pommora/uix/Pickers/ColorPicker'
 import { VIEWPORT_MARGIN } from '@pommora/uix/Pickers/PickerMenu'
 import { clamp } from '@pommora/uix/Utilities/clamp'

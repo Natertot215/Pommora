@@ -17,14 +17,14 @@ import { ViewLeaf } from './ViewLeaf'
 import { ScalePicker } from '../../Settings/ScalePicker'
 import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
 import { PANE_MIN_H, PANE_MIN_W } from '@pommora/uix/Menus/frame-slide.css'
+import { MenuIndex } from '@pommora/uix/Menus/MenuIndex'
 import {
   FooterIconButton,
   FooterLockButton,
   MenuFooting,
-  MenuIndex,
   MenuScrollFrame,
   MenuSeparator,
-} from '@pommora/uix/Menus'
+} from '@pommora/uix/Menus/MenuRows'
 import { IconChoice } from '../../Assets/IconChoice'
 import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
 import { useViewTileScope } from '../ViewTileScope'

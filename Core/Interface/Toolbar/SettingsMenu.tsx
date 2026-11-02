@@ -1,6 +1,6 @@
 import type { SelectionState } from '../../Navigation/navRef'
 import { useSession } from '../../Session/store'
-import { MenuSurface } from '@pommora/uix/Menus'
+import { MenuSurface } from '@pommora/uix/Menus/MenuSurface'
 import { SettingsFrame } from '../../Views/Settings/SettingsFrame'
 import { PageMenu } from '../../Pages/PageMenu'
 import { SpaceMenu } from '../../Contexts/SpaceMenu'

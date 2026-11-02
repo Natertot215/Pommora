@@ -1,5 +1,5 @@
 import { EyeToggle } from '@pommora/uix/Elements/EyeToggle'
-import type { PickerRowLook } from '@pommora/uix/Menus'
+import type { PickerRowLook } from '@pommora/uix/Menus/MenuIndex'
 import { side } from '@pommora/uix/Menus/menu-row.css'
 import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
 import { type SortDirections, viewSpecOf } from '../valueKinds'

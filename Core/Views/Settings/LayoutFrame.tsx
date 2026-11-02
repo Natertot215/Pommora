@@ -11,14 +11,8 @@ import {
   viewOption,
 } from '../views'
 import { Icon, type IconName } from '@pommora/uix/Symbols'
-import {
-  MenuIndex,
-  MenuSeparator,
-  MenuTopRow,
-  MenuScrollFrame,
-  steppedRow,
-  pickerRow,
-} from '@pommora/uix/Menus'
+import { MenuIndex, steppedRow, pickerRow } from '@pommora/uix/Menus/MenuIndex'
+import { MenuSeparator, MenuTopRow, MenuScrollFrame } from '@pommora/uix/Menus/MenuRows'
 import { ICON, VIEW_SETTINGS_MAX_HEIGHT } from '@pommora/uix/Menus/frames.css'
 import { useSaveView } from '../viewWrite'
 import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'

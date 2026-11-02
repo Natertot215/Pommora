@@ -21,7 +21,7 @@ import {
   MenuScrollFrame,
   MenuTopRow,
   RowRemove,
-} from '@pommora/uix/Menus'
+} from '@pommora/uix/Menus/MenuRows'
 import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
 import { OverScroll } from '@pommora/uix/Interactions/OverScroll'
 import { Reveal } from '@pommora/uix/Animations/Reveal'

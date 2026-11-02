@@ -1,6 +1,7 @@
 import { PROPERTY_TYPES, type PropertyDefinition } from '../../Properties/properties'
 import { findOption, optionLabel } from '../../Properties/propertyValue'
-import { heading, menuDropLine } from '@pommora/uix/Menus'
+import { menuDropLine } from '@pommora/uix/Menus/MenuRows'
+import { heading } from '@pommora/uix/Menus/menu-row.css'
 import { hiddenRow, optionRow } from '@pommora/uix/Menus/frames.css'
 import { LineRow, LineZone, lineList } from '@pommora/uix/Interactions/drag'
 import { moveBefore } from '@pommora/uix/Utilities/moveItem'

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { MenuRow } from '@pommora/uix/Menus'
+import type { MenuRow } from '@pommora/uix/Menus/MenuIndex'
 import { dateDefaults } from '../columnStyles'
 import type { PropertyDefinition, PropertyType } from '../properties'
 import { rowsFor } from './typeRows'
