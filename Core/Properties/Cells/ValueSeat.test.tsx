@@ -281,10 +281,11 @@ describe('a sweep', () => {
     [rowA.id, rowA],
     [rowB.id, rowB],
   ])
-  const open = (): void => {
+  const open = (cell?: HTMLElement): void => {
     mount(columnOf(SELECT), { rowOf: (id) => rows.get(id) })
-    act(() => seat.sweep(rowA, columnOf(SELECT), [rowA.id, rowB.id], el()))
+    act(() => seat.sweep(rowA, columnOf(SELECT), [rowA.id, rowB.id], cell ?? el()))
   }
+  const bodyCell = (): HTMLElement => document.body.appendChild(document.createElement('div'))
   const option = (label: string): HTMLElement | undefined =>
     [
       ...document.querySelectorAll<HTMLElement>(
@@ -311,6 +312,26 @@ describe('a sweep', () => {
     expect(commit.mock.calls.map(([r]) => r.id)).toEqual([rowA.id, rowB.id])
     expect(undoValue(null)).toBe(true)
     expect(reverted).toEqual([rowB.id, rowA.id])
+  })
+
+  it('stays open over the rows that remain, and a pick lands on those alone', () => {
+    const cell = bodyCell()
+    open(cell)
+    mount(columnOf(SELECT), { rowOf: (id) => (id === rowA.id ? rowA : undefined) })
+    expect(seat.open?.mode).toBe('picker')
+    act(() => option('Alpha')?.click())
+    expect(commit.mock.calls.map(([r]) => r.id)).toEqual([rowA.id])
+    cell.remove()
+  })
+
+  it('closes once its cell leaves the page', () => {
+    const onClose = vi.fn()
+    const cell = bodyCell()
+    open(cell)
+    cell.remove()
+    mount(columnOf(SELECT), { rowOf: (id) => rows.get(id), onClose })
+    expect(seat.open).toBeNull()
+    expect(onClose).toHaveBeenCalled()
   })
 })
 

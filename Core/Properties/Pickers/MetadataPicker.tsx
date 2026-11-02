@@ -33,7 +33,6 @@ export function MetadataPicker({ seat }: { seat: ValueSeatApi }): React.JSX.Elem
           seat.slide(entry.id)
           break
         case 'click':
-          seat.close()
           seat.openAway(at, entry, seat.anchor.current)
       }
     }
@@ -79,7 +78,7 @@ export function MetadataPicker({ seat }: { seat: ValueSeatApi }): React.JSX.Elem
                 <MenuTopRow
                   label={GROUP_LABELS[column.kind === 'context' ? 'contexts' : 'properties']}
                   current={columnLabel(column, contexts)}
-                  onBack={() => seat.slide()}
+                  onBack={() => (spaces.length + rest.length > 0 ? seat.slide() : seat.close())}
                 />
               }
               onCommit={(commits) => seat.commitPicks([row], column, commits)}

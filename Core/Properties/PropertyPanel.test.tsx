@@ -495,20 +495,55 @@ describe('the Add row', () => {
 })
 
 describe('picking from the Add list', () => {
+  const tagsDef: PropertyDefinition = {
+    id: 'prop_tags',
+    label: 'Tags',
+    key: 'Tags',
+    type: 'multiSelect',
+    select_options: [
+      { id: 'opt_a', key: 'A', label: 'A' },
+      { id: 'opt_b', key: 'B', label: 'B' },
+    ],
+  }
+  const doneDef: PropertyDefinition = {
+    id: 'prop_done',
+    label: 'Done',
+    key: 'Done',
+    type: 'checkbox',
+  }
+  const settle = async (ms = 30): Promise<void> => {
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, ms))
+    })
+  }
   const entry = (name: string): HTMLElement | undefined =>
-    [...document.querySelectorAll<HTMLElement>('[data-picker-portal] [role="button"]')].find(
-      (e) => e.textContent?.trim() === name,
+    [...document.querySelectorAll<HTMLElement>('[data-picker-portal] [role="button"]')].find((e) =>
+      e.textContent?.includes(name),
     )
   const press = async (el: HTMLElement | null | undefined): Promise<void> => {
     await act(async () => {
       el?.click()
     })
-    await act(async () => {
-      await new Promise((r) => setTimeout(r, 30))
-    })
+    await settle()
+  }
+  const open = async (frontmatter: Record<string, unknown>, ids: string[]): Promise<void> => {
+    const tree = useSession.getState().tree as never as {
+      config: { registry: PropertyDefinition[] }
+      collections: { propertyIds: string[] }[]
+    }
+    tree.config.registry = [stageDef, noteDef, rankDef, tagsDef]
+    tree.collections[0].propertyIds = ids
+    cachePageDetail(detail({ path: 'Col/Page.md', frontmatter }))
+    await renderPanel(<PropertyPanel subject={PAGE} host="dropdown" />)
+    await settle()
   }
   const add = (): HTMLElement | null => host.querySelector('[aria-label="Add Property"]')
   const row = (id: string): HTMLElement | null => host.querySelector(`[data-property-row="${id}"]`)
+  const fieldRow = (name: string): HTMLElement | undefined =>
+    [...host.querySelectorAll<HTMLElement>('[data-ghost-root] [role="button"]')].find(
+      (e) => e.textContent === name,
+    )
+  const portal = (): Element | null => document.querySelector('[data-picker-portal]')
 
   it('a typed entry shows its row with its field open in it', async () => {
     cachePageDetail(detail({ path: 'Col/Page.md' }))
@@ -516,10 +551,8 @@ describe('picking from the Add list', () => {
     await press(add())
     await press(entry('Note'))
     expect(row('prop_note')?.querySelector('input')).not.toBeNull()
-    await act(async () => {
-      await new Promise((r) => setTimeout(r, 400))
-    })
-    expect(entry('Note')).toBeUndefined()
+    await settle(400)
+    expect(portal()).toBeNull()
   })
 
   it('an option entry lands the picked option on the page and shows its row', async () => {
@@ -540,8 +573,28 @@ describe('picking from the Add list', () => {
     expect(row('prop_stage')).not.toBeNull()
   })
 
+  it('Add Check from the list writes `true`, shows the row, and closes the list', async () => {
+    seedDef(doneDef)
+    cachePageDetail(detail({ path: 'Col/Page.md' }))
+    await renderPanel(<PropertyPanel subject={PAGE} host="dropdown" />)
+    await press(add())
+    await press(entry('Done'))
+    expect(useSession.getState().mutate).toHaveBeenCalledWith(
+      {
+        op: 'setProperty',
+        path: 'Col/Page.md',
+        propertyId: 'prop_done',
+        value: { kind: 'checkbox', value: true },
+      },
+      expect.anything(),
+    )
+    expect(row('prop_done')).not.toBeNull()
+    await settle(400)
+    expect(portal()).toBeNull()
+  })
+
   it('a file naming a Checkbox with false shows its row and leaves the Add list', async () => {
-    seedDef({ id: 'prop_done', label: 'Done', key: 'Done', type: 'checkbox' })
+    seedDef(doneDef)
     cachePageDetail(detail({ path: 'Col/Page.md', frontmatter: { Done: false } }))
     await renderPanel(<PropertyPanel subject={PAGE} host="dropdown" />)
     expect(row('prop_done')).not.toBeNull()
@@ -549,58 +602,13 @@ describe('picking from the Add list', () => {
     expect(entry('Note')).toBeDefined()
     expect(entry('Done')).toBeUndefined()
   })
-})
-
-describe('the Add list', () => {
-  const tagsDef: PropertyDefinition = {
-    id: 'prop_tags',
-    label: 'Tags',
-    key: 'Tags',
-    type: 'multiSelect',
-    select_options: [
-      { id: 'opt_a', key: 'A', label: 'A' },
-      { id: 'opt_b', key: 'B', label: 'B' },
-    ],
-  }
-  const settle = async (): Promise<void> => {
-    await act(async () => {
-      await new Promise((r) => setTimeout(r, 30))
-    })
-  }
-  const portalRow = (name: string): HTMLElement | undefined =>
-    [...document.querySelectorAll<HTMLElement>('[data-picker-portal] [role="button"]')].find((e) =>
-      e.textContent?.includes(name),
-    )
-  const press = async (el: HTMLElement | undefined | null): Promise<void> => {
-    await act(async () => {
-      el?.click()
-    })
-    await settle()
-  }
-  const open = async (frontmatter: Record<string, unknown>, ids: string[]): Promise<void> => {
-    const tree = useSession.getState().tree as never as {
-      config: { registry: PropertyDefinition[] }
-      collections: { propertyIds: string[] }[]
-    }
-    tree.config.registry = [stageDef, noteDef, rankDef, tagsDef]
-    tree.collections[0].propertyIds = ids
-    cachePageDetail(detail({ path: 'Col/Page.md', frontmatter }))
-    await renderPanel(<PropertyPanel subject={PAGE} host="dropdown" />)
-    await settle()
-  }
-  const plus = (): HTMLElement | null => host.querySelector('[aria-label="Add Property"]')
-  const row = (id: string): Element | null => host.querySelector(`[data-property-row="${id}"]`)
-  const fieldRow = (name: string): HTMLElement | undefined =>
-    [...host.querySelectorAll<HTMLElement>('[data-ghost-root] [role="button"]')].find(
-      (e) => e.textContent === name,
-    )
 
   it('a Select entry slides under ‹ Properties · Stage, and cancelling leaves no row', async () => {
     await open({ Note: 1 }, [noteDef.id, stageDef.id])
-    await press(plus())
-    expect(portalRow('Stage')?.querySelector('.lucide-chevron-right')).not.toBeNull()
-    await press(portalRow('Stage'))
-    expect(portalRow('Properties')?.textContent).toContain('Stage')
+    await press(add())
+    expect(entry('Stage')?.querySelector('.lucide-chevron-right')).not.toBeNull()
+    await press(entry('Stage'))
+    expect(entry('Properties')?.textContent).toContain('Stage')
     expect(row('prop_stage')).toBeNull()
     await act(async () => {
       document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
@@ -611,25 +619,37 @@ describe('the Add list', () => {
 
   it('the first pick from a group’s last entry shows its row and keeps its pane open', async () => {
     await open({ Note: 1 }, [noteDef.id, tagsDef.id])
-    await press(plus())
-    await press(portalRow('Tags'))
-    await press(portalRow('A'))
+    await press(add())
+    await press(entry('Tags'))
+    await press(entry('A'))
     expect(row('prop_tags')).not.toBeNull()
-    expect(plus()).not.toBeNull()
-    expect(portalRow('B')).toBeTruthy()
-    await press(portalRow('B'))
-    expect(portalRow('Properties')?.textContent).toContain('Tags')
+    expect(add()).not.toBeNull()
+    expect(entry('B')).toBeTruthy()
+    await press(entry('B'))
+    expect(entry('Properties')?.textContent).toContain('Tags')
+  })
+
+  it('Back from a pane whose entry left the list closes it, since no list stands behind it', async () => {
+    cachePageDetail(detail({ path: 'Col/Page.md', frontmatter: { '<Areas>': ['Work'] } }))
+    await renderPanel(<PropertyPanel subject={PAGE} host="dropdown" />)
+    await press(host.querySelector<HTMLElement>('[aria-label="Add Context"]'))
+    await press(entry('Topics'))
+    await press(entry('Craft'))
+    expect(row('ctx_topics')).not.toBeNull()
+    await press(entry('Spaces'))
+    await settle(400)
+    expect(portal()).toBeNull()
   })
 
   it('a pick from a standing Add row keeps that row, and its pane, through the first row landing', async () => {
     await open({}, [tagsDef.id])
-    const add = fieldRow('Add Property')
-    await press(add)
-    await press(portalRow('Tags'))
-    await press(portalRow('A'))
+    const standing = fieldRow('Add Property')
+    await press(standing)
+    await press(entry('Tags'))
+    await press(entry('A'))
     expect(row('prop_tags')).not.toBeNull()
-    expect(fieldRow('Add Property')).toBe(add)
-    expect(portalRow('B')).toBeTruthy()
+    expect(fieldRow('Add Property')).toBe(standing)
+    expect(entry('B')).toBeTruthy()
   })
 })
 

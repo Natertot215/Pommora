@@ -177,11 +177,13 @@ export function useValueSeat(host: SeatHost) {
   const openAway = (row: ViewRow, column: ResolvedColumn, el: HTMLElement | null): void => {
     const intent = intentOf(row, column)
     if (intent?.kind !== 'edit') run(row, column, intent, el)
-    else if (!live.current.add?.inPlace) run(row, column, { kind: 'popover' }, el)
+    else if (!host.add?.inPlace) run(row, column, { kind: 'popover' }, el)
     else {
-      flushSync(() => live.current.add?.show(column))
+      flushSync(() => host.add?.show(column))
       run(row, column, intent, el && host.anchor(el, column))
     }
+    // A commit or the file dialog opens no pane, so nothing is left to hold the anchor.
+    if (intent?.kind === 'commit' || intent?.kind === 'file') close()
   }
 
   const openAdd = (row: ViewRow, el: HTMLElement | null, group?: keyof ItemColumns): void => {
@@ -376,8 +378,6 @@ export function MenuSeat(): React.JSX.Element {
     const row = pending.rowOf()
     if (!row) return dismiss()
     seat.openAway(row, pending.column, pending.trigger)
-    // The file dialog opens no pane, so nothing is left to hold the menu's anchor.
-    if (pending.column.type === 'file') dismiss()
   }, [pending])
   return <ValueSeat seat={seat} />
 }
