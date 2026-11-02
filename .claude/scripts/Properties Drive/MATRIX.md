@@ -1,6 +1,6 @@
 ## Properties Drive — Matrix
 
-The drive's cases, derived from *Properties Restructure — Decisions & Intention* and written to the end-state contract of the Properties Restructure plan's AFTER blocks. Each group lands with the plan phase that adds it and drives the channels and surfaces the interface uses. Every check prints as `[g<group> <decisions>] <name>`, so a run reads against the tables below line for line. Each group seeds what it needs in `~/Test` and puts it back; the harness restores `~/Test` when the run ends.
+The drive's cases, derived from *Properties Restructure — Decisions & Intention* and written to the end-state contract of the Properties Restructure plan's AFTER blocks. Groups 18 and 19 derive from *Metadata Picker — Decisions & Intention* instead, and print its letters with an `MP-` prefix so they're never read as the Restructure's. Each group lands with the plan phase that adds it and drives the channels and surfaces the interface uses. Every check prints as `[g<group> <decisions>] <name>`, so a run reads against the tables below line for line. Each group seeds what it needs in `~/Test` and puts it back; the harness restores `~/Test` when the run ends.
 
 #### Group 1 — What Counts as a Property
 
@@ -155,3 +155,31 @@ The drive's cases, derived from *Properties Restructure — Decisions & Intentio
 | Link and Checkbox | the new Link and Checkbox | open each editor | 8px between rows; screenshots `g15-link`, `g15-checkbox`, `g15-file` | L-1 |
 | Delete from ⋮ | the new File, its editor open | ⋮ › Delete, confirm | the definition is gone and the list is the live slot | O-5 |
 | Removed from outside | the new Number, its editor open | `mutate` `unassignProperty` from outside the pane | the list is the live slot, and no "Property not found." shows | O-5 |
+
+
+#### Group 18 — Placement
+
+| Case | Seeds | Operation | Expected | Decisions |
+| --- | --- | --- | --- | --- |
+| A low window | `Place Due` (Date & Time), `Place Tall` (Select, 20 options), `Place Notes` (Text), and ten `Place Filler` Text properties on Collection A; `Place One` holding `2026-10-22T09:30` and `words`; a homepage View Tile of `Place Table` between two filler tiles | `Emulation.setDeviceMetricsOverride` to 600 CSS pixels | `innerHeight` reads back 600 | MP-E-1 |
+| Visibility flips | as above, the window sized so the settings' root fits below its trigger and Visibility doesn't | open the tile's settings, then Visibility, with an rAF sampler on the pane | the root opens below and Visibility ends above its trigger; every frame stays inside the window, its largest per-frame step under 60px and printed in the case's name; screenshot `g18-visibility-flipped` | MP-E-1 |
+| Back from the flip | as above | Back | the pane stays above its trigger and the edge it hangs from never moves; screenshot `g18-visibility-back` | MP-E-1 |
+| A tall list | a 400-pixel window, the tile scrolled so `Place Tall`'s cell sits 200 pixels down | open the cell's option list, sampled | the list opens above from its first frame and never moves; neither side holds it, so it's fenced at the top margin, over its cell; screenshot `g18-fence-top` | MP-E-1 |
+| End Date at the edge | the window sized so `Place Due`'s calendar fits below its cell and the calendar with End Date on doesn't | open the calendar, then turn End Date on | the calendar keeps its side and rises inside the window; screenshot `g18-end-date-risen` | MP-E-1 |
+| The 24-hour clock | `timeFormat` set to `twentyFourHour` | open the calendar | the clock reads `09` and `30` with no AM or PM | MP-E-5 |
+| Nested lists | as above | open Month, Year, Hour, and Minute in turn and pick November, 2027, 10, and 45 | each list opens over the calendar and its pick lands; screenshot `g18-month-nested` | MP-E-5 |
+| TextPane on a low card | `Place Cards` shown, the window sized so the pane opens below the card's value with less than a line to spare | open TextPane from the pen, then four Shift-Enter lines | the pane keeps its side and the window, and rises with the lines; screenshot `g18-textpane-risen` | MP-E-1 |
+
+#### Group 19 — Settings Panes
+
+| Case | Seeds | Operation | Expected | Decisions |
+| --- | --- | --- | --- | --- |
+| The toolbar's Layout | Collection A's Cards view shown | open Card Scale's list, then press Card Image beside it, then again | the first press lands on the list's own shield, closes the list, opens nothing, and reaches no `click` listener on Card Image; the second opens Card Image's list | MP-E-3 |
+| A View Tile's Layout | a homepage View Tile of the Cards view, scrolled near the window's top | as above, in the tile's settings | as above; screenshot `g19-tile-list-only-closes` | MP-E-3 |
+| A tile's handle menu | as above | press the tile's handle | the menu draws in `[data-picker-portal]` and `Menu.popup` records nothing; screenshot `g19-tile-handle-menu` | MP-D-6 |
+| Month, then Year | `Panes Due` (Date & Time) on Collection A; `Panes One` holding `2026-10-22T09:30` in the `Panes Table` view | open Month's list, then press Year, then again | as the toolbar's Layout | MP-E-3 |
+| Hour, then Minute | as above | open Hour's list, then press Minute, then again | the first press reaches Minute rather than a shield, closes the list, and its click is dropped; the second opens Minute's list | MP-E-3 |
+| A double-click on Hour | as above | double-click Hour | its field takes focus and no list stays open | MP-E-3 |
+| A filter's field lists | the view filtering on Title and on Location | open the second rule's field list, then press the first rule's field, then again | as the toolbar's Layout | MP-E-3 |
+| LocationField's pane | as above | open the Location rule's value pane, then press the first rule's operator | the press lands on the operator, the `focus="keep"` pane closes, and the operator's list opens | MP-E-3 |
+| A slider row | Settings › Pages & Writing | open Editor Scale's list, then press a Heading size slider beside it | the press lands on the list's shield and closes it, and every slider keeps its value | MP-E-3 |

@@ -4,15 +4,15 @@ import { ulid } from 'ulidx'
 import {
   mintOptionId, optionId,
   FM, frontmatter, frontRaw, pageFile, pageIds, pagePath,
-  ask, boxOf, chooseNative, click, closeSettings, createPage, DIALOG, escapeAll, field, labels, launch, META, mouseAt, mouseClick, must, NEXUS, notice,
-  openCollection, openPage, openSettings, pickNative, popNative, portalOpen, pressDialog, pressKey, read, relaunch, restore, row, sel, selectField, SET,
-  holds, item, PORTAL_ROWS, SETTINGS_BUTTON, settles, shot, sleep, tally, textEl, trashRowEl, typeText, until, viewFrame,
+  ask, boxOf, chooseNative, click, closeSettings, createPage, DIALOG, doubleClick, escapeAll, field, inMain, labels, launch, META, mouseAt, mouseClick, must, NEXUS, notice,
+  openCollection, openPage, openPane, openSettings, overlaps, pickNative, popNative, portalOpen, pressDialog, pressKey, read, relaunch, restore, ribbon, row, sel, selectField, SET,
+  holds, hover, item, PORTAL_ROWS, SETTINGS_BUTTON, SHIFT, settles, shot, sleep, tally, textEl, trashRowEl, typeText, until, viewFrame,
 } from '../drive-harness.mjs'
 import { parse } from 'yaml'
 
 const PORT = 9403
 // The drive's groups in order, each landed by the plan phase that adds it.
-const LANDED = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15']
+const LANDED = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '18', '19']
 const GROUPS = new Set(process.argv.slice(2))
 if (GROUPS.size === 0 || [...GROUPS].some((g) => !LANDED.includes(g))) {
   console.error(`usage: node live-drive.mjs <group…>   (groups ${LANDED.join(', ')})`)
@@ -1141,6 +1141,430 @@ async function group15(cdp) {
   await until('the registry as it was', async () => (await config(cdp)).registry.length === JSON.parse(kept[0]).order.length)
 }
 
+// ── Groups 18 and 19 — the Metadata Picker's Pane Shell ─────────────────────
+
+/** Writes `defs` into the registry and assigns them to Collection A, saves `views`, and answers what puts the registry, the sidecar, and the homepage back. */
+async function seedPanes(cdp, defs, views) {
+  const kept = [REGISTRY_REL, SIDECAR_A, HOMEPAGE].map((rel) => [rel, read(rel)])
+  const tiles = new Set(readdirSync(join(NEXUS, HOMEPAGE_DIR)))
+  const file = JSON.parse(kept[0][1])
+  writeFileSync(REGISTRY, JSON.stringify({
+    ...file,
+    order: [...(file.order ?? []), ...defs.map((d) => d.id)],
+    defs: { ...file.defs, ...Object.fromEntries(defs.map((d) => [d.id, d])) },
+  }, null, 2))
+  await until('the definitions', async () => {
+    const held = (await config(cdp)).registry
+    return defs.every((d) => held.some((h) => h.id === d.id))
+  })
+  for (const d of defs)
+    await must(`assign ${d.label}`, ask(cdp, 'mutate', { op: 'assignProperty', containerPath: COLLECTION, propertyId: d.id }))
+  for (const view of views) await must(`save ${view.name}`, ask(cdp, 'views:save', COLLECTION, 'collection', view, {}))
+  return async (pages) => {
+    await escapeAll(cdp)
+    await naturalWindow(cdp)
+    for (const title of pages) {
+      rmSync(join(NEXUS, pagePath(title)))
+      delete pageIds[title]
+    }
+    for (const [rel, text] of kept) writeFileSync(join(NEXUS, rel), text)
+    for (const name of readdirSync(join(NEXUS, HOMEPAGE_DIR))) if (!tiles.has(name)) rmSync(join(NEXUS, HOMEPAGE_DIR, name))
+    await until('the definitions leave', async () => !(await config(cdp)).registry.some((h) => h.id === defs[0].id))
+  }
+}
+
+const HOME = { kind: 'homepage' }
+const HOMEPAGE_DIR = '.nexus/interface/homepage'
+const HOMEPAGE = `${HOMEPAGE_DIR}/homepage.json`
+/** The first element `css` matches that the window shows: a tab kept alive behind the shown one draws its copies off to the left. */
+const shownEl = (css) => `[...document.querySelectorAll(${JSON.stringify(css)})].find((e) => e.getClientRects().length > 0 && e.getBoundingClientRect().left >= 0)`
+const VIEW_SETTINGS = shownEl('.tile button[aria-label="View settings"]')
+/** A View Tile showing `viewId` between two filler tiles, so it sits in the window's lower half and the board scrolls. A board already drawn doesn't redraw from a tile written over the channel, so the window reloads before the homepage shows. */
+async function homeTile(cdp, viewId) {
+  const source = (await ask(cdp, 'nexus:state')).value.tree.collections.find((c) => c.path === COLLECTION).id
+  await must('a filler tile', ask(cdp, 'tiles:create', HOME, { kind: 'append', h: 300 }))
+  await must('the View Tile', ask(cdp, 'tiles:create', HOME, { kind: 'append' }, { kind: 'view', value: { source_id: source, view_id: viewId } }))
+  await must('a filler tile', ask(cdp, 'tiles:create', HOME, { kind: 'append', h: 600 }))
+  await cdp.evaluate('window.__beforeReload = true')
+  await cdp.send('Page.reload')
+  await until('the reloaded ribbon', () => cdp.evaluate(`!window.__beforeReload && !!${ribbon('Homepage')}`), 30000)
+  await sleep(1500)
+  await mouseClick(cdp, ribbon('Homepage'))
+  await until('the View Tile', () => cdp.evaluate(`!!${VIEW_SETTINGS}`))
+  await sleep(800)
+}
+
+const LAYERS = `[...document.querySelectorAll('[data-picker-portal]:not([data-dismissal-shield])')]`
+const TOP_LAYER = `${LAYERS}.at(-1)`
+const layerCount = (cdp) => cdp.evaluate(`${LAYERS}.length`)
+/** A pane's box and its side: a pane above its trigger is placed by its bottom edge, one below by its top. */
+const layerBox = (cdp, expr = TOP_LAYER) => cdp.evaluate(`(() => {
+  const e = ${expr}
+  if (!e) return null
+  const b = e.getBoundingClientRect()
+  return { top: b.top, bottom: b.bottom, left: b.left, right: b.right, height: b.height, side: e.style.bottom ? 'up' : 'down', view: innerHeight }
+})()`)
+/** Runs `act` while an in-page sampler records the top pane's box on every frame for `ms`. */
+async function framesOf(cdp, act, ms = 900) {
+  await cdp.evaluate(`(() => {
+    window.__frames = []
+    const end = performance.now() + ${ms}
+    const tick = () => {
+      const e = ${TOP_LAYER}
+      if (e) {
+        const b = e.getBoundingClientRect()
+        window.__frames.push({ top: b.top, bottom: b.bottom, side: e.style.bottom ? 'up' : 'down', view: innerHeight })
+      }
+      if (performance.now() < end) requestAnimationFrame(tick)
+    }
+    requestAnimationFrame(tick)
+  })()`)
+  await act()
+  await sleep(ms + 100)
+  return cdp.evaluate('window.__frames')
+}
+const largestStep = (frames) =>
+  Math.round(Math.max(0, ...frames.slice(1).map((f, i) => Math.max(Math.abs(f.top - frames[i].top), Math.abs(f.bottom - frames[i].bottom)))))
+const insideWindow = (frames) => frames.length > 0 && frames.every((f) => f.top >= 0 && f.bottom <= f.view)
+
+let zoom
+/** Shows the window `height` CSS pixels tall, answering the height it reads back; the app's zoom makes a CSS pixel smaller than a device one. */
+async function windowHeight(cdp, height) {
+  zoom ??= await cdp.evaluate('outerWidth / innerWidth')
+  const width = await cdp.evaluate('innerWidth')
+  await cdp.send('Emulation.setDeviceMetricsOverride', { width: Math.round(width * zoom), height: Math.round(height * zoom), deviceScaleFactor: 0, mobile: false })
+  await sleep(600)
+  return cdp.evaluate('innerHeight')
+}
+async function naturalWindow(cdp) {
+  await cdp.send('Emulation.clearDeviceMetricsOverride')
+  await sleep(600)
+}
+// A pane's room on a side is measured past the menu gap and the window margin.
+const CLEARANCE = 14
+/** Scrolls the surface holding `expr` until its top sits at `top`. */
+async function scrollTo(cdp, expr, top) {
+  await cdp.evaluate(`(() => {
+    const el = ${expr}
+    let s = el.parentElement
+    while (s && !(s.scrollHeight > s.clientHeight && /auto|scroll/.test(getComputedStyle(s).overflowY))) s = s.parentElement
+    s.scrollTop += el.getBoundingClientRect().top - ${top}
+  })()`)
+  await sleep(400)
+}
+/** Sizes the window so `expr` has `room` below it as a pane counts room. */
+const roomBelow = async (cdp, expr, room) => windowHeight(cdp, Math.round((await boxOf(cdp, expr)).bottom + CLEARANCE + room))
+
+const CAL = `${LAYERS}.find((e) => e.querySelector('[aria-label="Next month"]'))`
+const MONTH = `${CAL}.querySelectorAll('button')[0]`
+const YEAR = `${CAL}.querySelectorAll('button')[1]`
+/** The calendar's first clock: its hour, its minute, and on a 12-hour clock its AM or PM. */
+const clockParts = `(() => { let f = ${CAL}.querySelector('.lucide-clock'); while (f && f.querySelectorAll('button').length < 2) f = f.parentElement; return [...f.querySelectorAll('button')] })()`
+const HOUR = `${clockParts}[0]`
+const MINUTE = `${clockParts}[1]`
+const END_DATE = `${CAL}.querySelector('[aria-label="End Date"]')`
+const rowIn = (scope, text) => `[...(${scope}).querySelectorAll('[role=button]')].find((e) => e.textContent.trim() === ${JSON.stringify(text)})`
+const BACK = `[...document.querySelectorAll('[data-picker-portal] [role=button]')].find((e) => !e.closest('[inert]') && e.querySelector('.lucide-chevron-left'))`
+
+// ── Group 18 — Placement ────────────────────────────────────────────────────
+
+const PLACE = {
+  due: { id: 'prop_drive_place_due', label: 'Place Due', key: 'Place Due', type: 'dateTime' },
+  tall: {
+    id: 'prop_drive_place_tall', label: 'Place Tall', key: 'Place Tall', type: 'select',
+    select_options: Array.from({ length: 20 }, (_, i) => ({ id: `opt_drive_tall_${i + 1}`, key: `Tall ${i + 1}`, label: `Tall ${i + 1}` })),
+  },
+  notes: { id: 'prop_drive_place_notes', label: 'Place Notes', key: 'Place Notes', type: 'text' },
+}
+// Visibility lists every property, so these make it taller than the settings' root.
+const PLACE_FILLERS = Array.from({ length: 10 }, (_, i) => ({ id: `prop_drive_place_filler_${i + 1}`, label: `Place Filler ${i + 1}`, key: `Place Filler ${i + 1}`, type: 'text' }))
+const onlyPlaceOne = { match: 'all', rules: [{ property_id: '_title', op: 'is', value: 'Place One' }] }
+const PLACE_TABLE = {
+  id: 'view_01KZPROPERTIESDRIVE18TBL', name: 'Place Table', type: 'table', hidden_properties: [],
+  property_order: ['_title', PLACE.due.id, PLACE.tall.id], filter: onlyPlaceOne, filter_enabled: true,
+}
+const PLACE_CARDS = {
+  id: 'view_01KZPROPERTIESDRIVE18CRD', name: 'Place Cards', type: 'cards', hidden_properties: [],
+  property_order: ['_title', PLACE.notes.id], filter: onlyPlaceOne, filter_enabled: true,
+}
+
+async function group18(cdp) {
+  const putBack = await seedPanes(cdp, [...Object.values(PLACE), ...PLACE_FILLERS], [PLACE_TABLE, PLACE_CARDS])
+  await createPage(cdp, 'Place One', {
+    [PLACE.due.id]: { kind: 'dateTime', value: '2026-10-22T09:30' },
+    [PLACE.notes.id]: { kind: 'text', value: 'words' },
+  })
+  await homeTile(cdp, PLACE_TABLE.id)
+  const cell = (n) => `${shownEl(`.tile .data-row[data-rid="${pageIds['Place One']}"]`)}.querySelectorAll('.data-cell')[${n}]`
+  await until('the tile’s row', () => cdp.evaluate(`!!${shownEl(`.tile .data-row[data-rid="${pageIds['Place One']}"]`)}`))
+
+  const natural = await cdp.evaluate('innerHeight')
+  const low = await windowHeight(cdp, 600)
+  item(18, 'MP-E-1', 'a low window reads back the height it was given', Math.abs(low - 600) <= 1 && low < natural, show({ natural, low }))
+
+  // The root's and Visibility's heights, read anywhere, then the window sized so the root fits below and Visibility doesn't.
+  await mouseClick(cdp, VIEW_SETTINGS)
+  await until('the settings pane', () => portalOpen(cdp))
+  await sleep(600)
+  const rootBox = await layerBox(cdp)
+  await mouseClick(cdp, liveRow('Visibility'))
+  await sleep(900)
+  const shownBox = await layerBox(cdp)
+  await escapeAll(cdp)
+  await roomBelow(cdp, VIEW_SETTINGS, Math.round((rootBox.height + shownBox.height) / 2))
+  await mouseClick(cdp, VIEW_SETTINGS)
+  await until('the settings pane', () => portalOpen(cdp))
+  await sleep(600)
+  const opened = await layerBox(cdp)
+  const flip = await framesOf(cdp, () => mouseClick(cdp, liveRow('Visibility'), { settle: 0 }))
+  const flipped = await layerBox(cdp)
+  const trigger = await boxOf(cdp, VIEW_SETTINGS)
+  item(18, 'MP-E-1', "a View Tile's Visibility, outgrowing the room below its trigger, flips above it",
+    opened.side === 'down' && flipped.side === 'up' && flipped.bottom <= trigger.top, show({ rootBox, shownBox, opened, flipped, trigger }))
+  const step = largestStep(flip)
+  item(18, 'MP-E-1', `the flip keeps every frame inside the window, its largest per-frame step ${step}px under 60px`,
+    insideWindow(flip) && step < 60, show({ step, frames: flip }))
+  await shot(cdp, 'g18-visibility-flipped', TOP_LAYER)
+
+  const back = await framesOf(cdp, () => mouseClick(cdp, BACK, { settle: 0 }))
+  const returned = await layerBox(cdp)
+  item(18, 'MP-E-1', 'Back from the flip stays above its trigger, the edge it hangs from never moving',
+    returned.side === 'up' && returned.bottom <= trigger.top && insideWindow(back) && back.every((f) => f.side === 'up' && Math.abs(f.bottom - back[0].bottom) < 1),
+    show({ returned, back }))
+  await shot(cdp, 'g18-visibility-back', TOP_LAYER)
+  await escapeAll(cdp)
+
+  // A short window with the cell high in it, so the list has more room above than below and neither side holds it.
+  const resting = (await boxOf(cdp, cell(2))).top
+  await windowHeight(cdp, 400)
+  await scrollTo(cdp, cell(2), 200)
+  const tall = await framesOf(cdp, () => mouseClick(cdp, cell(2), { settle: 0 }))
+  const list = await layerBox(cdp)
+  const tallCell = await boxOf(cdp, cell(2))
+  item(18, 'MP-E-1', 'a 20-option list near the foot of a short window opens above its cell from the start and never moves again',
+    tall.length > 0 && tall.every((f) => f.side === 'up' && f.top === tall[0].top && f.bottom === tall[0].bottom), show({ list, tall }))
+  item(18, 'MP-E-1', 'a list neither side holds is fenced at the top margin, inside the window, over its cell',
+    list.top >= 0 && list.top < 10 && list.bottom <= list.view && list.bottom > tallCell.top, show({ list, tallCell }))
+  await shot(cdp, 'g18-fence-top')
+  await escapeAll(cdp)
+  await naturalWindow(cdp)
+  await scrollTo(cdp, cell(2), resting)
+
+  // The calendar's height closed and with End Date on, then the window sized so the closed one fits below and the grown one doesn't.
+  await naturalWindow(cdp)
+  await mouseClick(cdp, cell(1))
+  await until('the calendar', () => cdp.evaluate(`!!${CAL}`))
+  await sleep(600)
+  const single = await layerBox(cdp, CAL)
+  await mouseClick(cdp, END_DATE)
+  await sleep(700)
+  const spanned = await layerBox(cdp, CAL)
+  await mouseClick(cdp, END_DATE)
+  await sleep(700)
+  await escapeAll(cdp)
+  await roomBelow(cdp, cell(1), Math.round((single.height + spanned.height) / 2))
+  await mouseClick(cdp, cell(1))
+  await until('the calendar', () => cdp.evaluate(`!!${CAL}`))
+  await sleep(600)
+  const before = await layerBox(cdp, CAL)
+  await mouseClick(cdp, END_DATE)
+  await sleep(700)
+  const risen = await layerBox(cdp, CAL)
+  item(18, 'MP-E-1', "a popped calendar's End Date at the window's edge rises inside the window rather than flipping",
+    before.side === 'down' && risen.side === 'down' && risen.top < before.top && risen.bottom <= risen.view, show({ single, spanned, before, risen }))
+  await shot(cdp, 'g18-end-date-risen', CAL)
+  await mouseClick(cdp, END_DATE)
+  await escapeAll(cdp)
+  await naturalWindow(cdp)
+
+  const clockFormat = (await config(cdp)).personalization.timeFormat
+  await must('the 24-hour clock', ask(cdp, 'personalization:set', 'timeFormat', 'twentyFourHour'))
+  await mouseClick(cdp, cell(1))
+  await until('the calendar', () => cdp.evaluate(`!!${CAL}`))
+  await sleep(600)
+  const parts = await cdp.evaluate(`${clockParts}.map((b) => b.textContent.trim())`)
+  item(18, 'MP-E-5', 'the 24-hour clock draws its hour padded and no AM or PM', same(parts, ['09', '30']), show(parts))
+
+  const nested = {}
+  for (const [name, part, pick] of [['Month', MONTH, 'November'], ['Year', YEAR, '2027'], ['Hour', HOUR, '10'], ['Minute', MINUTE, '45']]) {
+    await mouseClick(cdp, part)
+    await until(`the ${name} list`, async () => (await layerCount(cdp)) === 2)
+    await sleep(400)
+    const [pane, over] = [await layerBox(cdp, CAL), await layerBox(cdp)]
+    if (name === 'Month') await shot(cdp, 'g18-month-nested', CAL)
+    await click(cdp, rowIn(TOP_LAYER, pick))
+    const landed = await settles(async () => (await layerCount(cdp)) === 1 && (await cdp.evaluate(`${part}.textContent.trim()`)) === pick, 3000)
+    nested[name] = { over: overlaps(pane, over), landed }
+  }
+  item(18, 'MP-E-5', 'Month, Year, Hour, and Minute each open nested over the calendar, and a pick lands',
+    Object.values(nested).every((n) => n.over && n.landed), show(nested))
+  await escapeAll(cdp)
+  await must('the clock as it was', ask(cdp, 'personalization:set', 'timeFormat', clockFormat))
+
+  // TextPane's height on the card, then the window sized so it opens below with less than a line to spare.
+  await showView(cdp, PLACE_CARDS)
+  const value = shownEl(`[data-rid="${pageIds['Place One']}"] .card-value`)
+  await until('the card’s value', () => cdp.evaluate(`!!${value}`))
+  await openPane(cdp, value)
+  const pane = await layerBox(cdp)
+  await escapeAll(cdp)
+  await roomBelow(cdp, value, Math.round(pane.height) + 6)
+  await openPane(cdp, value)
+  const lines = [await layerBox(cdp)]
+  for (const word of ['two', 'three', 'four', 'five']) {
+    await pressKey(cdp, 'Enter', SHIFT)
+    await typeText(cdp, word)
+    await sleep(500)
+    lines.push(await layerBox(cdp))
+  }
+  const rises = lines.slice(1).filter((l, i) => l.top < lines[i].top).length
+  item(18, 'MP-E-1', 'TextPane on a low card rises line by line, keeping its side and the window',
+    lines.every((l) => l.side === 'down' && l.bottom <= l.view) && lines.slice(1).every((l, i) => l.top <= lines[i].top) && rises >= 2, show({ rises, lines }))
+  await shot(cdp, 'g18-textpane-risen', TOP_LAYER)
+
+  await putBack(['Place One'])
+}
+
+// ── Group 19 — Settings Panes ───────────────────────────────────────────────
+
+/** Opens `open`'s list, then presses `press` beside it as a pointer does, reading what the press hit and left behind, and unless `again` is false presses it once more. A click listener on the pressed control counts what reached it. */
+async function pressBeside(cdp, open, press, { again = true } = {}) {
+  const base = await layerCount(cdp)
+  await mouseClick(cdp, open)
+  await until('the list', async () => (await layerCount(cdp)) > base)
+  await sleep(400)
+  const list = await layerBox(cdp)
+  await cdp.evaluate(`(() => {
+    const el = ${press}
+    window.__pressed = el
+    window.__presses = 0
+    el.addEventListener('click', () => { window.__presses += 1 })
+  })()`)
+  const at = await boxOf(cdp, 'window.__pressed')
+  const beside = !overlaps(list, { left: at.x, right: at.x, top: at.y, bottom: at.y })
+  const hit = await cdp.evaluate(`(() => {
+    const e = document.elementFromPoint(${at.x}, ${at.y})
+    return e?.hasAttribute('data-dismissal-shield') ? 'shield' : window.__pressed.contains(e) ? 'control' : (e?.tagName ?? null)
+  })()`)
+  await mouseAt(cdp, at)
+  const closed = await settles(async () => (await layerCount(cdp)) === base, 3000)
+  const first = await cdp.evaluate('window.__presses')
+  if (!again) return { beside, hit, closed, first }
+  await mouseAt(cdp, at)
+  const second = await cdp.evaluate('window.__presses')
+  const reopened = (await layerCount(cdp)) > base
+  if (reopened) await pressKey(cdp, 'Escape')
+  return { beside, hit, closed, first, second, reopened }
+}
+const onlyClosed = (r, hit) => r.beside && r.hit === hit && r.closed && r.first === 0
+const thenOpens = (r) => r.second === 1 && r.reopened
+
+const PANES = { due: { id: 'prop_drive_panes_due', label: 'Panes Due', key: 'Panes Due', type: 'dateTime' } }
+const PANES_TABLE = {
+  id: 'view_01KZPROPERTIESDRIVE19TBL', name: 'Panes Table', type: 'table', hidden_properties: [],
+  property_order: ['_title', PANES.due.id], filter: { match: 'all', rules: [{ property_id: '_title', op: 'is', value: 'Panes One' }] }, filter_enabled: true,
+}
+
+async function group19(cdp) {
+  const putBack = await seedPanes(cdp, Object.values(PANES), [PANES_TABLE])
+  await createPage(cdp, 'Panes One', { [PANES.due.id]: { kind: 'dateTime', value: '2026-10-22T09:30' } })
+  const cards = (await views(cdp)).find((v) => v.type === 'cards')
+
+  await showView(cdp, cards)
+  await viewFrame(cdp, 'Layout')
+  const toolbar = await pressBeside(cdp, liveEl('Card Scale'), liveEl('Card Image'))
+  item(19, 'MP-E-3', "in the toolbar's Layout, a press on Card Image with Card Scale's list open lands on the list's shield and only closes it",
+    onlyClosed(toolbar, 'shield'), show(toolbar))
+  item(19, 'MP-E-3', "in the toolbar's Layout, a second press on Card Image opens its list", thenOpens(toolbar), show(toolbar))
+  await escapeAll(cdp)
+
+  // The tile high in the window, so its Layout opens below with room for Card Scale's list beneath it, as the toolbar's does.
+  await homeTile(cdp, cards.id)
+  await scrollTo(cdp, VIEW_SETTINGS, 100)
+  await mouseClick(cdp, VIEW_SETTINGS)
+  await until('the settings pane', () => portalOpen(cdp))
+  await sleep(600)
+  await mouseClick(cdp, liveRow('Layout'))
+  await sleep(900)
+  const tile = await pressBeside(cdp, liveEl('Card Scale'), liveEl('Card Image'))
+  item(19, 'MP-E-3', "in a View Tile's Layout, a press on Card Image with Card Scale's list open lands on the list's shield and only closes it",
+    onlyClosed(tile, 'shield'), show(tile))
+  item(19, 'MP-E-3', "in a View Tile's Layout, a second press on Card Image opens its list", thenOpens(tile), show(tile))
+  await shot(cdp, 'g19-tile-list-only-closes', TOP_LAYER)
+  await escapeAll(cdp)
+
+  const popups = await inMain('__drive.seq')
+  const handle = `${VIEW_SETTINGS}.closest('.tile').querySelector('.tile-handle')`
+  // The handle comes forward of the tile's resize edge once the pointer rests on it.
+  await hover(cdp, handle)
+  await mouseClick(cdp, handle)
+  const inApp = await settles(async () => (await cdp.evaluate(`${LAYERS}.some((e) => e.querySelector('[role=button]'))`)), 3000)
+  const native = (await inMain('__drive.seq')) !== popups
+  item(19, 'MP-D-6', "a tile's handle menu draws in-app in [data-picker-portal] and pops no native menu", inApp && !native, show({ inApp, native }))
+  await shot(cdp, 'g19-tile-handle-menu', TOP_LAYER)
+  await escapeAll(cdp)
+
+  await showView(cdp, PANES_TABLE)
+  const due = `${shownEl(`.data-row[data-rid="${pageIds['Panes One']}"]`)}.querySelectorAll('.data-cell')[1]`
+  const openCalendar = async () => {
+    await escapeAll(cdp)
+    await mouseClick(cdp, due)
+    await until('the calendar', () => cdp.evaluate(`!!${CAL}`))
+    await sleep(600)
+  }
+  await openCalendar()
+  const month = await pressBeside(cdp, MONTH, YEAR)
+  item(19, 'MP-E-3', "a press on Year with Month's list open lands on the list's shield and only closes it", onlyClosed(month, 'shield'), show(month))
+  item(19, 'MP-E-3', 'a second press on Year opens its list', thenOpens(month), show(month))
+  await openCalendar()
+  const hour = await pressBeside(cdp, HOUR, MINUTE)
+  item(19, 'MP-E-3', "a press on Minute with Hour's list open reaches no shield, closes the list, and drops its click",
+    onlyClosed(hour, 'control'), show(hour))
+  item(19, 'MP-E-3', 'a second press on Minute opens its list', thenOpens(hour), show(hour))
+  await openCalendar()
+  await doubleClick(cdp, HOUR)
+  const typing = await cdp.evaluate(`document.activeElement?.tagName === 'INPUT' && ${CAL}.contains(document.activeElement)`)
+  const lists = await layerCount(cdp)
+  item(19, 'MP-E-3', 'a double-click on Hour lands in its field with no list left open', typing && lists === 1, show({ typing, lists }))
+  await escapeAll(cdp)
+
+  await must('the two filter rules', ask(cdp, 'views:save', COLLECTION, 'collection', PANES_TABLE, {
+    filter: { match: 'all', rules: [PANES_TABLE.filter.rules[0], { property_id: '_location', op: 'is', values: [] }] },
+  }))
+  await viewFrame(cdp, 'Filter')
+  const fieldTrigger = (n) => `[...document.querySelectorAll('[aria-label="Filter property"]')].filter((e) => !e.closest('[inert]'))[${n}]`
+  const fields = await pressBeside(cdp, fieldTrigger(1), fieldTrigger(0))
+  item(19, 'MP-E-3', "a press on the first rule's field with the second's list open lands on the list's shield and only closes it",
+    onlyClosed(fields, 'shield'), show(fields))
+  item(19, 'MP-E-3', "a second press on the first rule's field opens its list", thenOpens(fields), show(fields))
+  const filterPanes = await layerCount(cdp)
+  await mouseClick(cdp, `[...document.querySelectorAll('[aria-label="Filter values"]')].find((e) => !e.closest('[inert]'))`)
+  await until('the location pane', async () => (await layerCount(cdp)) > filterPanes)
+  await sleep(400)
+  const operator = `[...document.querySelectorAll('[aria-label="Filter operator"]')].find((e) => !e.closest('[inert]'))`
+  await cdp.evaluate(`(() => { window.__presses = 0; (${operator}).addEventListener('click', () => { window.__presses += 1 }) })()`)
+  await mouseClick(cdp, operator)
+  const landed = await cdp.evaluate('window.__presses')
+  const panes = await layerCount(cdp)
+  item(19, 'MP-E-3', "a press beneath LocationField's focus-keep pane lands on the operator beneath, closing that pane and opening the operator's list",
+    landed === 1 && panes === filterPanes + 1, show({ filterPanes, landed, panes }))
+  await escapeAll(cdp)
+
+  await openSettings(cdp, 'Pages & Writing')
+  const slider = `[...document.querySelectorAll('[role=slider][aria-label^="Heading"]')].find((s) => {
+    const b = s.getBoundingClientRect(), l = ${TOP_LAYER}.getBoundingClientRect(), x = b.left + b.width / 2, y = b.top + b.height / 2
+    return (x < l.left || x > l.right || y < l.top || y > l.bottom) && y > 0 && y < innerHeight
+  })`
+  const was = await cdp.evaluate(`[...document.querySelectorAll('[role=slider][aria-label^="Heading"]')].map((s) => s.getAttribute('aria-valuenow'))`)
+  const scale = await pressBeside(cdp, liveEl('Editor Scale'), slider, { again: false })
+  const now = await cdp.evaluate(`[...document.querySelectorAll('[role=slider][aria-label^="Heading"]')].map((s) => s.getAttribute('aria-valuenow'))`)
+  item(19, 'MP-E-3', "a press on a slider row with Editor Scale's list open only closes the list and leaves every slider as it was",
+    scale.beside && scale.hit === 'shield' && scale.closed && same(was, now), show({ scale, was, now }))
+  await closeSettings(cdp)
+
+  await putBack(['Panes One'])
+}
+
 // ── The run ─────────────────────────────────────────────────────────────────
 
 let cdp
@@ -1161,6 +1585,8 @@ try {
   if (GROUPS.has('13')) await group13(cdp)
   if (GROUPS.has('14')) await group14(cdp)
   if (GROUPS.has('15')) await group15(cdp)
+  if (GROUPS.has('18')) await group18(cdp)
+  if (GROUPS.has('19')) await group19(cdp)
   cdp.close()
 } catch (e) {
   item(0, '—', 'the run reached its end', false, String(e?.stack ?? e))
