@@ -675,8 +675,8 @@ const activate = (cdp, viewId) =>
 const HOME = { kind: 'homepage' }
 const HOMEPAGE_DIR = '.nexus/interface/homepage'
 const HOMEPAGE = `${HOMEPAGE_DIR}/homepage.json`
-/** Writes `defs` into the registry and assigns them to Collection A, saves `views`, and answers what puts the registry, the sidecar, and the homepage back. */
-async function seedCollection(cdp, defs, views) {
+/** Writes `defs` into the registry and assigns them to Collection A, saves `seededViews`, and answers what puts the registry, the sidecar, and the homepage back. */
+async function seedCollection(cdp, defs, seededViews) {
   const kept = [REGISTRY_REL, SIDECAR_A, HOMEPAGE].map((rel) => [rel, read(rel)])
   const tiles = new Set(readdirSync(join(NEXUS, HOMEPAGE_DIR)))
   const file = JSON.parse(kept[0][1])
@@ -691,7 +691,7 @@ async function seedCollection(cdp, defs, views) {
   })
   for (const d of defs)
     await must(`assign ${d.label}`, ask(cdp, 'mutate', { op: 'assignProperty', containerPath: COLLECTION, propertyId: d.id }))
-  for (const view of views) await must(`save ${view.name}`, ask(cdp, 'views:save', COLLECTION, 'collection', view, {}))
+  for (const view of seededViews) await must(`save ${view.name}`, ask(cdp, 'views:save', COLLECTION, 'collection', view, {}))
   return async (pages) => {
     await escapeAll(cdp)
     for (const title of pages) {
@@ -818,8 +818,8 @@ async function group12(cdp) {
   })
   await createPage(cdp, 'Kinds C')
 
-  const save = (patch) => must('save Drive Kinds', ask(cdp, 'views:save', 'Collection A', 'collection', base, patch))
-  await must('show Drive Kinds', ask(cdp, 'mutate', { op: 'setActiveView', path: 'Collection A', kind: 'collection', viewId: base.id }))
+  const save = (patch) => must('save Drive Kinds', ask(cdp, 'views:save', COLLECTION, 'collection', base, patch))
+  await must('show Drive Kinds', ask(cdp, 'mutate', { op: 'setActiveView', path: COLLECTION, kind: 'collection', viewId: base.id }))
   await openCollection(cdp)
   const onlyKinds = { property_id: '_title', op: 'starts_with', value: 'Kinds ' }
 
@@ -897,8 +897,7 @@ const rowLabel = (id, name) =>
   `(() => { let el = document.querySelector('[data-property-row="${id}"]'); while (el && !el.textContent.includes(${JSON.stringify(name)})) el = el.parentElement; return el && [...el.querySelectorAll('span')].find((s) => s.children.length === 0 && s.textContent.trim() === ${JSON.stringify(name)}) })()`
 /** The first element of `scope`, or inside it, showing exactly `text`: a chip draws its label more than once, so a cell's own text repeats it. */
 const valueIn = (scope, text) => `[...document.querySelectorAll(${JSON.stringify(scope)})].flatMap((e) => [e, ...e.querySelectorAll('*')]).find((e) => e.getClientRects().length > 0 && e.textContent.trim() === ${JSON.stringify(text)})`
-const PANE = sel(PANE_LAYER)
-const paneOpen = (cdp) => cdp.evaluate(`!!${PANE}`)
+const paneOpen = (cdp) => cdp.evaluate(`!!${sel(PANE_LAYER)}`)
 const paneRows = (cdp) => cdp.evaluate(`[...document.querySelectorAll('${PANE_LAYER} [role="button"]')].map((b) => b.textContent.trim())`)
 // Seat One holds every seat property, so the panel draws no Add Property for the harness's `openPanel` to wait on; its rows say it's open.
 const PANEL_ROWS = `!!document.querySelector('[data-property-row]')`
@@ -958,11 +957,11 @@ async function group14(cdp) {
   const card = (title) => `[data-rid="${pageIds[title]}"]`
   await mouseClick(cdp, valueIn(`${card('Seat One')} .card-value`, 'Seat Open'))
   await until('the first card picker', () => paneOpen(cdp))
-  await cdp.evaluate(`void (window.__seatPane = ${PANE})`)
+  await cdp.evaluate(`void (window.__seatPane = ${sel(PANE_LAYER)})`)
   // The first picker's dismissal shield takes the first press, so the second card's value is pressed again while that picker is still leaving.
   await mouseClick(cdp, valueIn(`${card('Seat Two')} .card-value`, 'Seat Open'), { settle: 50 })
   await mouseClick(cdp, valueIn(`${card('Seat Two')} .card-value`, 'Seat Open'))
-  const fresh = await settles(() => cdp.evaluate(`!!${PANE} && ${PANE} !== window.__seatPane`))
+  const fresh = await settles(() => cdp.evaluate(`!!${sel(PANE_LAYER)} && ${sel(PANE_LAYER)} !== window.__seatPane`))
   item(14, 'LC-54', "moving from one card's picker to another's mounts a fresh picker", fresh, show({ fresh }))
   await escapeAll(cdp)
 
@@ -1443,9 +1442,9 @@ async function group19(cdp) {
   await showView(cdp, cards)
   await viewFrame(cdp, 'Layout')
   const toolbar = await pressBeside(cdp, liveEl('Card Scale'), liveEl('Card Image'))
-  item(19, 'MP-E-3', "in the toolbar's Layout, a press on Card Image with Card Scale's list open lands on the list's shield and only closes it",
+  item(19, 'MP-E-3', "control: in the toolbar's Layout, which draws no shield of its own, a press on Card Image with Card Scale's list open lands on the list's shield and only closes it",
     onlyClosed(toolbar, 'shield'), show(toolbar))
-  item(19, 'MP-E-3', "in the toolbar's Layout, a second press on Card Image opens its list", thenOpens(toolbar), show(toolbar))
+  item(19, 'MP-E-3', "control: in the toolbar's Layout, a second press on Card Image opens its list", thenOpens(toolbar), show(toolbar))
   await escapeAll(cdp)
 
   await must('the two filter rules', ask(cdp, 'views:save', COLLECTION, 'collection', cards, TWO_RULES))

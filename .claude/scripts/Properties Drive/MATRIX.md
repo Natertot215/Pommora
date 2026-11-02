@@ -20,7 +20,6 @@ The drive's cases, derived from *Properties Restructure — Decisions & Intentio
 | A Link column's look | `Looks Link` (Link) in the same view | right-click its header | the native menu holds Format and no Style | I-4 |
 | A compact Select chip | `Looks Select` (Select, option Alpha) shown compact, and the page `Looks One` holding Alpha | open Collection A | the row's chip draws `svg.lucide-tag` | M-1 |
 
-
 #### Group 3 — The Value Write's One Home
 
 | Case | Seeds | Operation | Expected | Decisions |
@@ -100,7 +99,6 @@ The drive's cases, derived from *Properties Restructure — Decisions & Intentio
 | The partial restore | as above | `restore` | the reply's warning names `Drive Partial` as recorded partly | N-1 |
 | The group leaves things as it found them | everything above | delete and empty both properties and both pages; the settings written back | Collections A and B, the settings, and the Trash's count match the group's start | — |
 
-
 #### Group 11 — Columns Carry Their Answer
 
 | Case | Seeds | Operation | Expected | Decisions |
@@ -111,7 +109,6 @@ The drive's cases, derived from *Properties Restructure — Decisions & Intentio
 | The columns | a Drive Columns table view of the four columns; the Drive Columns page holding a text, a link, and Alpha | open Collection A | the row's cells read `Drive words`, the address's Full Link text, and `Alpha`, each from its distinct leaf texts | 07-01, 06-08 |
 | A Select edit | as above | click the Select cell, pick Beta | the page's front matter holds `Drive Select` as the one-item list `[Beta]` | 07-01 |
 
-
 #### Group 12 — The Per-Kind View Record
 
 | Case | Seeds | Operation | Expected | Decisions |
@@ -120,13 +117,11 @@ The drive's cases, derived from *Properties Restructure — Decisions & Intentio
 | Checkbox "is not empty" | as above | the view filters All of `Title starts with "Kinds "` and `Kinds Done is not empty` | only `Kinds A` draws | K-1 |
 | An empty Select in both directions | as above | the view sorts by `Kinds Stage` ascending, then descending | `Kinds A`, `Kinds B`, `Kinds C`, then `Kinds B`, `Kinds A`, `Kinds C` | K-2 |
 
-
 #### Group 13 — The Filter's Clock
 
 | Case | Seeds | Operation | Expected | Decisions |
 | --- | --- | --- | --- | --- |
 | The filter's clock | `Drive Due` (Date & Time) with a 24-hour column style, the `Drive Clock` view filtering it on `2026-10-22T15:30`, `~/Test` on its 12-hour clock | view settings › Filter › the date field | the picker shows `15:30` with no AM or PM, and no End Date | J-1 |
-
 
 #### Group 14 — One Value Seat
 
@@ -142,7 +137,6 @@ The drive's cases, derived from *Properties Restructure — Decisions & Intentio
 | A card's picker per value | `Seat Stage` on `Seat One` and `Seat Two` | open Seat One's option picker on its card, then press Seat Two's twice while it leaves, its dismissal taking the first press | a fresh picker element mounts | LC-54 |
 | A Link from a card's chooser | `Seat Site` hidden in Seat Cards | click Seat Two's card off any value, choose Seat Site | the field opens empty | — |
 | The sidebar's Properties menu | `Seat Due` (Date & Time) holding `2026-10-22` | right-click Seat One in the sidebar, choose Properties › Seat Due | the calendar opens | X6 |
-
 
 #### Group 15 — The Properties Pane
 
@@ -173,13 +167,13 @@ The drive's cases, derived from *Properties Restructure — Decisions & Intentio
 
 | Case | Seeds | Operation | Expected | Decisions |
 | --- | --- | --- | --- | --- |
-| The toolbar's Layout | Collection A's Cards view shown | open Card Scale's list, then press Card Image beside it, then again | the first press lands on the list's own shield, closes the list, opens nothing, and reaches no `click` listener on Card Image; the second opens Card Image's list | MP-E-3 |
-| A View Tile's Layout | a homepage View Tile of the Cards view, scrolled near the window's top | as above, in the tile's settings | as above; screenshot `g19-tile-list-only-closes` | MP-E-3 |
-| A View Tile's filter field lists | as above, the Cards view filtering on Title and on Location | in the tile's settings › Filter, open the second rule's field list, then press the first rule's field, then again | as the toolbar's Layout; this case discriminates, since the tile's settings pane draws the shield and only `FilterFrame`'s `ownShield` gives the list its own | MP-E-3 |
+| The toolbar's Layout | Collection A's Cards view shown | open Card Scale's list, then press Card Image beside it, then again | the first press lands on the list's own shield, closes the list, opens nothing, and reaches no `click` listener on Card Image; the second opens Card Image's list; the control, since the toolbar's settings draw no shield, so the list's shield stands with or without `ownShield` | MP-E-3 |
+| A View Tile's Layout | a homepage View Tile of the Cards view, scrolled near the window's top | as above, in the tile's settings | the same two presses and outcomes; this case discriminates, since the tile's settings pane draws the shield and only `MenuPresenter`'s `ownShield` gives the list its own; screenshot `g19-tile-list-only-closes` | MP-E-3 |
+| A View Tile's filter field lists | as above, the Cards view filtering on Title and on Location | in the tile's settings › Filter, open the second rule's field list, then press the first rule's field, then again | the same two presses and outcomes as the toolbar's Layout; this case discriminates, since the tile's settings pane draws the shield and only `FilterFrame`'s `ownShield` gives the list its own | MP-E-3 |
 | A tile's handle menu | as above | press the tile's handle | the menu draws in `[data-picker-portal]` and `Menu.popup` records nothing; screenshot `g19-tile-handle-menu` | MP-D-6 |
-| Month, then Year | `Panes Due` (Date & Time) on Collection A; `Panes One` holding `2026-10-22T09:30` in the `Panes Table` view | open Month's list, then press Year, then again | as the toolbar's Layout | MP-E-3 |
+| Month, then Year | `Panes Due` (Date & Time) on Collection A; `Panes One` holding `2026-10-22T09:30` in the `Panes Table` view | open Month's list, then press Year, then again | the same two presses and outcomes as the toolbar's Layout | MP-E-3 |
 | Hour, then Minute | as above | open Hour's list, then press Minute, then again | the first press reaches Minute rather than a shield, closes the list, and its click is dropped; the second opens Minute's list | MP-E-3 |
 | A double-click on Hour | as above | double-click Hour | its field takes focus and no list stays open | MP-E-3 |
-| The toolbar's filter field lists | `Panes Table` filtering on Title and on Location | as above, in the toolbar's Filter | as above; the control, since the toolbar's settings draw no shield, so the list's shield stands with or without `ownShield` | MP-E-3 |
+| The toolbar's filter field lists | `Panes Table` filtering on Title and on Location | as above, in the toolbar's Filter | the same two presses and outcomes as the toolbar's Layout; the control, since the toolbar's settings draw no shield, so the list's shield stands with or without `ownShield` | MP-E-3 |
 | LocationField's pane | as above | open the Location rule's value pane, then press the first rule's operator | the press lands on the operator, the `focus="keep"` pane closes, and the operator's list opens | MP-E-3 |
 | A slider row | Settings › Pages & Writing | open Editor Scale's list, then press a Heading size slider beside it | the press lands on the list's shield and closes it, and every slider keeps its value | MP-E-3 |
