@@ -6,7 +6,7 @@ import {
   type Size,
 } from '../Interactions/useResizable'
 import { clamp } from '../Utilities/clamp'
-import { VIEWPORT_MARGIN, type PickerDirection } from './PickerMenu'
+import { VIEWPORT_MARGIN, type PickerDirection } from './panePlacement'
 
 /** An axis resizes when it has a floor; one without a default fits its content until it's first resized. */
 export interface PaneBounds {

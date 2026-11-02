@@ -3,7 +3,7 @@ import { useLineRow } from '@pommora/uix/Interactions/drag'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
 import { titleInput } from '@pommora/uix/Menus/menu-row.css'
 import { ColorPicker } from '@pommora/uix/Pickers/ColorPicker'
-import { VIEWPORT_MARGIN } from '@pommora/uix/Pickers/PickerMenu'
+import { sideFor, VIEWPORT_MARGIN } from '@pommora/uix/Pickers/panePlacement'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 import { colorNameFor } from '@pommora/uix/Theme/ramp'
 import { text } from '@pommora/uix/Theme'
@@ -105,7 +105,8 @@ export function MatrixLabel({
       // The pickers' rule, held to the stage's free box: below the node unless above has more of the room it lacks, and centred until an edge stops it.
       const st = matrixRuntime.stageOf(surface)
       const below = st.y + st.height - VIEWPORT_MARGIN - (sy + r)
-      const up = box.h > below && sy - r - st.y - VIEWPORT_MARGIN > below
+      const above = sy - r - st.y - VIEWPORT_MARGIN
+      const up = sideFor('down', box.h, { down: below, up: above }) === 'up'
       const half = box.w / 2
       const x = clamp(sx, st.x + VIEWPORT_MARGIN + half, st.x + st.width - VIEWPORT_MARGIN - half)
       l.toggleAttribute('data-above', up)

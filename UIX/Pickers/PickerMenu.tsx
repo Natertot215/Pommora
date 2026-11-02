@@ -17,15 +17,12 @@ import { useFocusScope } from '../Interactions/focusScope'
 import { keepFocus } from '../Interactions/shared'
 import { cx } from '../Utilities/cx'
 import { useLatest } from '../Utilities/stableApi'
-import { clamp } from '../Utilities/clamp'
-import { MENU_GAP as GAP } from '../Menus/menuAnchor'
+import { placePane, roomAround, sideFor, type PanePos, type PickerDirection } from './panePlacement'
 import type { PaneResize } from './usePaneResize'
 import * as s from './picker-base.css'
 
 /** The portal layer a floating pane occupies. Containment reads against this rather than the pane's body, so the pane's own rim and resize edges are inside it. */
 export const PICKER_PORTAL_ATTR = 'data-picker-portal'
-
-export const VIEWPORT_MARGIN = 8
 
 const stopPointerBubble = (e: { stopPropagation: () => void }): void => e.stopPropagation()
 const stopContextBubble = (e: {
@@ -36,25 +33,11 @@ const stopContextBubble = (e: {
   e.preventDefault()
 }
 
-export type PickerDirection = 'down' | 'up'
-
-/** KNOB — how far past the trigger's center the near edge and the Bloom's origin sit. */
-const ANCHOR_RESERVE = 30
-
-const CORNER_CLEAR = s.PANE_RADIUS + 2
-
-type Pos = {
-  top?: number
-  bottom?: number
-  right?: number
-  left?: number
-  origin?: string
-}
 const POS_KEYS = ['top', 'bottom', 'right', 'left', 'origin'] as const
-const samePos = (a: Pos | null, b: Pos): boolean =>
+const samePos = (a: PanePos | null, b: PanePos): boolean =>
   a !== null && POS_KEYS.every((k) => a[k] === b[k])
 // A fixed pane on a half-pixel offset composites its text blurry under the frost, and a measured trigger sits on one whenever its layout does.
-const snapped = (p: Pos): Pos => ({
+const snapped = (p: PanePos): PanePos => ({
   ...p,
   ...(p.top !== undefined && { top: Math.round(p.top) }),
   ...(p.bottom !== undefined && { bottom: Math.round(p.bottom) }),
@@ -153,8 +136,8 @@ export function PickerMenu({
   const placeResize = resize?.place
 
   const glassRef = useRef<HTMLDivElement>(null)
-  const [pos, setPosState] = useState<Pos | null>(null)
-  const setPos = (raw: Pos): void => {
+  const [pos, setPosState] = useState<PanePos | null>(null)
+  const setPos = (raw: PanePos): void => {
     const next = snapped(raw)
     setPosState((prev) => (samePos(prev, next) ? prev : next))
   }
@@ -189,47 +172,27 @@ export function PickerMenu({
     if (!rectOf) return
     const measure = (): void => {
       const t = rectOf()
-      const c = centerX ?? t.left + t.width / 2
-      const edgeL = (bounds?.left ?? 0) + VIEWPORT_MARGIN
-      const edgeR = (bounds?.right ?? window.innerWidth) - VIEWPORT_MARGIN
-      const { w: pw, h: ph } = paneBox.current
-      let eff = decidedDir.current ?? direction
+      const pane = paneBox.current
+      const view = { w: window.innerWidth, h: window.innerHeight }
+      let side = decidedDir.current ?? direction
       if (decidedDir.current === null) {
-        const room = (side: PickerDirection): number =>
-          side === 'up'
-            ? t.top - GAP - VIEWPORT_MARGIN
-            : window.innerHeight - t.bottom - GAP - VIEWPORT_MARGIN
-        const other = direction === 'up' ? 'down' : 'up'
-        if (ph > room(direction) && room(other) > room(direction)) eff = other
-        decidedDir.current = eff
-        placeResize?.({ dir: eff, room: room(eff) })
+        const room = roomAround(t, view.h)
+        side = sideFor(side, pane.h, room)
+        decidedDir.current = side
+        placeResize?.({ dir: side, room: room[side] })
       }
-      const edge = (along: number, at: number): number =>
-        clamp(at, CORNER_CLEAR, Math.max(CORNER_CLEAR, along - CORNER_CLEAR))
-      const near = (x: number): string => `${edge(pw, x)}px ${eff === 'up' ? ph : 0}px`
-      const vertical =
-        eff === 'up' ? { bottom: window.innerHeight - t.top + GAP } : { top: t.bottom + GAP }
-      if (decidedCenter.current === null)
-        decidedCenter.current =
-          origin === 'center' || (origin === 'auto' && c - pw / 2 >= edgeL && c + pw / 2 <= edgeR)
-      if (decidedCenter.current) {
-        const half = pw / 2
-        const left = Math.min(Math.max(c, edgeL + half), edgeR - half)
-        setPos({ ...vertical, left: left - half, origin: near(c - (left - half)) })
-        return
-      }
-      if (origin === 'left') {
-        const left = clamp(c - ANCHOR_RESERVE, edgeL, Math.max(edgeL, edgeR - pw))
-        setPos({ ...vertical, left, origin: near(ANCHOR_RESERVE) })
-        return
-      }
-      const iw = window.innerWidth
-      const right = clamp(
-        iw - c - ANCHOR_RESERVE,
-        iw - edgeR,
-        Math.max(iw - edgeR, iw - edgeL - pw),
-      )
-      setPos({ ...vertical, right, origin: near(pw - ANCHOR_RESERVE) })
+      const { pos: next, centered } = placePane({
+        t,
+        pane,
+        view,
+        side,
+        centered: decidedCenter.current,
+        origin,
+        centerX,
+        bounds,
+      })
+      decidedCenter.current = centered
+      setPos(next)
     }
     place.current = measure
     measure()

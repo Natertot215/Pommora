@@ -10,13 +10,9 @@ import { FieldPicker } from './FieldPicker'
 function Host({
   open,
   focus,
-  bounds,
-  origin,
 }: {
   open: boolean
   focus?: 'trap' | 'leave' | 'keep'
-  bounds?: { left: number; right: number }
-  origin?: 'auto' | 'center' | 'left' | 'right'
 }): React.JSX.Element {
   const ref = useRef<HTMLButtonElement>(null)
   const menu = (
@@ -38,8 +34,6 @@ function Host({
         open={open}
         onDismiss={() => {}}
         triggerRef={ref}
-        {...(bounds ? { bounds } : {})}
-        {...(origin ? { origin } : {})}
         {...(focus === undefined ? {} : { focus })}
       >
         {menu}
@@ -445,77 +439,6 @@ describe('PickerMenu focus contract', () => {
     }
     expect(press('field')).toBe(false)
     expect(press('row')).toBe(true)
-  })
-})
-
-// Whether a pane CENTERS is a decision, not a look — the pixels stay visual truth, but which of the two placements it takes has to hold.
-describe('PickerMenu auto-centering', () => {
-  const PANE_W = 200
-  let triggerCenter = 512
-  const realRect = Element.prototype.getBoundingClientRect
-  const realWidth = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetWidth')
-  const realHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetHeight')
-
-  beforeEach(() => {
-    Element.prototype.getBoundingClientRect = (): DOMRect => {
-      const left = triggerCenter - 20
-      return { left, right: left + 40, top: 100, bottom: 120, width: 40, height: 20 } as DOMRect
-    }
-    Object.defineProperty(HTMLElement.prototype, 'offsetWidth', {
-      configurable: true,
-      get: () => PANE_W,
-    })
-    Object.defineProperty(HTMLElement.prototype, 'offsetHeight', {
-      configurable: true,
-      get: () => 120,
-    })
-  })
-  afterEach(() => {
-    Element.prototype.getBoundingClientRect = realRect
-    if (realWidth) Object.defineProperty(HTMLElement.prototype, 'offsetWidth', realWidth)
-    if (realHeight) Object.defineProperty(HTMLElement.prototype, 'offsetHeight', realHeight)
-  })
-
-  const layer = (): HTMLElement => layerOf('first')
-
-  it('straddles the trigger when the whole pane fits there', async () => {
-    triggerCenter = 512
-    await render(<Host open={false} />)
-    await render(<Host open />)
-    expect(layer().style.left).toBe('412px')
-  })
-
-  // A named `center` slides within its bounds; `auto` declines to center at all once it would have to be clamped.
-  it('slides a centered pane within a given bounds rather than the viewport', async () => {
-    // Mid-viewport, so nothing about the WINDOW would move it; the surface is what does.
-    triggerCenter = 580
-    const b = { left: 200, right: 600 }
-    await render(<Host open={false} origin="center" bounds={b} />)
-    await render(<Host open origin="center" bounds={b} />)
-    expect(layer().style.left).toBe('392px')
-  })
-
-  it('centers freely at that same point when nothing bounds it', async () => {
-    triggerCenter = 580
-    await render(<Host open={false} origin="center" />)
-    await render(<Host open origin="center" />)
-    expect(layer().style.left).toBe('480px')
-  })
-
-  it('declines to center under `auto` when the bounds would clamp it', async () => {
-    triggerCenter = 580
-    const b = { left: 200, right: 600 }
-    await render(<Host open={false} bounds={b} />)
-    await render(<Host open bounds={b} />)
-    expect(layer().style.transform).toBe('')
-  })
-
-  it('falls back to the edge anchor when centering would be clamped', async () => {
-    triggerCenter = 60
-    await render(<Host open={false} />)
-    await render(<Host open />)
-    expect(layer().style.transform).toBe('')
-    expect(layer().style.right).not.toBe('')
   })
 })
 
