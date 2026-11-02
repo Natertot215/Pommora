@@ -14,7 +14,7 @@
 
 **`~/Test` Hash:** `e5a32a5d30d6a11310cd559ee2b1b84b261c3265` at Run Start.
 
-**Net Ledger** (Actionable column of `view-delta --exclude .claude`; Measured is cumulative from the BASELINE head, and a phase's own delta, its Measured less the row above, is held against its per-phase Estimate):
+**Net Ledger** (Actionable column of `view-delta --exclude .claude`; Measured is cumulative from the BASELINE head, less commits another session landed in the range (`54b0636d8`, +16), and a phase's own delta, its Measured less the row above, is held against its per-phase Estimate):
 
 | Phase | Estimate | Measured |
 |---|---|---|
@@ -239,10 +239,10 @@ The order is what makes each step land once. Phase 0 readies the drives and pins
   - [x] Task 3-5 · The panel's commits
   - [x] Compaction Checkpoint
 - [ ] **Phase 4** — The Two Pickers
-  - [ ] Task 4-1 · The two pickers, the seat, and the builder
-  - [ ] Task 4-2 · Tests beside their modules
-  - [ ] Task 4-3 · Group 16, group 18's slides, and the Option Picker steps
-  - [ ] Task 4-4 · Call 8's check
+  - [x] Task 4-1 · The two pickers, the seat, and the builder
+  - [x] Task 4-2 · Tests beside their modules
+  - [x] Task 4-3 · Group 16, group 18's slides, and the Option Picker steps
+  - [x] Task 4-4 · Call 8's check
   - [ ] Review Checkpoint
   - [ ] Compaction Checkpoint
 - [ ] **Phase 5** — Settings Panes
@@ -2694,3 +2694,9 @@ Each row's exact wording is in *Investigation · §What Becomes False*.
 
 - **Phase 2 Review (`2a8cae9a0`):** a flip starts from the pane's measured top rather than `crossing`, which assumed an unfenced old box and jumped by the fence's correction; `crossing` and `TriggerBox.height` left, and the fence holds a too-tall pane's top on both sides. Tasks 2-3 and 2-4's AFTERs show the forms the review replaced.
 - **Task 3-4 Carried Through (`76174426a`):** MarkdownPM's resting cells (`cellStatic.tsx`) took the `connections` getter as required too, since every caller passes one, matching `ValueContext` and `EditorHost`.
+- **The Back Bar's Comment (`4223a9634`):** Task 4-1 added three comments against two removed, since Call 2's answer came after *§The Comment Ledger*: the picker-only label is an exception, and *One Way* has it carry its reason where a reader meets it. The run's total still falls.
+- **Call 8 (`ecee1e7bb`):** it reproduced on a dev scratch instance: a one-line Link or Text field closed 8–11ms after it opened, as StrictMode's simulated unmount ran `view.destroy()`'s blur into `leave`. `ValueEditor` clears `viewRef` before `destroy()` and its blur handler stands down without a view; a `StrictMode` test pins it, and the same clicks held their fields open with real focus afterward.
+- **Phase 4 Review (`8ade65994`, `991cc54ad`, `8990e3267`, `eb143bcca`):**
+  - `openAway` closes the seat itself when an intent opens no pane, in place of `MetadataPicker`'s `seat.close()` and `MenuSeat`'s File-only `dismiss()`, so a right-click Checkbox commit also lets its request go.
+  - Back from an Add list emptied by its last pick closes the list rather than showing an empty pane.
+  - Tabler glyphs scale their drawing rather than their box, so a Tabler icon's label lines up with a Lucide neighbor's; this reaches every file-type icon.
