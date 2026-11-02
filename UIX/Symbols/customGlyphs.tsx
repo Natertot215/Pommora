@@ -4,10 +4,8 @@ import type { LucideIcon, LucideProps } from 'lucide-react'
 import { IconProgressCheck } from '@tabler/icons-react'
 import { MARK_BOX, markDiscs } from './mark'
 
-// Tabler glyphs read smaller than Lucide at the same box; this bump matches them.
+// Tabler glyphs read smaller than Lucide at the same box; this bump scales their drawing to match, keeping the box.
 const TABLER_SCALE = 1.1
-const scaleTabler = (size: LucideProps['size']): LucideProps['size'] =>
-  typeof size === 'number' ? size * TABLER_SCALE : `calc(${size ?? '1em'} * ${TABLER_SCALE})`
 
 const STROKE = {
   stroke: 'currentColor',
@@ -74,8 +72,8 @@ export const MetadataLabel = glyph(
 )
 
 export const asTablerGlyph = (Tabler: LucideIcon): LucideIcon =>
-  forwardRef<SVGSVGElement, LucideProps>(({ size = 24, ...rest }, ref) => (
-    <Tabler ref={ref} size={scaleTabler(size)} {...rest} />
+  forwardRef<SVGSVGElement, LucideProps>(({ style, ...rest }, ref) => (
+    <Tabler ref={ref} style={{ ...style, scale: TABLER_SCALE }} {...rest} />
   )) as unknown as LucideIcon
 
 export const ProgressCheck = asTablerGlyph(IconProgressCheck)
