@@ -1,6 +1,6 @@
 ## Properties Drive — Matrix
 
-The drive's cases, derived from *Properties Restructure — Decisions & Intention* and written to the end-state contract of the Properties Restructure plan's AFTER blocks. Groups 18 and 19 derive from *Metadata Picker — Decisions & Intention* instead, and print its letters with an `MP-` prefix so they're never read as the Restructure's. Each group lands with the plan phase that adds it and drives the channels and surfaces the interface uses. Every check prints as `[g<group> <decisions>] <name>`, so a run reads against the tables below line for line. Each group seeds what it needs in `~/Test` and puts it back; the harness restores `~/Test` when the run ends.
+The drive's cases, derived from *Properties Restructure — Decisions & Intention* and written to the end-state contract of the Properties Restructure plan's AFTER blocks. Groups 16, 18, and 19 derive from *Metadata Picker — Decisions & Intention* instead, and print its letters with an `MP-` prefix so they're never read as the Restructure's. Each group lands with the plan phase that adds it and drives the channels and surfaces the interface uses. Every check prints as `[g<group> <decisions>] <name>`, so a run reads against the tables below line for line. Each group seeds what it needs in `~/Test` and puts it back; the harness restores `~/Test` when the run ends.
 
 #### Group 1 — What Counts as a Property
 
@@ -135,7 +135,7 @@ The drive's cases, derived from *Properties Restructure — Decisions & Intentio
 | The File's Remove | as above | choose Remove | the page file drops `Seat Doc` and the row leaves the panel | J-10, LC-15 |
 | The panel's picker and its row | `Seat Stage` on `Seat One`, its row not revealed | open its picker, then clear the value from outside | the picker closes with the row | — |
 | A card's picker per value | `Seat Stage` on `Seat One` and `Seat Two` | open Seat One's option picker on its card, then press Seat Two's twice while it leaves, its dismissal taking the first press | a fresh picker element mounts | LC-54 |
-| A Link from a card's chooser | `Seat Site` hidden in Seat Cards | click Seat Two's card off any value, choose Seat Site | the field opens empty | — |
+| A Link from a card's Add list | `Seat Site` hidden in Seat Cards | click Seat Two's card off any value, choose Seat Site | the field opens empty | — |
 | The sidebar's Properties menu | `Seat Due` (Date & Time) holding `2026-10-22` | right-click Seat One in the sidebar, choose Properties › Seat Due | the calendar opens | X6 |
 
 #### Group 15 — The Properties Pane
@@ -150,11 +150,37 @@ The drive's cases, derived from *Properties Restructure — Decisions & Intentio
 | Delete from ⋮ | the new File, its editor open | ⋮ › Delete, confirm | the definition is gone and the list is the live slot | O-5 |
 | Removed from outside | the new Number, its editor open | `mutate` `unassignProperty` from outside the pane | the list is the live slot, and no "Property not found." shows | O-5 |
 
+#### Group 16 — The Add List
+
+The surfaces are a Standard card, a Compact card, the page dropdown, the SidePane, and the Space dropdown, and every row below runs on each that lists it; a Compact card draws its Checkbox, so it doesn't list one.
+
+| Case | Seeds | Operation | Expected | Decisions |
+| --- | --- | --- | --- | --- |
+| A Table's empty cell | `Add Select`, `Add Multi`, `Add Status`, `Add Due`, `Add Start`, `Add Check`, `Add File`, `Add Number`, `Add Text`, `Add Link`, and the option-less `Add Bare` on Collection A; the Context `Add Empty` with no Spaces; `Add Blank`, and `Add Held` holding `Add Select` and `Add Text`; the views `Add Standard` (cards hiding every property), `Add Compact`, and `Add Table` | click `Add Blank`'s empty Select cell in `Add Table` | its own option list opens, with no "›" row and no back bar | MP-B-1 |
+| Stamps in Visibility | as above | view settings › Visibility | Creation Time and Last Modified are listed | MP-C-6 |
+| A settings pane's bar | as above | as above | the bar's label ends flush with the bar and the controls beneath it, with no margin | MP-C-3 |
+| The panel leaves out what's held | as above | `Add Held`'s page dropdown › Add Property | `Add Select` and `Add Text` aren't listed | MP-C-5 |
+| The "›" | as above | open each surface's Add list | "›" on exactly the Contexts, Select, Multi-Select, Status, both Dates, and `Add Bare` (at HEAD on every fillable row); a Compact card lists every blank but the Checkbox; Creation Time and Last Modified are absent (at HEAD both listed); screenshot `g16-add-list` | MP-C-1, MP-B-5, MP-C-5, MP-C-6 |
+| The ceiling | as above | the Standard card's 15-row list | it caps at 240px and scrolls (at HEAD it stood 365px); the slid calendar never scrolls | MP-C-4 |
+| The back bar | as above | slide into Select, Multi-Select, Status, Areas, and Add Due on each surface | every bar has one height, padding, and glyph size, matching a settings pane's bar (at HEAD 14px, no padding, a 12px glyph); its label sits 8px in from the pane's right edge, as far as the chevron draws from its left; a Context's reads "Spaces"; screenshots `g16-slid-select`, `g16-slid-calendar`, `g16-panel-spaces-bar` | MP-C-3, MP-C-4, MP-B-4 |
+| Select | as above | slide in, then Back; slide in, then Escape; slide in, then press outside; slide in and pick Red | New Option shows; Back returns to the list, and Escape and the outside press close everything, none writing; the pick writes and closes everything, and a panel shows its row | MP-C-1, MP-C-2 |
+| Multi-Select | as above | slide in, pick One, then Two | the pane stays across both picks, outliving its entry leaving the list, and both write | MP-C-1 |
+| Status | as above | slide in, pick Open | Open and Closed sit behind one divider with no New Option; the pick writes and closes everything | MP-C-1 |
+| Context | as above | slide into Areas, pick its first Space | pick-only rows with no New Option; the pane stays and the pick writes | MP-C-1 |
+| Nothing to pick | as above | slide into `Add Bare`, then `Add Empty` | New Option alone, then an empty pane under the back bar | MP-C-1 |
+| Date | as above | pick a day and leave by Back, by Escape, and by an outside press; pick two days; then slide into `Add Start` | the pane stays after each day and each pick writes once; two days keep the last; `Add Start` opens with no day selected | MP-C-1, MP-C-2 |
+| Checkbox | as above, but a Compact card | press `Add Check`, then the drawn box | it checks with nothing left open; unchecking keeps it drawn | MP-C-1 |
+| File | a path handed to the dialog stub for the Standard card's second press | press `Add File` with the dialog cancelled, then with the path | the dialog opens and the list closes; the cancel writes nothing and leaves no panel row; the path adopts a chip on the card | MP-C-2, MP-C-1 |
+| Typed values | as above | press `Add Number`, `Add Text`, and `Add Link`, and type | a card pops a small empty window, TextPane, and an empty field, and a panel focuses the row's own field; each value lands; screenshot `g16-panel-typed-row` | MP-C-2 |
+| The `+` held | as above | open a panel's Add list, the pointer moved away | the `+` stays shown | MP-B-1 |
+| The standing row | Area One, holding nothing | press its standing Add Property row | the list hangs from the row; screenshot `g16-panel-row-anchored` | MP-B-1 |
+| A held hidden value | `Add Held` on the Standard card | open its Add list, press `Add Text` | the two held rows list last with no "›"; the press shows `Add Text` in the saved view and closes the list | MP-C-5, MP-C-7 |
+
 #### Group 18 — Placement
 
 | Case | Seeds | Operation | Expected | Decisions |
 | --- | --- | --- | --- | --- |
-| A low window | `Place Due` (Date & Time), `Place Tall` (Select, 20 options), `Place Notes` (Text), and ten `Place Filler` Text properties on Collection A; `Place One` holding `2026-10-22T09:30` and `words`; a homepage View Tile of `Place Table` between two filler tiles | `Emulation.setDeviceMetricsOverride` to 600 CSS pixels | `innerHeight` reads back 600 | MP-E-1 |
+| A low window | `Place Due` (Date & Time), `Place Tall` (Select, 40 options with long labels), `Place Notes` (Text), and ten `Place Filler` Text properties on Collection A; `Place One` holding `2026-10-22T09:30` and `words`, the views showing the pages titled `Place `; a homepage View Tile of `Place Table` between two filler tiles | `Emulation.setDeviceMetricsOverride` to 600 CSS pixels | `innerHeight` reads back 600 | MP-E-1 |
 | Visibility flips | as above, the window sized so the settings' root fits below its trigger and Visibility doesn't | open the tile's settings, then Visibility, with an rAF sampler on the pane | the root opens below and Visibility ends above its trigger; every frame stays inside the window, its largest per-frame step under 60px and printed in the case's name; screenshot `g18-visibility-flipped` | MP-E-1 |
 | Back from the flip | as above | Back | the pane stays above its trigger and the edge it hangs from never moves; screenshot `g18-visibility-back` | MP-E-1 |
 | A tall list | a 400-pixel window, the tile scrolled so `Place Tall`'s cell sits 200 pixels down | open the cell's option list, sampled | the list opens above from its first frame and never moves; neither side holds it, so it's fenced at the top margin, over its cell; screenshot `g18-fence-top` | MP-E-1 |
@@ -162,6 +188,13 @@ The drive's cases, derived from *Properties Restructure — Decisions & Intentio
 | The 24-hour clock | `timeFormat` set to `twentyFourHour` | open the calendar | the clock reads `09` and `30` with no AM or PM | MP-E-5 |
 | Nested lists | as above | open Month, Year, Hour, and Minute in turn and pick November, 2027, 10, and 45 | each list opens over the calendar and its pick lands; screenshot `g18-month-nested` | MP-E-5 |
 | TextPane on a low card | `Place Cards` shown, the window sized so the pane opens below the card's value with less than a line to spare | open TextPane from the pen, then four Shift-Enter lines, each sampled | the pane keeps its side and rises with the lines, and every frame of each Shift-Enter stays inside the window; screenshot `g18-textpane-risen` | MP-E-1 |
+| A low card's slid calendar | `Place Two`, holding nothing; `Place Cards` shown, the window sized so `Place Two`'s Add list fits below its card and the slid calendar doesn't | open the card's Add list, slide into `Place Due`, sampled | the list opens below and the calendar ends above the card, every frame inside the window; screenshot `g18-card-calendar-flipped` | MP-E-1 |
+| End Date on the flipped calendar | as above | turn End Date on, then off | the calendar keeps its side and rises from the edge it hangs from, inside the window | MP-E-1 |
+| Back after the flip | as above | Back, sampled | the list returns above the card and the edge it hangs from never moves | MP-E-1 |
+| A 40-option list on a low card | as above | slide into `Place Tall`, sampled | every frame stays inside the window, capped | MP-E-1 |
+| The last card in a row | `Place Two`'s card, the row's last | open its Add list, slide into `Place Due` | the calendar stays inside the window | MP-E-1 |
+| Add at a panel's end | `Place One` in the page dropdown, then the SidePane | Add Property, slide into `Place Tall`, sampled | every frame stays inside the window | MP-E-1 |
+| A sweep's pane | `Place One` and `Place Two` in `Place Table` | click `Place Two`'s `Place Tall` cell, then sweep the column from `Place One` to `Place Two` | both panes share one rect (at HEAD the mass pane sat 29px right of the single one); screenshot `g18-sweep-pane` | MP-B-8 |
 
 #### Group 19 — Settings Panes
 

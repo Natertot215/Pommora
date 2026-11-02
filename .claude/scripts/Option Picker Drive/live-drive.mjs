@@ -1,6 +1,6 @@
 import {
   mintOptionId, optionId,
-  ask, boxOf, check, chooseNative, click, COPY, drag, frontmatter, launch, mintPageId, mouseClick, portalOpen, pressKey, read,
+  ask, boxOf, check, chooseNative, click, COPY, drag, frontmatter, labels, launch, META, mintPageId, mouseClick, pickNative, popNative, portalOpen, pressKey, read,
   refusal, restore, results, sel, shot, sleep, sweep, textEl, until,
 } from '../drive-harness.mjs'
 
@@ -193,20 +193,87 @@ async function surfaceCreateDragMenu(cdp, tag, title) {
   while (await portalOpen(cdp)) await pressKey(cdp, 'Escape')
 }
 
-async function stepCardsAndMass(cdp) {
+const driveCard = `[...document.querySelectorAll('[data-rid]')].find((c) => c.textContent.includes('Drive One'))`
+async function stepCards(cdp) {
   const r = await ask(cdp, 'views:save', 'Collection A', 'collection', driveView(), { type: 'cards' })
   check('cards: the view switches to Cards', r.ok && driveView().type === 'cards')
   await sleep(1500)
-  await mouseClick(cdp, `[...document.querySelectorAll('[data-rid]')].find((c) => c.textContent.includes('Drive One')).querySelector('.card-prop-row .card-value')`)
+  await mouseClick(cdp, `${driveCard}.querySelector('.card-prop-row .card-value')`)
   if (!(await portalOpen(cdp))) throw new Error("Drive One's card picker did not open")
   await shot(cdp, 'card-picker')
   await surfaceCreateDragMenu(cdp, 'cards', 'Card New')
-  const back = await ask(cdp, 'views:save', 'Collection A', 'collection', driveView(), { type: 'table' })
-  check('mass: the view switches back to Table', back.ok && driveView().type === 'table')
+}
+
+const blankCard = `[...document.querySelectorAll('[data-rid]')].find((c) => c.textContent.includes('Page A'))`
+const LIVE_ROWS = `[...document.querySelectorAll('[data-picker-portal] [role=button]')].filter((e) => !e.closest('[inert]'))`
+const BACK_BAR = `${LIVE_ROWS}.some((e) => e.querySelector('.lucide-chevron-left'))`
+const optionLabels = (cdp) => cdp.evaluate(`[...document.querySelectorAll(${JSON.stringify(PICKER_ROWS)})].filter((e) => !e.closest('[inert]')).map((e) => e.textContent.trim())`)
+async function slideIn(cdp, name) {
+  while (await portalOpen(cdp)) await pressKey(cdp, 'Escape')
+  await click(cdp, `${blankCard}.querySelector('.card-props')`)
+  await until("Page A's Add list", () => cdp.evaluate(`!!${LIVE_ROWS}.find((e) => e.textContent.trim() === ${JSON.stringify(name)})`))
+  await sleep(500)
+  await click(cdp, `${LIVE_ROWS}.find((e) => e.textContent.trim() === ${JSON.stringify(name)})`)
+  await until(`${name}'s slide`, () => cdp.evaluate(BACK_BAR))
+  await sleep(600)
+}
+
+async function stepSlides(cdp) {
+  const hidden = await ask(cdp, 'views:save', 'Collection A', 'collection', driveView(), { hidden_properties: [ids['Drive Select'], ids['Drive Status']] })
+  check("slides: Drive Select and Drive Status leave the cards, so a card's Add list offers them", hidden.ok)
   await sleep(1500)
-  await sweep(cdp, await boxOf(cdp, cell('Drive One', 'Drive Select')), await boxOf(cdp, cell('Drive Two', 'Drive Select')), { steps: 6 })
-  if (!(await portalOpen(cdp))) throw new Error('The mass picker did not open from the sweep')
+  await slideIn(cdp, 'Drive Select')
+  await shot(cdp, 'slide-picker')
+  await surfaceCreateDragMenu(cdp, 'slide', 'Slide New')
+  const gone = await ask(cdp, 'mutate', { op: 'deleteOption', propertyId: ids['Drive Select'], optionId: optionId(defNamed('Drive Select'), 'Slide New') })
+  check('slide: Slide New is deleted again, so the panel lists what it did before', gone.ok && !optionValues('Drive Select').includes('Slide New'), JSON.stringify(gone))
+  await slideIn(cdp, 'Drive Status')
+  const status = await cdp.evaluate(`(() => {
+    const rows = [...document.querySelectorAll(${JSON.stringify(PICKER_ROWS)})].filter((e) => !e.closest('[inert]')).map((e) => e.getBoundingClientRect())
+    const dividers = [...document.querySelectorAll('[data-picker-portal] [aria-hidden="true"]')].filter((e) => !e.closest('[inert]') && e.querySelector('span') && e.getBoundingClientRect().top >= rows[0].bottom - 1 && e.getBoundingClientRect().bottom <= rows.at(-1).top + 1)
+    return { rows: rows.length, dividers: dividers.length, create: !!document.querySelector('[data-picker-portal] [aria-label="New Option"]') }
+  })()`)
+  check("slides: a slid Status draws its groups behind dividers with no New Option", status.rows === statusGroups().flatMap((g) => g.options).length && status.dividers === statusGroups().length - 1 && !status.create, JSON.stringify(status))
+  await shot(cdp, 'slide-status')
+  while (await portalOpen(cdp)) await pressKey(cdp, 'Escape')
+  const back = await ask(cdp, 'views:save', 'Collection A', 'collection', driveView(), { type: 'table', hidden_properties: [] })
+  check('slides: the view switches back to Table', back.ok && driveView().type === 'table')
+  await sleep(1500)
+  await openCellPicker(cdp, 'Drive One', 'Drive Select')
+  const clicked = { rows: await optionLabels(cdp), bar: await cdp.evaluate(BACK_BAR) }
+  while (await portalOpen(cdp)) await pressKey(cdp, 'Escape')
+  const menu = await popNative(cdp, await boxOf(cdp, textEl('.data-row .cell-title-text', 'Drive One')))
+  await pickNative([])
+  const leaf = labels(menu?.find((r) => r.label === 'Properties')?.submenu.find((r) => r.label === 'Drive Select')?.submenu)
+  check("slides: a click opens the Select's option rows with no back bar, the same rows its menu leaf lists", clicked.rows.length > 0 && JSON.stringify(clicked.rows) === JSON.stringify(leaf) && !clicked.bar, JSON.stringify({ clicked, leaf }))
+}
+
+const ringed = (cdp) => cdp.evaluate(`[...document.querySelectorAll(${JSON.stringify(PICKER_ROWS)})].filter((e) => getComputedStyle(e.querySelector('[role=button]'), '::after').content !== 'none').map((e) => e.textContent.trim())`)
+async function sweepOver(cdp, prop) {
+  while (await portalOpen(cdp)) await pressKey(cdp, 'Escape')
+  await sweep(cdp, await boxOf(cdp, cell('Drive One', prop)), await boxOf(cdp, cell('Drive Two', prop)), { steps: 6 })
+  if (!(await portalOpen(cdp))) throw new Error(`The sweep over ${prop} opened no picker`)
+  await sleep(500)
+}
+
+async function stepMassPicks(cdp) {
+  const held = [frontmatter('Drive One')['Drive Select'], frontmatter('Drive Two')['Drive Select']]
+  await sweepOver(cdp, 'Drive Select')
   await shot(cdp, 'mass-picker')
+  const some = await ringed(cdp)
+  check('mass: a Select value only some rows hold is never ringed', some.length === 0, JSON.stringify({ held, some }))
+  await mouseClick(cdp, pickerRow('Fresh'))
+  const wrote = await until('both rows on Fresh', async () => lists('Drive One', 'Drive Select', 'Fresh') && lists('Drive Two', 'Drive Select', 'Fresh'), 4000).catch(() => false)
+  check('mass: a Select pick writes every swept row and closes', wrote && !(await portalOpen(cdp)), JSON.stringify([frontmatter('Drive One'), frontmatter('Drive Two')]))
+  await pressKey(cdp, 'z', META)
+  const undone = await until('both rows as they were', async () => JSON.stringify([frontmatter('Drive One')['Drive Select'], frontmatter('Drive Two')['Drive Select']]) === JSON.stringify(held), 4000).catch(() => false)
+  check('mass: one ⌘Z undoes the pick on every row', undone, JSON.stringify({ held, now: [frontmatter('Drive One')['Drive Select'], frontmatter('Drive Two')['Drive Select']] }))
+  await sweepOver(cdp, 'Drive Multi')
+  const partial = await ringed(cdp)
+  await mouseClick(cdp, pickerRow('Two'))
+  const toggled = await until('Two on both rows', async () => lists('Drive One', 'Drive Multi', 'Two') && lists('Drive Two', 'Drive Multi', 'Two'), 4000).catch(() => false)
+  check("mass: a Multi-Select pick toggles onto every swept row and the pane stays, the value only some rows held never ringed", toggled && (await portalOpen(cdp)) && !partial.includes('One'), JSON.stringify({ partial, rows: [frontmatter('Drive One'), frontmatter('Drive Two')] }))
+  await sweepOver(cdp, 'Drive Select')
   await surfaceCreateDragMenu(cdp, 'mass', 'Mass New')
 }
 
@@ -298,7 +365,9 @@ try {
   await stepDragReorder(cdp)
   await stepStyleCompact(cdp)
   await stepEditOption(cdp)
-  await stepCardsAndMass(cdp)
+  await stepCards(cdp)
+  await stepSlides(cdp)
+  await stepMassPicks(cdp)
   await stepPanel(cdp)
   await stepMulti(cdp)
   await stepEditor(cdp)

@@ -1,18 +1,19 @@
 import { chmodSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { ulid } from 'ulidx'
 import {
   mintOptionId, optionId,
   FM, frontmatter, frontRaw, pageFile, pageIds, pagePath,
-  ask, boxOf, chooseNative, click, closeSettings, createPage, DIALOG, doubleClick, escapeAll, field, inMain, labels, launch, META, mouseAt, mouseClick, must, NEXUS, notice,
-  openCollection, openPage, openPane, openSettings, overlaps, pickNative, popNative, portalOpen, pressDialog, pressKey, read, relaunch, restore, ribbon, row, sel, selectField, SET,
-  holds, hover, item, PANE_LAYER, PORTAL_ROWS, SETTINGS_BUTTON, SHIFT, settles, shot, sleep, tally, textEl, trashRowEl, typeText, until, viewFrame,
+  activeTab, ask, boxOf, chooseNative, closePanel, click, closeSettings, createPage, DIALOG, doubleClick, escapeAll, field, inMain, labels, launch, META, mouseAt, mouseClick, must, NEXUS, notice,
+  openCollection, openPage, openPane, openPanel, openSettings, overlaps, pickNative, popNative, portalOpen, pressDialog, pressKey, read, relaunch, restore, ribbon, row, sel, selectField, SET,
+  holds, hover, item, PANE, PANE_LAYER, PORTAL_ROWS, SETTINGS_BUTTON, SHIFT, settles, shot, sleep, sweep, tally, textEl, trashRowEl, typeText, until, viewFrame, watch,
 } from '../drive-harness.mjs'
 import { parse } from 'yaml'
 
 const PORT = 9403
 // The drive's groups in order, each landed by the plan phase that adds it.
-const LANDED = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '18', '19']
+const LANDED = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '18', '19']
 const GROUPS = new Set(process.argv.slice(2))
 if (GROUPS.size === 0 || [...GROUPS].some((g) => !LANDED.includes(g))) {
   console.error(`usage: node live-drive.mjs <group…>   (groups ${LANDED.join(', ')})`)
@@ -876,7 +877,7 @@ const SEAT_TABLE = {
   id: 'view_01KZPROPERTIESDRIVE14TBL', name: 'Seat Table', type: 'table', hidden_properties: [],
   property_order: ['_title', ...Object.values(SEAT).map((d) => d.id)],
 }
-// The Link and the File stay off the cards, so every card's chooser offers them.
+// The Link and the File stay off the cards, so every card's Add list offers them.
 const SEAT_CARDS = {
   id: 'view_01KZPROPERTIESDRIVE14CRD', name: 'Seat Cards', type: 'cards',
   property_order: ['_title', SEAT.stage.id, SEAT.notes.id, SEAT.due.id], hidden_properties: [SEAT.site.id, SEAT.doc.id],
@@ -962,12 +963,12 @@ async function group14(cdp) {
   await escapeAll(cdp)
 
   await click(cdp, `document.querySelector('${card('Seat Two')} .card-props')`)
-  await until('the card chooser', () => paneOpen(cdp))
-  // The chooser slides in, so its rows are pressed once they've landed.
+  await until("the card's Add list", () => paneOpen(cdp))
+  // The Add list blooms in, so its rows are pressed once they've landed.
   await sleep(500)
   await mouseClick(cdp, valueIn('[data-picker-portal] [role="button"]', SEAT.site.label))
   const empty = await settles(() => cdp.evaluate(`document.querySelector('[data-picker-portal] .cm-content')?.textContent === ''`))
-  item(14, '—', "a Link added from a card's chooser opens an empty field", empty, show({ empty }))
+  item(14, '—', "a Link added from a card's Add list opens an empty field", empty, show({ empty }))
   await escapeAll(cdp)
 
   await showView(cdp, SEAT_TABLE)
@@ -1128,7 +1129,7 @@ async function group15(cdp) {
   await until('the registry as it was', async () => (await config(cdp)).registry.length === JSON.parse(kept[0]).order.length)
 }
 
-// ── Groups 18 and 19 — the Metadata Picker's Pane Shell ─────────────────────
+// ── Groups 16, 18, and 19 — the Metadata Picker ─────────────────────────────
 
 /** The first element `css` matches that the window shows: a tab kept alive behind the shown one draws its copies off to the left. */
 const shownEl = (css) => `[...document.querySelectorAll(${JSON.stringify(css)})].find((e) => e.getClientRects().length > 0 && e.getBoundingClientRect().left >= 0)`
@@ -1163,7 +1164,7 @@ const layerBox = (cdp, expr = TOP_LAYER) => cdp.evaluate(`(() => {
   const e = ${expr}
   if (!e) return null
   const b = e.getBoundingClientRect()
-  return { top: b.top, bottom: b.bottom, left: b.left, right: b.right, height: b.height, side: e.style.bottom ? 'up' : 'down', view: innerHeight }
+  return { top: b.top, bottom: b.bottom, left: b.left, right: b.right, width: b.width, height: b.height, side: e.style.bottom ? 'up' : 'down', view: innerHeight }
 })()`)
 /** Runs `act` while an in-page sampler records the top pane's box for `ms`: on every frame, or with `resizes` on each of its resizes, as the frame about to paint it holds it. */
 async function framesOf(cdp, act, { resizes = false, ms = 900 } = {}) {
@@ -1235,26 +1236,457 @@ const END_DATE = `${CAL}.querySelector('[aria-label="End Date"]')`
 const rowIn = (scope, text) => `[...(${scope}).querySelectorAll('[role=button]')].find((e) => e.textContent.trim() === ${JSON.stringify(text)})`
 const BACK = `[...document.querySelectorAll('[data-picker-portal] [role=button]')].find((e) => !e.closest('[inert]') && e.querySelector('.lucide-chevron-left'))`
 
+// ── Group 16 — The Add List ─────────────────────────────────────────────────
+
+const ADD = {
+  select: { id: 'prop_drive_add_select', label: 'Add Select', key: 'Add Select', type: 'select', select_options: [{ id: 'opt_drive_add_red', key: 'Red', label: 'Red' }, { id: 'opt_drive_add_green', key: 'Green', label: 'Green' }] },
+  multi: { id: 'prop_drive_add_multi', label: 'Add Multi', key: 'Add Multi', type: 'multiSelect', select_options: [{ id: 'opt_drive_add_one', key: 'One', label: 'One' }, { id: 'opt_drive_add_two', key: 'Two', label: 'Two' }] },
+  status: {
+    id: 'prop_drive_add_status', label: 'Add Status', key: 'Add Status', type: 'status',
+    status_groups: [
+      { id: 'todo', label: 'To Do', color: 'grey', options: [{ id: 'opt_drive_add_open', key: 'Open', label: 'Open' }] },
+      { id: 'done', label: 'Done', color: 'green', options: [{ id: 'opt_drive_add_closed', key: 'Closed', label: 'Closed' }] },
+    ],
+  },
+  due: { id: 'prop_drive_add_due', label: 'Add Due', key: 'Add Due', type: 'dateTime' },
+  start: { id: 'prop_drive_add_start', label: 'Add Start', key: 'Add Start', type: 'dateTime' },
+  check: { id: 'prop_drive_add_check', label: 'Add Check', key: 'Add Check', type: 'checkbox' },
+  file: { id: 'prop_drive_add_file', label: 'Add File', key: 'Add File', type: 'file' },
+  number: { id: 'prop_drive_add_number', label: 'Add Number', key: 'Add Number', type: 'number' },
+  text: { id: 'prop_drive_add_text', label: 'Add Text', key: 'Add Text', type: 'text' },
+  link: { id: 'prop_drive_add_link', label: 'Add Link', key: 'Add Link', type: 'link' },
+  bare: { id: 'prop_drive_add_bare', label: 'Add Bare', key: 'Add Bare', type: 'select' },
+}
+const ADD_IDS = Object.values(ADD).map((d) => d.id)
+const layoutOf = ({ property_order, hidden_properties }) => ({ property_order, hidden_properties })
+const ADD_STANDARD = { id: 'view_01KZPROPERTIESDRIVE16STD', name: 'Add Standard', type: 'cards', format: 'standard', property_order: ['_title'], hidden_properties: ADD_IDS }
+const ADD_COMPACT = { id: 'view_01KZPROPERTIESDRIVE16CMP', name: 'Add Compact', type: 'cards', format: 'compact', property_order: ['_title', ...ADD_IDS], hidden_properties: [] }
+const ADD_TABLE = { id: 'view_01KZPROPERTIESDRIVE16TBL', name: 'Add Table', type: 'table', property_order: ['_title', ...ADD_IDS], hidden_properties: [] }
+const CONTEXTS_REL = '.nexus/contexts/contexts.json'
+const EMPTY_CONTEXT = 'Add Empty'
+const SPACE_FILE = '.nexus/contexts/Areas/Area One/_space.json'
+const CONTEXT_TITLES = ['Areas', 'Topics', 'Projects', EMPTY_CONTEXT]
+const SLIDING = [...CONTEXT_TITLES, ...['select', 'multi', 'status', 'due', 'start', 'bare'].map((k) => ADD[k].label)]
+const ENTRIES = [...CONTEXT_TITLES, ...Object.values(ADD).map((d) => d.label)]
+const STAMPS = ['Creation Time', 'Last Modified']
+const LIVE_ROWS = `[...document.querySelectorAll('${PANE_LAYER} [role=button]')].filter((e) => !e.closest('[inert]'))`
+const entry = (label) => `${LIVE_ROWS}.find((e) => e.textContent.trim() === ${JSON.stringify(label)})`
+const liveRows = (cdp) => cdp.evaluate(`${LIVE_ROWS}.map((e) => ({ label: e.textContent.trim(), slides: !!e.querySelector('.lucide-chevron-right') }))`)
+const listUp = (cdp) => cdp.evaluate(`!!${BACK} || ${LIVE_ROWS}.some((e) => ${JSON.stringify(ENTRIES)}.includes(e.textContent.trim()))`)
+const optionRows = (cdp) => cdp.evaluate(`${LIVE_ROWS}.filter((e) => !e.querySelector('.lucide-chevron-left')).map((e) => ({ label: e.textContent.trim(), lineRow: !!e.closest('[data-line-row]') }))`)
+const newOptionShown = (cdp) => cdp.evaluate(`[...document.querySelectorAll('${PANE_LAYER} [aria-label="New Option"]')].some((e) => !e.closest('[inert]'))`)
+const scrolling = (scope) => `[...(${scope}).querySelectorAll('*')].filter((e) => !e.closest('[inert]') && e.scrollHeight > e.clientHeight + 1 && /auto|scroll/.test(getComputedStyle(e).overflowY)).map((e) => ({ height: e.clientHeight, content: e.scrollHeight }))`
+const selectedDays = (cdp) => cdp.evaluate(`[...${CAL}.querySelectorAll('[data-k]')].filter((b) => Number(getComputedStyle(b).fontWeight) >= 600).map((b) => b.dataset.k)`)
+const dayOf = (n) => `[...${CAL}.querySelectorAll('[data-k]')].find((b) => b.dataset.k.endsWith('-${n}'))`
+const barOf = (cdp, bar = BACK) => cdp.evaluate(`(() => {
+  const bar = ${bar}
+  if (!bar) return null
+  const pane = (bar.closest('[data-picker-portal]') ?? bar.parentElement).getBoundingClientRect()
+  const glyph = bar.querySelector('.lucide-chevron-left')
+  const g = glyph.getBoundingClientRect()
+  const label = [...bar.querySelectorAll('span')].filter((s) => s.children.length === 0).at(-1)
+  const l = label.getBoundingClientRect()
+  return {
+    text: bar.textContent.trim(), height: Math.round(bar.getBoundingClientRect().height), padding: getComputedStyle(bar).padding, glyph: Math.round(g.width),
+    inset: Math.round((pane.right - l.right) * 10) / 10, chevron: Math.round((g.left - pane.left + glyph.querySelector('path').getBBox().x * (g.width / 24)) * 10) / 10,
+    labelRight: l.right, barRight: bar.getBoundingClientRect().right, labelMargin: getComputedStyle(label).marginRight,
+  }
+})()`)
+
+async function addEntries(cdp, s) {
+  const text = () => read(s.file)
+  const start = text()
+  const seen = { bars: {} }
+  const shows = (id) => cdp.evaluate(`!!document.querySelector('${s.scope ?? ''}[data-property-row="${id}"]')`)
+  const leave = async () => {
+    for (let i = 0; i < 3 && (await listUp(cdp)); i++) await pressKey(cdp, 'Escape')
+  }
+  const reset = async () => {
+    writeFileSync(join(NEXUS, s.file), start)
+    if (s.view) await must(`${s.name}'s view as it was`, ask(cdp, 'views:save', COLLECTION, 'collection', s.view, layoutOf(s.view)))
+    await sleep(900)
+  }
+  const open = async (group) => {
+    if (s.card) await escapeAll(cdp)
+    else await leave()
+    await s.open(group)
+    await until(`${s.name}'s Add list`, () => listUp(cdp))
+    await sleep(500)
+  }
+  const slide = async (group, label) => {
+    await open(group)
+    await click(cdp, entry(label))
+    await until(`${label}'s slide`, () => cdp.evaluate(`!!${BACK}`))
+    await sleep(600)
+  }
+  const outside = async () => {
+    const pane = await layerBox(cdp)
+    await mouseAt(cdp, { x: Math.max(4, pane.left - 40), y: pane.top + 10 })
+  }
+  const pickOption = async (label) => {
+    await mouseClick(cdp, entry(label))
+    await sleep(700)
+  }
+
+  const contexts = s.card ? [] : (await open('contexts'), await liveRows(cdp))
+  await open('properties')
+  seen.listed = [...contexts, ...(await liveRows(cdp))]
+  if (s.shoot) await shot(cdp, 'g16-add-list', TOP_LAYER)
+  if (s.ceiling) seen.ceiling = await cdp.evaluate(scrolling(TOP_LAYER))
+  if (s.plus) {
+    await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 4, y: 4, button: 'none' })
+    await sleep(600)
+    seen.plus = await cdp.evaluate(`getComputedStyle(${s.plus('properties')}).opacity`)
+  }
+
+  await slide('properties', ADD.select.label)
+  seen.bars.Select = await barOf(cdp)
+  seen.newOption = await newOptionShown(cdp)
+  if (s.shoot) await shot(cdp, 'g16-slid-select', TOP_LAYER)
+  await mouseClick(cdp, BACK)
+  await sleep(600)
+  const back = { list: !!(await cdp.evaluate(`!!${entry(ADD.select.label)} && !${BACK}`)), kept: text() === start }
+  await slide('properties', ADD.select.label)
+  await pressKey(cdp, 'Escape')
+  const escaped = { closed: !(await listUp(cdp)), kept: text() === start }
+  await slide('properties', ADD.select.label)
+  await outside()
+  const pressed = { closed: await settles(async () => !(await listUp(cdp)), 2000), kept: text() === start }
+  seen.leaving = { back, escaped, pressed }
+  await slide('properties', ADD.select.label)
+  await pickOption('Red')
+  seen.select = { closed: !(await listUp(cdp)), wrote: await settles(async () => text().includes('Red')), row: s.card || (await shows(ADD.select.id)) }
+
+  await slide('properties', ADD.multi.label)
+  seen.bars.Multi = await barOf(cdp)
+  await pickOption('One')
+  const first = { open: await cdp.evaluate(`!!${BACK}`), left: await cdp.evaluate(`![...document.querySelectorAll('${PANE_LAYER} [role=button]')].some((e) => e.textContent.trim() === ${JSON.stringify(ADD.multi.label)})`) }
+  await pickOption('Two')
+  seen.multi = { first, open: await cdp.evaluate(`!!${BACK}`), wrote: await settles(async () => text().includes('One') && text().includes('Two')), row: s.card || (await shows(ADD.multi.id)) }
+
+  await slide('properties', ADD.status.label)
+  seen.bars.Status = await barOf(cdp)
+  seen.status = { options: (await optionRows(cdp)).map((o) => o.label), groups: await cdp.evaluate(`(() => {
+      const at = (t) => ${LIVE_ROWS}.find((e) => e.textContent.trim() === t).getBoundingClientRect()
+      const a = at('Open'), b = at('Closed')
+      return [...document.querySelectorAll('${PANE_LAYER} [aria-hidden="true"]')].filter((e) => !e.closest('[inert]') && e.querySelector('span') && e.getBoundingClientRect().top >= a.bottom - 1 && e.getBoundingClientRect().bottom <= b.top + 1).length
+    })()`), newOption: await newOptionShown(cdp) }
+  await pickOption('Open')
+  Object.assign(seen.status, { closed: !(await listUp(cdp)), wrote: await settles(async () => text().includes('Open')) })
+
+  await slide('contexts', 'Areas')
+  seen.bars.Context = await barOf(cdp)
+  if (s.spacesShot) await shot(cdp, 'g16-panel-spaces-bar', TOP_LAYER)
+  const spaces = await optionRows(cdp)
+  const before = text()
+  await mouseClick(cdp, entry(spaces[0]?.label))
+  await sleep(700)
+  seen.context = { spaces, open: await cdp.evaluate(`!!${BACK}`), newOption: await newOptionShown(cdp), wrote: await settles(async () => text() !== before && text().includes(spaces[0]?.label)) }
+
+  await slide('contexts', EMPTY_CONTEXT)
+  seen.emptyContext = { options: await optionRows(cdp), back: await cdp.evaluate(`!!${BACK}`) }
+  await slide('properties', ADD.bare.label)
+  seen.emptySelect = { options: await optionRows(cdp), newOption: await newOptionShown(cdp) }
+
+  const days = {}
+  for (const [leaveBy, n] of [['Back', 10], ['Escape', 11], ['an outside press', 12]]) {
+    await reset()
+    await slide('properties', ADD.due.label)
+    if (leaveBy === 'Back') {
+      seen.bars.Date = await barOf(cdp)
+      seen.calendarScrolls = await cdp.evaluate(scrolling(CAL))
+      if (s.shoot) await shot(cdp, 'g16-slid-calendar', TOP_LAYER)
+    }
+    const watcher = await watch([s.file])
+    await mouseClick(cdp, dayOf(n))
+    const stays = await cdp.evaluate(`!!${CAL}`)
+    if (leaveBy === 'Back') await mouseClick(cdp, BACK)
+    else if (leaveBy === 'Escape') await pressKey(cdp, 'Escape')
+    else await outside()
+    await sleep(900)
+    const { writes } = await watcher.stop()
+    days[leaveBy] = { stays, writes: writes[s.file], held: text().includes(`-${n}`) }
+  }
+  await reset()
+  await slide('properties', ADD.due.label)
+  await mouseClick(cdp, dayOf(13))
+  await mouseClick(cdp, dayOf(14))
+  await pressKey(cdp, 'Escape')
+  days.twoDays = await settles(async () => text().includes('-14') && !text().includes('-13'))
+  await slide('properties', ADD.start.label)
+  days.startSelected = await selectedDays(cdp)
+  seen.date = days
+
+  if (s.listsCheck) {
+    await open('properties')
+    await click(cdp, entry(ADD.check.label))
+    const checked = { closed: await settles(async () => !(await listUp(cdp)), 2000), wrote: await settles(async () => /Add Check"?:\s*true/.test(text())) }
+    const box = `document.querySelector('${s.checkbox}.cell-checkbox')`
+    await until('the drawn checkbox', () => cdp.evaluate(`!!${box}`))
+    await sleep(500)
+    await mouseClick(cdp, box)
+    seen.check = { ...checked, unchecked: await settles(async () => !/Add Check"?:\s*true/.test(text())), drawn: await cdp.evaluate(`!!${box}`) }
+  }
+
+  const dialogs = await inMain('__drive.dialogs')
+  const unfiled = text()
+  await open('properties')
+  await click(cdp, entry(ADD.file.label))
+  await sleep(1000)
+  seen.file = { dialog: (await inMain('__drive.dialogs')) === dialogs + 1, closed: !(await listUp(cdp)), kept: text() === unfiled, noRow: s.card || !(await shows(ADD.file.id)) }
+  if (s.picks) {
+    await inMain(`__drive.picks.push(${JSON.stringify(s.picks)})`)
+    await open('properties')
+    await click(cdp, entry(ADD.file.label))
+    seen.file.chip = await settles(() => cdp.evaluate(`!!document.querySelector('${s.checkbox}[data-file-chip-index]')`))
+  }
+
+  const typed = {}
+  for (const [k, word] of [['number', '7'], ['text', 'typed words'], ['link', 'https://example.org']]) {
+    await open('properties')
+    await click(cdp, entry(ADD[k].label))
+    await sleep(900)
+    const pane = await cdp.evaluate(`({
+      layer: !!${TOP_LAYER} && !${TOP_LAYER}.querySelector('[role=button]'),
+      textPane: !!document.querySelector('${PANE}'),
+      inRow: !!document.activeElement?.closest('[data-property-row="${ADD[k].id}"]'),
+      empty: (document.activeElement?.tagName === 'INPUT' ? document.activeElement.value : document.activeElement?.cmTile?.root.view.state.doc.toString()) === '',
+    })`)
+    if (s.typedShot && k === 'number') await shot(cdp, 'g16-panel-typed-row', `document.querySelector('[data-property-row="${ADD.number.id}"]')`)
+    await typeText(cdp, word)
+    await pressKey(cdp, k === 'text' && s.card ? 'Escape' : 'Enter')
+    await leave()
+    typed[k] = { ...pane, landed: await settles(async () => text().includes(word)) }
+  }
+  seen.typed = typed
+  await leave()
+  return seen
+}
+
+async function group16(cdp) {
+  const keptContexts = read(CONTEXTS_REL)
+  const keptSpace = read(SPACE_FILE)
+  const putBack = await seedCollection(cdp, Object.values(ADD), [ADD_STANDARD, ADD_COMPACT, ADD_TABLE])
+  await must('the empty Context', ask(cdp, 'mutate', { op: 'createContextGroup', id: ulid(), name: EMPTY_CONTEXT }))
+  await createPage(cdp, 'Add Blank')
+  await createPage(cdp, 'Add Held', {
+    [ADD.select.id]: { kind: 'select', value: 'opt_drive_add_red' },
+    [ADD.text.id]: { kind: 'text', value: 'held words' },
+  })
+  const blank = pageFile('Add Blank')
+  const picked = join(tmpdir(), 'Add Drive.pdf')
+  writeFileSync(picked, '%PDF-1.4\n')
+
+  await showView(cdp, ADD_TABLE)
+  await mouseClick(cdp, `${row('Add Blank')}.querySelectorAll('.data-cell')[1]`)
+  await until('the Select cell’s picker', () => paneOpen(cdp))
+  const cellRows = await liveRows(cdp)
+  item(16, 'MP-B-1', "a Table's empty cell opens its own value's list, no Add list and no back bar",
+    cellRows.length > 0 && cellRows.every((r) => !r.slides) && !(await cdp.evaluate(`!!${BACK}`)), show(cellRows))
+  await escapeAll(cdp)
+
+  await viewFrame(cdp, 'Visibility')
+  const VISIBILITY_BAR = `[...document.querySelectorAll('[role=button]')].find((e) => !e.closest('[inert]') && e.querySelector('.lucide-chevron-left'))`
+  const settingsBar = await barOf(cdp, VISIBILITY_BAR)
+  const controlRight = await cdp.evaluate(`(() => {
+    let pane = (${VISIBILITY_BAR}).parentElement
+    while (!pane.querySelector('[aria-label^="Show "], [aria-label^="Hide "]')) pane = pane.parentElement
+    return [...pane.querySelectorAll('[aria-label^="Show "], [aria-label^="Hide "]')].find((e) => !e.closest('[inert]')).getBoundingClientRect().right
+  })()`)
+  const visibility = await cdp.evaluate('document.body.innerText')
+  item(16, 'MP-C-6', 'Visibility lists Creation Time and Last Modified', STAMPS.every((t) => visibility.includes(t)))
+  item(16, 'MP-C-3', "a settings pane's back bar keeps its label flush with the bar and the controls beneath it",
+    settingsBar?.labelMargin === '0px' && Math.abs(settingsBar.labelRight - settingsBar.barRight) < 0.5 && Math.abs(settingsBar.labelRight - controlRight) < 0.5, show({ settingsBar, controlRight }))
+  await escapeAll(cdp)
+  if (await cdp.evaluate(`(${SETTINGS_BUTTON}).getAttribute('aria-pressed') === 'true'`)) await mouseClick(cdp, SETTINGS_BUTTON)
+
+  await openPage(cdp, 'Add Held')
+  await openPanel(cdp)
+  await mouseClick(cdp, sel('[aria-label="Add Property"]'))
+  await until('the Add list', () => listUp(cdp))
+  const heldPanel = (await liveRows(cdp)).map((r) => r.label)
+  await escapeAll(cdp)
+  await closePanel(cdp)
+  item(16, 'MP-C-5', "the panel's Add list leaves out what the item holds", !heldPanel.includes(ADD.select.label) && !heldPanel.includes(ADD.text.label), show(heldPanel))
+
+  const zone = (title) => `(() => { const c = ${shownEl(`[data-rid="${pageIds[title]}"]`)}; return c.querySelector('.card-props') ?? c.querySelector('.card-text') })()`
+  const cardSurface = (name, view, extra) => ({
+    name, view, card: true, file: pagePath('Add Blank'), checkbox: `[data-rid="${pageIds['Add Blank']}"] `,
+    open: () => click(cdp, zone('Add Blank')),
+    ...extra,
+  })
+  const plusOf = (scope) => (group) => `document.querySelector('${scope}[aria-label="${group === 'contexts' ? 'Add Context' : 'Add Property'}"]')`
+  const panelSurface = (name, file, scope, ready, extra) => ({
+    name, file, scope, checkbox: `${scope}[data-property-row="${ADD.check.id}"] `, listsCheck: true, plus: plusOf(scope),
+    open: async (group) => {
+      await ready()
+      await mouseClick(cdp, plusOf(scope)(group))
+    },
+    ...extra,
+  })
+  const pagePanel = async () => {
+    if ((await activeTab(cdp)) !== 'Add Blank') {
+      await showView(cdp, ADD_TABLE)
+      await openPage(cdp, 'Add Blank')
+    }
+    await openPanel(cdp)
+  }
+  const sidePane = async () => {
+    if (await cdp.evaluate(`!!document.querySelector('.window-side-pane [aria-label="Add Property"]')`)) return
+    await closePanel(cdp)
+    await showView(cdp, ADD_TABLE)
+    await openPage(cdp, 'Add Blank')
+    await chooseNative(cdp, `document.querySelector('[role=tab][title="Add Blank"]')`, 'Preview')
+    await until('the PageWindow', () => cdp.evaluate(`!!document.querySelector('.page-window')`))
+    await mouseClick(cdp, sel('.page-window button[title="Side Pane"]'))
+    await until("the side pane's Add", () => cdp.evaluate(`!!document.querySelector('.window-side-pane [aria-label="Add Property"]')`))
+  }
+  const spacePanel = async () => {
+    if ((await activeTab(cdp)) !== 'Area One') {
+      await closePanel(cdp)
+      if (!(await cdp.evaluate(`!!(${sidebarRow('Area One')})`))) await click(cdp, ribbon('Contexts'))
+      await until('Area One in the sidebar', () => cdp.evaluate(`!!(${sidebarRow('Area One')})`))
+      await click(cdp, sidebarRow('Area One'))
+      await until("Area One's tab", async () => (await activeTab(cdp)) === 'Area One')
+      await sleep(800)
+    }
+    await openPanel(cdp)
+  }
+
+  const surfaces = [
+    cardSurface('Standard card', ADD_STANDARD, { listsCheck: true, shoot: true, ceiling: true, picks: picked }),
+    cardSurface('Compact card', ADD_COMPACT),
+    panelSurface('page dropdown', pagePath('Add Blank'), '', pagePanel, { spacesShot: true, typedShot: true }),
+    panelSurface('SidePane', pagePath('Add Blank'), '.window-side-pane ', sidePane),
+    panelSurface('Space dropdown', SPACE_FILE, '', spacePanel),
+  ]
+  const ran = {}
+  for (const s of surfaces) {
+    if (s.name === 'Space dropdown') {
+      await spacePanel()
+      await mouseClick(cdp, liveRow('Add Property'))
+      await until('the Add list', () => listUp(cdp))
+      await sleep(500)
+      const pane = await layerBox(cdp)
+      const standing = await boxOf(cdp, liveRow('Add Property'))
+      ran.hop = { pane, standing }
+      await shot(cdp, 'g16-panel-row-anchored')
+      for (let i = 0; i < 3 && (await listUp(cdp)); i++) await pressKey(cdp, 'Escape')
+    }
+    if (s.view) await showView(cdp, s.view)
+    ran[s.name] = await addEntries(cdp, s)
+    if (s.name === 'SidePane') {
+      await mouseClick(cdp, sel('.page-window button[title="Close"]'))
+      await until('the PageWindow gone', () => cdp.evaluate(`!document.querySelector('.page-window')`))
+    }
+    if (s.view) await must(`${s.name}'s view as it was`, ask(cdp, 'views:save', COLLECTION, 'collection', s.view, layoutOf(s.view)))
+    writeFileSync(join(NEXUS, s.file), s.file === SPACE_FILE ? keptSpace : blank)
+    await sleep(800)
+  }
+  await closePanel(cdp)
+  await click(cdp, ribbon('Collections'))
+  await until('Collection A in the sidebar', () => cdp.evaluate(`!!(${sidebarRow(COLLECTION)})`))
+  const all = Object.entries(ran).filter(([k]) => k !== 'hop')
+  const every = (f) => all.every(([, r]) => f(r))
+  const of = (f) => show(Object.fromEntries(all.map(([k, r]) => [k, f(r)])))
+
+  const slideRight = (r, name) => {
+    const expected = name === 'Compact card' ? ENTRIES.filter((l) => l !== ADD.check.label) : ENTRIES
+    const labels = r.listed.map((x) => x.label)
+    return expected.every((l) => labels.includes(l)) && r.listed.every((x) => x.slides === SLIDING.includes(x.label))
+  }
+  const standard = ran['Standard card']
+  item(16, 'MP-C-1 MP-B-5', `"›" draws on exactly the ${SLIDING.length} rows that slide, on every surface (at HEAD every fillable row wore one, Checkbox, Number, Text, Link, and File included)`,
+    all.every(([k, r]) => slideRight(r, k)), of((r) => r.listed.map((x) => `${x.label}${x.slides ? ' ›' : ''}`)))
+  item(16, 'MP-C-5', 'a Compact card lists its blanks and leaves out the Checkbox it draws',
+    !ran['Compact card'].listed.some((x) => x.label === ADD.check.label) && ran['Compact card'].listed.length === ENTRIES.length - 1, of((r) => r.listed.length))
+  item(16, 'MP-C-6', 'Creation Time and Last Modified are absent from every Add list (at HEAD both were listed)',
+    every((r) => !r.listed.some((x) => STAMPS.includes(x.label))), of((r) => r.listed.map((x) => x.label)))
+  const ceiling = standard.ceiling?.[0]
+  item(16, 'MP-C-4', `a ${standard.listed.length}-row list caps at ${ceiling?.height}px and scrolls its ${ceiling?.content}px (at HEAD a 15-row list stood 365px)`,
+    ceiling?.height === 240 && ceiling.content > 240, show(standard.ceiling))
+  item(16, 'MP-C-4', 'the calendar slid in from the Add list never scrolls', every((r) => r.calendarScrolls.length === 0), of((r) => r.calendarScrolls))
+
+  const bars = all.flatMap(([k, r]) => Object.entries(r.bars).map(([type, b]) => ({ at: `${k} ${type}`, ...b })))
+  const ref = bars[0]
+  const shape = (b) => `${b.height}px tall, ${b.padding} padding, a ${b.glyph}px glyph`
+  item(16, 'MP-C-3 MP-C-4', `the back bar stands ${shape(ref)} across Select, Multi, Status, Context, and Date on every surface, matching a settings pane's bar (at HEAD 14px tall, no padding, a 12px glyph)`,
+    bars.length === all.length * 5 && bars.every((b) => b.height === ref.height && b.padding === ref.padding && b.glyph === ref.glyph) &&
+      ref.height === settingsBar.height && ref.padding === settingsBar.padding && ref.glyph === settingsBar.glyph, show({ bars, settingsBar }))
+  item(16, 'MP-C-3', `on a picker's surface the bar's label sits ${ref.inset}px in from the pane's right edge on every type and surface, as far in as the chevron draws from its left (${ref.chevron}px)`,
+    bars.every((b) => Math.abs(b.inset - 8) <= 0.75 && Math.abs(b.inset - b.chevron) <= 1.5), show(bars.map((b) => ({ at: b.at, inset: b.inset, chevron: b.chevron }))))
+  item(16, 'MP-B-4', 'a slid Context\'s bar reads "Spaces" on cards and panels alike', every((r) => r.bars.Context.text.startsWith('Spaces')), of((r) => r.bars.Context.text))
+
+  item(16, 'MP-C-1', 'a Select slides in with New Option', every((r) => r.newOption), of((r) => r.newOption))
+  item(16, 'MP-C-2', "Back, Escape, and an outside press from a slid Select each write nothing, Back returning to the list and the other two closing everything",
+    every((r) => r.leaving.back.list && r.leaving.back.kept && r.leaving.escaped.closed && r.leaving.escaped.kept && r.leaving.pressed.closed && r.leaving.pressed.kept), of((r) => r.leaving))
+  item(16, 'MP-C-1 MP-C-2', "a Select's pick writes and closes everything, and the panel shows its row", every((r) => r.select.closed && r.select.wrote && r.select.row), of((r) => r.select))
+  item(16, 'MP-C-1', 'a Multi-Select stays open across picks, outliving its entry leaving the list, and writes both',
+    every((r) => r.multi.first.open && r.multi.first.left && r.multi.open && r.multi.wrote && r.multi.row), of((r) => r.multi))
+  item(16, 'MP-C-1', 'a Status slides in with its groups behind a divider and no New Option, and its pick closes everything',
+    every((r) => same(r.status.options, ['Open', 'Closed']) && r.status.groups === 1 && !r.status.newOption && r.status.closed && r.status.wrote), of((r) => r.status))
+  item(16, 'MP-C-1', 'a Context slides into pick-only Space rows, no New Option, and stays open across a pick that writes',
+    every((r) => r.context.spaces.length > 0 && r.context.spaces.every((o) => !o.lineRow) && !r.context.newOption && r.context.open && r.context.wrote), of((r) => r.context))
+  item(16, 'MP-C-1', 'an empty Select slides to New Option alone, and an empty Context to an empty pane under its back bar',
+    every((r) => r.emptySelect.options.length === 0 && r.emptySelect.newOption && r.emptyContext.options.length === 0 && r.emptyContext.back), of((r) => ({ select: r.emptySelect, context: r.emptyContext })))
+  item(16, 'MP-C-1 MP-C-2', 'a day picked in a slid calendar keeps the pane and writes once, left by Back, Escape, or an outside press',
+    every((r) => ['Back', 'Escape', 'an outside press'].every((k) => r.date[k].stays && r.date[k].writes === 1 && r.date[k].held)), of((r) => r.date))
+  item(16, 'MP-C-1', 'two days picked keep only the last, and a second date slides in blank', every((r) => r.date.twoDays && r.date.startSelected.length === 0), of((r) => ({ twoDays: r.date.twoDays, start: r.date.startSelected })))
+  const checks = all.filter(([, r]) => r.check)
+  item(16, 'MP-C-1', 'a Checkbox acts from the list, checked with nothing left open, and unchecking keeps it drawn',
+    checks.length === all.length - 1 && checks.every(([, r]) => r.check.closed && r.check.wrote && r.check.unchecked && r.check.drawn), show(Object.fromEntries(checks.map(([k, r]) => [k, r.check]))))
+  item(16, 'MP-C-2', 'a File opens the dialog and closes the list, and a cancel writes nothing and leaves no row in a panel',
+    every((r) => r.file.dialog && r.file.closed && r.file.kept && r.file.noRow), of((r) => r.file))
+  item(16, 'MP-C-1', "a File's picked path adopts a chip on the card", standard.file.chip, show(standard.file))
+  const typed = (k, onCard) => all.every(([name, r]) => r.typed[k].landed && r.typed[k].empty !== false && (name.endsWith('card') ? onCard(r.typed[k]) : r.typed[k].inRow))
+  item(16, 'MP-C-2', 'a Number pops a small empty window on a card and its row field in a panel, and typing lands', typed('number', (t) => t.layer), of((r) => r.typed.number))
+  item(16, 'MP-C-2', 'a Text pops TextPane on a card and its row field in a panel, and typing lands', typed('text', (t) => t.textPane), of((r) => r.typed.text))
+  item(16, 'MP-C-2', 'a Link pops an empty field on a card and its row field in a panel, and typing lands', typed('link', (t) => t.layer), of((r) => r.typed.link))
+  const panels = all.filter(([k]) => !k.endsWith('card'))
+  item(16, 'MP-B-1', "a panel's + stays shown while its list is open", panels.every(([, r]) => r.plus === '1'), show(Object.fromEntries(panels.map(([k, r]) => [k, r.plus]))))
+  const { pane, standing } = ran.hop
+  item(16, 'MP-B-1', "a Space's standing Add row opens the list hanging from the row itself",
+    Math.abs(pane.top - standing.bottom) <= 12 || Math.abs(standing.top - pane.bottom) <= 12, show(ran.hop))
+
+  await showView(cdp, ADD_STANDARD)
+  await click(cdp, zone('Add Held'))
+  await until("Add Held's list", () => cdp.evaluate(`!!${entry(ADD.text.label)}`))
+  await sleep(500)
+  const held = await liveRows(cdp)
+  const tail = held.slice(-2).map((r) => r.label)
+  await click(cdp, entry(ADD.text.label))
+  const shown = await settles(async () => !(await listUp(cdp)) && !viewOnDisk(ADD_STANDARD.id).hidden_properties.includes(ADD.text.id))
+  const drawnHeld = await cdp.evaluate(`${shownEl(`[data-rid="${pageIds['Add Held']}"]`)}.textContent.includes('held words')`)
+  item(16, 'MP-C-5 MP-C-7', "a held hidden value lists after every fillable row with no \"›\", and its press shows the property in the saved view and closes the list",
+    same([...tail].sort(), [ADD.select.label, ADD.text.label]) && held.slice(-2).every((r) => !r.slides) && shown && drawnHeld, show({ held, shown, drawnHeld }))
+
+  rmSync(picked)
+  await putBack(['Add Blank', 'Add Held'])
+  writeFileSync(join(NEXUS, CONTEXTS_REL), keptContexts)
+  rmSync(join(NEXUS, '.nexus/contexts', EMPTY_CONTEXT), { recursive: true, force: true })
+  await until('the empty Context leaves', async () => !(await ask(cdp, 'nexus:state')).value.tree.contexts.some((g) => g.def.title === EMPTY_CONTEXT))
+}
+
 // ── Group 18 — Placement ────────────────────────────────────────────────────
 
 const PLACE = {
   due: { id: 'prop_drive_place_due', label: 'Place Due', key: 'Place Due', type: 'dateTime' },
   tall: {
     id: 'prop_drive_place_tall', label: 'Place Tall', key: 'Place Tall', type: 'select',
-    select_options: Array.from({ length: 20 }, (_, i) => ({ id: `opt_drive_tall_${i + 1}`, key: `Tall ${i + 1}`, label: `Tall ${i + 1}` })),
+    select_options: Array.from({ length: 40 }, (_, i) => ({ id: `opt_drive_tall_${i + 1}`, key: `Tall ${i + 1}`, label: `Tall Option Number ${i + 1}, Labelled Long` })),
   },
   notes: { id: 'prop_drive_place_notes', label: 'Place Notes', key: 'Place Notes', type: 'text' },
 }
 // Visibility lists every property, so these make it taller than the settings' root.
 const PLACE_FILLERS = Array.from({ length: 10 }, (_, i) => ({ id: `prop_drive_place_filler_${i + 1}`, label: `Place Filler ${i + 1}`, key: `Place Filler ${i + 1}`, type: 'text' }))
-const onlyPlaceOne = { match: 'all', rules: [{ property_id: '_title', op: 'is', value: 'Place One' }] }
+const onlyPlaces = { match: 'all', rules: [{ property_id: '_title', op: 'starts_with', value: 'Place ' }] }
 const PLACE_TABLE = {
   id: 'view_01KZPROPERTIESDRIVE18TBL', name: 'Place Table', type: 'table', hidden_properties: [],
-  property_order: ['_title', PLACE.due.id, PLACE.tall.id], filter: onlyPlaceOne, filter_enabled: true,
+  property_order: ['_title', PLACE.due.id, PLACE.tall.id], filter: onlyPlaces, filter_enabled: true,
 }
 const PLACE_CARDS = {
   id: 'view_01KZPROPERTIESDRIVE18CRD', name: 'Place Cards', type: 'cards', hidden_properties: [],
-  property_order: ['_title', PLACE.notes.id], filter: onlyPlaceOne, filter_enabled: true,
+  property_order: ['_title', PLACE.notes.id], filter: onlyPlaces, filter_enabled: true,
 }
 
 async function group18(cdp) {
@@ -1310,7 +1742,7 @@ async function group18(cdp) {
   const tall = await framesOf(cdp, () => mouseClick(cdp, cell(2), { settle: 0 }))
   const list = await layerBox(cdp)
   const tallCell = await boxOf(cdp, cell(2))
-  item(18, 'MP-E-1', 'a 20-option list near the foot of a short window opens above its cell from the start and never moves again',
+  item(18, 'MP-E-1', 'a 40-option list near the foot of a short window opens above its cell from the start and never moves again',
     tall.length > 0 && tall.every((f) => f.side === 'up' && f.top === tall[0].top && f.bottom === tall[0].bottom), show({ list, tall }))
   item(18, 'MP-E-1', 'a list neither side holds is fenced at the top margin, inside the window, over its cell',
     list.top >= 0 && list.top < 10 && list.bottom <= list.view && list.bottom > tallCell.top, show({ list, tallCell }))
@@ -1393,7 +1825,106 @@ async function group18(cdp) {
   await shot(cdp, 'g18-textpane-risen', TOP_LAYER)
 
   await naturalWindow(cdp)
-  await putBack(['Place One'])
+  await createPage(cdp, 'Place Two')
+  const placeCard = (title) => shownEl(`[data-rid="${pageIds[title]}"]`)
+  const cardText = `${placeCard('Place Two')}.querySelector('.card-text')`
+  const openAddOn = async (title) => {
+    await escapeAll(cdp)
+    await until(`${title}'s card`, () => cdp.evaluate(`!!${placeCard(title)}`))
+    await click(cdp, `${placeCard(title)}.querySelector('.card-props')`)
+    await until('the Add list', () => cdp.evaluate(`!!${entry(PLACE.due.label)}`))
+    await sleep(500)
+  }
+  const slideTo = async (label) => {
+    await click(cdp, entry(label))
+    await until(`${label}'s slide`, () => cdp.evaluate(`!!${BACK}`))
+    await sleep(600)
+  }
+  await openAddOn('Place Two')
+  const addList = await layerBox(cdp)
+  await slideTo(PLACE.due.label)
+  const slidCalendar = await layerBox(cdp)
+  await roomBelow(cdp, cardText, Math.round((addList.height + slidCalendar.height) / 2))
+  await openAddOn('Place Two')
+  const listed = await layerBox(cdp)
+  const slid = await framesOf(cdp, () => click(cdp, entry(PLACE.due.label)))
+  const flippedCalendar = await layerBox(cdp)
+  const text = await boxOf(cdp, cardText)
+  item(18, 'MP-E-1', "a low card's calendar, slid in from an Add list that fits below, ends above the card inside the window on every frame",
+    listed.side === 'down' && flippedCalendar.side === 'up' && flippedCalendar.bottom <= text.top && insideWindow(slid), show({ addList, slidCalendar, listed, flippedCalendar, text }))
+  await shot(cdp, 'g18-card-calendar-flipped', TOP_LAYER)
+  await mouseClick(cdp, END_DATE)
+  await sleep(700)
+  const spannedUp = await layerBox(cdp)
+  item(18, 'MP-E-1', 'End Date on the flipped calendar rises from the edge it hangs from, inside the window',
+    spannedUp.side === 'up' && Math.abs(spannedUp.bottom - flippedCalendar.bottom) < 1 && spannedUp.top < flippedCalendar.top && spannedUp.top >= 0, show({ flippedCalendar, spannedUp }))
+  await mouseClick(cdp, END_DATE)
+  await sleep(700)
+  const backFrames = await framesOf(cdp, () => mouseClick(cdp, BACK, { settle: 0 }))
+  const relisted = await layerBox(cdp)
+  item(18, 'MP-E-1', 'Back from the flipped calendar returns to the list above the card, the edge it hangs from never moving',
+    relisted.side === 'up' && insideWindow(backFrames) && backFrames.every((f) => f.side === 'up' && Math.abs(f.bottom - backFrames[0].bottom) < 1), show({ relisted, backFrames }))
+  const long = await framesOf(cdp, () => click(cdp, entry(PLACE.tall.label)))
+  const capped = await layerBox(cdp)
+  item(18, 'MP-E-1', 'a 40-option list slid in on a low card stays inside the window on every frame, capped',
+    insideWindow(long) && capped.top >= 0 && capped.bottom <= capped.view, show({ capped, long }))
+  await escapeAll(cdp)
+  await naturalWindow(cdp)
+
+  await openAddOn('Place Two')
+  await slideTo(PLACE.due.label)
+  const edge = await cdp.evaluate(`(() => {
+    const pane = ${TOP_LAYER}.getBoundingClientRect(), card = ${placeCard('Place Two')}.getBoundingClientRect()
+    const row = [...document.querySelectorAll('[data-rid]')].filter((e) => e.getClientRects().length > 0 && Math.abs(e.getBoundingClientRect().top - card.top) < 2)
+    return { left: pane.left, right: pane.right, view: innerWidth, last: row.every((e) => e.getBoundingClientRect().right <= card.right + 1) }
+  })()`)
+  item(18, 'MP-E-1', 'the last card in a row keeps its slid calendar inside the window', edge.last && edge.left >= 0 && edge.right <= edge.view, show(edge))
+  await escapeAll(cdp)
+
+  await showView(cdp, PLACE_TABLE)
+  const placeRow = (title) => shownEl(`.data-row[data-rid="${pageIds[title]}"]`)
+  await mouseClick(cdp, `${placeRow('Place One')}.querySelector('.cell-title-text')`)
+  await until("Place One's tab", async () => (await activeTab(cdp)) === 'Place One')
+  await sleep(800)
+  const panelEnd = {}
+  for (const [name, scope] of [['the dropdown', ''], ['the SidePane', '.window-side-pane ']]) {
+    if (scope) {
+      await closePanel(cdp)
+      await chooseNative(cdp, `document.querySelector('[role=tab][title="Place One"]')`, 'Preview')
+      await until('the PageWindow', () => cdp.evaluate(`!!document.querySelector('.page-window')`))
+      await mouseClick(cdp, sel('.page-window button[title="Side Pane"]'))
+    } else await openPanel(cdp)
+    const plus = `document.querySelector('${scope}[aria-label="Add Property"]')`
+    await until(`${name}'s Add`, () => cdp.evaluate(`!!${plus}`))
+    await mouseClick(cdp, plus)
+    await until('the Add list', () => cdp.evaluate(`!!${entry(PLACE.tall.label)}`))
+    await sleep(500)
+    const frames = await framesOf(cdp, () => click(cdp, entry(PLACE.tall.label)))
+    panelEnd[name] = { frames: frames.length, inside: insideWindow(frames), pane: await layerBox(cdp) }
+    for (let i = 0; i < 3 && (await listUp(cdp)); i++) await pressKey(cdp, 'Escape')
+  }
+  await mouseClick(cdp, sel('.page-window button[title="Close"]'))
+  await until('the PageWindow gone', () => cdp.evaluate(`!document.querySelector('.page-window')`))
+  item(18, 'MP-E-1', "Add at a panel's end, in the dropdown and the SidePane, keeps a slid 40-option list inside the window on every frame",
+    Object.values(panelEnd).every((p) => p.inside), show(panelEnd))
+
+  await showView(cdp, PLACE_TABLE)
+  const optionCell = (title) => `${placeRow(title)}.querySelectorAll('.data-cell')[2]`
+  await until('both rows', () => cdp.evaluate(`!!${placeRow('Place Two')}`))
+  await mouseClick(cdp, optionCell('Place Two'))
+  await until('the single pane', () => paneOpen(cdp))
+  await sleep(500)
+  const singlePane = await layerBox(cdp)
+  await escapeAll(cdp)
+  await sweep(cdp, await boxOf(cdp, optionCell('Place One')), await boxOf(cdp, optionCell('Place Two')), { steps: 6 })
+  await until('the sweep pane', () => paneOpen(cdp))
+  await sleep(500)
+  const swept = await layerBox(cdp)
+  await shot(cdp, 'g18-sweep-pane')
+  item(18, 'MP-B-8', `a sweep's pane opens on its last cell exactly where a single click there opens one, ${Math.round(swept.width)}px wide (at HEAD the mass pane sat 29px right of the single one)`,
+    ['top', 'left', 'width', 'height'].every((k) => Math.abs(swept[k] - singlePane[k]) < 1), show({ singlePane, swept }))
+  await escapeAll(cdp)
+  await putBack(['Place One', 'Place Two'])
 }
 
 // ── Group 19 — Settings Panes ───────────────────────────────────────────────
@@ -1559,6 +2090,7 @@ try {
   if (GROUPS.has('13')) await group13(cdp)
   if (GROUPS.has('14')) await group14(cdp)
   if (GROUPS.has('15')) await group15(cdp)
+  if (GROUPS.has('16')) await group16(cdp)
   if (GROUPS.has('18')) await group18(cdp)
   if (GROUPS.has('19')) await group19(cdp)
   cdp.close()

@@ -542,7 +542,7 @@ surface('propertyAdd', async () => {
     if (!(await ev(`!!${add}`))) continue
     res[label] = await settled({ id: label, el: add, host: `${add}.parentElement.parentElement` })
   }
-  // An open chooser holds its "+" shown.
+  // An open Add list holds its "+" shown.
   const first = Object.keys(res)[0]
   await press(q(`button[aria-label="${first}"]`))
   await after(park)

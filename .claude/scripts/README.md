@@ -7,12 +7,13 @@ row's second column and each literal value in its third must appear in those fil
 since the theme republishes hashed tokens under stable names. Exit 0 means the tables agree; drift
 is listed per table.
 
-`Option Picker Drive/live-drive.mjs` drives the option mutations the value picker offers, and the
+`Option Picker Drive/live-drive.mjs` drives the option mutations both pickers offer, and the
 Property Frame's option editor's share of them — creation from the footer, blank and duplicate
 refusals, drag reorder, the right-click menu's Style and Edit Option, the editor's Clear and Delete
 with the Items each names, the popup's rename, color, appearance and icon, and the host's own blank
-refusal — against the real app, on the Table, Cards, mass-assign, and Properties-panel surfaces
-alike, and asserts each one in `.nexus/properties.json`, the page files and the view's sidecar. It
+refusal — against the real app, on the Table, Cards, a pane slid in from a card's Add list, a
+multi-row pick, and Properties-panel surfaces alike, along with what a multi-row pick writes, holds,
+and undoes, and asserts each one in `.nexus/properties.json`, the page files and the view's sidecar. It
 seeds `Collection A/Set Alpha` with its properties, view, and pages on debug port 9343.
 
 `Text Property Drive/live-drive.mjs` drives the Text property end to end against the real app, in
@@ -90,8 +91,8 @@ the decision each proves. It takes the groups to run as arguments —
 `node live-drive.mjs 1 6B` — seeds each group's own Sets, pages, and settings in `~/Test`'s
 `Collection A` and puts the settings back, on debug port 9393, and exits non-zero on any failed check.
 
-`Properties Drive/live-drive.mjs` drives the Properties Restructure's visible surfaces against the
-real app, in seventeen groups. `MATRIX.md` beside it holds each group's
+`Properties Drive/live-drive.mjs` drives the Properties Restructure's and the Metadata Picker's visible
+surfaces against the real app, in eighteen groups. `MATRIX.md` beside it holds each group's
 cases and the decision each proves. It takes the groups to run as arguments —
 `node live-drive.mjs 1 15` — puts back what each group seeds, on debug port 9403, and exits
 non-zero on any failed check.
