@@ -7,7 +7,7 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react'
-import { createPortal } from 'react-dom'
+import { createPortal, flushSync } from 'react-dom'
 import { pickerBloom } from '../Animations/animations.css'
 import { useExitPresence, useHeld } from '../Animations/useExitPresence'
 import { GlassSurface } from '../Glass/GlassSurface'
@@ -170,7 +170,7 @@ export function PickerMenu({
       if (resized(el, paneBox)) place.current?.()
     }
     measure()
-    const ro = new ResizeObserver(measure)
+    const ro = new ResizeObserver(() => flushSync(measure))
     ro.observe(el)
     return () => ro.disconnect()
   }, [mounted])

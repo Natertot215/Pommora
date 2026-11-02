@@ -653,6 +653,16 @@ describe('PickerMenu re-measure', () => {
     )
   })
 
+  it('re-places a grown pane before the frame paints', async () => {
+    await open()
+    expect(layer().style.top).toBe('426px')
+    paneH = 400
+    ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = false
+    observers[0]?.()
+    ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
+    expect(layer().style.top).toBe('360px')
+  })
+
   it('keeps its side through a shrink, even where the room no longer holds it', async () => {
     await open()
     await open(600)
