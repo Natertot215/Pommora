@@ -22,7 +22,7 @@ The operational layer for running, driving, and committing to the app; the Featu
 
 ### Second Instances & Sync
 
-- **Scratch Instance:** The single-instance lock lives in userData, so a second instance takes its own `POMMORA_USERDATA` (use `$HOME`, not `~`) and its own `POMMORA_DEBUG_PORT`.
+- **Scratch Instance:** The single-instance lock lives in userData, so a second instance takes its own `POMMORA_USERDATA` (use `$HOME`, not `~`), which also gives it a mock keychain, and its own `POMMORA_DEBUG_PORT`.
   - **Borrowing the dev renderer:** `cd Desktop && POMMORA_USERDATA=… POMMORA_DEBUG_PORT=9334 ELECTRON_RENDERER_URL=http://localhost:5173 env -u ELECTRON_RUN_AS_NODE ../node_modules/.bin/electron .` opens `~/Test` with HMR and `window.__pommora`, without a build.
   - **Two devices on one Mac:** Build once and launch each instance from the built output; two `npm run dev` processes collide on the renderer port. Built output exposes only `window.nexus.ask`, and a copied Nexus folder is a replica with the same Nexus ID.
 - **Sync Hub:** `npm run sync` starts `Sync/hub.ts` on `http://127.0.0.1:7473` with its data in `~/.pommora-sync/` (`POMMORA_SYNC_DATA`, `POMMORA_SYNC_HOST`, `POMMORA_SYNC_PORT` override). `npm run sync:cert` writes a certificate that switches it to TLS and prints the pin. The app never starts the hub.

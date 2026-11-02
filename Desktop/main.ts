@@ -74,8 +74,11 @@ if (app.isPackaged)
   for (const s of ['remote-debugging-port', 'remote-debugging-pipe'])
     app.commandLine.removeSwitch(s)
 
-// A second instance beside the live one: its own userData carries its own single-instance lock.
-if (DEV_ENV.POMMORA_USERDATA) app.setPath('userData', DEV_ENV.POMMORA_USERDATA)
+// A second instance beside the live one: its own userData carries its own single-instance lock, and a mock keychain leaves the login keychain alone.
+if (DEV_ENV.POMMORA_USERDATA) {
+  app.setPath('userData', DEV_ENV.POMMORA_USERDATA)
+  app.commandLine.appendSwitch('use-mock-keychain')
+}
 
 // file://-loaded ES modules are CORS-blocked (opaque origin → blank window); app:// gives the bundle a real origin. Both schemes must be registered before the app is ready.
 const RENDERER_SCHEME = 'app'
