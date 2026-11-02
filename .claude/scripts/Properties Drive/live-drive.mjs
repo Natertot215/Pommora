@@ -56,8 +56,7 @@ const showsFiledata = (rows) => FILEDATA.every((f) => rows.some((r) => r.label =
 async function group1(cdp) {
   const view = { id: 'view_01KZPROPERTIESDRIVE00TBL', name: 'Drive Filedata', type: 'table', property_order: FILEDATA.map((f) => f.id), hidden_properties: [], hide_column_icons: false }
   await must('save the Drive Filedata view', ask(cdp, 'views:save', COLLECTION, 'collection', view, {}))
-  await must('show the Drive Filedata view', ask(cdp, 'mutate', { op: 'setActiveView', path: COLLECTION, kind: 'collection', viewId: view.id }))
-  await openCollection(cdp)
+  await showView(cdp, view)
   await until('the table head', () => cdp.evaluate(`document.querySelectorAll('.table-head > *').length >= ${FILEDATA.length}`))
   const head = await rowsOf(cdp, '.table-head > *')
   item(1, 'F-2 F-3', 'the header shows Title, Creation Time, and Last Modified with their glyphs', showsFiledata(head), show(head))
@@ -109,7 +108,7 @@ async function headerMenu(cdp, label) {
 async function group2(cdp) {
   const ids = {}
   for (const [label, type] of [['Looks Number', 'number'], ['Looks Link', 'link'], ['Looks Select', 'select']])
-    ids[label] = (await must(`add ${label}`, ask(cdp, 'mutate', { op: 'addProperty', containerPath: 'Collection A', draft: { label, type } }))).created.propertyId
+    ids[label] = (await must(`add ${label}`, ask(cdp, 'mutate', { op: 'addProperty', containerPath: COLLECTION, draft: { label, type } }))).created.propertyId
   await must('Looks Number as a percent', ask(cdp, 'mutate', { op: 'configureProperty', propertyId: ids['Looks Number'], patch: { number_family: 'percent' } }))
   await must('Looks Select gains Alpha', ask(cdp, 'mutate', { op: 'editOption', propertyId: ids['Looks Select'], edit: { op: 'add', groupId: 'select', id: mintOptionId(), label: 'Alpha' } }))
   const view = {
@@ -117,8 +116,8 @@ async function group2(cdp) {
     property_order: ['_title', ids['Looks Number'], ids['Looks Link'], ids['Looks Select']], hidden_properties: [],
     column_styles: { [ids['Looks Select']]: { look: 'compact' } },
   }
-  await must('save the Looks Table', ask(cdp, 'views:save', 'Collection A', 'collection', view, {}))
-  await must('show the Looks Table', ask(cdp, 'mutate', { op: 'setActiveView', path: 'Collection A', kind: 'collection', viewId: view.id }))
+  await must('save the Looks Table', ask(cdp, 'views:save', COLLECTION, 'collection', view, {}))
+  await must('show the Looks Table', ask(cdp, 'mutate', { op: 'setActiveView', path: COLLECTION, kind: 'collection', viewId: view.id }))
   await createPage(cdp, 'Looks One', { [ids['Looks Select']]: { kind: 'select', value: optionId(defNamed('Looks Select'), 'Alpha') } })
   await openCollection(cdp)
   await until('the Looks Table headers', () => cdp.evaluate(`!!(${header('Looks Select')})`))
@@ -137,15 +136,14 @@ async function group3(cdp) {
   const space = '.nexus/contexts/Areas/Area One'
   const files = [REGISTRY, join(NEXUS, 'Collection A/_pagecollection.json'), join(NEXUS, space, '_space.json')]
   const stored = files.map((f) => readFileSync(f, 'utf8'))
-  const status = await must('Status', ask(cdp, 'mutate', { op: 'addProperty', containerPath: 'Collection A', draft: {
+  const status = await must('Status', ask(cdp, 'mutate', { op: 'addProperty', containerPath: COLLECTION, draft: {
     label: 'Status', type: 'select',
     select_options: [{ key: 'Option 1', label: 'Option 1' }, { key: 'Option 2', label: 'Option 2' }],
   } }))
-  const notes = await must('Notes', ask(cdp, 'mutate', { op: 'addProperty', containerPath: 'Collection A', draft: { label: 'Notes', type: 'text' } }))
+  const notes = await must('Notes', ask(cdp, 'mutate', { op: 'addProperty', containerPath: COLLECTION, draft: { label: 'Notes', type: 'text' } }))
   const view = { id: 'view_01KZPROPDRIVE000000VALUES', name: 'Drive Values', type: 'table', property_order: ['_title', status.created.propertyId, notes.created.propertyId], hidden_properties: [] }
-  await must('save Drive Values', ask(cdp, 'views:save', 'Collection A', 'collection', view, {}))
-  await must('show Drive Values', ask(cdp, 'mutate', { op: 'setActiveView', path: 'Collection A', kind: 'collection', viewId: view.id }))
-  await openCollection(cdp)
+  await must('save Drive Values', ask(cdp, 'views:save', COLLECTION, 'collection', view, {}))
+  await showView(cdp, view)
   for (const title of ['Tidy', 'Spaces', 'Filled']) await createPage(cdp, title)
   // Written by hand, as Obsidian or another app would leave them.
   const byHand = (title, yaml) => writeFileSync(join(NEXUS, pagePath(title)), `---\nID: ${pageIds[title]}\n${yaml}\n---\n`)
@@ -157,7 +155,7 @@ async function group3(cdp) {
   const tidied = await settles(async () => same(frontmatter('Tidy').Status, ['Option 2']))
   item(3, 'P-1', 'editing another property writes a several-word Select as the option it shows', tidied, show(frontmatter('Tidy')))
 
-  await must('filter Drive Values', ask(cdp, 'views:save', 'Collection A', 'collection', view, {
+  await must('filter Drive Values', ask(cdp, 'views:save', COLLECTION, 'collection', view, {
     filter: { match: 'all', rules: [{ property_id: notes.created.propertyId, op: 'is_empty' }] },
     filter_enabled: true,
   }))
@@ -211,7 +209,7 @@ async function group4() {
   item(4, 'O-6', 'a damaged property list opens the Nexus with no definitions and names the list unreadable',
     opened.ok && tree.config.registry.length === 0 && entry?.kind === 'registry', show({ ok: opened.ok, entry }))
   item(4, 'O-6', 'every Space still reads, so tiles keep their Space boards', same(spacesOf(tree), spacesOf(before)), show(spacesOf(tree)))
-  const assigned = tree.collections.find((c) => c.path === 'Collection A')?.propertyIds ?? []
+  const assigned = tree.collections.find((c) => c.path === COLLECTION)?.propertyIds ?? []
   item(4, 'R4', 'Collection A keeps the ids its sidecar assigns while the list can’t be read', assigned.includes(def.id), show(assigned))
 
   writeFileSync(join(NEXUS, REGISTRY_REL), fixed)
@@ -239,17 +237,17 @@ const aliasesOf = (title) =>
 const holdsLine = (title, key) => frontRaw(title).split('\n').some((l) => l.startsWith(`${key}:`))
 
 async function group5(cdp) {
-  const pick = await must('Drive Undo Pick', ask(cdp, 'mutate', { op: 'addProperty', containerPath: 'Collection A', draft: { label: 'Drive Undo Pick', type: 'select' } }))
-  const link = await must('Drive Undo Link', ask(cdp, 'mutate', { op: 'addProperty', containerPath: 'Collection A', draft: { label: 'Drive Undo Link', type: 'link' } }))
+  const pick = await must('Drive Undo Pick', ask(cdp, 'mutate', { op: 'addProperty', containerPath: COLLECTION, draft: { label: 'Drive Undo Pick', type: 'select' } }))
+  const link = await must('Drive Undo Link', ask(cdp, 'mutate', { op: 'addProperty', containerPath: COLLECTION, draft: { label: 'Drive Undo Link', type: 'link' } }))
   for (const label of ['Doing', 'Done']) await must(`Drive Undo Pick ${label}`, ask(cdp, 'mutate', { op: 'editOption', propertyId: pick.created.propertyId, edit: { op: 'add', groupId: 'select', id: mintOptionId(), label } }))
-  await must('the undo table', ask(cdp, 'views:save', 'Collection A', 'collection', { ...UNDO_VIEW, type: 'table', property_order: ['_title', pick.created.propertyId, link.created.propertyId], hidden_properties: [] }, {}))
+  await must('the undo table', ask(cdp, 'views:save', COLLECTION, 'collection', { ...UNDO_VIEW, type: 'table', property_order: ['_title', pick.created.propertyId, link.created.propertyId], hidden_properties: [] }, {}))
   for (const title of ['Drive Undo Page', 'Drive Undo Target']) await createPage(cdp, title)
   await must('Drive Undo Target keeps an alias', ask(cdp, 'mutate', { op: 'editAliases', path: pagePath('Drive Undo Target'), edit: { op: 'add', alias: 'kept' } }))
   const text = pageFile('Drive Undo Page')
   writeFileSync(join(NEXUS, pagePath('Drive Undo Page')), text.replace(/^---\n/, '---\nDrive Undo Pick:\n'))
   await sleep(1200)
   await openCollection(cdp)
-  await must('show the undo table', ask(cdp, 'mutate', { op: 'setActiveView', path: 'Collection A', kind: 'collection', viewId: UNDO_VIEW.id }))
+  await must('show the undo table', ask(cdp, 'mutate', { op: 'setActiveView', path: COLLECTION, kind: 'collection', viewId: UNDO_VIEW.id }))
   await until('the undo table', () => cdp.evaluate(`!!${row('Drive Undo Page')}`))
   const cell = (n) => `${row('Drive Undo Page')}.querySelectorAll('.data-cell')[${n}]`
 
@@ -399,7 +397,7 @@ const optionRoles = (v) => ({ sort: v.sort, group: v.group, filter: v.filter, co
 
 async function group7(cdp) {
   const G = 7
-  const added = await must('P8 Stage', ask(cdp, 'mutate', { op: 'addProperty', containerPath: 'Collection A', draft: { label: 'P8 Stage', type: 'select' } }))
+  const added = await must('P8 Stage', ask(cdp, 'mutate', { op: 'addProperty', containerPath: COLLECTION, draft: { label: 'P8 Stage', type: 'select' } }))
   const propertyId = added.created.propertyId
   const seedId = optionsOf(propertyId)[0]?.id
   const doneId = mintOptionId()
@@ -409,7 +407,7 @@ async function group7(cdp) {
   for (const [name, value] of [['P8 One', doneId], ['P8 Two', seedId]])
     await createPage(cdp, name, { [propertyId]: { kind: 'select', value } })
   const VIEW = `view_${ulid()}`
-  await must('the P8 Stages view', ask(cdp, 'views:save', 'Collection A', 'collection', {
+  await must('the P8 Stages view', ask(cdp, 'views:save', COLLECTION, 'collection', {
     id: VIEW, name: 'P8 Stages', type: 'table', property_order: ['_title', propertyId], hidden_properties: [],
     sort: [{ property_id: propertyId, direction: 'ascending', order: [doneId, seedId] }],
     group: { kind: 'property', property_id: propertyId, order_mode: 'manual', order: [doneId, seedId] },
@@ -427,7 +425,7 @@ async function group7(cdp) {
   item(G, 'D-1', "the view's sort order, group order, collapse, and filter are untouched by the rename",
     await holds(async () => JSON.stringify(optionRoles(viewOnDisk(VIEW))) === before, 2000), JSON.stringify(optionRoles(viewOnDisk(VIEW))))
 
-  await must('show P8 Stages', ask(cdp, 'mutate', { op: 'setActiveView', path: 'Collection A', kind: 'collection', viewId: VIEW }))
+  await must('show P8 Stages', ask(cdp, 'mutate', { op: 'setActiveView', path: COLLECTION, kind: 'collection', viewId: VIEW }))
   await openCollection(cdp)
   const bands = await until('the P8 Stages bands', () => cdp.evaluate(`(() => {
     const rows = [...document.querySelectorAll('.group-band-row')]
@@ -552,7 +550,7 @@ const writeRel = (rel, value) => writeFileSync(join(NEXUS, rel), JSON.stringify(
 async function group10() {
   const op = (what, req) => must(what, ask(cdp, 'mutate', req))
   const before = {
-    a: collectionSidecar('Collection A'),
+    a: collectionSidecar(COLLECTION),
     b: collectionSidecar('Collection B'),
     settings: read('.nexus/settings.json'),
     trash: (await trashRows(cdp)).length,
@@ -565,20 +563,20 @@ async function group10() {
     await op(`set ${title}`, { op: 'setProperty', path: pagePath(title), propertyId, value: { kind: 'text', value: `${title} value` } })
   }
   const removedFrom = Date.now()
-  await op('remove Drive Kept', { op: 'unassignProperty', containerPath: 'Collection A', propertyId })
-  const block = stashIn('Collection A', propertyId)
+  await op('remove Drive Kept', { op: 'unassignProperty', containerPath: COLLECTION, propertyId })
+  const block = stashIn(COLLECTION, propertyId)
   item(10, 'C-3', 'a Remove stashes the values beside the time it set them aside',
     same(block?.values, { [pageIds['Drive Stays']]: 'Drive Stays value', [pageIds['Drive Trashed']]: 'Drive Trashed value' }) &&
       Date.parse(block?.removed_at) >= removedFrom - 1000 && Date.parse(block?.removed_at) <= Date.now(),
     show(block))
 
   const trashed = (await op('trash Drive Trashed', { op: 'delete', path: pagePath('Drive Trashed'), kind: 'page' })).undo.bundlePath
-  await op('re-add Drive Kept', { op: 'assignProperty', containerPath: 'Collection A', propertyId })
+  await op('re-add Drive Kept', { op: 'assignProperty', containerPath: COLLECTION, propertyId })
   item(10, 'C-2', 're-adding refills the page still in the Collection and the trashed page’s Trash copy, and spends the stash',
     frontmatter('Drive Stays')['Drive Kept'] === 'Drive Stays value' &&
       frontAt(`${trashed}/Drive Trashed.md`)['Drive Kept'] === 'Drive Trashed value' &&
-      stashIn('Collection A', propertyId) === undefined,
-    show({ stays: frontmatter('Drive Stays'), copy: frontAt(`${trashed}/Drive Trashed.md`), stash: stashIn('Collection A', propertyId) }))
+      stashIn(COLLECTION, propertyId) === undefined,
+    show({ stays: frontmatter('Drive Stays'), copy: frontAt(`${trashed}/Drive Trashed.md`), stash: stashIn(COLLECTION, propertyId) }))
   await op('restore Drive Trashed', { op: 'restore', bundlePath: trashed })
   item(10, 'C-2', 'restoring the trashed page brings its value back',
     frontmatter('Drive Trashed')['Drive Kept'] === 'Drive Trashed value', show(frontmatter('Drive Trashed')))
@@ -639,7 +637,7 @@ async function group10() {
   writeFileSync(join(NEXUS, '.nexus/settings.json'), before.settings)
   await settles(async () => (await ask(cdp, 'nexus:state')).value.tree.config.personalization.permanentDelete === before.permanentDelete)
   const after = {
-    a: collectionSidecar('Collection A'),
+    a: collectionSidecar(COLLECTION),
     b: collectionSidecar('Collection B'),
     settings: read('.nexus/settings.json'),
     trash: (await trashRows(cdp)).length,
@@ -819,8 +817,7 @@ async function group12(cdp) {
   await createPage(cdp, 'Kinds C')
 
   const save = (patch) => must('save Drive Kinds', ask(cdp, 'views:save', COLLECTION, 'collection', base, patch))
-  await must('show Drive Kinds', ask(cdp, 'mutate', { op: 'setActiveView', path: COLLECTION, kind: 'collection', viewId: base.id }))
-  await openCollection(cdp)
+  await showView(cdp, base)
   const onlyKinds = { property_id: '_title', op: 'starts_with', value: 'Kinds ' }
 
   await save({ filter: { match: 'any', rules: [{ property_id: KINDS.score.id, op: 'is', value: 'abc' }, { property_id: '_title', op: 'is', value: 'Kinds A' }] } })
@@ -852,8 +849,7 @@ async function group13(cdp) {
     filter: { match: 'all', rules: [{ property_id: due, op: 'is', value: '2026-10-22T15:30' }] },
   }
   await must('save the Drive Clock view', ask(cdp, 'views:save', COLLECTION, 'collection', view, {}))
-  await must('show the Drive Clock view', ask(cdp, 'mutate', { op: 'setActiveView', path: COLLECTION, kind: 'collection', viewId: view.id }))
-  await openCollection(cdp)
+  await showView(cdp, view)
   await viewFrame(cdp, 'Filter')
   await click(cdp, sel('[aria-label="Filter date"]'))
   await until('the filter date picker', () => portalOpen(cdp))
@@ -1121,7 +1117,7 @@ async function group15(cdp) {
   await click(cdp, `[...document.querySelectorAll('[role=button]')].find((e) => !e.closest('[inert]') && e.textContent.trim().startsWith('New Number'))`)
   await sleep(700)
   const number = defNamed('New Number')
-  await must('remove New Number from outside', ask(cdp, 'mutate', { op: 'unassignProperty', containerPath: 'Collection A', propertyId: number.id }))
+  await must('remove New Number from outside', ask(cdp, 'mutate', { op: 'unassignProperty', containerPath: COLLECTION, propertyId: number.id }))
   const shown = await settles(() => listLive(cdp))
   const caption = await cdp.evaluate(`document.body.innerText.includes('Property not found.')`)
   item(15, 'O-5', 'a property removed from outside under its open editor gives way to the list', shown && !caption, show({ shown, caption }))
@@ -1169,17 +1165,25 @@ const layerBox = (cdp, expr = TOP_LAYER) => cdp.evaluate(`(() => {
   const b = e.getBoundingClientRect()
   return { top: b.top, bottom: b.bottom, left: b.left, right: b.right, height: b.height, side: e.style.bottom ? 'up' : 'down', view: innerHeight }
 })()`)
-/** Runs `act` while an in-page sampler records the top pane's box on every frame for `ms`. */
-async function framesOf(cdp, act, ms = 900) {
+/** Runs `act` while an in-page sampler records the top pane's box for `ms`: on every frame, or with `resizes` on each of its resizes, as the frame about to paint it holds it. */
+async function framesOf(cdp, act, { resizes = false, ms = 900 } = {}) {
   await cdp.evaluate(`(() => {
     window.__frames = []
+    const sample = () => {
+      const e = ${TOP_LAYER}
+      if (!e) return
+      const b = e.getBoundingClientRect()
+      window.__frames.push({ top: b.top, bottom: b.bottom, side: e.style.bottom ? 'up' : 'down', view: innerHeight })
+    }
+    if (${resizes}) {
+      const ro = new ResizeObserver(sample)
+      ro.observe(${TOP_LAYER})
+      setTimeout(() => ro.disconnect(), ${ms})
+      return
+    }
     const end = performance.now() + ${ms}
     const tick = () => {
-      const e = ${TOP_LAYER}
-      if (e) {
-        const b = e.getBoundingClientRect()
-        window.__frames.push({ top: b.top, bottom: b.bottom, side: e.style.bottom ? 'up' : 'down', view: innerHeight })
-      }
+      sample()
       if (performance.now() < end) requestAnimationFrame(tick)
     }
     requestAnimationFrame(tick)
@@ -1377,7 +1381,7 @@ async function group18(cdp) {
   const lines = [await layerBox(cdp)]
   const grew = []
   for (const word of ['two', 'three', 'four', 'five']) {
-    grew.push(...(await framesOf(cdp, () => pressKey(cdp, 'Enter', SHIFT))))
+    grew.push(...(await framesOf(cdp, () => pressKey(cdp, 'Enter', SHIFT), { resizes: true })))
     await typeText(cdp, word)
     lines.push(await layerBox(cdp))
   }
