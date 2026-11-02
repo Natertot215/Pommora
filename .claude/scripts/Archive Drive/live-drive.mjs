@@ -4,8 +4,8 @@ import { parse } from 'yaml'
 import {
   optionId,
   activeTab, ask, boxOf, chooseNative, click, closeSettings, createPage, DIALOG, doubleClick, escapeAll, FM, holds, hover, labels, launch, mintPageId, mouseAt,
-  mouseClick, must, nativeRows, NEXUS, notice, openCollection, openPage, openSettings, PAGE_VIEW, pageIds, pickNative, popNative, portalOpen, pressDialog, pressKey,
-  item, menuByEvent, META, RAIL, refusal, relaunch, resizeBy, restore, ribbon, row, sel, SETTINGS_BUTTON, settles, shot, sleep, tally, textEl, trashRowEl, typeText, until, watch, writeBody,
+  mouseClick, must, nativeRows, NEXUS, notice, openCollection, openPage, openSettings, PAGE_VIEW, pageIds, pickNative, popNative, portalOpen, press, pressDialog, pressKey,
+  item, menuByEvent, META, RAIL, refusal, relaunch, resizeBy, restore, ribbon, row, sel, SETTINGS_BUTTON, settles, shot, sleep, SWITCH, tally, textEl, trashRowEl, typeText, until, watch, writeBody,
 } from '../drive-harness.mjs'
 
 const PORT = 9393
@@ -78,12 +78,6 @@ async function sidebarTo(cdp, mode, title) {
   await click(cdp, sidebarRow(title))
 }
 const drawn = (cdp, title) => cdp.evaluate(`!!(${sidebarRow(title)})`)
-/** Scrolled into the Settings body's view first, since a press lands where the element is drawn. */
-async function press(cdp, expr) {
-  await cdp.evaluate(`(${expr}).scrollIntoView({ block: 'center' })`)
-  await sleep(300)
-  await mouseClick(cdp, expr)
-}
 /** A folded row's chevron pressed as a pointer presses it, since the chevron is an svg, which takes no `.click()`. */
 async function unfold(cdp, title, child) {
   if (await drawn(cdp, child)) return
@@ -781,7 +775,6 @@ const dialogRead = (cdp) =>
 const noticeUp = async (cdp, text) =>
   (await settles(async () => !(await drained(cdp)) && (await notice(cdp)) === text)) && same(await cdp.evaluate(`[...(${SHOWN} ?? ${LABEL}).querySelectorAll('button')].map((b) => b.textContent.trim())`), ['Undo'])
 const pressUndo = (cdp) => click(cdp, `[...${LABEL}.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Undo')`)
-const SWITCH = (label) => `document.querySelector('[role="switch"][aria-label="${label}"]')`
 const sectionOf = (heading) => `[...document.querySelectorAll('.settings-section')].find((s) => s.firstElementChild?.textContent.trim().toLowerCase() === ${JSON.stringify(heading.toLowerCase())})`
 const controlsOf = (cdp, heading) => cdp.evaluate(`[...(${sectionOf(heading)}).querySelectorAll('[role="switch"][aria-label], button[aria-label]')].map((e) => e.getAttribute('aria-label'))`)
 const adjacent = (list, a, b) => list.indexOf(a) >= 0 && list.indexOf(b) === list.indexOf(a) + 1

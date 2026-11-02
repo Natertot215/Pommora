@@ -11,6 +11,9 @@ export const REPO = process.env.POMMORA_DRIVE_REPO ?? join(homedir(), 'The Studi
 export const NEXUS = join(homedir(), 'Test')
 const ELECTRON = join(REPO, 'node_modules/electron/dist/Electron.app/Contents/MacOS/Electron')
 let port, shotsDir, backup, userData, child, main
+/** The app's zoom, read once the window draws: a CSS pixel is this many device ones, which a screenshot's clip and the window's size count in. */
+export let zoom
+const zoomOf = (cdp) => cdp.evaluate('outerWidth / innerWidth')
 
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 export async function until(what, fn, ms = 15000) {
@@ -253,7 +256,7 @@ export const typeText = (cdp, text) => cdp.send('Input.insertText', { text })
 
 let shots = 0
 export async function shot(cdp, name, around) {
-  const clip = around && (await cdp.evaluate(`(() => { const b = (${around}).getBoundingClientRect(); const x = Math.max(0, b.left - 100), y = Math.max(0, b.top - 100); return { x, y, width: Math.min(innerWidth - x, b.width + 200), height: Math.min(innerHeight - y, b.height + 200), scale: 1 } })()`))
+  const clip = around && (await cdp.evaluate(`(() => { const b = (${around}).getBoundingClientRect(); const x = Math.max(0, b.left - 100), y = Math.max(0, b.top - 100), z = ${zoom}; return { x: x * z, y: y * z, width: Math.min(innerWidth - x, b.width + 200) * z, height: Math.min(innerHeight - y, b.height + 200) * z, scale: 1 } })()`))
   const { data } = await cdp.send('Page.captureScreenshot', { format: 'png', ...(clip && { clip }) })
   writeFileSync(join(shotsDir, `${String(++shots).padStart(2, '0')}-${name}.png`), Buffer.from(data, 'base64'))
 }
@@ -614,6 +617,7 @@ async function start() {
   await cdp.send('Emulation.setFocusEmulationEnabled', { enabled: true })
   await until('the sidebar', () => cdp.evaluate(`!!document.querySelector('.row span')`), 30000)
   await sleep(3000)
+  zoom = await zoomOf(cdp)
   return cdp
 }
 async function quit() {
@@ -635,7 +639,9 @@ export async function relaunch(cdp, closed) {
 /** Attaches to an instance already listening on `debugPort`, built or the dev instance the Vite server serves, with no build, backup, or launch. */
 export async function attach(debugPort) {
   port = debugPort
-  return { cdp: await connect(['app://', 'http://localhost']) }
+  const cdp = await connect(['app://', 'http://localhost'])
+  zoom = await zoomOf(cdp)
+  return { cdp }
 }
 
 // A build that failed before the backup leaves nothing to restore.
@@ -657,6 +663,13 @@ export async function openSettings(cdp, frame) {
   await click(cdp, `${RAIL}.find((r) => r.textContent.trim() === ${JSON.stringify(frame)})`)
   await sleep(800)
 }
+/** Scrolled into the Settings body's view first, since a press lands where the element is drawn. */
+export async function press(cdp, expr) {
+  await cdp.evaluate(`(${expr}).scrollIntoView({ block: 'center' })`)
+  await sleep(300)
+  await mouseClick(cdp, expr)
+}
+export const SWITCH = (label) => `document.querySelector('[role="switch"][aria-label="${label}"]')`
 export async function closeSettings(cdp) {
   if (await cdp.evaluate(`!!document.querySelector('.settings-rail')`)) await mouseClick(cdp, ribbon('Settings'))
   await sleep(600)

@@ -7,7 +7,7 @@ import {
   FM, frontmatter, frontRaw, pageFile, pageIds, pagePath,
   activeTab, ask, BACK, boxOf, chooseNative, closePageWindow, closePanel, click, closeSettings, createPage, DIALOG, doubleClick, entry, escapeAll, field, inMain, labels, launch, META, mouseAt, mouseClick, must, NEXUS, notice,
   openCollection, openPage, openPane, openPanel, openSettings, openSidePane, overlaps, pickNative, popNative, portalOpen, pressDialog, pressKey, read, relaunch, restore, ribbon, row, sel, selectField, SET,
-  holds, hover, item, LIVE_ROWS, PANE, PANE_LAYER, PORTAL_ROWS, SETTINGS_BUTTON, SHIFT, settles, shot, sleep, slideTo, statusDividers, sweep, tally, textEl, trashRowEl, typeText, until, viewFrame, watch,
+  holds, hover, item, LIVE_ROWS, PANE, PANE_LAYER, PORTAL_ROWS, press, SETTINGS_BUTTON, SHIFT, settles, shot, sleep, slideTo, statusDividers, sweep, SWITCH, tally, textEl, trashRowEl, typeText, until, viewFrame, watch, zoom,
 } from '../drive-harness.mjs'
 import { parse } from 'yaml'
 
@@ -1156,6 +1156,16 @@ async function tileFrame(cdp, frame) {
   await sleep(900)
 }
 
+/** `n` Text properties named for their group, which lengthen every list of a Collection's properties. */
+const fillers = (group, n) =>
+  Array.from({ length: n }, (_, i) => ({ id: `prop_drive_${group.toLowerCase()}_filler_${i + 1}`, label: `${group} Filler ${i + 1}`, key: `${group} Filler ${i + 1}`, type: 'text' }))
+/** A toolbar settings pane's back bar: the toolbar draws its panes in place, outside any [data-picker-portal]. */
+const SETTINGS_BAR = `[...document.querySelectorAll('[role=button]')].find((e) => !e.closest('[inert]') && e.querySelector('.lucide-chevron-left'))`
+async function closeToolbarSettings(cdp) {
+  if (await cdp.evaluate(`(${SETTINGS_BUTTON}).getAttribute('aria-pressed') === 'true'`)) await mouseClick(cdp, SETTINGS_BUTTON)
+  await sleep(400)
+}
+
 const LAYERS = `[...document.querySelectorAll('${PANE_LAYER}')]`
 const TOP_LAYER = `${LAYERS}.at(-1)`
 const layerCount = (cdp) => cdp.evaluate(`${LAYERS}.length`)
@@ -1166,19 +1176,19 @@ const layerBox = (cdp, expr = TOP_LAYER) => cdp.evaluate(`(() => {
   const b = e.getBoundingClientRect()
   return { top: b.top, bottom: b.bottom, left: b.left, right: b.right, width: b.width, height: b.height, side: e.style.bottom ? 'up' : 'down', view: innerHeight }
 })()`)
-/** Runs `act` while an in-page sampler records the top pane's box for `ms`: on every frame, or with `resizes` on each of its resizes, as the frame about to paint it holds it. */
-async function framesOf(cdp, act, { resizes = false, ms = 900 } = {}) {
+/** Runs `act` while an in-page sampler records the box of `of`, the top pane unless named, for `ms`: on every frame, or with `resizes` on each of its resizes, as the frame about to paint it holds it. */
+async function framesOf(cdp, act, { of = TOP_LAYER, resizes = false, ms = 900 } = {}) {
   await cdp.evaluate(`(() => {
     window.__frames = []
     const sample = () => {
-      const e = ${TOP_LAYER}
+      const e = ${of}
       if (!e) return
       const b = e.getBoundingClientRect()
       window.__frames.push({ top: b.top, bottom: b.bottom, side: e.style.bottom ? 'up' : 'down', view: innerHeight })
     }
     if (${resizes}) {
       const ro = new ResizeObserver(sample)
-      ro.observe(${TOP_LAYER})
+      ro.observe(${of})
       setTimeout(() => ro.disconnect(), ${ms})
       return
     }
@@ -1197,10 +1207,8 @@ const largestStep = (frames) =>
   Math.round(Math.max(0, ...frames.slice(1).map((f, i) => Math.max(Math.abs(f.top - frames[i].top), Math.abs(f.bottom - frames[i].bottom)))))
 const insideWindow = (frames) => frames.length > 0 && frames.every((f) => f.top >= 0 && f.bottom <= f.view)
 
-let zoom
-/** Shows the window `height` CSS pixels tall, answering the height it reads back; the app's zoom makes a CSS pixel smaller than a device one. */
+/** Shows the window `height` CSS pixels tall, answering the height it reads back. */
 async function windowHeight(cdp, height) {
-  zoom ??= await cdp.evaluate('outerWidth / innerWidth')
   const width = await cdp.evaluate('innerWidth')
   await cdp.send('Emulation.setDeviceMetricsOverride', { width: Math.round(width * zoom), height: Math.round(height * zoom), deviceScaleFactor: 0, mobile: false })
   await sleep(600)
@@ -1367,7 +1375,7 @@ async function addEntries(cdp, s) {
 
   await slide('contexts', 'Areas')
   seen.bars.Context = await barOf(cdp)
-  if (s.spacesShot) await shot(cdp, 'g16-panel-spaces-bar')
+  if (s.spacesShot) await shot(cdp, 'g16-panel-spaces-bar', TOP_LAYER)
   const spaces = await optionRows(cdp)
   const before = text()
   await mouseClick(cdp, entry(spaces[0]?.label))
@@ -1444,7 +1452,7 @@ async function addEntries(cdp, s) {
       inRow: !!document.activeElement?.closest('[data-property-row="${ADD[k].id}"]'),
       empty: (document.activeElement?.tagName === 'INPUT' ? document.activeElement.value : document.activeElement?.cmTile?.root.view.state.doc.toString()) === '',
     })`)
-    if (s.typedShot && k === 'number') await shot(cdp, 'g16-panel-typed-row')
+    if (s.typedShot && k === 'number') await shot(cdp, 'g16-panel-typed-row', `document.querySelector('${s.scope}[data-property-row="${ADD.number.id}"]')`)
     await typeText(cdp, word)
     await pressKey(cdp, k === 'text' && s.card ? 'Escape' : 'Enter')
     await leaveList(cdp)
@@ -1478,10 +1486,9 @@ async function group16(cdp) {
   await escapeAll(cdp)
 
   await viewFrame(cdp, 'Visibility')
-  const VISIBILITY_BAR = `[...document.querySelectorAll('[role=button]')].find((e) => !e.closest('[inert]') && e.querySelector('.lucide-chevron-left'))`
-  const settingsBar = await barOf(cdp, VISIBILITY_BAR)
+  const settingsBar = await barOf(cdp, SETTINGS_BAR)
   const controlRight = await cdp.evaluate(`(() => {
-    let pane = (${VISIBILITY_BAR}).parentElement
+    let pane = (${SETTINGS_BAR}).parentElement
     while (!pane.querySelector('[aria-label^="Show "], [aria-label^="Hide "]')) pane = pane.parentElement
     return [...pane.querySelectorAll('[aria-label^="Show "], [aria-label^="Hide "]')].find((e) => !e.closest('[inert]')).getBoundingClientRect().right
   })()`)
@@ -1490,7 +1497,7 @@ async function group16(cdp) {
   item(16, 'MP-C-3', "a settings pane's back bar keeps its label flush with the bar and the controls beneath it",
     settingsBar?.labelMargin === '0px' && Math.abs(settingsBar.labelRight - settingsBar.barRight) < 0.5 && Math.abs(settingsBar.labelRight - controlRight) < 0.5, show({ settingsBar, controlRight }))
   await escapeAll(cdp)
-  if (await cdp.evaluate(`(${SETTINGS_BUTTON}).getAttribute('aria-pressed') === 'true'`)) await mouseClick(cdp, SETTINGS_BUTTON)
+  await closeToolbarSettings(cdp)
 
   await openPage(cdp, 'Add Held')
   await openPanel(cdp)
@@ -1665,7 +1672,7 @@ const PLACE = {
   notes: { id: 'prop_drive_place_notes', label: 'Place Notes', key: 'Place Notes', type: 'text' },
 }
 // Visibility lists every property, so these make it taller than the settings' root.
-const PLACE_FILLERS = Array.from({ length: 10 }, (_, i) => ({ id: `prop_drive_place_filler_${i + 1}`, label: `Place Filler ${i + 1}`, key: `Place Filler ${i + 1}`, type: 'text' }))
+const PLACE_FILLERS = fillers('Place', 10)
 const onlyPlaces = { match: 'all', rules: [{ property_id: '_title', op: 'starts_with', value: 'Place ' }] }
 const PLACE_TABLE = {
   id: 'view_01KZPROPERTIESDRIVE18TBL', name: 'Place Table', type: 'table', hidden_properties: [],
@@ -1899,7 +1906,7 @@ async function group18(cdp) {
   await until('the sweep pane', () => paneOpen(cdp))
   await sleep(500)
   const swept = await layerBox(cdp)
-  await shot(cdp, 'g18-sweep-pane')
+  await shot(cdp, 'g18-sweep-pane', TOP_LAYER)
   item(18, 'MP-B-8', `a sweep's pane opens on its last cell exactly where a single click there opens one, ${Math.round(swept.width)}px wide (at HEAD the mass pane sat 29px right of the single one)`,
     ['top', 'left', 'width', 'height'].every((k) => Math.abs(swept[k] - singlePane[k]) < 1), show({ singlePane, swept }))
   await escapeAll(cdp)
@@ -1947,6 +1954,30 @@ const PANES_TABLE = {
 }
 const TWO_RULES = { filter: { match: 'all', rules: [PANES_TABLE.filter.rules[0], { property_id: '_location', op: 'is', values: [] }] } }
 const fieldTrigger = (n) => `[...document.querySelectorAll('[aria-label="Filter property"]')].filter((e) => !e.closest('[inert]'))[${n}]`
+// Visibility and the Properties list list every property, so these carry both past the 440px ceiling.
+const PANES_FILLERS = fillers('Panes', 16)
+const PREVIEW_RULES = { rules: { match: 'all', rules: Array.from({ length: 12 }, (_, i) => ({ property_id: '_title', op: 'starts_with', value: `Rule ${i + 1}` })) }, enabled: true }
+/** The settings pane holding `expr`: its frame's height and ceiling, whether its body scrolls, and how many slides it sits in. */
+const paneFrame = (cdp, expr) => cdp.evaluate(`(() => {
+  const f = (${expr}).closest('[style*="max-height"]')
+  const body = f.querySelector(':scope > .scroll-fade')
+  let slides = 0
+  for (let e = f; e; e = e.parentElement) if (e.style?.transform.startsWith('translateX') && [...e.children].filter((c) => c.hasAttribute('inert')).length === 1) slides++
+  return { height: Math.round(f.getBoundingClientRect().height), ceiling: f.style.maxHeight, scrolls: body.scrollHeight > body.clientHeight + 1, slides }
+})()`)
+const atCeiling = (f) => f.height === 440 && f.ceiling === '440px' && f.scrolls
+const VIEWS_BUTTON = sel('button[title="Views"]')
+const NEW_VIEW = sel('[aria-label="New View"]')
+/** The view list's slide: the box around its track. */
+const VIEW_SLIDE = `(() => { let e = ${NEW_VIEW}; while (e && !e.style.transform.startsWith('translateX')) e = e.parentElement; return e?.parentElement })()`
+const VIEW_MENU = sel('[aria-label="View menu"]')
+/** Open In Preview's Manage: the first one up from its label. */
+const MANAGE_PREVIEW = `(() => {
+  const manage = (r) => [...r.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Manage')
+  let r = ${textEl('*', 'Open In Preview')}
+  while (r && !manage(r)) r = r.parentElement
+  return manage(r)
+})()`
 
 async function group19(cdp) {
   const putBack = await seedCollection(cdp, Object.values(PANES), [PANES_TABLE])
@@ -2046,6 +2077,141 @@ async function group19(cdp) {
     scale.beside && scale.hit === 'shield' && scale.closed && same(was, now), show({ scale, was, now }))
   await closeSettings(cdp)
 
+  // Seeded only now, so the lists the presses above open stay short.
+  const unfill = await seedCollection(cdp, PANES_FILLERS, [])
+  await showView(cdp, PANES_TABLE)
+  const SETTINGS_PANE = `(${SETTINGS_BAR}).closest('[style*="max-height"]')`
+
+  const titles = {}
+  for (const frame of ['Group', 'Sort', 'Filter']) {
+    await viewFrame(cdp, frame)
+    titles[frame] = await cdp.evaluate(`${SETTINGS_BAR}?.textContent.trim()`)
+    await closeToolbarSettings(cdp)
+  }
+  item(19, 'MP-F-4', 'Group opens "Grouping", Sort "Sorting", and Filter "Filtering"',
+    titles.Group?.endsWith('Grouping') && titles.Sort?.endsWith('Sorting') && titles.Filter?.endsWith('Filtering'), show(titles))
+
+  await viewFrame(cdp, 'Layout')
+  const flat = await paneFrame(cdp, SETTINGS_BAR)
+  const flatMenu = await cdp.evaluate(`!!${VIEW_MENU}`)
+  item(19, 'MP-F-3', "Layout's flat form sits in the settings' one slide, opening none of its own, with no ⋮", flat.slides === 1 && !flatMenu, show({ flat, flatMenu }))
+  await shot(cdp, 'g19-layout-flat', SETTINGS_PANE)
+  await closeToolbarSettings(cdp)
+
+  await viewFrame(cdp, 'Visibility')
+  const bySettings = await paneFrame(cdp, SETTINGS_BAR)
+  await shot(cdp, 'g19-visibility-settings', SETTINGS_PANE)
+  await closeToolbarSettings(cdp)
+  await viewFrame(cdp, 'Properties')
+  const properties = await paneFrame(cdp, SETTINGS_BAR)
+  await shot(cdp, 'g19-properties-440', SETTINGS_PANE)
+  await closeToolbarSettings(cdp)
+
+  await mouseClick(cdp, VIEWS_BUTTON)
+  await until('the view list', () => cdp.evaluate(`!!${NEW_VIEW}`))
+  await sleep(600)
+  const listed = await layerBox(cdp, VIEW_SLIDE)
+  await shot(cdp, 'g19-view-list-floor', VIEW_SLIDE)
+  const into = await framesOf(cdp, () => mouseClick(cdp, sel(`[aria-label="Edit ${PANES_TABLE.name}"]`), { settle: 0 }), { of: VIEW_SLIDE })
+  const editor = await layerBox(cdp, VIEW_SLIDE)
+  await click(cdp, liveRow('Layout'))
+  await until("the editor's Visibility", () => cdp.evaluate(`!!${SETTINGS_BAR}?.textContent.trim().endsWith('Layout')`))
+  await sleep(600)
+  const byEditor = await paneFrame(cdp, SETTINGS_BAR)
+  await shot(cdp, 'g19-visibility-editor', SETTINGS_PANE)
+  await mouseClick(cdp, SETTINGS_BAR)
+  await sleep(700)
+  const out = await framesOf(cdp, () => mouseClick(cdp, SETTINGS_BAR, { settle: 0 }), { of: VIEW_SLIDE })
+  const relisted = await layerBox(cdp, VIEW_SLIDE)
+  await mouseClick(cdp, VIEWS_BUTTON)
+  await until('the view list closed', async () => !(await cdp.evaluate(`!!${NEW_VIEW}`)))
+
+  item(19, 'MP-F-1 MP-F-7', `Visibility stands ${bySettings.height}px by Settings and ${byEditor.height}px by the view editor's Layout, each scrolling at the 440px ceiling (at HEAD 320 by Settings)`,
+    atCeiling(bySettings) && atCeiling(byEditor), show({ bySettings, byEditor }))
+  item(19, 'MP-F-7', `the Properties list stands ${properties.height}px, scrolling at the 440px ceiling (at HEAD 320)`, atCeiling(properties), show(properties))
+  const heights = (frames) => frames.map((f) => Math.round(f.bottom - f.top))
+  const slide = [...heights(into), ...heights(out)]
+  item(19, 'MP-F-7', `a two-view list stands ${Math.round(listed.height)}px and holds the 245px floor across the slide to its editor and back, never under ${Math.min(...slide)}px (at HEAD 225)`,
+    Math.round(listed.height) === 245 && Math.round(relisted.height) === 245 && into.length > 0 && out.length > 0 && slide.every((h) => h >= 245),
+    show({ listed: listed.height, editor: editor.height, relisted: relisted.height, into: heights(into), out: heights(out) }))
+
+  const keptRules = (await config(cdp)).personalization.openInPreview ?? { rules: null, enabled: true }
+  await must('the preview rules', ask(cdp, 'personalization:set', 'openInPreview', PREVIEW_RULES))
+  await openSettings(cdp, 'Navigation')
+  await press(cdp, MANAGE_PREVIEW)
+  await until('the Preview Rules pane', () => cdp.evaluate(`!!${TOP_LAYER}?.querySelector('[aria-label="Filter property"]')`))
+  await sleep(600)
+  const rules = await paneFrame(cdp, `${TOP_LAYER}.querySelector('.scroll-fade')`)
+  await shot(cdp, 'g19-preview-rules-440', TOP_LAYER)
+  await escapeAll(cdp)
+  await closeSettings(cdp)
+  await must('the preview rules as they were', ask(cdp, 'personalization:set', 'openInPreview', keptRules))
+  item(19, 'MP-F-7', `Preview Rules stands ${rules.height}px, scrolling at the 440px ceiling (at HEAD 320)`, atCeiling(rules), show(rules))
+
+  const nativeMenus = async (on) => {
+    const checked = () => cdp.evaluate(`(${SWITCH('Use Native Menus')}).getAttribute('aria-checked') === 'true'`)
+    await openSettings(cdp, 'Interface')
+    if ((await checked()) !== on) await press(cdp, SWITCH('Use Native Menus'))
+    const held = await settles(async () => (await checked()) === on)
+    await closeSettings(cdp)
+    return held
+  }
+  const openEditor = async (name) => {
+    await mouseClick(cdp, sel(`[aria-label="Edit ${name}"]`))
+    await until(`${name}'s editor`, () => cdp.evaluate(`!!${VIEW_MENU} && !${VIEW_MENU}.closest('[inert]')`))
+    await sleep(600)
+  }
+  /** Duplicates Panes Table from its editor's ⋮ and deletes the copy from the copy's own, answering what the menu drew and what each choice did. */
+  const viewMenu = async (native) => {
+    const before = (await views(cdp)).map((v) => v.id)
+    await mouseClick(cdp, VIEWS_BUTTON)
+    await until('the view list', () => cdp.evaluate(`!!${NEW_VIEW}`))
+    await sleep(500)
+    await openEditor(PANES_TABLE.name)
+    const seq = await inMain('__drive.seq')
+    let rows
+    if (native) {
+      rows = await popNative(cdp, await boxOf(cdp, VIEW_MENU), 'left')
+      await sleep(400)
+    } else {
+      await mouseClick(cdp, VIEW_MENU)
+      await until('the in-app menu', () => cdp.evaluate(`!!${entry('Duplicate')}`))
+      await sleep(400)
+      rows = await cdp.evaluate(`${LIVE_ROWS}.map((e) => ({ label: e.textContent.trim() }))`)
+      await shot(cdp, 'g19-view-menu-in-app', TOP_LAYER)
+    }
+    const popped = (await inMain('__drive.seq')) !== seq
+    const drawn = await cdp.evaluate(`!!${entry('Duplicate')}`)
+    if (native) await pickNative(['Duplicate'])
+    else await click(cdp, entry('Duplicate'))
+    const copy = await until('the copy', async () => (await views(cdp)).find((v) => !before.includes(v.id)))
+    await mouseClick(cdp, SETTINGS_BAR)
+    await sleep(700)
+    await openEditor(copy.name)
+    if (native) await chooseNative(cdp, VIEW_MENU, 'Delete', { button: 'left' })
+    else {
+      await mouseClick(cdp, VIEW_MENU)
+      await until('the in-app menu', () => cdp.evaluate(`!!${entry('Delete')}`))
+      await click(cdp, entry('Delete'))
+    }
+    await until('the confirmation', () => cdp.evaluate(`!!${DIALOG}`))
+    await pressDialog(cdp, 'Delete')
+    const deleted = await settles(async () => !(await views(cdp)).some((v) => v.id === copy.id))
+    const closed = await settles(async () => !(await cdp.evaluate(`!!${NEW_VIEW}`)))
+    return { rows, popped, drawn, copy: copy.name, deleted, closed }
+  }
+  const inAppMenu = await viewMenu(false)
+  const switchedOn = await nativeMenus(true)
+  const systemMenu = await viewMenu(true)
+  const switchedOff = await nativeMenus(false)
+  item(19, 'MP-F-6', "with Use Native Menus off, the view editor's ⋮ draws Duplicate and Delete in-app in [data-picker-portal] and pops no native menu",
+    same(labels(inAppMenu.rows), ['Duplicate', 'Delete']) && inAppMenu.drawn && !inAppMenu.popped, show(inAppMenu))
+  item(19, 'MP-F-6', 'with Use Native Menus on, the ⋮ pops Duplicate and Delete as a system menu, a separator between them, and draws nothing in-app',
+    switchedOn && systemMenu.popped && !systemMenu.drawn && same(labels(systemMenu.rows), ['Duplicate', 'Delete']) && systemMenu.rows?.[1]?.separator === true, show(systemMenu))
+  item(19, 'MP-F-6', "the ⋮'s Duplicate adds a view, and its Delete removes the copy and closes the dropdown, with Use Native Menus off and on",
+    [inAppMenu, systemMenu].every((r) => r.copy && r.deleted && r.closed) && switchedOff, show({ inAppMenu, systemMenu, switchedOn, switchedOff }))
+
+  await unfill([])
   await putBack(['Panes One'])
 }
 
