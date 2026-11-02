@@ -3,7 +3,6 @@ import type { ColumnStyle } from '../columnStyles'
 import { findOption, optionLabel, isBlankValue, type PropertyValue } from '../propertyValue'
 import type { ResolvedColumn, ViewRow } from '../../Views/viewRow'
 import { ProgressBar } from '@pommora/uix/Elements/ProgressBar'
-import { colorNameFor } from '@pommora/uix/Theme/ramp'
 import { OverScroll } from '@pommora/uix/Interactions/OverScroll'
 import { valueGlyph } from '@pommora/uix/Fields/fields.css'
 import { resolveFileValue } from '../../Assets/assetUrl'
@@ -16,7 +15,7 @@ import { LinkCell } from './LinkCell'
 import { TextCell } from './TextCell'
 import { CheckboxGlyph } from './CheckboxGlyph'
 import { holderOf, type ValueContext } from '../valueContext'
-import { FileChip, NeutralChip } from '@pommora/uix/Labels/recipes'
+import { FileChip } from '@pommora/uix/Labels/recipes'
 import { SortableZone, useDragItem } from '@pommora/uix/Interactions/drag'
 import { moveBefore } from '@pommora/uix/Utilities/moveItem'
 
@@ -98,10 +97,9 @@ export function Cell({
           {(id) => {
             const c = ctx.spaces.get(id)
             return (
-              <NeutralChip
-                color={colorNameFor(c?.color)}
-                title={c?.title ?? id}
-                icon={c?.icon}
+              <OptionChip
+                type="context"
+                option={{ label: c?.title ?? id, color: c?.color, icon: c?.icon }}
                 {...(remove
                   ? {
                       onRemove: () =>

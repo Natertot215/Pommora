@@ -15,8 +15,6 @@ import { OptionDraft } from '../Schema/OptionSlot'
 import { type OptionStyleControl, useOptionEdit } from '../Schema/useOptionEdit'
 import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
 import { PICKER_MAX_HEIGHT } from '@pommora/uix/Pickers/picker-base.css'
-import { colorNameFor } from '@pommora/uix/Theme/ramp'
-import { NeutralChip } from '@pommora/uix/Labels/recipes'
 import {
   FootingCreate,
   MenuFooting,
@@ -220,11 +218,7 @@ export function PropertyOptionRows({
         selected={selected}
         row={(o, run) => (
           <MenuItem key={o.value} picked={run} centered onClick={() => onPick(o.value)}>
-            {contextOptions ? (
-              <NeutralChip color={colorNameFor(o.color)} title={o.label} icon={o.icon} />
-            ) : (
-              <OptionChip type={column.type} look={look} option={o} def={column.def} />
-            )}
+            <OptionChip type={column.type} look={look} option={o} def={column.def} />
           </MenuItem>
         )}
       />

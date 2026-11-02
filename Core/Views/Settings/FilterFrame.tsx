@@ -11,7 +11,6 @@ import {
 import type { PaneTarget } from '../paneTargets'
 import { Icon } from '@pommora/uix/Symbols'
 import { leading } from '@pommora/uix/Fields/fields.css'
-import { colorNameFor } from '@pommora/uix/Theme/ramp'
 import {
   MenuFooting,
   MenuDesc,
@@ -45,7 +44,6 @@ import type { OperatorChoice } from '../valueKinds'
 import * as fp from './filter-frame.css'
 import { flattenNodes, LocationField } from './LocationField'
 import { useMultiValue } from './useMultiValue'
-import { NeutralChip } from '@pommora/uix/Labels/recipes'
 import { OptionChip } from '../../Properties/Cells/OptionChip'
 import { EditableInput } from '@pommora/uix/Fields/EditableInput'
 
@@ -154,25 +152,14 @@ function ChipsField({
           <span className={fp.placeholder}>Value</span>
         ) : (
           <OverScroll className={fp.chipRun}>
-            {shown.map((v) => {
-              const o = byValue.get(v)
-              return contextOptions ? (
-                <NeutralChip
-                  key={v}
-                  color={colorNameFor(o?.color)}
-                  title={o?.label ?? v}
-                  icon={o?.icon}
-                  onRemove={() => toggle(v)}
-                />
-              ) : (
-                <OptionChip
-                  key={v}
-                  type={column.type}
-                  option={o ?? { label: v }}
-                  onRemove={() => toggle(v)}
-                />
-              )
-            })}
+            {shown.map((v) => (
+              <OptionChip
+                key={v}
+                type={column.type}
+                option={byValue.get(v) ?? { label: v }}
+                onRemove={() => toggle(v)}
+              />
+            ))}
           </OverScroll>
         )}
       </div>

@@ -2,6 +2,7 @@ import type { ColumnLook } from '../columnStyles'
 import type { ColumnType, OptionAppearance, PropertyDefinition } from '../properties'
 import { chipOf } from '../typeDisplay'
 import { Label } from '@pommora/uix/Labels/Label'
+import { NeutralChip } from '@pommora/uix/Labels/recipes'
 import { Icon, type IconName, iconNameOr } from '@pommora/uix/Symbols'
 import { colorNameFor } from '@pommora/uix/Theme/ramp'
 
@@ -46,16 +47,28 @@ export function OptionChip({
   className?: string
 }): React.JSX.Element {
   const label = option?.label ?? ''
+  const color = colorNameFor(option?.color)
+  const removal = onRemove ? { onRemove } : {}
+  if (type === 'context')
+    return (
+      <NeutralChip
+        color={color}
+        title={label}
+        icon={option?.icon}
+        className={className}
+        {...removal}
+      />
+    )
   return (
     <Label
       shape={chipOf(type).shape}
-      color={colorNameFor(option?.color)}
+      color={color}
       {...(option?.appearance === 'clear' ? { fill: 'none' as const } : {})}
       className={className}
       {...(look === 'compact'
         ? { icon: <Icon name={optionGlyph(type, option, def)} size="body" /> }
         : { text: label })}
-      {...(onRemove ? { onRemove } : {})}
+      {...removal}
     />
   )
 }
