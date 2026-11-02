@@ -20,7 +20,7 @@
 |---|---|---|
 | 0 · Drives and Pins | 0 | 0 (the BASELINE head) |
 | 1 · Kit Imports | about −54; −54 built for the barrel | −54 (+101 / −155) |
-| 2 · The Pane Shell | about +79 (+195 / −116); +72 built | |
+| 2 · The Pane Shell | about +79 (+195 / −116); +72 built | +32 (+326 / −294) |
 | 3 · Small Folds | about −16; −4 built | |
 | 4 · The Two Pickers | about −95; −96 (+386 / −482) built, and the back bar's label +1 | |
 | 5 · Settings Panes | about −70 (+46 / −116) | |
@@ -222,15 +222,15 @@ The order is what makes each step land once. Phase 0 readies the drives and pins
 - [x] **Phase 1** — Kit Imports
   - [x] Task 1-1 · The barrel leaves
   - [x] Task 1-2 · `ManageRow` and `PickerControl` swap folders
-- [ ] **Phase 2** — The Pane Shell
+- [x] **Phase 2** — The Pane Shell
   - [x] Task 2-1 · One meaning per anchor prop, and the guard
   - [x] Task 2-2 · `panePlacement.ts`
   - [x] Task 2-3 · The fence
   - [x] Task 2-4 · The slide decides and the pane travels
   - [x] Task 2-5 · The trigger rule
   - [x] Task 2-6 · A list only closes
-  - [ ] Task 2-7 · Groups 18 and 19 open
-  - [ ] Review Checkpoint
+  - [x] Task 2-7 · Groups 18 and 19 open
+  - [x] Review Checkpoint
 - [ ] **Phase 3** — Small Folds
   - [ ] Task 3-1 · The Space chip
   - [ ] Task 3-2 · `PickOption`'s `id`
