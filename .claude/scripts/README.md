@@ -103,7 +103,7 @@ with its own userData and the drive's debug port, writes a screenshot of each st
 system: the app's main process starts paused on its inspector (the drive's port plus one), where the
 harness patches its windows to show without activating the app or taking clicks, and records each
 native menu rather than drawing it, so a drive reads the menu's rows and chooses one by its labels,
-running the row's own click. Chromium's backgrounding switches and DevTools focus emulation keep the
+running the row's own click, and a file dialog and Reveal Location are recorded rather than shown. Chromium's backgrounding switches and DevTools focus emulation keep the
 window behaving as the frontmost one, and every press and click goes through DevTools.
 `POMMORA_DRIVE_REPO` builds and launches another checkout in place of this one. Its `COPY` table holds
 the refusals and the confirmation the drives assert by their worded text.

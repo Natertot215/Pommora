@@ -101,7 +101,7 @@ export function tally(groups, { marks = ['PASS', 'FAIL'], note = '' } = {}) {
 
 // Installed through the inspector before the app's first line runs: a window shows without activating the app, and a native menu is recorded rather than drawn, its rows read and chosen from here.
 const PATCHES = `(() => {
-  const { app, BrowserWindow, Menu } = require('electron')
+  const { app, BrowserWindow, Menu, dialog, shell } = require('electron')
   // Click-through as well, so a press meant for the app behind never lands on it and activates it; the drive's input reaches the page through DevTools either way.
   BrowserWindow.prototype.show = function () {
     this.setIgnoreMouseEvents(true)
@@ -113,7 +113,13 @@ const PATCHES = `(() => {
   const rowsOf = (menu) => menu.items.filter((i) => i.visible).map((i) =>
     i.type === 'separator' ? { separator: true } : { label: i.label, enabled: i.enabled, ...(i.submenu && { submenu: rowsOf(i.submenu) }) })
   const itemAt = (menu, path) => path.reduce((item, label) => item?.submenu?.items.find((i) => i.visible && i.type !== 'separator' && i.label === label), { submenu: menu })
-  const drive = { popup: null, seq: 0 }
+  const drive = { popup: null, seq: 0, dialogs: 0, picks: [], revealed: [] }
+  dialog.showOpenDialog = async () => {
+    drive.dialogs++
+    const picked = drive.picks.shift()
+    return picked ? { canceled: false, filePaths: [picked] } : { canceled: true, filePaths: [] }
+  }
+  shell.showItemInFolder = (path) => { drive.revealed.push(path) }
   Menu.prototype.popup = function (options = {}) {
     drive.popup = { menu: this, options }
     drive.seq++
@@ -165,6 +171,7 @@ export async function menuByEvent(cdp, expr) {
 export const pickNative = (path) => main.evaluate(`__drive.choose(${JSON.stringify(path)})`)
 /** The rows of the menu now up, one the app popped on its own after a choice, or null while none is. */
 export const nativeRows = () => main.evaluate('__drive.rows()')
+export const inMain = (expr) => main.evaluate(expr)
 export const labels = (rows) => (rows ?? []).filter((r) => !r.separator).map((r) => r.label)
 
 /** Pops `expr`'s native menu and chooses `path`, answering the menu's top-level labels, disabled rows among them. `edge` presses the element's leading padding, so a link inside it is never the target. */
@@ -245,8 +252,9 @@ export const META = 4
 export const typeText = (cdp, text) => cdp.send('Input.insertText', { text })
 
 let shots = 0
-export async function shot(cdp, name) {
-  const { data } = await cdp.send('Page.captureScreenshot', { format: 'png' })
+export async function shot(cdp, name, around) {
+  const clip = around && (await cdp.evaluate(`(() => { const b = (${around}).getBoundingClientRect(); const x = Math.max(0, b.left - 100), y = Math.max(0, b.top - 100); return { x, y, width: Math.min(innerWidth - x, b.width + 200), height: Math.min(innerHeight - y, b.height + 200), scale: 1 } })()`))
+  const { data } = await cdp.send('Page.captureScreenshot', { format: 'png', ...(clip && { clip }) })
   writeFileSync(join(shotsDir, `${String(++shots).padStart(2, '0')}-${name}.png`), Buffer.from(data, 'base64'))
 }
 
@@ -569,7 +577,7 @@ export async function launch(debugPort, shotsName) {
   userData = join(backup, 'ud'); mkdirSync(userData)
   writeFileSync(join(userData, 'pommora.json'), JSON.stringify({ lastNexusPath: NEXUS }))
   mkdirSync(shotsDir, { recursive: true })
-  process.once('SIGINT', () => restore().then(() => process.exit(130)))
+  for (const signal of ['SIGINT', 'SIGTERM']) process.once(signal, () => restore().then(() => process.exit(130)))
   return { cdp: await start() }
 }
 
