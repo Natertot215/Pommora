@@ -14,6 +14,14 @@ import { stubDialer } from '../../vitest.setup'
 import { makeTree } from '../../Testing/testTree'
 // Absent from property_order and blank on every page, so it is the card menu's one addable entry.
 const numberDef: PropertyDefinition = { id: 'prop_n', label: 'Count', key: 'Count', type: 'number' }
+const stageDef: PropertyDefinition = {
+  id: 'prop_stage',
+  label: 'Stage',
+  key: 'Stage',
+  type: 'select',
+  select_options: [{ id: 'opt_early', key: 'Early', label: 'Early' }],
+}
+const dueDef: PropertyDefinition = { id: 'prop_due', label: 'Due', key: 'Due', type: 'dateTime' }
 
 const source = (): CollectionNode =>
   ({
@@ -193,13 +201,6 @@ describe('the card menu', () => {
   })
 
   it('a value set from a card’s right-click leaves a hidden property hidden', async () => {
-    const stageDef: PropertyDefinition = {
-      id: 'prop_stage',
-      label: 'Stage',
-      key: 'Stage',
-      type: 'select',
-      select_options: [{ id: 'opt_early', key: 'Early', label: 'Early' }],
-    }
     const saveSpy = vi.fn(async () => ({ ok: true, value: { id: 'view_1' } }))
     useSession.setState({ tree: makeTree({ registry: [STATUS_DEF, numberDef, stageDef] }) })
     ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
@@ -223,7 +224,6 @@ describe('the card menu', () => {
 })
 
 describe('a card’s dates', () => {
-  const dueDef: PropertyDefinition = { id: 'prop_due', label: 'Due', key: 'Due', type: 'dateTime' }
   const startDef: PropertyDefinition = {
     id: 'prop_start',
     label: 'Start',
@@ -315,14 +315,6 @@ describe('a card’s link value', () => {
 })
 
 describe('the card’s Add chooser', () => {
-  const stageDef: PropertyDefinition = {
-    id: 'prop_stage',
-    label: 'Stage',
-    key: 'Stage',
-    type: 'select',
-    select_options: [{ id: 'opt_early', key: 'Early', label: 'Early' }],
-  }
-  const dueDef: PropertyDefinition = { id: 'prop_due', label: 'Due', key: 'Due', type: 'dateTime' }
   const doneDef: PropertyDefinition = {
     id: 'prop_done',
     label: 'Done',
