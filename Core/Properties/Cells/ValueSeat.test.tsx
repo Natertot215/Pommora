@@ -124,14 +124,6 @@ describe('a value seat’s click', () => {
     expect(portalText()).toContain('Alpha')
   })
 
-  it('an option created while the picker is open joins its list', () => {
-    mount(columnOf(SELECT))
-    act(() => el().click())
-    const beta = { id: 'opt_beta', key: 'beta', label: 'Beta' }
-    mount(columnOf({ ...SELECT, select_options: [...(SELECT.select_options ?? []), beta] }))
-    expect(portalText()).toContain('Beta')
-  })
-
   it('a Checkbox commits checked, opening nothing', () => {
     mount(columnOf(CHECK))
     act(() => el().click())

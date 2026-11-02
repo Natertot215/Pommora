@@ -92,6 +92,10 @@ const isCentred = (): boolean =>
   [...document.querySelectorAll<HTMLElement>('[data-picker-portal]')].some(
     (e) => e.style.left === '200px',
   )
+const rowText = (label: string): HTMLElement | undefined =>
+  [...document.querySelectorAll<HTMLElement>('[data-picker-portal] *')].find(
+    (e) => e.textContent === label && e.children.length === 0,
+  )
 
 describe('PropertyPicker panes', () => {
   it('an options target renders its option chips', async () => {
@@ -112,6 +116,34 @@ describe('PropertyPicker panes', () => {
     })
     expect(portal()).toBeTruthy()
     expect(portalText()).not.toContain('Alpha')
+  })
+
+  it('a Multi-Select target toggles values, staying open, committing the full array each time', async () => {
+    const onCommit = vi.fn()
+    const onDismiss = vi.fn()
+    await render({
+      target: {
+        kind: 'options',
+        column: propertyColumn({ ...selectDef, type: 'multiSelect' }),
+        pick: 'multiSelect',
+        currents: [{ kind: 'multiSelect', value: ['opt_Alpha'] }],
+      },
+      onCommit,
+      onDismiss,
+    })
+    await act(async () => {
+      rowText('Beta')?.click()
+    })
+    expect(onCommit).toHaveBeenCalledWith([
+      { index: 0, next: { kind: 'multiSelect', value: ['opt_Alpha', 'opt_Beta'] } },
+    ])
+    expect(onDismiss).not.toHaveBeenCalled()
+    await act(async () => {
+      rowText('Alpha')?.click()
+    })
+    expect(onCommit).toHaveBeenLastCalledWith([
+      { index: 0, next: { kind: 'multiSelect', value: [] } },
+    ])
   })
 
   it('a dateTime target renders the calendar, not option chips', async () => {
@@ -142,10 +174,6 @@ describe('editing options from the picker', () => {
   const newOption = (): HTMLButtonElement | null =>
     document.querySelector('[data-picker-portal] button[aria-label="New Option"]')
   const draft = (): HTMLInputElement | null => document.querySelector('[data-picker-portal] input')
-  const rowText = (label: string): HTMLElement | undefined =>
-    [...document.querySelectorAll<HTMLElement>('[data-picker-portal] *')].find(
-      (e) => e.textContent === label && e.children.length === 0,
-    )
   const beginDraft = async (): Promise<HTMLInputElement> => {
     await act(async () => {
       newOption()?.click()

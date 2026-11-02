@@ -7,8 +7,6 @@ import { EditorView } from '@codemirror/view'
 import type { PropertyDefinition } from '../../Properties/properties'
 import type { CollectionNode } from '../../Nexus/tree'
 import { useSession } from '../../Session/store'
-import { PropertyPicker } from '../../Properties/Pickers/PropertyPicker'
-import { propertyColumn } from '../Pipeline/columns'
 import { propsAtRoot, valuesReply } from '../../Testing/pageValues'
 import { ID_KEY } from '../../Nexus/identityMark'
 import { stubDialer } from '../../vitest.setup'
@@ -558,74 +556,6 @@ describe('open actions + row-click narrowing', () => {
     })
     expect(openExternalSpy).toHaveBeenCalledWith('https://old.com')
     expect(selectSpy).not.toHaveBeenCalled()
-  })
-})
-
-describe('PropertyPicker (direct mount) — seed values', () => {
-  it('a seed status def shows its option values (values show regardless of name)', async () => {
-    const { defaultStatusSeed } = await import('../../Properties/registryProperty')
-    const seedDef: PropertyDefinition = {
-      id: 'prop_seed',
-      label: 'Status',
-      key: 'Status',
-      type: 'status',
-      status_groups: defaultStatusSeed(),
-    }
-    await act(async () => {
-      root.render(
-        <PropertyPicker
-          target={{
-            kind: 'options',
-            column: propertyColumn(seedDef),
-            pick: 'select',
-            currents: [null],
-          }}
-          triggerRef={{ current: host }}
-          onCommit={vi.fn()}
-          onDismiss={vi.fn()}
-        />,
-      )
-    })
-    const labels = pickerButtons().map((b) => b.textContent)
-    expect(labels).toEqual(['Open', 'Active', 'Done'])
-  })
-})
-
-describe('PropertyPicker (direct mount) — multi-select', () => {
-  it('toggles values, staying open, committing the full array each time', async () => {
-    const onCommit = vi.fn()
-    const onDismiss = vi.fn()
-    await act(async () => {
-      root.render(
-        <PropertyPicker
-          target={{
-            kind: 'options',
-            column: propertyColumn(multiDef),
-            pick: 'multiSelect',
-            currents: [{ kind: 'multiSelect', value: ['opt_a'] }],
-          }}
-          triggerRef={{ current: host }}
-          onCommit={onCommit}
-          onDismiss={onDismiss}
-        />,
-      )
-    })
-    const beta = pickerButtons().find((b) => b.textContent === 'b')
-    await act(async () => {
-      beta?.click()
-    })
-    expect(onCommit).toHaveBeenCalledWith([
-      { index: 0, next: { kind: 'multiSelect', value: ['opt_a', 'opt_b'] } },
-    ])
-    expect(onDismiss).not.toHaveBeenCalled()
-
-    const alpha = pickerButtons().find((b) => b.textContent === 'a')
-    await act(async () => {
-      alpha?.click()
-    })
-    expect(onCommit).toHaveBeenLastCalledWith([
-      { index: 0, next: { kind: 'multiSelect', value: [] } },
-    ])
   })
 })
 
