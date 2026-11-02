@@ -17,7 +17,7 @@ import {
 import { useSession } from '../../Session/store'
 import { PropertyFrame } from './PropertyFrame'
 import { stubDialer } from '../../vitest.setup'
-import { type MenuDoor, setMenuDoor } from '@pommora/uix/Pickers/PickerControl'
+import { type MenuDoor, setMenuDoor } from '@pommora/uix/Menus/PickerControl'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 stubPointerCapture()

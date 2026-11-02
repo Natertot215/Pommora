@@ -1,5 +1,5 @@
 import { applyPersonalizationKey } from './applyPersonalization'
-import { value as pickerValue } from '@pommora/uix/Pickers/picker-control.css'
+import { value as pickerValue } from '@pommora/uix/Menus/picker-control.css'
 import { useState } from 'react'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { Icon } from '@pommora/uix/Symbols'
@@ -8,7 +8,7 @@ import { Menu, MenuItem, MenuSeparator } from '@pommora/uix/Menus/MenuRows'
 import { text } from '@pommora/uix/Theme'
 import { WindowBase } from '@pommora/uix/Windows/WindowBase'
 import { SETTINGS_RAIL, SETTINGS_WIN } from '@pommora/uix/Windows/windowBounds'
-import { steppedPickerProps } from '@pommora/uix/Pickers/PickerControl'
+import { steppedPickerProps } from '@pommora/uix/Menus/PickerControl'
 import { resolveColor } from '@pommora/uix/Theme/ramp'
 import {
   boundOf,

@@ -1,9 +1,9 @@
 import { type ReactNode, useRef, useState } from 'react'
 import { Button } from '../Buttons/Button'
-import { PickerMenu } from '../Pickers/PickerMenu'
+import { PickerMenu } from './PickerMenu'
 import { Icon, type IconName } from '../Symbols'
-import { MenuRowView } from './MenuIndex'
-import { trailingCluster, trailingFigure } from './menu-row.css'
+import { MenuRowView } from '../Menus/MenuIndex'
+import { trailingCluster, trailingFigure } from '../Menus/menu-row.css'
 import * as s from './manage-row.css'
 
 /** A row whose value is a list edited in its own pane: its count where it shows one, and Manage to open the pane. */

@@ -2,7 +2,7 @@
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { type MenuDoor, setMenuDoor } from '@pommora/uix/Pickers/PickerControl'
+import { type MenuDoor, setMenuDoor } from '@pommora/uix/Menus/PickerControl'
 import { useSession } from '../Session/store'
 import { makeTree } from '../Testing/testTree'
 import { DEFAULT_MATRIX_CONFIG } from './matrixConfig'

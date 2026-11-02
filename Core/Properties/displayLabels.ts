@@ -1,5 +1,5 @@
 import { LINK_DISPLAY_LABELS, LINK_DISPLAYS } from '../Connections/linkValue'
-import { type PickerOption, pickerOptions } from '@pommora/uix/Pickers/PickerControl'
+import { type PickerOption, pickerOptions } from '@pommora/uix/Menus/PickerControl'
 import {
   type ColumnLook,
   DATE_FORMATS,

@@ -57,7 +57,7 @@ import { useBandHeads } from '../Host/useBandHeads'
 import { EntityIcon } from '../../Assets/EntityIcon'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { useSetting } from '../../Session/store'
-import { PickerControl, type PickerOption } from '@pommora/uix/Pickers/PickerControl'
+import { PickerControl, type PickerOption } from '@pommora/uix/Menus/PickerControl'
 import { FILEDATA_TARGETS, schemaTargets, targetOption } from '../paneTargets'
 import {
   chipRegion,

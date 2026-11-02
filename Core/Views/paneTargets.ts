@@ -1,7 +1,7 @@
 import { FILEDATA, type Filedata, type PropertyDefinition } from '../Properties/properties'
 import type { NexusTree } from '../Nexus/tree'
 import { contextsByIdOf } from '../Contexts/contextIdentity'
-import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
+import type { PickerOption } from '@pommora/uix/Menus/PickerControl'
 import { propertyIcon, propertyTypeIconName } from '../Properties/typeDisplay'
 
 export interface PaneTarget {

@@ -1,4 +1,4 @@
-import { steppedPickerProps, PickerControl } from '@pommora/uix/Pickers/PickerControl'
+import { steppedPickerProps, PickerControl } from '@pommora/uix/Menus/PickerControl'
 import { SCALE } from './personalization'
 
 export function ScalePicker({

@@ -1,4 +1,4 @@
-import { setMenuDoor } from '@pommora/uix/Pickers/PickerControl'
+import { setMenuDoor } from '@pommora/uix/Menus/PickerControl'
 import { popMenu } from '../Actions/menuActions'
 import { MenuPresenter } from '../Interface/Menus/MenuPresenter'
 

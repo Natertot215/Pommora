@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { ManageRow } from '@pommora/uix/Menus/ManageRow'
+import { ManageRow } from '@pommora/uix/Pickers/ManageRow'
 import { popAliasRowMenu } from '../Actions/aliasRowMenu'
 import { ALIAS_ICON } from '../Assets/entityIconPolicy'
 import { heldAliases } from '../Connections/aliasMemory'

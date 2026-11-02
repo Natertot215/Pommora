@@ -7,7 +7,7 @@ import {
   type ScrollbarPresence,
   type ScrollbarReveal,
 } from './devicePrefs'
-import { type PickerOption, pickerOptions } from '@pommora/uix/Pickers/PickerControl'
+import { type PickerOption, pickerOptions } from '@pommora/uix/Menus/PickerControl'
 import { type NumberUnit, unitLabel } from '@pommora/uix/Utilities/numberUnit'
 import type { NumberRange } from '@pommora/uix/Utilities/clamp'
 import type { LinkDisplay } from '../Connections/linkValue'

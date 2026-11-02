@@ -2,7 +2,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { type MenuDoor, PickerControl, setMenuDoor, steppedPickerProps } from './PickerControl'
+import {
+  type MenuDoor,
+  PickerControl,
+  pickerOptions,
+  setMenuDoor,
+  steppedPickerProps,
+} from './PickerControl'
 import { steppedRange } from '../Utilities/clamp'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -193,5 +199,19 @@ describe('a stepped picker held within a range', () => {
       input.blur()
     })
     expect(onPick).toHaveBeenCalledWith(30)
+  })
+})
+
+describe('pickerOptions', () => {
+  it("builds one option per value in the values' order, labelled from the table, and a part of a vocabulary keeps its own values", () => {
+    const labels: Record<'twelveHour' | 'twentyFourHour' | 'system', string> = {
+      twelveHour: '12 Hours',
+      twentyFourHour: '24 Hours',
+      system: 'System',
+    }
+    expect(pickerOptions(['twelveHour', 'twentyFourHour'] as const, labels)).toEqual([
+      { value: 'twelveHour', label: '12 Hours' },
+      { value: 'twentyFourHour', label: '24 Hours' },
+    ])
   })
 })

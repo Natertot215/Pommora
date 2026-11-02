@@ -2,7 +2,7 @@ import { personalizationOf } from '../Session/configSlice'
 import { useSession, useSetting } from '../Session/store'
 import { previewTargets } from '../Navigation/previewRules'
 import { FilterFrame, filterViewOf, standalonePatch } from '../Views/Settings/FilterFrame'
-import { ManageRow } from '@pommora/uix/Menus/ManageRow'
+import { ManageRow } from '@pommora/uix/Pickers/ManageRow'
 import { settingOf } from './personalization'
 import type { RowOf } from './frames'
 

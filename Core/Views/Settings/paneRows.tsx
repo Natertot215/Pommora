@@ -1,7 +1,7 @@
 import { EyeToggle } from '@pommora/uix/Elements/EyeToggle'
 import type { PickerRowLook } from '@pommora/uix/Menus/MenuIndex'
 import { side } from '@pommora/uix/Menus/menu-row.css'
-import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
+import type { PickerOption } from '@pommora/uix/Menus/PickerControl'
 import { type SortDirections, viewSpecOf } from '../valueKinds'
 import type { ResolvedColumn } from '../viewRow'
 import * as oo from './option-order.css'

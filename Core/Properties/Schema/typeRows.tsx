@@ -1,6 +1,6 @@
 import { PathField } from '@pommora/uix/Fields/PathField'
 import { type MenuRow, pickerRow, type Trailing } from '@pommora/uix/Menus/MenuIndex'
-import { type PickerOption, pickerOptions } from '@pommora/uix/Pickers/PickerControl'
+import { type PickerOption, pickerOptions } from '@pommora/uix/Menus/PickerControl'
 import { resolveColor } from '@pommora/uix/Theme/ramp'
 import { numberFrom } from '@pommora/uix/Utilities/numberUnit'
 import { DEFAULT_LINK_DISPLAY, type LinkDisplay } from '../../Connections/linkValue'

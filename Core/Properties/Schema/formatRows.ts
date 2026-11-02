@@ -1,5 +1,5 @@
 import { type MenuRow, pickerRow } from '@pommora/uix/Menus/MenuIndex'
-import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
+import type { PickerOption } from '@pommora/uix/Menus/PickerControl'
 import type { IconName } from '@pommora/uix/Symbols'
 import { DEFAULT_KEY_FORMAT, type FormatChange, type KeyFormat, keyFormat } from '../keyFormat'
 import { type PropertyDefinition, PROPERTY_TYPES } from '../properties'
