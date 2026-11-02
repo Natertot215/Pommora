@@ -27,14 +27,14 @@ export const menuDropLine = ({
   right: s.ROW_TRAIL,
 })
 
+export type MenuBack = { label: string; onBack: () => void }
+
 export function MenuTopRow({
   label,
   onBack,
   trailing,
   current,
-}: {
-  label: string
-  onBack: () => void
+}: MenuBack & {
   trailing?: ReactNode
   current?: string
 }): React.JSX.Element {

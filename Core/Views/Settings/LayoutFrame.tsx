@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import type { PropertyDefinition } from '../../Properties/properties'
 import {
@@ -12,7 +12,13 @@ import {
 } from '../views'
 import { Icon, type IconName } from '@pommora/uix/Symbols'
 import { MenuIndex, steppedRow, pickerRow } from '@pommora/uix/Menus/MenuIndex'
-import { MenuSeparator, MenuTopRow, MenuScrollFrame } from '@pommora/uix/Menus/MenuRows'
+import {
+  AccessoryButton,
+  type MenuBack,
+  MenuSeparator,
+  MenuTopRow,
+  MenuScrollFrame,
+} from '@pommora/uix/Menus/MenuRows'
 import { ICON, SETTINGS_PANE_FLOOR, SETTINGS_PANE_MAX_HEIGHT } from '@pommora/uix/Menus/frames.css'
 import { useSaveView } from '../viewWrite'
 import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
@@ -22,7 +28,6 @@ import type { PickerOption } from '@pommora/uix/Menus/PickerControl'
 import { ViewLeaf, type ViewLeafId } from './ViewLeaf'
 import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
 import { iconForTypeSwitch } from '../viewIcon'
-import { ViewItemMenu } from './ViewItemMenu'
 import { TENTHS_SCALE } from '../../Settings/personalization'
 import { cx } from '@pommora/uix/Utilities/cx'
 import * as vs from './layout-frame.css'
@@ -106,22 +111,19 @@ export const VIEW_ROWS: ViewRow[] = [
   { id: 'sort', label: 'Sort', icon: 'arrow-up-down' },
 ]
 
-export function LayoutFrame({
-  source,
-  view,
-  schema,
-  door,
-  onBack,
-  onClose,
-}: {
-  source: CollectionNode | SetNode
-  view: SavedView
-  schema: PropertyDefinition[]
-  door: 'full' | 'flat'
-  onBack: () => void
-  onClose: () => void
-}): React.JSX.Element {
+export function LayoutFrame(
+  props: {
+    source: CollectionNode | SetNode
+    view: SavedView
+    back: MenuBack
+  } & (
+    | { door: 'flat' }
+    | { door: 'full'; schema: PropertyDefinition[]; onMenu: (trigger: HTMLElement) => void }
+  ),
+): React.JSX.Element {
+  const { source, view, back } = props
   const [frame, setFrame] = useState<ViewRowId | null>(null)
+  const menuRef = useRef<HTMLButtonElement>(null)
   const saveView = useSaveView(source)
   const write = (patch: Partial<SavedView>): void => void saveView(view, patch)
   const rename = (name: string): void => {
@@ -174,41 +176,6 @@ export function LayoutFrame({
     </>
   ) : null
 
-  const closeLeaf = (): void => setFrame(null)
-  const leafFor = (id: ViewRowId): React.JSX.Element => {
-    if (id !== 'layout')
-      return (
-        <ViewLeaf
-          id={id}
-          source={source}
-          view={view}
-          schema={schema}
-          label="Views"
-          onBack={closeLeaf}
-        />
-      )
-    if (options.leaf === 'switches')
-      return (
-        <MenuScrollFrame
-          header={<MenuTopRow label="Views" current="Layout" onBack={closeLeaf} />}
-          maxHeight={SETTINGS_PANE_MAX_HEIGHT}
-        >
-          <ViewSwitches source={source} view={view} switches={options.switches} />
-        </MenuScrollFrame>
-      )
-    return (
-      <VisibilityFrame
-        source={source}
-        schema={schema}
-        view={view}
-        label="Views"
-        current="Layout"
-        onBack={closeLeaf}
-        footer={<ViewSwitches source={source} view={view} switches={options.switches} separated />}
-      />
-    )
-  }
-
   const title = <InlineEditHeader value={view.name} onCommit={rename} />
   const grid = (
     <div className={vs.grid}>
@@ -226,43 +193,78 @@ export function LayoutFrame({
     </div>
   )
 
-  const header =
-    door === 'full' ? (
-      <MenuTopRow
-        label="Views"
-        onBack={onBack}
-        trailing={<ViewItemMenu source={source} view={view} onDeleted={onClose} />}
-      />
-    ) : (
-      <MenuTopRow label="Settings" current="Layout" onBack={onBack} />
+  if (props.door === 'flat')
+    return (
+      <MenuScrollFrame
+        header={<MenuTopRow {...back} current="Layout" />}
+        footer={cardsRows}
+        maxHeight={SETTINGS_PANE_MAX_HEIGHT}
+      >
+        {grid}
+        <ViewSwitches source={source} view={view} switches={options.switches} separated />
+      </MenuScrollFrame>
     )
 
+  const toView: MenuBack = { label: 'Views', onBack: () => setFrame(null) }
+  const leafFor = (id: ViewRowId): React.JSX.Element => {
+    if (id !== 'layout')
+      return <ViewLeaf id={id} source={source} view={view} schema={props.schema} back={toView} />
+    if (options.leaf === 'switches')
+      return (
+        <MenuScrollFrame
+          header={<MenuTopRow {...toView} current="Layout" />}
+          maxHeight={SETTINGS_PANE_MAX_HEIGHT}
+        >
+          <ViewSwitches source={source} view={view} switches={options.switches} />
+        </MenuScrollFrame>
+      )
+    return (
+      <VisibilityFrame
+        source={source}
+        schema={props.schema}
+        view={view}
+        back={toView}
+        current="Layout"
+        footer={<ViewSwitches source={source} view={view} switches={options.switches} separated />}
+      />
+    )
+  }
+
   const mainFrame = (
-    <MenuScrollFrame header={header} footer={cardsRows} maxHeight={SETTINGS_PANE_MAX_HEIGHT}>
-      {door === 'full' && (
-        <>
-          {title}
-          <MenuSeparator flush />
-        </>
-      )}
-      {grid}
-      {door === 'full' ? (
-        <MenuIndex
-          sections={[
-            {
-              rows: VIEW_ROWS.map((r) => ({
-                kind: 'item',
-                icon: <Icon name={r.icon} size={ICON.rootEntry} />,
-                label: r.label,
-                trailing: { kind: 'chevron' },
-                onSelect: () => setFrame(r.id),
-              })),
-            },
-          ]}
+    <MenuScrollFrame
+      header={
+        <MenuTopRow
+          {...back}
+          trailing={
+            <AccessoryButton
+              ref={menuRef}
+              icon="ellipsis-vertical"
+              size="body"
+              ariaLabel="View menu"
+              onClick={() => menuRef.current && props.onMenu(menuRef.current)}
+            />
+          }
         />
-      ) : (
-        <ViewSwitches source={source} view={view} switches={options.switches} separated />
-      )}
+      }
+      footer={cardsRows}
+      maxHeight={SETTINGS_PANE_MAX_HEIGHT}
+    >
+      {title}
+      <MenuSeparator flush />
+      {grid}
+      <MenuIndex
+        sections={[
+          {
+            rows: VIEW_ROWS.map((r) => ({
+              kind: 'item',
+              icon: <Icon name={r.icon} size={ICON.rootEntry} />,
+              label: r.label,
+              trailing: { kind: 'chevron' },
+              onSelect: () => setFrame(r.id),
+            })),
+          },
+        ]}
+      />
     </MenuScrollFrame>
   )
 

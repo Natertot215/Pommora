@@ -35,7 +35,7 @@ import { useSession } from '../../Session/store'
 import * as vd from '../../Interface/Toolbar/toolbar-menu.css'
 import { dialer } from '../../Platform/dialer'
 import { popMenu } from '../../Actions/menuActions'
-import { viewRowMenuItems } from '../../Actions/viewRowMenu'
+import { viewItemMenuItems, viewRowMenuItems } from '../../Actions/viewRowMenu'
 import { selectTargetOf } from '../../Navigation/navRef'
 
 export function ViewFrame({
@@ -85,12 +85,21 @@ export function ViewFrame({
     setRenamingId(null)
     void saveView(v, { name: next })
   }
+  const itemContext = { deletable: views.length > 1, duplicable: views.length > 0 }
+  const duplicate = (v: SavedView): void =>
+    void dialer().ask('views:duplicate', node.path, node.kind, v.id).then(reportRefusal)
+  const editorMenu = async (v: SavedView, trigger: HTMLElement): Promise<void> => {
+    const action = await popMenu(viewItemMenuItems(itemContext), trigger, {
+      solid: true,
+      compact: true,
+    })
+    if (action === 'duplicate') duplicate(v)
+    else if (action === 'delete' && (await deleteViewWithUndo(node, v))) onClose()
+  }
   const rowMenu = async (v: SavedView, e: React.MouseEvent<HTMLElement>): Promise<void> => {
     e.preventDefault()
     menuAnchorRef.current = e.currentTarget
-    const action = await popMenu(
-      viewRowMenuItems({ deletable: views.length > 1, duplicable: views.length > 0 }),
-    )
+    const action = await popMenu(viewRowMenuItems(itemContext))
     switch (action) {
       case 'rename':
         return setRenamingId(v.id)
@@ -99,7 +108,7 @@ export function ViewFrame({
       case 'color':
         return setColorFor(v)
       case 'duplicate':
-        return void dialer().ask('views:duplicate', node.path, node.kind, v.id).then(reportRefusal)
+        return duplicate(v)
       case 'delete':
         return void deleteViewWithUndo(node, v)
       default:
@@ -203,12 +212,12 @@ export function ViewFrame({
 
   const detail = editing ? (
     <LayoutFrame
+      door="full"
       source={node}
       view={editingLive}
       schema={schema}
-      door="full"
-      onBack={() => setEditingId(null)}
-      onClose={onClose}
+      back={{ label: 'Views', onBack: () => setEditingId(null) }}
+      onMenu={(trigger) => void editorMenu(editingLive, trigger)}
     />
   ) : null
 

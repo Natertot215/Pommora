@@ -18,6 +18,7 @@ import {
   FootingCreate,
   FootingItem,
   MenuScrollFrame,
+  type MenuBack,
   MenuTopRow,
   RowRemove,
 } from '@pommora/uix/Menus/MenuRows'
@@ -203,7 +204,7 @@ export function FilterFrame({
   read: () => FilterView
   schema: PropertyDefinition[]
   tree: NexusTree | null
-  back?: { label: string; onBack: () => void }
+  back?: MenuBack
   targets?: PaneTarget[]
   onCommit: (patch: FilterPatch) => void
 }): React.JSX.Element {
@@ -477,7 +478,7 @@ export function FilterFrame({
     <MenuScrollFrame
       className={fp.frame}
       maxHeight={SETTINGS_PANE_MAX_HEIGHT}
-      header={back && <MenuTopRow label={back.label} current="Filtering" onBack={back.onBack} />}
+      header={back && <MenuTopRow {...back} current="Filtering" />}
       footer={
         <MenuFooting
           leading={

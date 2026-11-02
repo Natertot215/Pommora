@@ -93,7 +93,12 @@ const source = { id: 'col1', kind: 'collection', path: 'Col', title: 'Col', view
 const mountPane = async (schema: PropertyDefinition[] = defs): Promise<void> => {
   await act(async () => {
     root.render(
-      <PropertyFrame collectionPath="Col" schema={schema} onBack={() => {}} source={source} />,
+      <PropertyFrame
+        collectionPath="Col"
+        schema={schema}
+        back={{ label: 'Settings', onBack: () => {} }}
+        source={source}
+      />,
     )
   })
 }

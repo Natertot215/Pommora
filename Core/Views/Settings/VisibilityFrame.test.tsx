@@ -50,7 +50,8 @@ const drag = async (name: string, from: number, ...to: number[]): Promise<void> 
         source={source as CollectionNode}
         schema={schema}
         view={view}
-        onBack={() => {}}
+        back={{ label: 'Settings', onBack: () => {} }}
+        current="Visibility"
       />,
     )
   })
@@ -106,7 +107,8 @@ describe('VisibilityFrame — the rows', () => {
           source={source as CollectionNode}
           schema={schema}
           view={{ ...view, property_order: [...(view.property_order ?? []), 'ctx_areas'] }}
-          onBack={() => {}}
+          back={{ label: 'Settings', onBack: () => {} }}
+          current="Visibility"
         />,
       )
     })

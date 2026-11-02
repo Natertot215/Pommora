@@ -26,6 +26,7 @@ import { MenuRowView, pickerRow } from '@pommora/uix/Menus/MenuIndex'
 import {
   FootingItem,
   MenuSeparator,
+  type MenuBack,
   MenuTopRow,
   MenuScrollFrame,
   MenuFooting,
@@ -110,14 +111,12 @@ export function GroupFrame({
   source,
   view,
   schema,
-  label,
-  onBack,
+  back,
 }: {
   source: CollectionNode | SetNode
   view: SavedView
   schema: PropertyDefinition[]
-  label: string
-  onBack: () => void
+  back: MenuBack
 }): React.JSX.Element {
   const nexus = useNexusForms()
   const saveView = useSaveView(source)
@@ -223,7 +222,7 @@ export function GroupFrame({
 
   return (
     <MenuScrollFrame
-      header={<MenuTopRow label={label} current="Grouping" onBack={onBack} />}
+      header={<MenuTopRow {...back} current="Grouping" />}
       footer={footings}
       maxHeight={SETTINGS_PANE_MAX_HEIGHT}
     >

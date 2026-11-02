@@ -7,6 +7,7 @@ import { readLiveView } from '../Host/pendingView'
 import { GroupFrame } from './GroupFrame'
 import { SortFrame } from './SortFrame'
 import { FilterFrame } from './FilterFrame'
+import type { MenuBack } from '@pommora/uix/Menus/MenuRows'
 
 export type ViewLeafId = 'group' | 'filter' | 'sort'
 
@@ -15,25 +16,21 @@ export function ViewLeaf({
   source,
   view,
   schema,
-  label,
-  onBack,
+  back,
 }: {
   id: ViewLeafId
   source: CollectionNode | SetNode
   view: SavedView
   schema: PropertyDefinition[]
-  label: string
-  onBack: () => void
+  back: MenuBack
 }): React.JSX.Element {
   const tree = useSession((st) => st.tree)
   const saveView = useSaveView(source)
   switch (id) {
     case 'group':
-      return (
-        <GroupFrame source={source} view={view} schema={schema} label={label} onBack={onBack} />
-      )
+      return <GroupFrame source={source} view={view} schema={schema} back={back} />
     case 'sort':
-      return <SortFrame source={source} view={view} schema={schema} label={label} onBack={onBack} />
+      return <SortFrame source={source} view={view} schema={schema} back={back} />
     case 'filter':
       return (
         <FilterFrame
@@ -43,7 +40,7 @@ export function ViewLeaf({
           read={() => readLiveView(source.id, view)}
           schema={schema}
           tree={tree}
-          back={{ label, onBack }}
+          back={back}
           onCommit={(patch) => void saveView(view, patch)}
         />
       )

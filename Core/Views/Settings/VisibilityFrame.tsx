@@ -4,7 +4,7 @@ import { FILEDATA, type PropertyDefinition } from '../../Properties/properties'
 import type { SavedView } from '../views'
 import { useSession } from '../../Session/store'
 import { MenuRowView } from '@pommora/uix/Menus/MenuIndex'
-import { MenuTopRow, MenuScrollFrame } from '@pommora/uix/Menus/MenuRows'
+import { type MenuBack, MenuTopRow, MenuScrollFrame } from '@pommora/uix/Menus/MenuRows'
 import { resolveColumn, resolveColumns } from '../Pipeline/columns'
 import { useSaveView } from '../viewWrite'
 import { LineGroup, LineRow, LineZone } from '@pommora/uix/Interactions/drag'
@@ -78,18 +78,16 @@ export function VisibilityFrame({
   source,
   schema,
   view,
-  onBack,
+  back,
   footer,
-  label = 'Settings',
   current,
 }: {
   source: CollectionNode | SetNode
   schema: PropertyDefinition[]
   view: SavedView
-  onBack: () => void
+  back: MenuBack
   footer?: ReactNode
-  label?: string
-  current?: string
+  current: string
 }): React.JSX.Element | null {
   const saveView = useSaveView(source)
   const tree = useSession((st) => st.tree)
@@ -118,7 +116,7 @@ export function VisibilityFrame({
 
   return (
     <MenuScrollFrame
-      header={<MenuTopRow label={label} current={current} onBack={onBack} />}
+      header={<MenuTopRow {...back} current={current} />}
       footer={footer}
       maxHeight={s.SETTINGS_PANE_MAX_HEIGHT}
     >

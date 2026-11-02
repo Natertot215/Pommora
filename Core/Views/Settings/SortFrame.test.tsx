@@ -79,7 +79,12 @@ const mount = async (v: SavedView): Promise<void> => {
   await act(async () => {
     root.render(
       <MenuDoorHost>
-        <SortFrame source={source} view={v} schema={schema} label="Settings" onBack={() => {}} />
+        <SortFrame
+          source={source}
+          view={v}
+          schema={schema}
+          back={{ label: 'Settings', onBack: () => {} }}
+        />
       </MenuDoorHost>,
     )
   })

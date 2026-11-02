@@ -160,8 +160,7 @@ describe('a locked view-embed scope', () => {
           source={source}
           view={view}
           schema={[statusDef]}
-          label="Settings"
-          onBack={() => {}}
+          back={{ label: 'Settings', onBack: () => {} }}
         />
       </ViewTileScopeProvider>,
     )

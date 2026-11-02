@@ -6,6 +6,7 @@ import type { CollectionNode } from '../../Nexus/tree'
 import type { PropertyDefinition } from '../../Properties/properties'
 import type { SavedView } from '../views'
 import { useSession } from '../../Session/store'
+import type { ChromeSlice } from '../../Session/chromeSlice'
 import { ViewFrame } from './ViewFrame'
 import { stubDialer } from '../../vitest.setup'
 import { mountEachTest } from '../../Testing/viewHarness'
@@ -43,9 +44,9 @@ mountEachTest((_h, r) => {
 let mutate: ReturnType<typeof vi.fn>
 let reorder: ReturnType<typeof vi.fn>
 
-const mount = async (node: CollectionNode): Promise<void> => {
+const mount = async (node: CollectionNode, onClose = (): void => {}): Promise<void> => {
   await act(async () => {
-    root.render(<ViewFrame node={node} schema={schema} onClose={() => {}} />)
+    root.render(<ViewFrame node={node} schema={schema} onClose={onClose} />)
   })
 }
 const clickRow = async (name: string): Promise<void> => {
@@ -190,5 +191,28 @@ describe('ViewFrame — the Archive row', () => {
       kind: 'collection',
       viewId: 'view_b',
     })
+  })
+})
+
+describe('ViewFrame — the view editor’s menu', () => {
+  it('deleting the view from its editor closes the dropdown', async () => {
+    const onClose = vi.fn()
+    const deleted = vi.fn(async () => ({ ok: true, value: {} }))
+    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({ 'views:delete': deleted })
+    const presentMenu = vi.fn<ChromeSlice['presentMenu']>(async () => 'delete')
+    useSession.setState({
+      devicePrefs: {},
+      presentMenu,
+      askConfirm: vi.fn(async () => true) as never,
+    })
+    await mount(source([view('view_a', 'Table'), view('view_b', 'Board')]), onClose)
+    await act(async () => {
+      ;(document.querySelector('[aria-label="Edit Board"]') as HTMLElement).click()
+    })
+    const trigger = document.querySelector('[aria-label="View menu"]') as HTMLElement
+    await act(async () => trigger.click())
+    expect(presentMenu.mock.calls[0]?.[1]).toBe(trigger)
+    expect(deleted).toHaveBeenCalledWith('Col', 'collection', 'view_b')
+    expect(onClose).toHaveBeenCalledOnce()
   })
 })

@@ -22,6 +22,7 @@ import { MenuIndex } from '@pommora/uix/Menus/MenuIndex'
 import {
   MenuItem,
   MenuDesc,
+  type MenuBack,
   MenuTopRow,
   MenuScrollFrame,
   MenuFooting,
@@ -159,12 +160,12 @@ function ListGroups({
 export function PropertyFrame({
   collectionPath,
   schema,
-  onBack,
+  back,
   source,
 }: {
   collectionPath: string
   schema: PropertyDefinition[]
-  onBack: () => void
+  back: MenuBack
   source: CollectionNode | SetNode
 }): React.JSX.Element {
   const nexus = useNexusForms()
@@ -351,7 +352,7 @@ export function PropertyFrame({
 
   const list = (
     <MenuScrollFrame
-      header={<MenuTopRow label="Settings" current="Properties" onBack={onBack} />}
+      header={<MenuTopRow {...back} current="Properties" />}
       maxHeight={s.SETTINGS_PANE_MAX_HEIGHT}
       footer={
         <MenuFooting

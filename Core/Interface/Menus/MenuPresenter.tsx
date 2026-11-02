@@ -3,7 +3,13 @@ import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import type { ActionItem } from '../../Actions/menuModel'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
 import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
-import { MenuItem, MenuScrollFrame, MenuSeparator, MenuTopRow } from '@pommora/uix/Menus/MenuRows'
+import {
+  type MenuBack,
+  MenuItem,
+  MenuScrollFrame,
+  MenuSeparator,
+  MenuTopRow,
+} from '@pommora/uix/Menus/MenuRows'
 import { pickRuns } from '@pommora/uix/Menus/pickRuns'
 import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
 import { PICKER_MAX_HEIGHT } from '@pommora/uix/Pickers/picker-base.css'
@@ -18,13 +24,13 @@ const leadingGlyph = (icon?: string): React.JSX.Element | undefined =>
 function Level({
   items,
   title,
-  onBack,
+  back,
   onPick,
   compact,
 }: {
   items: readonly ActionItem<string>[]
   title: string
-  onBack?: { label: string; back: () => void }
+  back?: MenuBack
   onPick: (action: string, stay?: boolean) => void
   compact?: boolean
 }): React.JSX.Element {
@@ -61,9 +67,7 @@ function Level({
       root={
         <MenuScrollFrame
           maxHeight={PICKER_MAX_HEIGHT}
-          header={
-            onBack && <MenuTopRow label={onBack.label} current={title} onBack={onBack.back} />
-          }
+          header={back && <MenuTopRow {...back} current={title} />}
         >
           {rows.map(renderRow)}
         </MenuScrollFrame>
@@ -73,7 +77,7 @@ function Level({
           <Level
             items={branch.items}
             title={branch.label}
-            onBack={{ label: title, back: () => setBranchAt(null) }}
+            back={{ label: title, onBack: () => setBranchAt(null) }}
             onPick={onPick}
             compact={compact}
           />

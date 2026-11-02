@@ -2,7 +2,12 @@ import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import type { PropertyDefinition } from '../../Properties/properties'
 import { LOCATION_SORT, type SavedView, type SortCriterion, VIEW_KINDS, viewOption } from '../views'
 import { MenuRowView, pickerRow } from '@pommora/uix/Menus/MenuIndex'
-import { MenuScrollFrame, MenuTopRow, MenuSeparator } from '@pommora/uix/Menus/MenuRows'
+import {
+  type MenuBack,
+  MenuScrollFrame,
+  MenuTopRow,
+  MenuSeparator,
+} from '@pommora/uix/Menus/MenuRows'
 import { useSaveView } from '../viewWrite'
 import { resolveColumn } from '../Pipeline/columns'
 import { contextIdsOf } from '../../Contexts/contextIdentity'
@@ -25,14 +30,12 @@ export function SortFrame({
   source,
   view,
   schema,
-  label,
-  onBack,
+  back,
 }: {
   source: CollectionNode | SetNode
   view: SavedView
   schema: PropertyDefinition[]
-  label: string
-  onBack: () => void
+  back: MenuBack
 }): React.JSX.Element {
   const saveView = useSaveView(source)
   const contextIds = contextIdsOf(useSession((st) => st.tree))
@@ -103,7 +106,7 @@ export function SortFrame({
 
   return (
     <MenuScrollFrame
-      header={<MenuTopRow label={label} current="Sorting" onBack={onBack} />}
+      header={<MenuTopRow {...back} current="Sorting" />}
       maxHeight={SETTINGS_PANE_MAX_HEIGHT}
     >
       <MenuRowView

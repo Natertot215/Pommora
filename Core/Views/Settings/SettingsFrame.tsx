@@ -20,6 +20,7 @@ import { MenuIndex } from '@pommora/uix/Menus/MenuIndex'
 import {
   FooterIconButton,
   FooterLockButton,
+  type MenuBack,
   MenuFooting,
   MenuScrollFrame,
   MenuSeparator,
@@ -77,7 +78,7 @@ function ContainerSettings({
   const configLocked = scope?.locked ?? false
   const frozen = (id: FrameId): boolean => configLocked && id !== 'properties'
 
-  const back = (): void => setPane('root')
+  const toRoot: MenuBack = { label: 'Settings', onBack: () => setPane('root') }
   const detailPane = pane === 'root' || frozen(pane) ? null : pane
 
   const viewScale = view.view_scale ?? ZOOM.default
@@ -157,7 +158,7 @@ function ContainerSettings({
           <PropertyFrame
             collectionPath={schemaCollection.path}
             schema={schema}
-            onBack={back}
+            back={toRoot}
             source={node}
           />
         )
@@ -167,32 +168,14 @@ function ContainerSettings({
             source={node}
             schema={schema}
             view={view}
-            onBack={back}
+            back={toRoot}
             current="Visibility"
           />
         )
       case 'layout':
-        return (
-          <LayoutFrame
-            source={node}
-            view={view}
-            schema={schema}
-            door="flat"
-            onBack={back}
-            onClose={back}
-          />
-        )
+        return <LayoutFrame door="flat" source={node} view={view} back={toRoot} />
       default:
-        return (
-          <ViewLeaf
-            id={id}
-            source={node}
-            view={view}
-            schema={schema}
-            label="Settings"
-            onBack={back}
-          />
-        )
+        return <ViewLeaf id={id} source={node} view={view} schema={schema} back={toRoot} />
     }
   }
 

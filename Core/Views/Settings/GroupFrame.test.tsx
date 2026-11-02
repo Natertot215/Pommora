@@ -69,7 +69,12 @@ const mount = async (v: SavedView): Promise<void> => {
   await act(async () => {
     root.render(
       <MenuDoorHost>
-        <GroupFrame source={source} view={v} schema={schema} label="Settings" onBack={() => {}} />
+        <GroupFrame
+          source={source}
+          view={v}
+          schema={schema}
+          back={{ label: 'Settings', onBack: () => {} }}
+        />
       </MenuDoorHost>,
     )
   })
@@ -179,8 +184,7 @@ describe('GroupFrame rows', () => {
             source={nested}
             view={view()}
             schema={[statusDef, dateDef]}
-            label="Settings"
-            onBack={() => {}}
+            back={{ label: 'Settings', onBack: () => {} }}
           />
         </MenuDoorHost>,
       )
@@ -202,8 +206,7 @@ describe('GroupFrame rows', () => {
             source={nested}
             view={view({ sub_group: { property_id: 'prop_status', order_mode: 'configured' } })}
             schema={[statusDef, dateDef]}
-            label="Settings"
-            onBack={() => {}}
+            back={{ label: 'Settings', onBack: () => {} }}
           />
         </MenuDoorHost>,
       )
@@ -383,8 +386,7 @@ describe('GroupFrame lists — dragging in the pane', () => {
             source={src}
             view={v}
             schema={[twoStatus, dateDef]}
-            label="Settings"
-            onBack={() => {}}
+            back={{ label: 'Settings', onBack: () => {} }}
           />
         </MenuDoorHost>,
       )

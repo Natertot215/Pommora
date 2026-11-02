@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { viewRowMenuItems } from './viewRowMenu'
+import { viewItemMenuItems, viewRowMenuItems } from './viewRowMenu'
 
 const labels = (ctx: Parameters<typeof viewRowMenuItems>[0]): string[] =>
   viewRowMenuItems(ctx).map((r) => r.label)
@@ -45,5 +45,29 @@ describe('a saved view row’s menu', () => {
       (r) => r.action === 'duplicate',
     )
     expect(row?.disabled).toBe(true)
+  })
+})
+
+describe('the view editor’s ⋮ menu', () => {
+  it('offers Duplicate and Delete with their glyphs', () => {
+    expect(
+      viewItemMenuItems({ deletable: true, duplicable: true }).map((r) => [r.label, r.icon]),
+    ).toEqual([
+      ['Duplicate', 'copy'],
+      ['Delete', 'trash'],
+    ])
+  })
+
+  it('refuses rather than drops what the view can’t do', () => {
+    const rows = viewItemMenuItems({ deletable: false, duplicable: false })
+    expect(rows.map((r) => [r.action, r.disabled])).toEqual([
+      ['duplicate', true],
+      ['delete', true],
+    ])
+  })
+
+  it('separates Delete from Duplicate, with nothing before Duplicate', () => {
+    const rows = viewItemMenuItems({ deletable: true, duplicable: true })
+    expect(rows.map((r) => r.separatorBefore === true)).toEqual([false, true])
   })
 })
