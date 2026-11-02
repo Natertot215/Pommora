@@ -82,9 +82,8 @@ export function PickerMenu({
   onExited,
   direction = 'down',
   origin = 'auto',
-  anchorX,
-  anchorY,
-  anchorHeight = 0,
+  at,
+  centerX,
   bounds,
   bareSurface = false,
   focus = 'trap',
@@ -106,9 +105,8 @@ export function PickerMenu({
   onExited?: () => void
   direction?: PickerDirection
   origin?: 'auto' | 'right' | 'center' | 'left'
-  anchorX?: number
-  anchorY?: number
-  anchorHeight?: number
+  at?: { x: number; y: number; height?: number }
+  centerX?: number
   bounds?: { left: number; right: number }
   bareSurface?: boolean
   /** `trap` takes focus and holds Tab inside; `leave` takes none on open, though a field inside takes it when pressed; `keep` takes none, so a press anywhere in the pane but inside a field leaves focus with its owner, claimed as it enters the pane, before an editor inside reads it and moves focus itself. Under `keep` the trigger belongs to the pane, so pressing it never closes the pane, and the pane stays modal, Escape and outside presses closing it, but draws no shield, so an outside press that closes it also lands. */
@@ -133,8 +131,8 @@ export function PickerMenu({
   const liveRef = useLatest(open || closing)
   useEffect(
     () => () => {
-      // Point-anchored menus (a pinned glance) close by design through an instant unmount — no Bloom-out to skip, so the guard would be a false positive.
-      if (import.meta.env.DEV && liveRef.current && anchorX === undefined)
+      // A pane nothing dismisses leaves with its host, as a pinned glance does with its tab, so only a dismissable one has a Bloom-out to lose.
+      if (import.meta.env.DEV && liveRef.current && onDismiss !== undefined)
         console.error(
           '[PickerMenu] unmounted while open/exiting — Bloom-out skipped. Mount persistently and ride `open`.',
         )
@@ -184,23 +182,14 @@ export function PickerMenu({
   useLayoutEffect(() => {
     // Frozen through the Bloom-out: a detached or moved trigger must not re-measure to zeros and snap the fading pane away.
     if (!mounted || !open) return
-    const point =
-      anchorX !== undefined && anchorY !== undefined
-        ? {
-            left: anchorX,
-            right: anchorX,
-            top: anchorY,
-            bottom: anchorY + anchorHeight,
-            width: 0,
-            height: anchorHeight,
-          }
-        : null
+    const height = at?.height ?? 0
+    const point = at ? { left: at.x, top: at.y, bottom: at.y + height, width: 0, height } : null
     const trigger = triggerRef?.current ?? markerRef.current?.parentElement
     const rectOf = point ? () => point : trigger ? () => trigger.getBoundingClientRect() : null
     if (!rectOf) return
     const measure = (): void => {
       const t = rectOf()
-      const c = anchorX ?? t.left + t.width / 2
+      const c = centerX ?? t.left + t.width / 2
       const edgeL = (bounds?.left ?? 0) + VIEWPORT_MARGIN
       const edgeR = (bounds?.right ?? window.innerWidth) - VIEWPORT_MARGIN
       const { w: pw, h: ph } = paneBox.current
@@ -269,10 +258,11 @@ export function PickerMenu({
     open,
     origin,
     direction,
-    anchorX,
-    anchorHeight,
+    at?.x,
+    at?.y,
+    at?.height,
+    centerX,
     bounds,
-    anchorY,
     placeResize,
   ])
 

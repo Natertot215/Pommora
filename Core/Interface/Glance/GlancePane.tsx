@@ -314,9 +314,7 @@ export function GlancePane(): React.JSX.Element {
     pinGlance({
       tabId: activeTabId,
       target: page,
-      anchorX: a.left + a.width / 2,
-      anchorY: a.top,
-      anchorHeight: a.height,
+      at: { x: a.left + a.width / 2, y: a.top, height: a.height },
       size: { w: card.offsetWidth, h: card.offsetHeight },
     })
     dismiss()
@@ -415,9 +413,7 @@ export function GlancePane(): React.JSX.Element {
               open={!exiting.has(p.pinId)}
               enter={false}
               onExited={() => removePin(p.pinId)}
-              anchorX={p.anchorX}
-              anchorY={p.anchorY}
-              anchorHeight={p.anchorHeight}
+              at={p.at}
               focus="leave"
               modal={false}
               origin="center"

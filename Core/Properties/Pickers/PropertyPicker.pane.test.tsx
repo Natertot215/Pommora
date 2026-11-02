@@ -36,7 +36,7 @@ const dateTimeTarget = (): PickTarget => ({ kind: 'dateTime', current: null })
 function Host(props: {
   target?: PickTarget | null
   chooser?: PickEntry[]
-  anchorX?: number
+  centerX?: number
   onCommit?: (value: unknown, entry?: PickEntry) => void
   onReveal?: (entry: PickEntry) => void
   onDismiss?: () => void
@@ -53,7 +53,7 @@ function Host(props: {
         triggerRef={ref}
         target={props.target ?? null}
         chooser={props.chooser}
-        anchorX={props.anchorX}
+        centerX={props.centerX}
         onCommit={props.onCommit ?? (() => {})}
         onReveal={props.onReveal}
         onDismiss={props.onDismiss ?? (() => {})}
@@ -139,7 +139,7 @@ describe('PropertyPicker panes', () => {
   })
 
   it('an options target anchored to a click centres its pane', async () => {
-    await render({ target: optionsTarget(), anchorX: 200 })
+    await render({ target: optionsTarget(), centerX: 200 })
     expect(isCentred()).toBe(true)
   })
 

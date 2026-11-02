@@ -558,9 +558,7 @@ describe('PickerMenu close render', () => {
       <PickerMenu
         open={open}
         onDismiss={() => {}}
-        anchorX={at?.x}
-        anchorY={at?.y}
-        anchorHeight={at ? 20 : undefined}
+        at={at ? { ...at, height: 20 } : undefined}
         {...(direction ? { direction } : {})}
       >
         {open ? <span data-id="body">BODY</span> : null}
@@ -594,7 +592,7 @@ describe('PickerMenu close render', () => {
       return <span data-id="body">BODY</span>
     }
     await render(
-      <PickerMenu open onDismiss={() => {}} anchorX={400} anchorY={500} anchorHeight={20}>
+      <PickerMenu open onDismiss={() => {}} at={{ x: 400, y: 500, height: 20 }}>
         <Builds />
       </PickerMenu>,
     )

@@ -10,9 +10,7 @@ const SIZE: Size = { w: 260, h: 120 }
 const pin = (tabId: string, id: string, path: string): Omit<PinnedGlance, 'pinId' | 'locked'> => ({
   tabId,
   target: { kind: 'page', id, path },
-  anchorX: 10,
-  anchorY: 20,
-  anchorHeight: 16,
+  at: { x: 10, y: 20, height: 16 },
   size: SIZE,
 })
 

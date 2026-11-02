@@ -292,7 +292,7 @@ export function ValueSeat({
         }
         open={open?.mode === 'picker' || chooser != null}
         triggerRef={seat.anchor}
-        anchorX={open?.mode === 'picker' ? open.x : undefined}
+        centerX={open?.mode === 'picker' ? open.x : undefined}
         onCommit={(value, entry) => {
           const column = entry ? host.columnOf(entry.id) : pickColumn
           const row = entry ? chooser?.row : pickRow

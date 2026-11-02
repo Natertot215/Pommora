@@ -231,9 +231,7 @@ describe('a nexus switch keeps none of the old nexus', () => {
     s.pinGlance({
       tabId: 't',
       target: page,
-      anchorX: 0,
-      anchorY: 0,
-      anchorHeight: 0,
+      at: { x: 0, y: 0, height: 0 },
       size: { w: 100, h: 100 },
     })
     await useSession.getState().choose()

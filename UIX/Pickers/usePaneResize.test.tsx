@@ -42,8 +42,7 @@ function Pane({
   return (
     <PickerMenu
       open={open}
-      anchorX={100}
-      anchorY={100}
+      at={{ x: 100, y: 100 }}
       focus="leave"
       direction={direction}
       resize={resize}

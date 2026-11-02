@@ -748,9 +748,7 @@ describe('store — a Set whose sidecar doesn’t parse keeps what belongs to it
     useSession.getState().pinGlance({
       tabId: 't1',
       target: P2 as PageTarget,
-      anchorX: 0,
-      anchorY: 0,
-      anchorHeight: 0,
+      at: { x: 0, y: 0, height: 0 },
       size: { w: 260, h: 120 },
     })
 
@@ -891,9 +889,7 @@ describe('glance pin lifecycle wiring (Task 10)', () => {
   const glancePin = (tabId: string, target = P): Parameters<State['pinGlance']>[0] => ({
     tabId,
     target: target as { kind: 'page'; id: string; path: string },
-    anchorX: 0,
-    anchorY: 0,
-    anchorHeight: 0,
+    at: { x: 0, y: 0, height: 0 },
     size: { w: 260, h: 120 },
   })
   const tags = (): string[] => useSession.getState().pinnedGlances.map((p) => p.tabId)

@@ -78,9 +78,7 @@ export function CaretPane({
     <PickerMenu
       glass="window"
       open={open}
-      anchorX={at.caretX}
-      anchorY={at.caretTop}
-      anchorHeight={at.caretBottom - at.caretTop}
+      at={{ x: at.caretX, y: at.caretTop, height: at.caretBottom - at.caretTop }}
       bounds={at.bounds}
       origin="center"
       focus="keep"

@@ -32,10 +32,10 @@ const DROPDOWN_MAX_HEIGHT = 136
 /** KNOB — the Month/Year buttons' inset; the pair reads as one title. */
 const TITLE_PAD_X = '2px'
 
-type Anchor = { x: number; y: number; h: number; el: HTMLElement }
+type Anchor = { x: number; y: number; height: number; el: HTMLElement }
 const anchorOf = (el: HTMLElement): Anchor => {
   const r = el.getBoundingClientRect()
-  return { x: r.left + r.width / 2, y: r.top, h: r.height, el }
+  return { x: r.left + r.width / 2, y: r.top, height: r.height, el }
 }
 
 const dataKey = (el: Element | null | undefined): string | null =>
@@ -417,9 +417,7 @@ export function CalendarPicker({
         open={menu !== null}
         onDismiss={() => setMenu(null)}
         triggerRef={menuTrigger}
-        anchorX={menu?.at.x}
-        anchorY={menu?.at.y}
-        anchorHeight={menu?.at.h}
+        at={menu?.at}
       >
         <MenuScrollFrame maxHeight={DROPDOWN_MAX_HEIGHT}>
           {menu && (
@@ -538,9 +536,7 @@ function ClockField({
         open={timeMenu !== null}
         onDismiss={() => setTimeMenu(null)}
         triggerRef={timeMenuTrigger}
-        anchorX={timeMenu?.at.x}
-        anchorY={timeMenu?.at.y}
-        anchorHeight={timeMenu?.at.h}
+        at={timeMenu?.at}
       >
         <MenuScrollFrame maxHeight={DROPDOWN_MAX_HEIGHT}>
           {timeMenu && <div className={s.menuList}>{timeRows(timeMenu.part)}</div>}

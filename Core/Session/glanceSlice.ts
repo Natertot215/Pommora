@@ -8,9 +8,7 @@ export type PinnedGlance = {
   pinId: string
   tabId: string
   target: { kind: 'page'; id: string; path: string }
-  anchorX: number
-  anchorY: number
-  anchorHeight: number
+  at: { x: number; y: number; height: number }
   size: Size
   locked: boolean
 }

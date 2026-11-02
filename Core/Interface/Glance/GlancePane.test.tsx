@@ -370,9 +370,7 @@ describe('pinned panes (Task 10)', () => {
       useSession.getState().pinGlance({
         tabId: 'tab-1',
         target: pinTarget,
-        anchorX: 200,
-        anchorY: 100,
-        anchorHeight: 16,
+        at: { x: 200, y: 100, height: 16 },
         size: { w: 260, h: 120 },
         ...over,
       }),
@@ -417,7 +415,7 @@ describe('pinned panes (Task 10)', () => {
   })
 
   it('renders at its frozen anchor under the portal, not the inline branch', () => {
-    addPin({ anchorX: 200, anchorY: 100, anchorHeight: 16 })
+    addPin({ at: { x: 200, y: 100, height: 16 } })
     const layer = document.querySelector('[data-picker-portal]') as HTMLElement
     expect(layer).not.toBeNull()
     expect(layer.style.left).toBe('200px')
@@ -514,7 +512,7 @@ describe('pinned panes (Task 10)', () => {
 
   it('Esc closes the newest active-tab pin, older ones survive', () => {
     const older = addPin()
-    const newer = addPin({ anchorX: 300 })
+    const newer = addPin({ at: { x: 300, y: 100, height: 16 } })
     act(() => useSession.getState().setPinLocked(newer, false))
     expect(pinCount()).toBe(2)
     escapeAndSettle()
@@ -526,7 +524,7 @@ describe('pinned panes (Task 10)', () => {
     const older = addPin()
     const between = vi.fn()
     const layer = pushDismissal({ layer: () => null, dismiss: between, outsidePress: false })
-    addPin({ anchorX: 300 })
+    addPin({ at: { x: 300, y: 100, height: 16 } })
     escapeAndSettle()
     expect(between).not.toHaveBeenCalled()
     expect(pinCount()).toBe(1)
@@ -549,7 +547,7 @@ describe('pinned panes (Task 10)', () => {
 
   it('a pointerdown outside every glance portal scrubs unlocked pins but spares locked ones', () => {
     const locked = addPin()
-    const open = addPin({ anchorX: 300 })
+    const open = addPin({ at: { x: 300, y: 100, height: 16 } })
     act(() => useSession.getState().setPinLocked(open, false))
     expect(pinCount()).toBe(2)
     clickAwayAndSettle()
@@ -567,7 +565,7 @@ describe('pinned panes (Task 10)', () => {
 
   it('navigation scrubs unlocked pins while locked ones survive', () => {
     const locked = addPin()
-    const open = addPin({ anchorX: 300 })
+    const open = addPin({ at: { x: 300, y: 100, height: 16 } })
     act(() => useSession.getState().setPinLocked(open, false))
     vi.useFakeTimers()
     try {
@@ -595,7 +593,7 @@ describe('pinned panes (Task 10)', () => {
     const ctlRoot = createRoot(ctlHost)
     act(() =>
       ctlRoot.render(
-        <PickerMenu open modal={false}>
+        <PickerMenu open onDismiss={() => {}}>
           x
         </PickerMenu>,
       ),

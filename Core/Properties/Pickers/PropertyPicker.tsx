@@ -66,7 +66,7 @@ export function PropertyPicker({
   chooser,
   open,
   triggerRef,
-  anchorX,
+  centerX,
   onCommit,
   onReveal,
   onDismiss,
@@ -76,7 +76,7 @@ export function PropertyPicker({
   chooser?: PickEntry[]
   open: boolean
   triggerRef: RefObject<HTMLElement | null>
-  anchorX?: number
+  centerX?: number
   onCommit: (value: PropertyValue | null, entry?: PickEntry) => void
   onReveal?: (entry: PickEntry) => void
   onDismiss: () => void
@@ -91,7 +91,7 @@ export function PropertyPicker({
   const t = picked ? (resolveTarget?.(picked) ?? null) : held
   const commit = (v: PropertyValue | null): void => (picked ? onCommit(v, picked) : onCommit(v))
 
-  const origin = t?.kind !== 'options' ? 'auto' : anchorX !== undefined ? 'center' : 'right'
+  const origin = t?.kind !== 'options' ? 'auto' : centerX !== undefined ? 'center' : 'right'
 
   const pane = !t ? null : t.kind === 'options' ? (
     (() => {
@@ -146,7 +146,7 @@ export function PropertyPicker({
       onDismiss={onDismiss}
       triggerRef={triggerRef}
       origin={chooser ? 'auto' : origin}
-      anchorX={anchorX}
+      centerX={centerX}
     >
       {chooser ? (
         <FrameSlide
