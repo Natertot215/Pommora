@@ -4,7 +4,7 @@
 
 | Total | Critical | High | Moderate | Low | Minimal |
 |-------|----------|------|----------|-----|---------|
-| 74 | 0 | 3 | 12 | 40 | 19 |
+| 75 | 0 | 3 | 12 | 40 | 20 |
 
 #### A1 • Sync & Devices
 
@@ -94,6 +94,7 @@
 | [I-051](#I-051 • A row's caption in a pane that sizes to its content stays on one line and widens the pane, so the format rows carry none.) | A row's caption in a pane that sizes to its content stays on one line and widens the pane, so the format rows carry none. | Minimal | Mini (TBD) | Drift | `54e93e491` | **Created:** 10-18-2026<br>**Updated:** 10-25-2026 |
 | [I-060](#I-060 • No row in a property's settings says whether it sets the property everywhere or only the current view.) | No row in a property's settings says whether it sets the property everywhere or only the current view. | Minimal | Small (TBD) | Drift | `4f63cba01` | **Created:** 10-21-2026<br>**Updated:** 10-31-2026 |
 | [I-064](#I-064 • Every line row points screen readers at the drag instructions, including rows in a list that can't be dragged, where Space acts on the row instead.) | Every line row points screen readers at the drag instructions, including rows in a list that can't be dragged, where Space acts on the row instead. | Minimal | Small (TBD) | Drift | `312d63751` | **Created:** 10-26-2026<br>**Updated:** 10-31-2026 |
+| [I-075](#I-075 • The pop-up that action menus, managed lists, and value pickers mount in is named and filed as a picker, though it picks nothing.) | The pop-up that action menus, managed lists, and value pickers mount in is named and filed as a picker, though it picks nothing. | Minimal | Small (TBD) | Drift | `69db9942e` | **Created:** 11-01-2026<br>**Updated:** 11-01-2026 |
 
 #### A6 • Tiles & Embeds
 
@@ -1104,6 +1105,20 @@ Every row of a line list points screen readers at the drag instructions through 
 
 Deferred by the owner. Each row says whether it stays put, as it already says what Enter and Space do, and that one flag both refuses the row's keyboard lift in the engine and drops its description; `lineList`'s `locked`, `groupedLine`'s per-kind `disabled`, and the band spec's `draggable` check in its `snap` fold into it, and a displace item in a disabled zone drops the description too.
 
+#### I-075 • The pop-up that action menus, managed lists, and value pickers mount in is named and filed as a picker, though it picks nothing.
+
+| Concern | Scale | Origin | Base | Date |
+|---------|-------|--------|------|------|
+| Minimal | Small (TBD) | Drift | `69db9942e` | **Created:** 11-01-2026<br>**Updated:** 11-01-2026 |
+
+**Description**
+
+`PickerMenu` is the blank pane that plain action menus mount in through `MenuPresenter`, a managed list through `ManageRow`, and every value picker, while the toolbar's dropdowns draw `MenuSurface` instead. It chooses nothing itself, but its name reads as one more picker, and it sits in `UIX/Pickers/` beside the Calendar, Color, Field, and Icon pickers, in a folder whose description names Color, Calendar, Icon, and Text and leaves the shell out. A reader looking for the shell of a menu finds `MenuSurface` in `UIX/Menus/` and has to know to look among the pickers for the other one, and one reading `PickerMenu` beside `PropertyPicker` has no way to tell the shell from a picker.[^75]
+
+**Solution** [TBD]
+
+Assess `PickerMenu` as a whole in its own pass, its name and its folder together rather than as a side effect of other work. A new name touches the 29 code files that mention it and the seven Feature, Guideline, and Resource documents, and a new folder has to settle which way `UIX/Pickers` and `UIX/Menus` depend on each other.
+
 ### A6 • Tiles & Embeds
 
 #### I-023 • In a free-text markdown tile, the footnotes divider and the footnote reveal do nothing.
@@ -1328,3 +1343,4 @@ In `MatrixCanvas`, keep a small map of active pointer ids on the host; while two
 [^72]: **I-072:** `Core/Views/handlers.ts:~26-30` (`views:save`), `Core/Views/views.ts:~164-166` (`savedView`'s `id` catch), `Core/Views/viewsFile.ts:~32-91` (`answering`, `patchViews`, `saveView`), `Core/Views/views.ts:~355-383` (`ownViewId`, `viewIdsOf`, `containerViewIds`), `Core/Views/Settings/ViewFrame.tsx:~80`, `Core/Views/viewWrite.ts:~43`
 [^73]: **I-073:** `Core/Bundles/rows.ts:~71-84` (`respellsRows`), `Core/Bundles/rows.ts:~56-69,~160` (`liveCrumbs`, `homeResolves`), `Core/Nexus/settle.ts:~198-201` (the push), `Core/Session/nexusSlice.ts:~286` and `Core/Interface/Confirm/confirmations.ts:~139` (the window's own re-lists)
 [^74]: **I-074:** `Core/MarkdownPM/Engine/Tables/regions.ts:28-31,51` (`MAY_OPEN`, `opensBlock`, `endsBody`, `tableRegions`), `Core/MarkdownPM/Engine/parser.ts:19-37` (`parse`'s fence mask)
+[^75]: **I-075:** `UIX/Pickers/PickerMenu.tsx:~74` (`PickerMenu`), `Core/Interface/Menus/MenuPresenter.tsx:~98` (the action menus' shell), `UIX/Menus/ManageRow.tsx:~3,~53-63` (the import and the pane), `UIX/Menus/MenuDropdown.tsx:~91` and `Core/Interface/Toolbar/SettingsMenu.tsx:~40` (the toolbar's `MenuSurface`), `.claude/Resources/PommoraUIX.md:~380` ("The rectangle every menu, dropdown panel, and picker mounts"), `.claude/CLAUDE.md:~109` (the folder's description)

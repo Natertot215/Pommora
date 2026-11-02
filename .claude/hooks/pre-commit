@@ -4,5 +4,5 @@
 ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
 cd "$ROOT" || exit 0
 
-node .claude/scripts/check-atlas.mjs || echo "token ledger: drift above — the Features SOURCE tables disagree with the code" >&2
+node .claude/scripts/check-atlas.mjs || echo "token ledger: drift above — the SOURCE tables disagree with the code" >&2
 exit 0

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Verifies the token atlas: every SOURCE-tagged table in .claude/Features must agree with the
+// Verifies the token atlas: every SOURCE-tagged table in .claude/Features and .claude/Resources must agree with the
 // code file(s) its SOURCE line names. A table row's checkable claims are its backticked token
 // identifiers (column 2) and its literal values (hex / px / ms / bare numbers in column 3);
 // each must appear in the table's source text. Derivation prose ("system-white @ 65%") is not
@@ -9,7 +9,12 @@ import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..')
-const featuresDir = join(repoRoot, '.claude', 'Features')
+const claudeDir = join(repoRoot, '.claude')
+const docs = ['Features', 'Resources'].flatMap((dir) =>
+  readdirSync(join(claudeDir, dir))
+    .filter((f) => f.endsWith('.md'))
+    .map((f) => join(dir, f)),
+)
 
 const IDENT = /^[A-Za-z0-9_.@'[\]-]+$/
 const SKIP_IDENTS = new Set(['token', 'value', '—'])
@@ -24,8 +29,8 @@ const bridgeText = ['theme-vars.css.ts', 'colors.ts', 'color.css.ts']
 let failures = 0
 let tables = 0
 
-for (const doc of readdirSync(featuresDir).filter((f) => f.endsWith('.md'))) {
-  const lines = readFileSync(join(featuresDir, doc), 'utf8').split('\n')
+for (const doc of docs) {
+  const lines = readFileSync(join(claudeDir, doc), 'utf8').split('\n')
   for (let i = 0; i < lines.length; i++) {
     const m = lines[i].match(/^\*\*SOURCE:\*\*\s*(.+)$/)
     if (!m) continue

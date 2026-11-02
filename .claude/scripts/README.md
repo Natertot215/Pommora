@@ -1,11 +1,11 @@
 ## Scripts
 
-`check-atlas.mjs` verifies the token ledger: every `**SOURCE:**`-tagged table in `// Features` must
-agree with the code files its SOURCE line names — each backticked token in a row's second column and
-each literal value in its third must appear in those files. `UIX/Theme`'s `theme-vars.css.ts`,
-`colors.ts` and `color.css.ts` are an implicit source for every `--var` handle, since the theme
-republishes hashed tokens under stable names. Exit 0 means the tables agree; drift is listed per
-table.
+`check-atlas.mjs` verifies the token ledger: every `**SOURCE:**`-tagged table in `// Features` and
+`// Resources` must agree with the code files its SOURCE line names — each backticked token in a
+row's second column and each literal value in its third must appear in those files. `UIX/Theme`'s
+`theme-vars.css.ts`, `colors.ts` and `color.css.ts` are an implicit source for every `--var` handle,
+since the theme republishes hashed tokens under stable names. Exit 0 means the tables agree; drift
+is listed per table.
 
 `Option Picker Drive/live-drive.mjs` drives the option mutations the value picker offers, and the
 Property Frame's option editor's share of them — creation from the footer, blank and duplicate
