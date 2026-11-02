@@ -59,7 +59,7 @@ const ACTIVE_OPTIONS: PickerOption<'on' | 'off'>[] = [
   { value: 'off', label: 'Off' },
 ]
 
-function FieldPicker({
+function RuleField({
   ariaLabel,
   display,
   icon,
@@ -328,7 +328,7 @@ export function FilterFrame({
       const style = styleFor(column!, view, nexus)
       const fmt = dateFormFor(style.date_format)
       return (
-        <FieldPicker
+        <RuleField
           ariaLabel="Filter date"
           className={fp.valueField}
           display={operand ? formatDate(operand, fmt, 'none') : null}
@@ -342,7 +342,7 @@ export function FilterFrame({
               onCommit={(v) => patch({ value: v?.kind === 'dateTime' ? v.value : undefined })}
             />
           )}
-        </FieldPicker>
+        </RuleField>
       )
     }
 
@@ -391,7 +391,7 @@ export function FilterFrame({
     return (
       <Reveal key={id} open enterOnMount={entering(id)} fill>
         <div className={fp.ruleRow}>
-          <FieldPicker
+          <RuleField
             ariaLabel="Filter property"
             display={target?.label ?? rule.property_id}
             icon={target?.icon}
@@ -405,8 +405,8 @@ export function FilterFrame({
                 rule.property_id,
               )
             }
-          </FieldPicker>
-          <FieldPicker
+          </RuleField>
+          <RuleField
             ariaLabel="Filter operator"
             chevron
             className={current?.slot === 'none' ? fp.controlFieldWide : fp.controlField}
@@ -447,7 +447,7 @@ export function FilterFrame({
                 )
               })
             }
-          </FieldPicker>
+          </RuleField>
           {valueCell(rule, index, current, column)}
           <RowRemove ariaLabel="Remove filter" onClick={() => removeRow(index)} />
         </div>
@@ -459,14 +459,14 @@ export function FilterFrame({
   const draftRow = (draft !== null || lead) && (
     <Reveal key={draft ?? 'lead'} open enterOnMount={!lead} fill>
       <div className={fp.ruleRow}>
-        <FieldPicker
+        <RuleField
           ariaLabel="Filter property"
           className={cx(fp.cellField, fp.blankWide)}
           display={null}
           placeholder={lead ? 'Where' : ''}
         >
           {(close) => targetOptions((id) => completeDraft(id), close)}
-        </FieldPicker>
+        </RuleField>
         <span className={cx(fp.controlField, fp.blankNarrow)} />
         <span className={fp.valueField} />
         {!lead && <RowRemove ariaLabel="Remove filter" onClick={() => setDraft(null)} />}
