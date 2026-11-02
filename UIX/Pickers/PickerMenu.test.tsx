@@ -533,7 +533,7 @@ describe('PickerMenu close render', () => {
   })
 })
 
-describe('PickerMenu slide growth', () => {
+describe('PickerMenu re-measure', () => {
   let paneH = 300
   let grew: ((by: number) => void) | null = null
   const observers: (() => void)[] = []
@@ -602,5 +602,20 @@ describe('PickerMenu slide growth', () => {
     await act(async () => grew?.(-50))
     expect(layer().style.top).toBe('460px')
     expect(animate).not.toHaveBeenCalled()
+  })
+
+  it('dismisses when its trigger leaves the page', async () => {
+    const dismiss = vi.fn()
+    const trigger = document.body.appendChild(document.createElement('button'))
+    await render(
+      <PickerMenu open onDismiss={dismiss} triggerRef={{ current: trigger }}>
+        <span data-id="body">BODY</span>
+      </PickerMenu>,
+    )
+    trigger.remove()
+    await act(async () => {
+      for (const fire of observers) fire()
+    })
+    expect(dismiss).toHaveBeenCalledOnce()
   })
 })

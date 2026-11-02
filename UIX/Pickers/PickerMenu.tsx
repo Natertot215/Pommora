@@ -121,6 +121,7 @@ export function PickerMenu({
     shield: onDismiss !== undefined && focus !== 'keep',
   })
   const liveRef = useLatest(open || closing)
+  const dismissRef = useLatest(onDismiss)
   useEffect(
     () => () => {
       // A pane nothing dismisses leaves with its host, as a pinned glance does with its tab, so only a dismissable one has a Bloom-out to lose.
@@ -181,6 +182,10 @@ export function PickerMenu({
     const rectOf = point ? () => point : trigger ? () => trigger.getBoundingClientRect() : null
     if (!rectOf) return
     const measure = (growth = 0): void => {
+      if (trigger && !point && !trigger.isConnected) {
+        dismissRef.current?.()
+        return
+      }
       const t = rectOf()
       const pane = paneBox.current
       const view = { w: window.innerWidth, h: window.innerHeight }
