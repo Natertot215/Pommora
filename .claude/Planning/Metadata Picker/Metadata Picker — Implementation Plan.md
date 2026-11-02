@@ -18,8 +18,8 @@
 
 | Phase | Estimate | Measured |
 |---|---|---|
-| 0 · Drives and Pins | 0 | |
-| 1 · Kit Imports | about −54; −54 built for the barrel | |
+| 0 · Drives and Pins | 0 | 0 (the BASELINE head) |
+| 1 · Kit Imports | about −54; −54 built for the barrel | −54 (+101 / −155) |
 | 2 · The Pane Shell | about +79 (+195 / −116); +72 built | |
 | 3 · Small Folds | about −16; −4 built | |
 | 4 · The Two Pickers | about −95; −96 (+386 / −482) built, and the back bar's label +1 | |
@@ -212,20 +212,20 @@ The order is what makes each step land once. Phase 0 readies the drives and pins
 #### Process Overview
 
 - [x] `[Stop: Nathan ratifies; no code changes before this]`
-- [ ] **Phase 0** — Drives and Pins
+- [x] **Phase 0** — Drives and Pins
   - [x] Run Start
   - [x] Task 0-1 · The log reads as ratified
   - [x] Task 0-2 · Group 15's repair
   - [x] Task 0-3 · The harness additions
   - [x] Task 0-4 · The pins
-  - [ ] Task 0-5 · The baseline and all seven drives
+  - [x] Task 0-5 · The baseline and all seven drives
 - [ ] **Phase 1** — Kit Imports
-  - [ ] Task 1-1 · The barrel leaves
-  - [ ] Task 1-2 · `ManageRow` and `PickerControl` swap folders
+  - [x] Task 1-1 · The barrel leaves
+  - [x] Task 1-2 · `ManageRow` and `PickerControl` swap folders
 - [ ] **Phase 2** — The Pane Shell
-  - [ ] Task 2-1 · One meaning per anchor prop, and the guard
-  - [ ] Task 2-2 · `panePlacement.ts`
-  - [ ] Task 2-3 · The fence
+  - [x] Task 2-1 · One meaning per anchor prop, and the guard
+  - [x] Task 2-2 · `panePlacement.ts`
+  - [x] Task 2-3 · The fence
   - [ ] Task 2-4 · The slide decides and the pane travels
   - [ ] Task 2-5 · The trigger rule
   - [ ] Task 2-6 · A list only closes
@@ -719,7 +719,7 @@ The dependency array names `at`'s fields, since `caretPane` and `GlancePane` bui
 **VERIFY**
 
 - [ ] Run the gates; `git grep -n "anchorX\|anchorY\|anchorHeight" -- UIX Core` prints nothing.
-- [ ] `npx vitest run Core/Views/Cards/cardGestures.test.tsx 2>&1 | grep -c 'unmounted while open/exiting'` reads two above its count at the prior commit, the masked unmounts Phase 4 removes, and no test fails on them.
+- [ ] `npx vitest run Core/Views/Cards/cardGestures.test.tsx --reporter=default 2>&1 | grep -c 'unmounted while open/exiting'` reads two above its count at the prior commit, the masked unmounts Phase 4 removes, and no test fails on them.
 
 #### Task 2-2
 
