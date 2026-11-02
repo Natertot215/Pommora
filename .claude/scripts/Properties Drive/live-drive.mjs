@@ -1967,10 +1967,10 @@ const paneFrame = (cdp, expr) => cdp.evaluate(`(() => {
 })()`)
 const atCeiling = (f) => f.height === 440 && f.ceiling === '440px' && f.scrolls
 const VIEWS_BUTTON = sel('button[title="Views"]')
-const NEW_VIEW = sel('[aria-label="New View"]')
+const NEW_VIEW = shownEl('[aria-label="New View"]')
 /** The view list's slide: the box around its track. */
 const VIEW_SLIDE = `(() => { let e = ${NEW_VIEW}; while (e && !e.style.transform.startsWith('translateX')) e = e.parentElement; return e?.parentElement })()`
-const VIEW_MENU = sel('[aria-label="View menu"]')
+const VIEW_MENU = shownEl('[aria-label="View menu"]')
 /** Open In Preview's Manage: the first one up from its label. */
 const MANAGE_PREVIEW = `(() => {
   const manage = (r) => [...r.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Manage')
@@ -2112,7 +2112,7 @@ async function group19(cdp) {
   await sleep(600)
   const listed = await layerBox(cdp, VIEW_SLIDE)
   await shot(cdp, 'g19-view-list-floor', VIEW_SLIDE)
-  const into = await framesOf(cdp, () => mouseClick(cdp, sel(`[aria-label="Edit ${PANES_TABLE.name}"]`), { settle: 0 }), { of: VIEW_SLIDE })
+  const into = await framesOf(cdp, () => mouseClick(cdp, shownEl(`[aria-label="Edit ${PANES_TABLE.name}"]`), { settle: 0 }), { of: VIEW_SLIDE })
   const editor = await layerBox(cdp, VIEW_SLIDE)
   await click(cdp, liveRow('Layout'))
   await until("the editor's Visibility", () => cdp.evaluate(`!!${SETTINGS_BAR}?.textContent.trim().endsWith('Layout')`))
@@ -2157,7 +2157,7 @@ async function group19(cdp) {
     return held
   }
   const openEditor = async (name) => {
-    await mouseClick(cdp, sel(`[aria-label="Edit ${name}"]`))
+    await mouseClick(cdp, shownEl(`[aria-label="Edit ${name}"]`))
     await until(`${name}'s editor`, () => cdp.evaluate(`!!${VIEW_MENU} && !${VIEW_MENU}.closest('[inert]')`))
     await sleep(600)
   }
