@@ -2,8 +2,8 @@ import { readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import {
   mintOptionId,
-  against, ask, boxOf, check, chooseNative, click, closePanel, createPage, doubleClick, drag, escapeAll, field, frontmatter,
-  launch, measure, metrics, mouseAt, mouseClick, must, NEXUS, openCollection, openPage, openPane, openPanel,
+  against, ask, boxOf, check, chooseNative, click, closePageWindow, closePanel, createPage, doubleClick, drag, escapeAll, field, frontmatter,
+  launch, measure, metrics, mouseAt, mouseClick, must, NEXUS, openCollection, openPage, openPane, openPanel, openSidePane,
   closeSettings, openSettings, PAGE_VIEW, pageFile, pageIds, pagePath, PANE, PANE_VIEW, portalOpen, pressKey, printMetrics, read, refusal, restore, results,
   row, sel, selectField, SETTINGS_BUTTON, settles, shot, sleep, sweep, typeText, until, writeBody, writeMetrics,
 } from '../drive-harness.mjs'
@@ -360,9 +360,7 @@ async function group2(cdp) {
 
   // The PageWindow's side pane holds the same row.
   await resetAliases(cdp, TARGET, ['launch'])
-  await chooseNative(cdp, `document.querySelector('[role=tab][title=${JSON.stringify(TARGET)}]')`, 'Preview')
-  await until('the PageWindow', () => cdp.evaluate(`!!document.querySelector('.page-window')`))
-  await mouseClick(cdp, sel('.page-window button[title="Side Pane"]'))
+  await openSidePane(cdp, TARGET)
   const SIDE = `document.querySelector('.window-side-pane')`
   await until("the side pane's Aliases row", () => cdp.evaluate(`!!${manageRow('Aliases', SIDE)}`))
   check("group 2: the PageWindow's side pane shows Aliases with its count, 1", (await countOf(cdp, 'Aliases', SIDE)) === '1')
@@ -378,8 +376,7 @@ async function group2(cdp) {
   await step(cdp, 'group 2: the side pane deletes window alias', () => mouseClick(cdp, xOf(MANAGE, 'window alias')), { reflect: `!${rowOf(MANAGE, 'window alias')}`, writes: aliasWrites(1) })
   check('group 2: the side pane deletes window alias', same(aliasesOf(TARGET), ['launch']))
   await escapeAll(cdp)
-  await mouseClick(cdp, sel('.page-window button[title="Close"]'))
-  await until('the PageWindow gone', () => cdp.evaluate(`!document.querySelector('.page-window')`))
+  await closePageWindow(cdp)
 }
 
 // ── Group 3 — the body picker ───────────────────────────────────────────────

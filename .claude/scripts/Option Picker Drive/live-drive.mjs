@@ -1,7 +1,7 @@
 import {
   mintOptionId, optionId,
-  ask, boxOf, check, chooseNative, click, COPY, drag, frontmatter, labels, launch, META, mintPageId, mouseClick, pickNative, popNative, portalOpen, pressKey, read,
-  refusal, restore, results, sel, shot, sleep, sweep, textEl, until,
+  ask, BACK, boxOf, check, chooseNative, click, COPY, drag, entry, escapeAll, frontmatter, labels, launch, META, mintPageId, mouseClick, pickNative, popNative, portalOpen, pressKey, read,
+  refusal, restore, results, sel, shot, sleep, slideTo, statusDividers, sweep, textEl, until,
 } from '../drive-harness.mjs'
 
 const PICKER_ROWS = '[data-picker-portal] [data-line-row]'
@@ -67,7 +67,7 @@ const popupOpen = (cdp) => cdp.evaluate(`!!document.querySelector(${JSON.stringi
 const drafting = (cdp) => cdp.evaluate(`!!document.querySelector('[data-picker-portal] input')`)
 const cell = (title, prop) => `[...document.querySelectorAll('.data-row')].find((r) => r.textContent.includes(${JSON.stringify(title)})).querySelectorAll('.data-cell')[${Object.keys(PROPS).indexOf(prop) + 1}]`
 async function openCellPicker(cdp, title, prop) {
-  while (await portalOpen(cdp)) await pressKey(cdp, 'Escape')
+  await escapeAll(cdp)
   await mouseClick(cdp, cell(title, prop))
   if (!(await portalOpen(cdp))) throw new Error(`${title}'s ${prop} picker did not open`)
 }
@@ -157,7 +157,7 @@ async function stepEditOption(cdp) {
   const gamma = defNamed('Drive Select').select_options.find((o) => o.label === 'Gamma')
   check('popup: color, appearance, and icon land on Gamma', gamma?.key === 'Gamma' && gamma?.color !== undefined && gamma?.appearance === 'clear' && gamma?.icon !== undefined, JSON.stringify(gamma))
   await shot(cdp, 'table-popup-edited')
-  while (await portalOpen(cdp)) await pressKey(cdp, 'Escape')
+  await escapeAll(cdp)
 }
 
 const confirmButton = (action) => `[...document.querySelectorAll('button')].find((b) => b.textContent.trim() === ${JSON.stringify(action)} && b.closest('[aria-label]')?.getAttribute('aria-label').startsWith(${JSON.stringify(action)}))`
@@ -176,7 +176,7 @@ async function stepClearDelete(cdp) {
   await click(cdp, confirmButton('Delete'))
   await sleep(1000)
   check('Delete removes Alpha from the registry', !optionValues('Drive Select').includes('Alpha'), JSON.stringify(optionValues('Drive Select')))
-  while (await portalOpen(cdp)) await pressKey(cdp, 'Escape')
+  await escapeAll(cdp)
   await pressKey(cdp, 'Escape')
 }
 
@@ -190,7 +190,7 @@ async function surfaceCreateDragMenu(cdp, tag, title) {
   check(`${tag}: Edit Option opens the popup`, await popupOpen(cdp))
   await shot(cdp, `${tag}-popup`)
   await pressKey(cdp, 'Escape')
-  while (await portalOpen(cdp)) await pressKey(cdp, 'Escape')
+  await escapeAll(cdp)
 }
 
 const driveCard = `[...document.querySelectorAll('[data-rid]')].find((c) => c.textContent.includes('Drive One'))`
@@ -205,17 +205,13 @@ async function stepCards(cdp) {
 }
 
 const blankCard = `[...document.querySelectorAll('[data-rid]')].find((c) => c.textContent.includes('Page A'))`
-const LIVE_ROWS = `[...document.querySelectorAll('[data-picker-portal] [role=button]')].filter((e) => !e.closest('[inert]'))`
-const BACK_BAR = `${LIVE_ROWS}.some((e) => e.querySelector('.lucide-chevron-left'))`
 const optionLabels = (cdp) => cdp.evaluate(`[...document.querySelectorAll(${JSON.stringify(PICKER_ROWS)})].filter((e) => !e.closest('[inert]')).map((e) => e.textContent.trim())`)
 async function slideIn(cdp, name) {
-  while (await portalOpen(cdp)) await pressKey(cdp, 'Escape')
+  await escapeAll(cdp)
   await click(cdp, `${blankCard}.querySelector('.card-props')`)
-  await until("Page A's Add list", () => cdp.evaluate(`!!${LIVE_ROWS}.find((e) => e.textContent.trim() === ${JSON.stringify(name)})`))
+  await until("Page A's Add list", () => cdp.evaluate(`!!${entry(name)}`))
   await sleep(500)
-  await click(cdp, `${LIVE_ROWS}.find((e) => e.textContent.trim() === ${JSON.stringify(name)})`)
-  await until(`${name}'s slide`, () => cdp.evaluate(BACK_BAR))
-  await sleep(600)
+  await slideTo(cdp, name)
 }
 
 async function stepSlides(cdp) {
@@ -228,20 +224,16 @@ async function stepSlides(cdp) {
   const gone = await ask(cdp, 'mutate', { op: 'deleteOption', propertyId: ids['Drive Select'], optionId: optionId(defNamed('Drive Select'), 'Slide New') })
   check('slide: Slide New is deleted again, so the panel lists what it did before', gone.ok && !optionValues('Drive Select').includes('Slide New'), JSON.stringify(gone))
   await slideIn(cdp, 'Drive Status')
-  const status = await cdp.evaluate(`(() => {
-    const rows = [...document.querySelectorAll(${JSON.stringify(PICKER_ROWS)})].filter((e) => !e.closest('[inert]')).map((e) => e.getBoundingClientRect())
-    const dividers = [...document.querySelectorAll('[data-picker-portal] [aria-hidden="true"]')].filter((e) => !e.closest('[inert]') && e.querySelector('span') && e.getBoundingClientRect().top >= rows[0].bottom - 1 && e.getBoundingClientRect().bottom <= rows.at(-1).top + 1)
-    return { rows: rows.length, dividers: dividers.length, create: !!document.querySelector('[data-picker-portal] [aria-label="New Option"]') }
-  })()`)
+  const status = { rows: (await optionLabels(cdp)).length, dividers: await statusDividers(cdp), create: await cdp.evaluate(`!!document.querySelector('[data-picker-portal] [aria-label="New Option"]')`) }
   check("slides: a slid Status draws its groups behind dividers with no New Option", status.rows === statusGroups().flatMap((g) => g.options).length && status.dividers === statusGroups().length - 1 && !status.create, JSON.stringify(status))
   await shot(cdp, 'slide-status')
-  while (await portalOpen(cdp)) await pressKey(cdp, 'Escape')
+  await escapeAll(cdp)
   const back = await ask(cdp, 'views:save', 'Collection A', 'collection', driveView(), { type: 'table', hidden_properties: [] })
   check('slides: the view switches back to Table', back.ok && driveView().type === 'table')
   await sleep(1500)
   await openCellPicker(cdp, 'Drive One', 'Drive Select')
-  const clicked = { rows: await optionLabels(cdp), bar: await cdp.evaluate(BACK_BAR) }
-  while (await portalOpen(cdp)) await pressKey(cdp, 'Escape')
+  const clicked = { rows: await optionLabels(cdp), bar: await cdp.evaluate(`!!${BACK}`) }
+  await escapeAll(cdp)
   const menu = await popNative(cdp, await boxOf(cdp, textEl('.data-row .cell-title-text', 'Drive One')))
   await pickNative([])
   const leaf = labels(menu?.find((r) => r.label === 'Properties')?.submenu.find((r) => r.label === 'Drive Select')?.submenu)
@@ -250,7 +242,7 @@ async function stepSlides(cdp) {
 
 const ringed = (cdp) => cdp.evaluate(`[...document.querySelectorAll(${JSON.stringify(PICKER_ROWS)})].filter((e) => getComputedStyle(e.querySelector('[role=button]'), '::after').content !== 'none').map((e) => e.textContent.trim())`)
 async function sweepOver(cdp, prop) {
-  while (await portalOpen(cdp)) await pressKey(cdp, 'Escape')
+  await escapeAll(cdp)
   await sweep(cdp, await boxOf(cdp, cell('Drive One', prop)), await boxOf(cdp, cell('Drive Two', prop)), { steps: 6 })
   if (!(await portalOpen(cdp))) throw new Error(`The sweep over ${prop} opened no picker`)
   await sleep(500)
@@ -264,7 +256,11 @@ async function stepMassPicks(cdp) {
   check('mass: a Select value only some rows hold is never ringed', some.length === 0, JSON.stringify({ held, some }))
   await mouseClick(cdp, pickerRow('Fresh'))
   const wrote = await until('both rows on Fresh', async () => lists('Drive One', 'Drive Select', 'Fresh') && lists('Drive Two', 'Drive Select', 'Fresh'), 4000).catch(() => false)
-  check('mass: a Select pick writes every swept row and closes', wrote && !(await portalOpen(cdp)), JSON.stringify([frontmatter('Drive One'), frontmatter('Drive Two')]))
+  check("mass: a Select pick writes every swept row and closes, the sweep's highlight leaving with it", wrote && !(await portalOpen(cdp)) && !(await cdp.evaluate(`!!document.querySelector('.cell-sweep')`)), JSON.stringify([frontmatter('Drive One'), frontmatter('Drive Two')]))
+  await sweepOver(cdp, 'Drive Select')
+  const all = await ringed(cdp)
+  check('mass: a Select value every swept row holds is ringed, alone', JSON.stringify(all) === '["Fresh"]', JSON.stringify(all))
+  await escapeAll(cdp)
   await pressKey(cdp, 'z', META)
   const undone = await until('both rows as they were', async () => JSON.stringify([frontmatter('Drive One')['Drive Select'], frontmatter('Drive Two')['Drive Select']]) === JSON.stringify(held), 4000).catch(() => false)
   check('mass: one ⌘Z undoes the pick on every row', undone, JSON.stringify({ held, now: [frontmatter('Drive One')['Drive Select'], frontmatter('Drive Two')['Drive Select']] }))
@@ -298,7 +294,7 @@ async function stepMulti(cdp) {
   await newOption(cdp, 'Three')
   await enter(cdp)
   check('multi: Three is appended and Drive One still holds One alone', optionValues('Drive Multi').at(-1) === 'Three' && lists('Drive One', 'Drive Multi', 'One') && !lists('Drive One', 'Drive Multi', 'Three'), JSON.stringify(optionValues('Drive Multi')))
-  while (await portalOpen(cdp)) await pressKey(cdp, 'Escape')
+  await escapeAll(cdp)
 }
 
 const statusGroups = () => defNamed('Drive Status').status_groups
@@ -345,7 +341,7 @@ async function stepEditor(cdp) {
   await cdp.send('Input.insertText', { text: 'Queued' })
   await enter(cdp)
   check("editor: the heading's inline rename relabels the group", statusGroups()[0].label === 'Queued', JSON.stringify(statusGroups()[0].label))
-  while (await portalOpen(cdp)) await pressKey(cdp, 'Escape')
+  await escapeAll(cdp)
   await pressKey(cdp, 'Escape')
 }
 

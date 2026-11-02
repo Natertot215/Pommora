@@ -301,6 +301,18 @@ export async function viewFrame(cdp, frame) {
 }
 export const PORTAL_ROWS = '[data-picker-portal] [role=button]'
 export const PANE_LAYER = '[data-picker-portal]:not([data-dismissal-shield])'
+export const LIVE_ROWS = `[...document.querySelectorAll('${PANE_LAYER} [role=button]')].filter((e) => !e.closest('[inert]'))`
+export const BACK = `${LIVE_ROWS}.find((e) => e.querySelector('.lucide-chevron-left'))`
+export const entry = (label) => `${LIVE_ROWS}.find((e) => e.textContent.trim() === ${JSON.stringify(label)})`
+export async function slideTo(cdp, label) {
+  await click(cdp, entry(label))
+  await until(`${label}'s slide`, () => cdp.evaluate(`!!${BACK}`))
+  await sleep(600)
+}
+export const statusDividers = (cdp) => cdp.evaluate(`(() => {
+  const rows = ${LIVE_ROWS}.filter((e) => !e.querySelector('.lucide-chevron-left')).map((e) => e.getBoundingClientRect())
+  return [...document.querySelectorAll('${PANE_LAYER} [aria-hidden="true"]')].filter((e) => !e.closest('[inert]') && e.querySelector('span') && e.getBoundingClientRect().top >= rows[0].bottom - 1 && e.getBoundingClientRect().bottom <= rows.at(-1).top + 1).length
+})()`)
 export async function openCollection(cdp) {
   await click(cdp, `[...document.querySelectorAll('.row span')].findLast((e) => e.textContent.trim() === 'Collection A')`)
   await sleep(1200)
@@ -339,6 +351,15 @@ export async function openPanel(cdp) {
 export async function closePanel(cdp) {
   if (await cdp.evaluate(`!!document.querySelector('[aria-label="Add Property"]')`)) await mouseClick(cdp, SETTINGS_BUTTON)
   await sleep(400)
+}
+export async function openSidePane(cdp, title) {
+  await chooseNative(cdp, `document.querySelector('[role=tab][title=${JSON.stringify(title)}]')`, 'Preview')
+  await until('the PageWindow', () => cdp.evaluate(`!!document.querySelector('.page-window')`))
+  await mouseClick(cdp, sel('.page-window button[title="Side Pane"]'))
+}
+export async function closePageWindow(cdp) {
+  await mouseClick(cdp, sel('.page-window button[title="Close"]'))
+  await until('the PageWindow gone', () => cdp.evaluate(`!document.querySelector('.page-window')`))
 }
 export async function escapeAll(cdp) {
   for (let i = 0; i < 4 && (await portalOpen(cdp)); i++) await pressKey(cdp, 'Escape')
