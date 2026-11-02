@@ -35,7 +35,6 @@ export function TextPane({
       open={open}
       onDismiss={close}
       triggerRef={triggerRef}
-      direction="down"
       origin="center"
       contentClassName="text-pane"
     >

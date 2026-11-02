@@ -48,13 +48,7 @@ export function OptionEditPopup({
   return (
     <>
       {/* Focus left where it was: opening is inspection, not an edit — nothing rings or selects on open. */}
-      <PickerMenu
-        open={open}
-        onDismiss={onDismiss}
-        triggerRef={triggerRef}
-        direction="down"
-        focus="leave"
-      >
+      <PickerMenu open={open} onDismiss={onDismiss} triggerRef={triggerRef} focus="leave">
         <div key={contentKey} className={s.root}>
           <div className={s.fieldRow}>
             <button

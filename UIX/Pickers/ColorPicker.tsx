@@ -22,7 +22,7 @@ export function ColorPicker({
   greyscale?: boolean
 }): React.JSX.Element | null {
   return (
-    <PickerMenu open={open} onDismiss={onDismiss} triggerRef={triggerRef} direction="down">
+    <PickerMenu open={open} onDismiss={onDismiss} triggerRef={triggerRef}>
       <ColorGrid selected={selected} onPick={onPick} greyscale={greyscale} />
     </PickerMenu>
   )

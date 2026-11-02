@@ -37,7 +37,6 @@ export function FieldPicker({
       open={open}
       onDismiss={onDismiss}
       triggerRef={triggerRef}
-      direction="down"
       origin="center"
       contentClassName={s.content}
     >
