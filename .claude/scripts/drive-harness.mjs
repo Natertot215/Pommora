@@ -99,7 +99,7 @@ export function tally(groups, { marks = ['PASS', 'FAIL'], note = '' } = {}) {
 
 // ── The main process ────────────────────────────────────────────────────────
 
-// Installed through the inspector before the app's first line runs: a window shows without activating the app, and a native menu is recorded rather than drawn, its rows read and chosen from here.
+// Installed through the inspector before the app's first line runs: a window shows without activating the app, a native menu is recorded rather than drawn, its rows read and chosen from here, and a file dialog and Reveal Location are recorded rather than shown.
 const PATCHES = `(() => {
   const { app, BrowserWindow, Menu, dialog, shell } = require('electron')
   // Click-through as well, so a press meant for the app behind never lands on it and activates it; the drive's input reaches the page through DevTools either way.
