@@ -10,6 +10,7 @@ import type { PropertyDefinition } from '../properties'
 import { defaultStatusSeed } from '../registryProperty'
 import { separator } from '@pommora/uix/Menus/menu-row.css'
 import { contextColumn, propertyColumn } from '../../Views/Pipeline/columns'
+import type { PickCommit } from './pickModel'
 import { PropertyPicker, type PickTarget } from './PropertyPicker'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -36,7 +37,7 @@ const dateTimeTarget = (): PickTarget => ({ kind: 'dateTime', current: null })
 function Host(props: {
   target?: PickTarget | null
   centerX?: number
-  onCommit?: (commits: unknown) => void
+  onCommit?: (commits: PickCommit[]) => void
   onDismiss?: () => void
 }): React.JSX.Element {
   const ref = useRef<HTMLButtonElement>(null)

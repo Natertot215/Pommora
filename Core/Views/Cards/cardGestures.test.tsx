@@ -324,8 +324,10 @@ describe('the card’s Add list', () => {
   }
   const entry = (name: string): HTMLElement | undefined =>
     portalButtons().find((b) => b.textContent?.includes(name))
-  const choose = async (name: string): Promise<void> => {
-    const defs = [STATUS_DEF, numberDef, stageDef, dueDef, doneDef]
+  const choose = async (
+    name: string,
+    defs = [STATUS_DEF, numberDef, stageDef, dueDef, doneDef],
+  ): Promise<void> => {
     useSession.setState({ tree: makeTree({ registry: defs }) })
     await renderView(root, { ...source(), propertyIds: defs.map((d) => d.id) })
     await act(async () => {
@@ -334,9 +336,7 @@ describe('the card’s Add list', () => {
     await act(async () => {
       entry(name)?.click()
     })
-    await act(async () => {
-      await new Promise((r) => setTimeout(r, 30))
-    })
+    await settle(30)
   }
 
   it('a Select entry slides into its options under ‹ Properties, in the same pane', async () => {
@@ -361,16 +361,7 @@ describe('the card’s Add list', () => {
       key: 'Start',
       type: 'dateTime',
     }
-    const defs = [STATUS_DEF, numberDef, dueDef, startDef]
-    useSession.setState({ tree: makeTree({ registry: defs }) })
-    await renderView(root, { ...source(), propertyIds: defs.map((d) => d.id) })
-    await act(async () => {
-      ;(card('p2').querySelector('.card-text') as HTMLElement).click()
-    })
-    await act(async () => {
-      entry('Due')?.click()
-    })
-    await settle(30)
+    await choose('Due', [STATUS_DEF, numberDef, dueDef, startDef])
     const days = (): HTMLElement[] => [
       ...document.querySelectorAll<HTMLElement>('[data-picker-portal] [data-k]'),
     ]

@@ -85,7 +85,7 @@ type SeatOpen = PaneOpen | { mode: 'add'; rowId: string; group?: keyof ItemColum
 
 export type ValueSeatApi = ReturnType<typeof useValueSeat>
 
-/** One value's click, right-click, and editing, shared by the table, cards, the Properties panel, and the menus that open away from a value. */
+/** One value's click, right-click, and editing, a surface's Add list, and the Table's sweep, shared by the table, cards, the Properties panel, and the menus that open away from a value. */
 export function useValueSeat(host: SeatHost) {
   const tree = useSession((s) => s.tree)
   // A menu resolves after its await, by when a view save may have handed the seat a new host.
@@ -194,7 +194,7 @@ export function useValueSeat(host: SeatHost) {
   }
 
   const slide = (columnId?: string): void =>
-    setOpen((at) => (at?.mode === 'add' ? { ...at, slid: columnId } : at))
+    setOpen((prev) => (prev?.mode === 'add' ? { ...prev, slid: columnId } : prev))
 
   const commitPicks = (rows: ViewRow[], column: ResolvedColumn, commits: PickCommit[]): void =>
     groupUndo(() => {

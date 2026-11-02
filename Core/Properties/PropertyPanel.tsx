@@ -223,10 +223,6 @@ export function PropertyPanel({
     )
   }
 
-  const glyphOf = (id: string): React.ReactNode => {
-    const column = seat.host.columnOf(id)
-    return column && ctx && <Icon name={columnIcon(column, ctx.contexts)} />
-  }
   const ghostApi = useGhostAnchor({
     ...FLUSH_GHOST,
     suppressed: () => seat.open !== null,
@@ -280,12 +276,16 @@ export function PropertyPanel({
         </Reveal>
       )
     }
+    const glyphOf = (id: string): React.ReactNode => {
+      const column = seat.host.columnOf(id)
+      return column && <Icon name={columnIcon(column, ctx.contexts)} />
+    }
     return (
       <>
         <div className={panelHost === 'dropdown' ? s.pageRows : cx(s.panelRows, 'scroll-fade')}>
           {GROUPS.map(({ key, label, add }) => {
             const rows = shown[key]
-            const addable = fields[key].some((f) => !isShown(f))
+            const addable = unshown(key).length > 0
             const standing = addable && rows.length === 0
             const opened = addKey === key
             const rowOpened = opened && addFromRow

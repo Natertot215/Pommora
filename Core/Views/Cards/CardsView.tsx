@@ -125,6 +125,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     revealProperty,
     commitValue,
     tree,
+    styleById,
   } = host
   const nexusId = useSession((s) => s.tree?.nexus.id ?? '')
   const defaultIcons = useSession((s) => personalizationOf(s).defaultIcons)
@@ -204,7 +205,6 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     return () => done()
   }, [inline])
 
-  const { styleById } = host
   // ── The root banner seat ──────────────────────────────────────────────────
 
   const [bannerRequest, setBannerRequest] = useState<BannerRequest | null>(null)

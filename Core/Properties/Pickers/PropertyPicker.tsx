@@ -97,7 +97,7 @@ export function PropertyPicker({
   centerX?: number
   onCommit: (commits: PickCommit[]) => void
   onDismiss: () => void
-}): React.JSX.Element | null {
+}): React.JSX.Element {
   const options = target?.kind === 'options'
   return (
     <PickerMenu
