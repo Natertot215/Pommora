@@ -217,7 +217,7 @@ export function PropertyOptionRows({
         groups={groups}
         selected={selected}
         row={(o, run) => (
-          <MenuItem key={o.value} picked={run} centered onClick={() => onPick(o.value)}>
+          <MenuItem key={o.id} picked={run} centered onClick={() => onPick(o.id)}>
             <OptionChip type={column.type} look={look} option={o} def={column.def} />
           </MenuItem>
         )}
@@ -239,7 +239,7 @@ function OptionGroups({
   return (
     <>
       {groups.map((g, i) => {
-        const runs = pickRuns(g.options.map((o) => selected.includes(o.value)))
+        const runs = pickRuns(g.options.map((o) => selected.includes(o.id)))
         return (
           <Fragment key={g.id}>
             {i > 0 && <MenuSeparator group />}
@@ -307,16 +307,16 @@ function EditableOptionRows({
             groups={groups}
             selected={selected}
             row={(o, run) => (
-              <Reveal key={o.value} open enterOnMount={edit.entering(o.value)} fill>
+              <Reveal key={o.id} open enterOnMount={edit.entering(o.id)} fill>
                 <LineRow
-                  id={o.value}
-                  open={() => onPick(o.value)}
+                  id={o.id}
+                  open={() => onPick(o.id)}
                   onContextMenu={(e) => {
                     e.preventDefault()
-                    void edit.openMenu(o.value, e.currentTarget)
+                    void edit.openMenu(o.id, e.currentTarget)
                   }}
                 >
-                  <MenuItem picked={run} centered tabIndex={-1} onClick={() => onPick(o.value)}>
+                  <MenuItem picked={run} centered tabIndex={-1} onClick={() => onPick(o.id)}>
                     <OptionChip type={def.type} look={look} option={o} def={def} />
                   </MenuItem>
                 </LineRow>

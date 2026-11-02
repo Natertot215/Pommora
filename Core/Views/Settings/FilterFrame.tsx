@@ -135,7 +135,7 @@ function ChipsField({
   const ref = useRef<HTMLDivElement>(null)
   const { shown, toggle } = useMultiValue(values, onCommit)
   const options = pickGroups(column, contextOptions).flatMap((g) => g.options)
-  const byValue = new Map(options.map((o) => [o.value, o]))
+  const byId = new Map(options.map((o) => [o.id, o]))
   return (
     <>
       {/* biome-ignore lint/a11y/useSemanticElements: a native button cannot nest the remove buttons */}
@@ -156,7 +156,7 @@ function ChipsField({
               <OptionChip
                 key={v}
                 type={column.type}
-                option={byValue.get(v) ?? { label: v }}
+                option={byId.get(v) ?? { label: v }}
                 onRemove={() => toggle(v)}
               />
             ))}

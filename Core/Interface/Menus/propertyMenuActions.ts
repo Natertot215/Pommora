@@ -47,9 +47,9 @@ export function propertyMenuBranches({ tree, schema, row }: PropertyMenuTarget):
       ...base,
       options: pickGroups(column, contextOptionsFor(column, tree, row.id)).map((g) =>
         g.options.map((o) => ({
-          value: o.value,
+          value: o.id,
           label: o.label,
-          checked: selected.includes(o.value),
+          checked: selected.includes(o.id),
         })),
       ),
     }

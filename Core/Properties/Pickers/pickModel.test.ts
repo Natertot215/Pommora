@@ -34,7 +34,7 @@ describe('pickGroups', () => {
       select_options: [{ id: 'opt_new', key: 'new', label: 'New' }],
     })
     const offered = pickGroups(named).flatMap((g) => g.options)
-    expect(offered.map((o) => [o.value, o.label])).toEqual([['opt_new', 'New']])
+    expect(offered.map((o) => [o.id, o.label])).toEqual([['opt_new', 'New']])
   })
 })
 

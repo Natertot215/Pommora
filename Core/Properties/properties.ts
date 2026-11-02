@@ -234,7 +234,7 @@ export const FILEDATA_BY_ID: ReadonlyMap<string, Filedata> = new Map(
 export const groupOptions = (g: StatusGroup): SelectOption[] =>
   g.options.map((o) => (o.color ? o : { ...o, color: g.color }))
 
-export type PickOption = { value: string; label: string; color?: string; icon?: string }
+export type PickOption = Omit<SelectOption, 'key'>
 
 /** Keyed on the DECLARED type, never on which array happens to be present, so a stale `select_options` a hand edit leaves on a Status property is ignored. */
 export const optionsOf = (

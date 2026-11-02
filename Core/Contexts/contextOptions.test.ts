@@ -23,17 +23,15 @@ const tree = {
 describe('contextOptionsFor', () => {
   it('drops the excluded Space and leaves the cached array identical for every other caller', () => {
     const all = contextOptionsFor(contextColumn('ctx_areas'), tree)!
-    expect(all.map((o) => o.value)).toEqual(['a1', 'a2'])
-    expect(contextOptionsFor(contextColumn('ctx_areas'), tree, 'a1')?.map((o) => o.value)).toEqual([
+    expect(all.map((o) => o.id)).toEqual(['a1', 'a2'])
+    expect(contextOptionsFor(contextColumn('ctx_areas'), tree, 'a1')?.map((o) => o.id)).toEqual([
       'a2',
     ])
     expect(contextOptionsFor(contextColumn('ctx_areas'), tree)).toBe(all)
-    expect(all.map((o) => o.value)).toEqual(['a1', 'a2'])
+    expect(all.map((o) => o.id)).toEqual(['a1', 'a2'])
   })
 
   it('offers only the Spaces of the Context asked for', () => {
-    expect(contextOptionsFor(contextColumn('ctx_topics'), tree)?.map((o) => o.value)).toEqual([
-      't1',
-    ])
+    expect(contextOptionsFor(contextColumn('ctx_topics'), tree)?.map((o) => o.id)).toEqual(['t1'])
   })
 })

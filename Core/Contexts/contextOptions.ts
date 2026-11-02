@@ -23,7 +23,7 @@ export function contextOptionsFor(
     opts = buildOptions(contextId, tree)
     byContext.set(contextId, opts)
   }
-  return excludeId ? opts.filter((o) => o.value !== excludeId) : opts
+  return excludeId ? opts.filter((o) => o.id !== excludeId) : opts
 }
 
 function buildOptions(contextId: string, tree: NexusTree): PickOption[] {
@@ -31,7 +31,7 @@ function buildOptions(contextId: string, tree: NexusTree): PickOption[] {
   return [...spacesByIdOf(tree)]
     .filter(([, s]) => s.contextId === contextId)
     .map(([id, s]) => ({
-      value: id,
+      id,
       label: s.title,
       icon: s.icon,
       ...(s.color ? { color: s.color } : {}),

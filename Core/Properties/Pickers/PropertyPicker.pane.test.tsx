@@ -344,7 +344,7 @@ describe('editing options from the picker', () => {
         column: contextColumn('ctx_a'),
         pick: 'context',
         current: null,
-        contextOptions: [{ value: 'Home', label: 'Home' }],
+        contextOptions: [{ id: 'Home', label: 'Home' }],
       },
     })
     expect(newOption()).toBeNull()

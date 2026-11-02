@@ -10,7 +10,7 @@ export const pickGroups = (column: ResolvedColumn, contextOptions?: PickOption[]
     ? [{ id: column.id, options: contextOptions }]
     : column.def
       ? optionGroupsOf(column.def)
-          .map((g) => ({ id: g.id, options: groupOptions(g).map((o) => ({ ...o, value: o.id })) }))
+          .map((g) => ({ id: g.id, options: groupOptions(g) }))
           .filter((g) => g.options.length > 0)
       : []
 
