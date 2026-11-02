@@ -1,4 +1,4 @@
-// The page exists on disk as Untitled the moment the gesture fires — seeds and order riding the create — and the caller's rename opens its naming surface over the row once it lands.
+// The page exists on disk as Untitled the moment the gesture fires — seeds riding the create, its order written at the gesture — and the caller's rename opens its naming surface over the row once it lands.
 
 import { pageValuesOf, type ViewRow, UNGROUPED } from '../viewRow'
 import { patchOverride } from '../../Properties/valueOverride'
@@ -21,7 +21,6 @@ import { groupKeyToValue } from '../reassign'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import type { ViewHostApi } from './useViewHost'
 import { personalizationOf } from '../../Session/configSlice'
-import { stageView, unstageView } from './pendingView'
 
 export interface CreateFlight {
   id: string
@@ -126,7 +125,7 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
     )
       return null
     const allIds = flattenContainer(c.source, c.effectiveValues, {}).rows.map((r) => r.id)
-    // The live view already folds a staged order, so the next create composes on this one.
+    // The live view folds the order just written, so the next create composes on this one.
     return { manual_order: tieOrderWith(c.view.manual_order, allIds, createdId, anchorId, where) }
   }
   const pageRequest = (
@@ -138,15 +137,15 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
     const seeds = { ...impliedSeeds(req, parentSetId, gestureSeeds), ...gestureSeeds }
     return Object.keys(seeds).length ? { ...req, seeds } : req
   }
-  // Seeds and slot are staged with the ask, so the push that mounts the newborn paints it in its band at its slot; the order is written once the page exists, and a refusal takes back both.
+  // Seeds ride the ask and the order is written at the gesture, so the push that mounts the newborn paints it in its band at its slot; a refused create leaves an id no row paints.
   const createPageIn = (
     req: CreatePageRequest,
     anchorId: string | null,
     where: Slot,
   ): CreateFlight => {
     const c = cfg()
-    const staged = orderPatch(c, req.id, anchorId, where)
-    if (staged) stageView(c.source.id, c.view, staged)
+    const order = orderPatch(c, req.id, anchorId, where)
+    if (order) void c.persistView(order, { viewState: true })
     const flight = mutate(req)
     patchSeedValues(
       req.id,
@@ -156,14 +155,7 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
     const path = flight.then((done) => {
       const created = done?.created
       const landed = created && 'path' in created ? created.path : null
-      const latest = cfg()
-      const order =
-        landed !== null && latest.view.id === c.view.id
-          ? orderPatch(latest, req.id, anchorId, where)
-          : null
-      if (order) void latest.persistView(order, { viewState: true })
-      else if (staged) unstageView(c.source.id, c.view.id, staged)
-      if (landed !== null) latest.rename({ id: req.id, path: landed })
+      if (landed !== null) cfg().rename({ id: req.id, path: landed })
       return landed
     })
     return { id: req.id, path }

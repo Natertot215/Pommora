@@ -44,6 +44,7 @@ type BandEffect =
 interface BandIO {
   persistView: (patch: ViewPatch) => Promise<Result<unknown>>
   mutate: (req: OrderRequest) => Promise<boolean>
+  persistAfter: (patch: ViewPatch, landed: Promise<boolean>) => void
   switched?: (s: Switched) => void
 }
 
@@ -137,8 +138,11 @@ export async function runBandEffect(effect: BandEffect | null, io: BandIO): Prom
       if (saved.ok && effect.switched) io.switched?.(effect.switched)
       return
     }
-    case 'fs':
-      if ((await io.mutate(effect.req)) && effect.after) await io.persistView(effect.after)
+    case 'fs': {
+      const landed = io.mutate(effect.req)
+      if (effect.after) io.persistAfter(effect.after, landed)
+      await landed
+    }
   }
 }
 

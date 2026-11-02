@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, createElement } from 'react'
 import type { Root } from 'react-dom/client'
 import { type SavedView, foldView, slotsOf, type ViewPatch } from '../views'
 import { mountEachTest } from '../../Testing/viewHarness'
-import { mutateAhead, stageView, useLiveView, usePainted } from './pendingView'
+import { dropIO, mutateAhead, stageView, unstageView, useLiveView, usePainted } from './pendingView'
+import { fault, ok } from '../../Contract/result'
 import { useSession } from '../../Session/store'
 import type { CollectionNode, NexusTree, SetNode } from '../../Nexus/tree'
 import type { MutateOutcome, OrderRequest } from '../../Nexus/mutateRequest'
@@ -108,6 +109,17 @@ describe('a whole field', () => {
     expect(live.collapsed_groups).toEqual(['a'])
   })
 
+  it('a take-back removes its own stage alone, so a stage made over it keeps painting', async () => {
+    await show(base())
+    const first = { collapsed_groups: ['a'] }
+    await put(first)
+    await put({ collapsed_groups: ['a', 'b'] })
+    await act(async () => unstageView('k', 'view_1', first))
+    expect(live.collapsed_groups).toEqual(['a', 'b'])
+    await act(async () => unstageView('k', 'view_1', { collapsed_groups: ['a', 'b'] }))
+    expect(live.collapsed_groups).toBeUndefined()
+  })
+
   it('three toggles paint the last through every landing, in order', async () => {
     await show(base({ collapsed_groups: [] }))
     await put({ collapsed_groups: ['a'] })
@@ -163,6 +175,54 @@ describe('the hook', () => {
     await show(base())
     expect(renders).toBe(1)
     expect(live.collapsed_groups).toEqual(['a'])
+  })
+})
+
+describe("a view patch riding a drop's write", () => {
+  const ride = async (saves: boolean) => {
+    let land: (landed: boolean) => void = () => {}
+    const persistView = vi.fn(async () => (saves ? ok({}) : fault('Refused.')))
+    await show(base())
+    const io = dropIO('Row', { source: { id: 'k' }, view: base(), persistView })
+    await act(async () =>
+      io.persistAfter(
+        { group_order: ['a'] },
+        new Promise((resolve) => {
+          land = resolve
+        }),
+      ),
+    )
+    return { land: (landed: boolean) => act(async () => land(landed)), persistView }
+  }
+
+  it('paints with the ask and saves once the write lands', async () => {
+    const { land, persistView } = await ride(true)
+    expect(live.group_order).toEqual(['a'])
+    expect(persistView).not.toHaveBeenCalled()
+    await land(true)
+    expect(persistView).toHaveBeenCalledWith({ group_order: ['a'] }, undefined)
+    expect(live.group_order).toEqual(['a'])
+  })
+
+  it('a refused write takes the paint back unsaved', async () => {
+    const { land, persistView } = await ride(true)
+    await land(false)
+    expect(persistView).not.toHaveBeenCalled()
+    expect(live.group_order).toBeUndefined()
+  })
+
+  it('a refused save takes the paint back', async () => {
+    const { land } = await ride(false)
+    await land(true)
+    expect(live.group_order).toBeUndefined()
+  })
+
+  it('saves the order as the view shows it at landing, keeping a write composed on it since', async () => {
+    const { land, persistView } = await ride(true)
+    await put({ group_order: ['a', 'b'] })
+    await land(true)
+    expect(persistView).toHaveBeenCalledWith({ group_order: ['a', 'b'] }, undefined)
+    expect(live.group_order).toEqual(['a', 'b'])
   })
 })
 

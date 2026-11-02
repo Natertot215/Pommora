@@ -3,9 +3,9 @@ import type { ContainerKind } from '../Nexus/entities'
 import {
   applyViewPatch,
   containerViewIds,
-  DEFAULT_VIEW_ID,
   mergeViewEdit,
   mintViewId,
+  ownViewId,
   ownsViewId,
   savedView,
   type RemovedView,
@@ -72,7 +72,7 @@ export async function saveView(
 ): Promise<Result<{ id: string }>> {
   let id = base.id
   const written = await patchViews(folder, kind, ({ cur, views, ids, resolve }, refuse) => {
-    const placeholder = base.id === DEFAULT_VIEW_ID
+    const placeholder = ownViewId(base.id) === undefined
     const at = placeholder
       ? views.findIndex((v) => savedView.safeParse(v).success)
       : ids.indexOf(resolve(base.id))

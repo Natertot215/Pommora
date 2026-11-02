@@ -116,6 +116,14 @@ describe('view persistence CRUD', () => {
     expect(views[0].collapsed_groups).toEqual(['g1'])
   })
 
+  it('saves a view with no id of its own as the placeholder, never storing an empty id', async () => {
+    await writeCollectionSidecar({ views: [view({ id: 'a' })] })
+    const saved = await upsert(folder, 'collection', view({ id: '', name: 'B' }))
+    const views = (await readRaw('_pagecollection.json')).views as SavedView[]
+    expect(saved.ok && saved.value.id).toBe('a')
+    expect(views.map((v) => [v.id, v.name])).toEqual([['a', 'B']])
+  })
+
   it('appends a placeholder save beside a view it cannot read, leaving that view as stored', async () => {
     const unreadable = 'hand-edited'
     await writeCollectionSidecar({ views: [unreadable] })

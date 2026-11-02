@@ -30,7 +30,7 @@ import { useActiveView } from './useActiveView'
 import { useBandHeads } from './useBandHeads'
 import { useContainerValues } from './useContainerValues'
 import { columnStylePatch, styleFor } from './useColumnStyles'
-import type { ViewPatch } from '../views'
+import type { ViewPatch, ViewWriteOpts } from '../views'
 import { groupKeyToValue, reassignable, reassignTarget } from '../reassign'
 import { resolveColumn } from '../Pipeline/columns'
 import type { SeatHost } from '../../Properties/Cells/ValueSeat'
@@ -140,10 +140,8 @@ export function useViewHost(source: CollectionNode | SetNode, nests: boolean) {
     return { rowById: byId, rowBand: band, paintOrder: ordered }
   }, [groups])
 
-  const persistView = (
-    patch: ViewPatch,
-    opts?: { viewState?: boolean },
-  ): Promise<Result<{ id: string }>> => saveView(view, patch, opts)
+  const persistView = (patch: ViewPatch, opts?: ViewWriteOpts): Promise<Result<{ id: string }>> =>
+    saveView(view, patch, opts)
   const toggleCollapse = (key: string): void => {
     if (searching) return
     const next = new Set(collapsed)

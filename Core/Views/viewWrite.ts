@@ -1,6 +1,6 @@
 import type { CollectionNode, SetNode } from '../Nexus/tree'
 import { ok, type Result, fault } from '../Contract/result'
-import { pickViewState, type SavedView, type ViewPatch } from './views'
+import { pickViewState, type SavedView, type ViewPatch, type ViewWriteOpts } from './views'
 import { stageView, unstageView } from './Host/pendingView'
 import { useViewTileScope, type ViewTileScopeValue } from './ViewTileScope'
 import { reportRefusal } from '../Interface/Notifications/notifications'
@@ -12,7 +12,7 @@ export const VIEW_CONFIG_LOCKED = 'The view configuration is locked on this embe
 export function resolveViewWrite(
   locked: boolean,
   patch: ViewPatch,
-  opts?: { viewState?: boolean },
+  opts?: ViewWriteOpts,
 ): ViewPatch | null {
   if (!locked) return patch
   return opts?.viewState ? pickViewState(patch) : null
@@ -24,7 +24,7 @@ export async function saveViewIn(
   source: CollectionNode | SetNode,
   view: SavedView,
   patch: ViewPatch,
-  opts?: { viewState?: boolean },
+  opts?: ViewWriteOpts,
 ): Promise<Result<{ id: string }>> {
   const r = await writeView(scope, source, view, patch, opts)
   reportRefusal(r)
@@ -36,7 +36,7 @@ async function writeView(
   source: CollectionNode | SetNode,
   view: SavedView,
   patch: ViewPatch,
-  opts?: { viewState?: boolean },
+  opts?: ViewWriteOpts,
 ): Promise<Result<{ id: string }>> {
   if (!scope) {
     const base = stageView(source.id, view, patch)
@@ -53,11 +53,7 @@ async function writeView(
 
 export function useSaveView(
   source: CollectionNode | SetNode,
-): (
-  view: SavedView,
-  patch: ViewPatch,
-  opts?: { viewState?: boolean },
-) => Promise<Result<{ id: string }>> {
+): (view: SavedView, patch: ViewPatch, opts?: ViewWriteOpts) => Promise<Result<{ id: string }>> {
   const scope = useViewTileScope()
   return (view, patch, opts) => saveViewIn(scope, source, view, patch, opts)
 }

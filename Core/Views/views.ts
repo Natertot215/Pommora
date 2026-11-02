@@ -112,6 +112,8 @@ const DATE_GRANULARITY_SET = new Set<string>(DATE_GRANULARITIES)
 
 const VIEW_STATE_KEYS = ['collapsed_groups', 'manual_order'] as const
 
+export type ViewWriteOpts = { viewState?: boolean }
+
 export function pickViewState(view: Partial<SavedView>): Partial<SavedView> {
   return Object.fromEntries(VIEW_STATE_KEYS.filter((k) => k in view).map((k) => [k, view[k]]))
 }
@@ -352,7 +354,8 @@ export const DEFAULT_VIEW_ID = `${VIEW_ID_PREFIX}default`
 
 export const mintViewId = (): string => `${VIEW_ID_PREFIX}${newId()}`
 
-const ownViewId = (id: unknown): string | undefined =>
+/** A view's own id; an empty or missing one is none, as the placeholder's is. */
+export const ownViewId = (id: unknown): string | undefined =>
   typeof id === 'string' && id !== '' && id !== DEFAULT_VIEW_ID ? id : undefined
 
 /** Whether `id` is the stored view's own id rather than a positional one `viewIdsOf` stood in for it. */

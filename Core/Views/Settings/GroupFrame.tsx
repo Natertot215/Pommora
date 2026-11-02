@@ -395,7 +395,7 @@ function LocationHierarchy({
 
   const base = { view, plan, sets, sourcePath: painted.path }
   const routing = bandRouting(model, base, (dragged) =>
-    dropIO(nodeLabel(model.byKey.get(dragged.key)), persist),
+    dropIO(nodeLabel(model.byKey.get(dragged.key)), { source, view, persistView: persist }),
   )
 
   const subChipRow = (

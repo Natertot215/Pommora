@@ -274,34 +274,42 @@ describe('runBandEffect', () => {
     const persistView = vi.fn(async () => ok({}))
     await runBandEffect(
       { kind: 'view', patch: {}, switched },
-      { persistView, mutate: vi.fn(), switched: notice },
+      { persistView, mutate: vi.fn(), persistAfter: vi.fn(), switched: notice },
     )
     expect(notice).toHaveBeenCalledWith(switched)
     notice.mockClear()
     await runBandEffect(
       { kind: 'view', patch: {}, switched },
-      { persistView: async () => fault('locked'), mutate: vi.fn(), switched: notice },
+      {
+        persistView: async () => fault('locked'),
+        mutate: vi.fn(),
+        persistAfter: vi.fn(),
+        switched: notice,
+      },
     )
     expect(notice).not.toHaveBeenCalled()
   })
 
-  it('writes the view order only after the folder move lands', async () => {
+  it('hands the view order to ride the folder move before it lands, and a bare move writes no view', async () => {
     const persistView = vi.fn(async () => ok({}))
+    const persistAfter = vi.fn()
+    let land: (landed: boolean) => void = () => {}
+    const moving = new Promise<boolean>((resolve) => {
+      land = resolve
+    })
+    const io = { persistView, mutate: () => moving, persistAfter }
     const req = {
       op: 'reorderChildren' as const,
       parentPath: '',
       key: 'set_order' as const,
       order: [],
     }
-    await runBandEffect(
-      { kind: 'fs', req, after: { group_order: ['x'] } },
-      { persistView, mutate: async () => false },
-    )
+    const run = runBandEffect({ kind: 'fs', req, after: { group_order: ['x'] } }, io)
+    expect(persistAfter).toHaveBeenCalledWith({ group_order: ['x'] }, moving)
+    land(true)
+    await run
+    await runBandEffect({ kind: 'fs', req }, io)
+    expect(persistAfter).toHaveBeenCalledTimes(1)
     expect(persistView).not.toHaveBeenCalled()
-    await runBandEffect(
-      { kind: 'fs', req, after: { group_order: ['x'] } },
-      { persistView, mutate: async () => true },
-    )
-    expect(persistView).toHaveBeenCalledWith({ group_order: ['x'] })
   })
 })

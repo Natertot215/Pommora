@@ -6,6 +6,7 @@ import {
   type SavedView,
   slotsOf,
   type ViewPatch,
+  type ViewWriteOpts,
 } from '../views'
 import { same } from '../../Files/stableJson'
 import type { Result } from '../../Contract/result'
@@ -113,11 +114,21 @@ export function stageView(sourceId: string, view: SavedView, patch: ViewPatch): 
   return applyViewPatch(live, patch)
 }
 
+/** Takes back this patch's own stage alone, so a stage made over it since keeps painting. */
 export function unstageView(sourceId: string, viewId: string, patch: ViewPatch): void {
   const entry = pending.get(keyOf(sourceId, viewId))
   if (!entry) return
-  const written = new Set(slotsOf(patch).map(([key]) => key))
-  restage(entry, Object.fromEntries(Object.entries(entry.staged).filter(([k]) => !written.has(k))))
+  const next = { ...entry.staged }
+  for (const [key, value] of slotsOf(patch)) {
+    const seen = next[key]?.seen ?? []
+    let at = seen.length - 1
+    while (at > 0 && !same(seen[at], value)) at--
+    if (at <= 0) continue
+    const kept = [...seen.slice(0, at), ...seen.slice(at + 1)]
+    if (kept.length > 1) next[key] = { value: kept[kept.length - 1], seen: kept }
+    else delete next[key]
+  }
+  restage(entry, next)
 }
 
 // ── Orders painted ahead ────────────────────────────────────────────────────
@@ -185,18 +196,38 @@ export function mutateAhead(
   )
 }
 
-type Persist = (patch: ViewPatch, opts?: { viewState?: boolean }) => Promise<Result<unknown>>
+type Persist = (patch: ViewPatch, opts?: ViewWriteOpts) => Promise<Result<unknown>>
 
 export function dropIO(
   name: string,
-  persist: Persist,
-): { persistView: Persist; mutate: (req: OrderRequest) => Promise<boolean> } {
+  {
+    source,
+    view,
+    persistView: persist,
+  }: { source: { id: string }; view: SavedView; persistView: Persist },
+): {
+  persistView: Persist
+  mutate: (req: OrderRequest) => Promise<boolean>
+  /** Painted at once, saved once `landed` as the view then shows it, so a write composed on it since stands, and taken back on a refusal of either. */
+  persistAfter: (patch: ViewPatch, landed: Promise<boolean>, opts?: ViewWriteOpts) => void
+} {
+  const persistView: Persist = (patch, opts) =>
+    persist(patch, opts).then((r) => {
+      refusedDrop(r.ok, name)
+      return r
+    })
   return {
-    persistView: (patch, opts) =>
-      persist(patch, opts).then((r) => {
-        refusedDrop(r.ok, name)
-        return r
-      }),
+    persistView,
     mutate: (req) => mutateAhead(req, name),
+    persistAfter: (patch, landed, opts) => {
+      stageView(source.id, view, patch)
+      void landed.then(async (ok) => {
+        const live = readLiveView(source.id, view)
+        const shown = Object.fromEntries(
+          Object.keys(patch).map((k) => [k, live[k as keyof SavedView]]),
+        )
+        if (!(ok && (await persistView(shown, opts)).ok)) unstageView(source.id, view.id, patch)
+      })
+    },
   }
 }
