@@ -1,0 +1,2053 @@
+diff --git a/Core/Properties/Cells/ValueSeat.test.tsx b/Core/Properties/Cells/ValueSeat.test.tsx
+index c7895ae..f8dcc6f 100644
+--- a/Core/Properties/Cells/ValueSeat.test.tsx
++++ b/Core/Properties/Cells/ValueSeat.test.tsx
+@@ -13,6 +13,7 @@ import { FILEDATA, type PropertyDefinition } from '../properties'
+ import { dateDefaults } from '../columnStyles'
+ import type { ResolvedColumn, ViewRow } from '../../Views/viewRow'
+ import { propertyColumn } from '../../Views/Pipeline/columns'
++import { pushUndo, undoValue } from '../../Session/undo'
+ import { MenuSeat, type SeatHost, useValueSeat, ValueSeat, type ValueSeatApi } from './ValueSeat'
+ 
+ let root: Root
+@@ -152,11 +153,11 @@ describe('a value seat’s click', () => {
+   it('a centered host carries the click’s x to the picker, and a plain one carries none', () => {
+     mount(columnOf(SELECT), { centered: true })
+     act(() => el().dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 40 })))
+-    expect(seat.open?.x).toBe(40)
++    expect(seat.open).toMatchObject({ x: 40 })
+     act(() => seat.close())
+     mount(columnOf(SELECT))
+     act(() => el().dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 40 })))
+-    expect(seat.open?.x).toBeUndefined()
++    expect(seat.open).toMatchObject({ x: undefined })
+   })
+ })
+ 
+@@ -280,6 +281,46 @@ describe('a value seat’s panes', () => {
+   })
+ })
+ 
++describe('a sweep', () => {
++  const rowA: ViewRow = { ...row, id: 'page_a', path: 'Col/A.md', frontmatter: {} as never }
++  const rowB: ViewRow = { ...row, id: 'page_b', path: 'Col/B.md', frontmatter: {} as never }
++  const rows = new Map([
++    [rowA.id, rowA],
++    [rowB.id, rowB],
++  ])
++  const open = (): void => {
++    mount(columnOf(SELECT), { rowOf: (id) => rows.get(id) })
++    act(() => seat.sweep(rowA, columnOf(SELECT), [rowA.id, rowB.id], el()))
++  }
++  const option = (label: string): HTMLElement | undefined =>
++    [
++      ...document.querySelectorAll<HTMLElement>(
++        '[data-picker-portal] [data-line-row] [role="button"]',
++      ),
++    ].find((e) => e.textContent?.includes(label))
++
++  it('opens its one picker at the settled cell', () => {
++    open()
++    expect(seat.open).toMatchObject({ mode: 'picker', swept: [rowA.id, rowB.id] })
++    expect(seat.anchor.current).toBe(el())
++  })
++
++  it('lands a pick on every row that lacks it, as one undo step', () => {
++    const reverted: string[] = []
++    commit.mockImplementation((r) =>
++      pushUndo(() => {
++        reverted.push(r.id)
++        return true
++      }),
++    )
++    open()
++    act(() => option('Alpha')?.click())
++    expect(commit.mock.calls.map(([r]) => r.id)).toEqual([rowA.id, rowB.id])
++    expect(undoValue(null)).toBe(true)
++    expect(reverted).toEqual([rowB.id, rowA.id])
++  })
++})
++
+ describe('the menu seat', () => {
+   const LINK = def('prop_l', 'link')
+   let trigger: HTMLElement
+diff --git a/Core/Properties/Cells/ValueSeat.tsx b/Core/Properties/Cells/ValueSeat.tsx
+index 3fc2671..6f11d36 100644
+--- a/Core/Properties/Cells/ValueSeat.tsx
++++ b/Core/Properties/Cells/ValueSeat.tsx
+@@ -1,9 +1,10 @@
+ import { useEffect, useReducer, useRef, useState } from 'react'
++import { flushSync } from 'react-dom'
+ import { isSecondaryClick } from '@pommora/uix/Interactions/chords'
+ import { useHeld } from '@pommora/uix/Animations/useExitPresence'
+ import { useLatest } from '@pommora/uix/Utilities/stableApi'
+ import type { ResolvedColumn, ViewRow } from '../../Views/viewRow'
+-import { propertyColumn } from '../../Views/Pipeline/columns'
++import { type ItemColumns, propertyColumn } from '../../Views/Pipeline/columns'
+ import type { ConnPage } from '../../Connections/pageIndex'
+ import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
+ import { readLinkText, resolveLink } from '../../Connections/linkValue'
+@@ -20,13 +21,16 @@ import { showConnectionMenu } from '../../Interface/Menus/connectionMenuActions'
+ import { contextOptionsFor } from '../../Contexts/contextOptions'
+ import { previewConnections } from '../../Session/pageConnections'
+ import { useSession } from '../../Session/store'
++import { groupUndo } from '../../Session/undo'
+ import type { ColumnStyle } from '../columnStyles'
+ import { numberBarCapable } from '../formatValue'
+ import { resolveFieldValue } from '../fieldValue'
+ import { pickKindOf } from '../properties'
+ import { isBlankValue, type PropertyValue } from '../propertyValue'
+ import { fileChipIndex, pickFileInto, runFileMenuAction } from '../Pickers/filePick'
+-import { type PickEntry, PropertyPicker, type PickTarget } from '../Pickers/PropertyPicker'
++import { MetadataPicker } from '../Pickers/MetadataPicker'
++import type { PickCommit } from '../Pickers/pickModel'
++import { PropertyPicker, type PickTarget } from '../Pickers/PropertyPicker'
+ import { PropertyValueInput } from '../Pickers/PropertyValueInput'
+ import { type ValueIntent, valueClickIntent, valueMenuIntent } from '../Pickers/valueClick'
+ 
+@@ -48,6 +52,12 @@ export type SeatHost = {
+   centered?: true
+   /** Keeps the surface's hover ghost down while a value's menu is open. */
+   hold?: <T>(menu: () => Promise<T>) => Promise<T>
++  /** Present where a surface adds metadata from a list: what the list holds for a row, how a held value shows, and, with `inPlace`, that a typed value edits where the surface shows it. */
++  add?: {
++    columns: (row: ViewRow) => ItemColumns
++    show: (column: ResolvedColumn) => void
++    inPlace?: true
++  }
+   /** Present where a value's menu offers Remove, naming what Remove takes the value out of. */
+   hide?: { from: HideFrom; run: (row: ViewRow, column: ResolvedColumn) => void }
+   /** The panel's Clear, which keeps its row shown. */
+@@ -60,16 +70,19 @@ type Mode = 'picker' | 'editor' | 'popover'
+ /** React events cross portals along the component tree, so a gesture inside a pane a value's field opened, such as its link suggestions, reaches the seat too. */
+ const fromPane = (e: React.MouseEvent): boolean => !e.currentTarget.contains(e.target as Node)
+ 
+-type SeatOpen = {
++type PaneOpen = {
+   rowId: string
+   columnId: string
+   mode: Mode
+   seat?: ConnEditAction
+   x?: number
++  swept?: string[]
+   /** Counts every open, so opening the same value again mounts a fresh popover. */
+   nonce: number
+ }
+ 
++type SeatOpen = PaneOpen | { mode: 'add'; rowId: string; group?: keyof ItemColumns; slid?: string }
++
+ export type ValueSeatApi = ReturnType<typeof useValueSeat>
+ 
+ /** One value's click, right-click, and editing, shared by the table, cards, the Properties panel, and the menus that open away from a value. */
+@@ -86,7 +99,9 @@ export function useValueSeat(host: SeatHost) {
+   }
+   // A pane whose anchor left the page closes: its row is gone, or a compact card dropped the value it just cleared. So does one whose column no longer resolves.
+   useEffect(() => {
+-    if (open && (!anchor.current?.isConnected || !host.columnOf(open.columnId))) close()
++    if (!open) return
++    if (!anchor.current?.isConnected || (open.mode !== 'add' && !host.columnOf(open.columnId)))
++      close()
+   })
+ 
+   const intentOf = (row: ViewRow, column: ResolvedColumn): ValueIntent | null =>
+@@ -106,10 +121,18 @@ export function useValueSeat(host: SeatHost) {
+     from: EventTarget | null = null,
+     x?: number,
+   ): boolean => {
+-    const float = (mode: Mode, seat?: ConnEditAction, at?: number): true => {
++    const float = (mode: Mode, seat?: ConnEditAction, at?: number, swept?: string[]): true => {
+       anchor.current = el
+       opens.current += 1
+-      setOpen({ rowId: row.id, columnId: column.id, mode, seat, x: at, nonce: opens.current })
++      setOpen({
++        rowId: row.id,
++        columnId: column.id,
++        mode,
++        seat,
++        x: at,
++        swept,
++        nonce: opens.current,
++      })
+       return true
+     }
+     const { commit, clear, hide } = live.current
+@@ -126,9 +149,7 @@ export function useValueSeat(host: SeatHost) {
+           )
+         return true
+       case 'picker':
+-        return float('picker', undefined, x)
+-      case 'dateTime':
+-        return float('picker')
++        return float('picker', undefined, x, intent.swept)
+       case 'edit':
+         return float('editor', intent.seat)
+       case 'popover':
+@@ -151,6 +172,41 @@ export function useValueSeat(host: SeatHost) {
+     run(row, column, { kind: 'popover' }, host.anchor(at, column))
+   }
+ 
++  const sweep = (
++    row: ViewRow,
++    column: ResolvedColumn,
++    rowIds: string[],
++    cell: HTMLElement,
++  ): void => {
++    run(row, column, { kind: 'picker', swept: rowIds }, cell)
++  }
++
++  /** What a click would do from away from the value: a typed value edits where the surface shows it once shown, and floats where it has nowhere to sit. */
++  const openAway = (row: ViewRow, column: ResolvedColumn, el: HTMLElement | null): void => {
++    const intent = intentOf(row, column)
++    if (intent?.kind !== 'edit') run(row, column, intent, el)
++    else if (!live.current.add?.inPlace) run(row, column, { kind: 'popover' }, el)
++    else {
++      flushSync(() => live.current.add?.show(column))
++      run(row, column, intent, el && host.anchor(el, column))
++    }
++  }
++
++  const openAdd = (row: ViewRow, el: HTMLElement | null, group?: keyof ItemColumns): void => {
++    const item = host.add?.columns(row)
++    if (!item || (group ? item[group] : [...item.contexts, ...item.properties]).length === 0) return
++    anchor.current = el
++    setOpen({ mode: 'add', rowId: row.id, group })
++  }
++
++  const slide = (columnId?: string): void =>
++    setOpen((at) => (at?.mode === 'add' ? { ...at, slid: columnId } : at))
++
++  const commitPicks = (rows: ViewRow[], column: ResolvedColumn, commits: PickCommit[]): void =>
++    groupUndo(() => {
++      for (const { index, next } of commits) live.current.commit(rows[index], column, next)
++    })
++
+   /** `label` is the panel row's name, which offers the row menu even over a link the connection menu could open. */
+   const menu = async (
+     row: ViewRow,
+@@ -196,7 +252,7 @@ export function useValueSeat(host: SeatHost) {
+   }
+ 
+   /** A typed value's field, inline or, with `popover`, floating; a popover mounts fresh for every open. */
+-  const input = (row: ViewRow, at: SeatOpen, popover = false): React.ReactNode => {
++  const input = (row: ViewRow, at: PaneOpen, popover = false): React.ReactNode => {
+     const column = host.columnOf(at.columnId)
+     return column?.def ? (
+       <PropertyValueInput
+@@ -219,13 +275,12 @@ export function useValueSeat(host: SeatHost) {
+       : null
+ 
+   /** A row never lists itself among a Context's Spaces; a page row's id names no Space, so it excludes nothing. */
+-  const target = (row: ViewRow, column: ResolvedColumn): PickTarget | null => {
+-    const current = resolveFieldValue(row, column)
++  const target = (rows: ViewRow[], column: ResolvedColumn): PickTarget | null => {
+     const style = host.style(column)
+     if (column.type === 'dateTime')
+       return {
+         kind: 'dateTime',
+-        current,
++        current: resolveFieldValue(rows[0], column),
+         dateFormat: style?.date_format,
+         timeFormat: style?.time_format,
+       }
+@@ -236,40 +291,44 @@ export function useValueSeat(host: SeatHost) {
+       kind: 'options',
+       column,
+       pick,
+-      current,
++      currents: rows.map((row) => resolveFieldValue(row, column)),
+       style:
+         setStyle && style
+           ? { current: style, set: (key, value) => setStyle(column, key, value) }
+           : undefined,
+-      contextOptions: contextOptionsFor(column, tree, row.id),
++      contextOptions: contextOptionsFor(column, tree, rows[0].id),
+     }
+   }
+ 
+-  return { open, anchor, host, close, intentOf, run, click, pane, menu, input, editor, target }
+-}
+-
+-/** A surface's add chooser on `row`, shown in the seat's picker so a drilled-in value opens in the same pane. */
+-type SeatChooser = {
+-  row: ViewRow
+-  entries: PickEntry[]
+-  onReveal: (entry: PickEntry) => void
+-  onDismiss: () => void
++  return {
++    open,
++    anchor,
++    host,
++    close,
++    click,
++    pane,
++    menu,
++    input,
++    editor,
++    target,
++    sweep,
++    openAway,
++    openAdd,
++    slide,
++    commitPicks,
++  }
+ }
+ 
+-/** The seat's floating panes: one picker, which a surface's add chooser shares, and one typed-value popover. Each holds the value it last opened on through its exit; the picker mounts fresh for another value and the popover for every open. */
+-export function ValueSeat({
+-  seat,
+-  chooser,
+-}: {
+-  seat: ValueSeatApi
+-  chooser?: SeatChooser | null
+-}): React.JSX.Element {
++/** The seat's floating panes: a value's picker, the Add list where the surface has one, and one typed-value popover. Each holds the value it last opened on through its exit; the picker mounts fresh for another value and the popover for every open. */
++export function ValueSeat({ seat }: { seat: ValueSeatApi }): React.JSX.Element {
+   const { open, host } = seat
+-  const last = useRef<{ picker?: SeatOpen; popover?: SeatOpen }>({})
++  const last = useRef<{ picker?: PaneOpen; popover?: PaneOpen }>({})
+   if (open?.mode === 'picker' || open?.mode === 'popover') last.current[open.mode] = open
+   const picked = last.current.picker
+-  const pickRow = picked && host.rowOf(picked.rowId)
+   const pickColumn = picked && host.columnOf(picked.columnId)
++  const pickRows = picked
++    ? (picked.swept ?? [picked.rowId]).flatMap((id) => host.rowOf(id) ?? [])
++    : []
+   const typed = last.current.popover
+   const typedRow = typed && host.rowOf(typed.rowId)
+   return (
+@@ -277,33 +336,19 @@ export function ValueSeat({
+       <PropertyPicker
+         key={picked ? `${picked.rowId}:${picked.columnId}` : 'none'}
+         target={
+-          !chooser && open?.mode === 'picker' && pickRow && pickColumn
+-            ? seat.target(pickRow, pickColumn)
++          open?.mode === 'picker' && pickRows.length > 0 && pickColumn
++            ? seat.target(pickRows, pickColumn)
+             : null
+         }
+-        chooser={chooser?.entries}
+-        resolveTarget={
+-          chooser
+-            ? (entry) => {
+-                const column = host.columnOf(entry.id)
+-                return column ? seat.target(chooser.row, column) : null
+-              }
+-            : undefined
+-        }
+-        open={open?.mode === 'picker' || chooser != null}
++        open={open?.mode === 'picker'}
+         triggerRef={seat.anchor}
+         anchorX={open?.mode === 'picker' ? open.x : undefined}
+-        onCommit={(value, entry) => {
+-          const column = entry ? host.columnOf(entry.id) : pickColumn
+-          const row = entry ? chooser?.row : pickRow
+-          if (row && column) host.commit(row, column, value)
+-        }}
+-        onReveal={chooser?.onReveal}
+-        onDismiss={() => {
+-          seat.close()
+-          chooser?.onDismiss()
++        onCommit={(commits) => {
++          if (pickColumn) seat.commitPicks(pickRows, pickColumn, commits)
+         }}
++        onDismiss={seat.close}
+       />
++      {host.add && <MetadataPicker seat={seat} />}
+       {typed && typedRow && seat.input(typedRow, typed, true)}
+     </>
+   )
+@@ -339,15 +384,9 @@ export function MenuSeat(): React.JSX.Element {
+     if (!pending) return
+     const row = pending.rowOf()
+     if (!row) return dismiss()
+-    const intent = seat.intentOf(row, pending.column)
+-    seat.run(
+-      row,
+-      pending.column,
+-      intent?.kind === 'edit' ? { kind: 'popover' } : intent,
+-      pending.trigger,
+-    )
++    seat.openAway(row, pending.column, pending.trigger)
+     // The file dialog opens no pane, so nothing is left to hold the menu's anchor.
+-    if (intent?.kind === 'file') dismiss()
++    if (pending.column.type === 'file') dismiss()
+   }, [pending])
+   return <ValueSeat seat={seat} />
+ }
+diff --git a/Core/Properties/Pickers/MassPropertyPicker.tsx b/Core/Properties/Pickers/MassPropertyPicker.tsx
+deleted file mode 100644
+index f636d4c..0000000
+--- a/Core/Properties/Pickers/MassPropertyPicker.tsx
++++ /dev/null
+@@ -1,35 +0,0 @@
+-import type { RefObject } from 'react'
+-import type { PropertyValue } from '../propertyValue'
+-import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
+-import { type PickCommit, pickOver } from './pickModel'
+-import { PropertyOptionRows, type PickTarget } from './PropertyPicker'
+-
+-export function MassPropertyPicker({
+-  target,
+-  currents,
+-  open,
+-  triggerRef,
+-  onPick,
+-  onDismiss,
+-}: {
+-  target: Extract<PickTarget, { kind: 'options' }>
+-  currents: Array<PropertyValue | null>
+-  open: boolean
+-  triggerRef: RefObject<HTMLElement | null>
+-  onPick: (commits: PickCommit[]) => void
+-  onDismiss: () => void
+-}): React.JSX.Element {
+-  const { selected, pick } = pickOver(target.pick, currents, onPick, onDismiss)
+-  return (
+-    <PickerMenu open={open} onDismiss={onDismiss} triggerRef={triggerRef} solid>
+-      <PropertyOptionRows
+-        column={target.column}
+-        style={target.style}
+-        contextOptions={target.contextOptions}
+-        selected={selected}
+-        onPick={pick}
+-        editable
+-      />
+-    </PickerMenu>
+-  )
+-}
+diff --git a/Core/Properties/Pickers/MetadataPicker.tsx b/Core/Properties/Pickers/MetadataPicker.tsx
+new file mode 100644
+index 0000000..f3eef2d
+--- /dev/null
++++ b/Core/Properties/Pickers/MetadataPicker.tsx
+@@ -0,0 +1,94 @@
++import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
++import { MenuItem, MenuScrollFrame, MenuSeparator, MenuTopRow } from '@pommora/uix/Menus'
++import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
++import { PICKER_MAX_HEIGHT } from '@pommora/uix/Pickers/picker-base.css'
++import { Icon } from '@pommora/uix/Symbols'
++import { contextsByIdOf } from '../../Contexts/contextIdentity'
++import { useSession } from '../../Session/store'
++import type { ResolvedColumn, ViewRow } from '../../Views/viewRow'
++import type { ValueSeatApi } from '../Cells/ValueSeat'
++import { columnIcon, columnLabel, GROUP_LABELS } from '../columnDisplay'
++import { resolveFieldValue } from '../fieldValue'
++import { ValuePane } from './PropertyPicker'
++import { emptyPane } from './property-picker.css'
++import { entryOutcome } from './valueClick'
++
++/** The Add list: what an item can show or set, sliding into a value's own pane where it has one and otherwise leaving for what a click on the value would do. */
++export function MetadataPicker({ seat }: { seat: ValueSeatApi }): React.JSX.Element {
++  const contexts = contextsByIdOf(useSession((s) => s.tree))
++  const { open, host } = seat
++  const adding = open?.mode === 'add' ? open : null
++  const row = adding ? host.rowOf(adding.rowId) : undefined
++  const column = adding?.slid ? host.columnOf(adding.slid) : undefined
++  const target = row && column ? seat.target([row], column) : null
++
++  const entryRow = (at: ViewRow, entry: ResolvedColumn): React.JSX.Element => {
++    const outcome = entryOutcome(entry.type, resolveFieldValue(at, entry))
++    const choose = (): void => {
++      switch (outcome) {
++        case 'show':
++          host.add?.show(entry)
++          seat.close()
++          break
++        case 'slide':
++          seat.slide(entry.id)
++          break
++        case 'click':
++          seat.close()
++          seat.openAway(at, entry, seat.anchor.current)
++      }
++    }
++    return (
++      <MenuItem
++        key={entry.id}
++        leading={<Icon name={columnIcon(entry, contexts)} size="control" />}
++        trailing={outcome === 'slide' ? <Icon name="chevron-right" size="control" /> : undefined}
++        onClick={choose}
++      >
++        {columnLabel(entry, contexts)}
++      </MenuItem>
++    )
++  }
++  const item = row && host.add?.columns(row)
++  const spaces = item && adding?.group !== 'properties' ? item.contexts : []
++  const rest = item && adding?.group !== 'contexts' ? item.properties : []
++
++  return (
++    <PickerMenu solid open={adding !== null} onDismiss={seat.close} triggerRef={seat.anchor}>
++      <FrameSlide
++        open={target !== null}
++        minWidth={120}
++        root={
++          row && spaces.length + rest.length > 0 ? (
++            <MenuScrollFrame maxHeight={PICKER_MAX_HEIGHT}>
++              {spaces.map((c) => entryRow(row, c))}
++              {spaces.length > 0 && rest.length > 0 && <MenuSeparator />}
++              {rest.map((c) => entryRow(row, c))}
++            </MenuScrollFrame>
++          ) : (
++            <div className={emptyPane} />
++          )
++        }
++        detail={
++          row &&
++          column &&
++          target && (
++            <ValuePane
++              key={column.id}
++              target={target}
++              header={
++                <MenuTopRow
++                  label={GROUP_LABELS[column.kind === 'context' ? 'contexts' : 'properties']}
++                  current={columnLabel(column, contexts)}
++                  onBack={() => seat.slide()}
++                />
++              }
++              onCommit={(commits) => seat.commitPicks([row], column, commits)}
++              onClose={seat.close}
++            />
++          )
++        }
++      />
++    </PickerMenu>
++  )
++}
+diff --git a/Core/Properties/Pickers/PropertyPicker.pane.test.tsx b/Core/Properties/Pickers/PropertyPicker.pane.test.tsx
+index 1eb4f59..0a5debb 100644
+--- a/Core/Properties/Pickers/PropertyPicker.pane.test.tsx
++++ b/Core/Properties/Pickers/PropertyPicker.pane.test.tsx
+@@ -10,7 +10,7 @@ import type { PropertyDefinition } from '../properties'
+ import { defaultStatusSeed } from '../registryProperty'
+ import { separator } from '@pommora/uix/Menus/menu-row.css'
+ import { contextColumn, propertyColumn } from '../../Views/Pipeline/columns'
+-import { PropertyPicker, type PickEntry, type PickTarget } from './PropertyPicker'
++import { PropertyPicker, type PickTarget } from './PropertyPicker'
+ 
+ ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
+ 
+@@ -29,18 +29,15 @@ const optionsTarget = (): PickTarget => ({
+   kind: 'options',
+   column: propertyColumn(selectDef),
+   pick: 'select',
+-  current: null,
++  currents: [null],
+ })
+ const dateTimeTarget = (): PickTarget => ({ kind: 'dateTime', current: null })
+ 
+ function Host(props: {
+   target?: PickTarget | null
+-  chooser?: PickEntry[]
+   anchorX?: number
+-  onCommit?: (value: unknown, entry?: PickEntry) => void
+-  onReveal?: (entry: PickEntry) => void
++  onCommit?: (commits: unknown) => void
+   onDismiss?: () => void
+-  resolveTarget?: (entry: PickEntry) => PickTarget | null
+ }): React.JSX.Element {
+   const ref = useRef<HTMLButtonElement>(null)
+   return (
+@@ -52,23 +49,14 @@ function Host(props: {
+         open
+         triggerRef={ref}
+         target={props.target ?? null}
+-        chooser={props.chooser}
+         anchorX={props.anchorX}
+         onCommit={props.onCommit ?? (() => {})}
+-        onReveal={props.onReveal}
+         onDismiss={props.onDismiss ?? (() => {})}
+-        resolveTarget={props.resolveTarget}
+       />
+     </>
+   )
+ }
+ 
+-const rowButton = (name: string): HTMLElement | undefined =>
+-  [
+-    ...document.querySelectorAll<HTMLElement>('[data-picker-portal] [role="button"]'),
+-    ...buttons(),
+-  ].find((e) => e.textContent?.includes(name))
+-
+ let host: HTMLDivElement
+ let root: Root
+ const menu = vi.fn(async (_req: unknown) => ok(null))
+@@ -100,9 +88,6 @@ const render = async (props: Parameters<typeof Host>[0]): Promise<void> => {
+ const portal = (): HTMLElement | null => document.querySelector('[data-picker-portal]')
+ const portalText = (): string =>
+   [...document.querySelectorAll('[data-picker-portal]')].map((e) => e.textContent ?? '').join('')
+-const buttons = (): HTMLButtonElement[] => [
+-  ...document.querySelectorAll<HTMLButtonElement>('[data-picker-portal] button'),
+-]
+ // jsdom measures the pane at zero width, so a centred pane's left edge sits exactly on the click.
+ const isCentred = (): boolean =>
+   [...document.querySelectorAll<HTMLElement>('[data-picker-portal]')].some(
+@@ -122,7 +107,7 @@ describe('PropertyPicker panes', () => {
+         kind: 'options',
+         column: propertyColumn(selectDef),
+         pick: 'select',
+-        current: null,
++        currents: [null],
+         style: { current: { ...dateDefaults('full'), look: 'compact' }, set: () => {} },
+       },
+     })
+@@ -143,108 +128,14 @@ describe('PropertyPicker panes', () => {
+     expect(isCentred()).toBe(true)
+   })
+ 
+-  it('an options target with no click does not centre', async () => {
+-    await render({ target: optionsTarget() })
++  it('a calendar ignores the click and opens on its trigger', async () => {
++    await render({ target: dateTimeTarget(), anchorX: 200 })
+     expect(isCentred()).toBe(false)
+   })
+ 
+-  it('a revealOnly chooser entry calls onReveal and never onCommit', async () => {
+-    const onReveal = vi.fn()
+-    const onCommit = vi.fn()
+-    const chooser: PickEntry[] = [
+-      { id: 'prop_r', name: 'Rank', icon: 'square-dashed', revealOnly: true, drillable: false },
+-    ]
+-    await render({ chooser, onReveal, onCommit })
+-    const row = buttons().find((b) => b.textContent?.includes('Rank'))
+-    const el =
+-      row ??
+-      [...document.querySelectorAll<HTMLElement>('[data-picker-portal] [role="button"]')].find(
+-        (e) => e.textContent?.includes('Rank'),
+-      )
+-    await act(async () => {
+-      el?.click()
+-    })
+-    expect(onReveal).toHaveBeenCalledTimes(1)
+-    expect(onCommit).not.toHaveBeenCalled()
+-  })
+-
+-  it('a revealOnly entry dismisses here; a dependent entry hands back without dismissing (its caller reopens on this mount)', async () => {
+-    const chooser: PickEntry[] = [
+-      { id: 'prop_r', name: 'Rank', icon: 'square-dashed', revealOnly: true, drillable: false },
+-      { id: 'prop_d', name: 'Due', icon: 'square-dashed', revealOnly: false, drillable: false },
+-    ]
+-    const revealOnlyDismiss = vi.fn()
+-    await render({ chooser, onReveal: vi.fn(), onDismiss: revealOnlyDismiss })
+-    await act(async () => {
+-      rowButton('Rank')?.click()
+-    })
+-    expect(revealOnlyDismiss).toHaveBeenCalledTimes(1)
+-
+-    const dependentDismiss = vi.fn()
+-    await act(() => root.unmount())
+-    host = document.createElement('div')
+-    document.body.appendChild(host)
+-    root = createRoot(host)
+-    await render({ chooser, onReveal: vi.fn(), onDismiss: dependentDismiss })
+-    await act(async () => {
+-      rowButton('Due')?.click()
+-    })
+-    expect(dependentDismiss).not.toHaveBeenCalled()
+-  })
+-
+-  it('lists Contexts, a divider, then properties, and a Context drills under Spaces', async () => {
+-    const entry = (id: string, name: string, group: PickEntry['group']): PickEntry => ({
+-      id,
+-      name,
+-      icon: 'square-dashed',
+-      revealOnly: false,
+-      drillable: true,
+-      group,
+-    })
+-    const chooser = [entry('prop_sel', 'Stage', 'Properties'), entry('ctx_a', 'Areas', 'Spaces')]
+-    await render({ chooser, resolveTarget: () => optionsTarget() })
+-    const stage = rowButton('Stage')
+-    const divider = stage?.previousElementSibling
+-    expect(divider?.getAttribute('aria-hidden')).toBe('true')
+-    expect(divider?.previousElementSibling).toBe(rowButton('Areas'))
+-    await act(async () => {
+-      rowButton('Areas')?.click()
+-    })
+-    await act(async () => {
+-      await new Promise((r) => setTimeout(r, 30))
+-    })
+-    expect(rowButton('Spaces')?.textContent).toContain('Areas')
+-  })
+-
+-  it('a targeted chooser entry slides to its value pane and onCommit carries the entry', async () => {
+-    const onCommit = vi.fn()
+-    const chooser: PickEntry[] = [
+-      {
+-        id: 'prop_sel',
+-        name: 'Stage',
+-        icon: 'square-dashed',
+-        revealOnly: false,
+-        drillable: true,
+-      },
+-    ]
+-    await render({ chooser, onCommit, resolveTarget: () => optionsTarget() })
+-    await act(async () => {
+-      rowButton('Stage')?.click()
+-    })
+-    await act(async () => {
+-      await new Promise((r) => setTimeout(r, 30))
+-    })
+-    expect(portalText()).toContain('Alpha')
+-    const alpha = [
+-      ...document.querySelectorAll<HTMLElement>('[data-picker-portal] [role="button"]'),
+-    ]
+-      .concat(buttons())
+-      .find((b) => b.textContent?.includes('Alpha'))
+-    await act(async () => {
+-      alpha?.click()
+-    })
+-    expect(onCommit).toHaveBeenCalled()
+-    expect(onCommit.mock.calls[0]?.[1]).toMatchObject({ id: 'prop_sel' })
++  it('an options target with no click does not centre', async () => {
++    await render({ target: optionsTarget() })
++    expect(isCentred()).toBe(false)
+   })
+ })
+ 
+@@ -329,7 +220,12 @@ describe('editing options from the picker', () => {
+       status_groups: [open, { ...active, options: [] }, done],
+     }
+     await render({
+-      target: { kind: 'options', column: propertyColumn(statusDef), pick: 'select', current: null },
++      target: {
++        kind: 'options',
++        column: propertyColumn(statusDef),
++        pick: 'select',
++        currents: [null],
++      },
+     })
+     expect(newOption()).toBeNull()
+     const order = [
+@@ -343,7 +239,7 @@ describe('editing options from the picker', () => {
+         kind: 'options',
+         column: contextColumn('ctx_a'),
+         pick: 'context',
+-        current: null,
++        currents: [null],
+         contextOptions: [{ value: 'Home', label: 'Home' }],
+       },
+     })
+@@ -359,7 +255,9 @@ describe('editing options from the picker', () => {
+       row?.focus()
+       row?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+     })
+-    expect(onCommit).toHaveBeenCalledWith({ kind: 'select', value: 'opt_Alpha' })
++    expect(onCommit).toHaveBeenCalledWith([
++      { index: 0, next: { kind: 'select', value: 'opt_Alpha' } },
++    ])
+   })
+ 
+   it("a row's right-click offers the option menu, without Style where no view is in hand and without Clear or Delete", async () => {
+diff --git a/Core/Properties/Pickers/PropertyPicker.tsx b/Core/Properties/Pickers/PropertyPicker.tsx
+index b07daeb..19638be 100644
+--- a/Core/Properties/Pickers/PropertyPicker.tsx
++++ b/Core/Properties/Pickers/PropertyPicker.tsx
+@@ -1,4 +1,4 @@
+-import { Fragment, type ReactNode, type RefObject, useEffect, useState } from 'react'
++import { Fragment, type ReactNode, type RefObject } from 'react'
+ import type { ColumnStyle } from '../columnStyles'
+ import {
+   groupOptions,
+@@ -23,165 +23,99 @@ import {
+   MenuItem,
+   MenuScrollFrame,
+   MenuSeparator,
+-  MenuTopRow,
+   menuDropLine,
+   pickRuns,
+   type PickRun,
+ } from '@pommora/uix/Menus'
+-import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
+ import { LineRow, LineZone, lineList } from '@pommora/uix/Interactions/drag'
+ import { Reveal } from '@pommora/uix/Animations/Reveal'
+-import { Icon } from '@pommora/uix/Symbols'
+ import { useHeld } from '@pommora/uix/Animations/useExitPresence'
+ import { DateTimeValuePicker } from './DateTimeValuePicker'
+-import { type PickGroup, pickGroups, pickOver } from './pickModel'
++import { type PickCommit, type PickGroup, pickGroups, pickOver } from './pickModel'
+ import { OptionChip } from '../Cells/OptionChip'
+-import { chooserTop, emptyPane } from './property-picker.css'
++import { emptyPane } from './property-picker.css'
+ 
+-export type PickTarget = { current: PropertyValue | null } & (
++export type PickTarget =
+   | {
+       kind: 'options'
+       column: ResolvedColumn
+       pick: OptionPickKind
++      currents: Array<PropertyValue | null>
+       style?: OptionStyleControl
+       contextOptions?: PickOption[]
+     }
+   | {
+       kind: 'dateTime'
++      current: PropertyValue | null
+       dateFormat?: ColumnStyle['date_format']
+       timeFormat?: ColumnStyle['time_format']
+     }
+-)
+ 
+-export type PickEntry = {
+-  id: string
+-  name: string
+-  icon: string
+-  revealOnly: boolean
+-  drillable: boolean
+-  group?: 'Spaces' | 'Properties'
++export function ValuePane({
++  target,
++  header,
++  onCommit,
++  onClose,
++}: {
++  target: PickTarget
++  header?: ReactNode
++  onCommit: (commits: PickCommit[]) => void
++  onClose: () => void
++}): React.JSX.Element {
++  if (target.kind === 'dateTime')
++    return (
++      <>
++        {header}
++        <DateTimeValuePicker
++          value={target.current}
++          dateFormat={target.dateFormat}
++          timeFormat={target.timeFormat}
++          span
++          onCommit={(next) => onCommit([{ index: 0, next }])}
++        />
++      </>
++    )
++  const { selected, pick } = pickOver(target.pick, target.currents, onCommit, onClose)
++  return (
++    <PropertyOptionRows
++      column={target.column}
++      style={target.style}
++      contextOptions={target.contextOptions}
++      header={header}
++      selected={selected}
++      onPick={pick}
++      editable
++    />
++  )
+ }
+ 
+ export function PropertyPicker({
+   target,
+-  chooser,
+   open,
+   triggerRef,
+   anchorX,
+   onCommit,
+-  onReveal,
+   onDismiss,
+-  resolveTarget,
+ }: {
+   target: PickTarget | null
+-  chooser?: PickEntry[]
+   open: boolean
+   triggerRef: RefObject<HTMLElement | null>
+   anchorX?: number
+-  onCommit: (value: PropertyValue | null, entry?: PickEntry) => void
+-  onReveal?: (entry: PickEntry) => void
++  onCommit: (commits: PickCommit[]) => void
+   onDismiss: () => void
+-  resolveTarget?: (entry: PickEntry) => PickTarget | null
+ }): React.JSX.Element | null {
+   const held = useHeld(target, open)
+-  const [picked, setPicked] = useState<PickEntry | null>(null)
+-  useEffect(() => {
+-    setPicked(null)
+-  }, [open])
+-
+-  const t = picked ? (resolveTarget?.(picked) ?? null) : held
+-  const commit = (v: PropertyValue | null): void => (picked ? onCommit(v, picked) : onCommit(v))
+-
+-  const origin = t?.kind !== 'options' ? 'auto' : anchorX !== undefined ? 'center' : 'right'
+-
+-  const pane = !t ? null : t.kind === 'options' ? (
+-    (() => {
+-      const { selected, pick } = pickOver(
+-        t.pick,
+-        [t.current],
+-        ([one]) => commit(one.next),
+-        onDismiss,
+-      )
+-      return (
+-        <PropertyOptionRows
+-          column={t.column}
+-          style={t.style}
+-          contextOptions={t.contextOptions}
+-          selected={selected}
+-          onPick={pick}
+-          editable
+-        />
+-      )
+-    })()
+-  ) : (
+-    <DateTimeValuePicker
+-      value={t.current}
+-      dateFormat={t.dateFormat}
+-      timeFormat={t.timeFormat}
+-      span
+-      onCommit={commit}
+-    />
+-  )
+-
+-  const entryRow = (e: PickEntry): React.JSX.Element => (
+-    <MenuItem
+-      key={e.id}
+-      leading={<Icon name={e.icon} size="body" />}
+-      trailing={e.revealOnly ? undefined : <Icon name="chevron-right" />}
+-      onClick={() => {
+-        if (e.drillable) return setPicked(e)
+-        onReveal?.(e)
+-        if (e.revealOnly) onDismiss()
+-      }}
+-    >
+-      {e.name}
+-    </MenuItem>
+-  )
+-  const spaces = chooser?.filter((e) => e.group === 'Spaces') ?? []
+-  const rest = chooser?.filter((e) => e.group !== 'Spaces') ?? []
+-
++  const options = held?.kind === 'options'
+   return (
+     <PickerMenu
+       solid
+       open={open}
+       onDismiss={onDismiss}
+       triggerRef={triggerRef}
+-      origin={chooser ? 'auto' : origin}
+-      anchorX={anchorX}
++      origin={!options ? 'auto' : anchorX !== undefined ? 'center' : 'right'}
++      anchorX={options ? anchorX : undefined}
+     >
+-      {chooser ? (
+-        <FrameSlide
+-          open={picked !== null}
+-          minWidth={120}
+-          minHeight={0}
+-          root={
+-            chooser.length === 0 ? (
+-              <div className={emptyPane} />
+-            ) : (
+-              <div>
+-                {spaces.map(entryRow)}
+-                {spaces.length > 0 && rest.length > 0 && <MenuSeparator />}
+-                {rest.map(entryRow)}
+-              </div>
+-            )
+-          }
+-          detail={
+-            picked && (
+-              <div>
+-                <MenuTopRow
+-                  label={picked.group ?? 'Properties'}
+-                  current={picked.name}
+-                  onBack={() => setPicked(null)}
+-                  className={chooserTop}
+-                />
+-                {pane}
+-              </div>
+-            )
+-          }
+-        />
+-      ) : (
+-        pane
+-      )}
++      {held && <ValuePane target={held} onCommit={onCommit} onClose={onDismiss} />}
+     </PickerMenu>
+   )
+ }
+@@ -190,6 +124,7 @@ export function PropertyOptionRows({
+   column,
+   style,
+   contextOptions,
++  header,
+   selected,
+   onPick,
+   editable,
+@@ -197,6 +132,7 @@ export function PropertyOptionRows({
+   column: ResolvedColumn
+   style?: OptionStyleControl
+   contextOptions?: PickOption[]
++  header?: ReactNode
+   selected: string[]
+   onPick: (value: string) => void
+   editable?: boolean
+@@ -208,6 +144,7 @@ export function PropertyOptionRows({
+         key={column.id}
+         def={column.def}
+         style={style}
++        header={header}
+         groups={groups}
+         selected={selected}
+         onPick={onPick}
+@@ -215,7 +152,7 @@ export function PropertyOptionRows({
+     )
+   const look = style?.current.look
+   return (
+-    <MenuScrollFrame maxHeight={PICKER_MAX_HEIGHT}>
++    <MenuScrollFrame maxHeight={PICKER_MAX_HEIGHT} header={header}>
+       <OptionGroups
+         groups={groups}
+         selected={selected}
+@@ -261,12 +198,14 @@ function OptionGroups({
+ function EditableOptionRows({
+   def,
+   style,
++  header,
+   groups,
+   selected,
+   onPick,
+ }: {
+   def: PropertyDefinition
+   style?: OptionStyleControl
++  header?: ReactNode
+   groups: PickGroup[]
+   selected: string[]
+   onPick: (value: string) => void
+@@ -280,6 +219,7 @@ function EditableOptionRows({
+     <>
+       <MenuScrollFrame
+         maxHeight={PICKER_MAX_HEIGHT}
++        header={header}
+         footer={
+           creates && (
+             <>
+diff --git a/Core/Properties/Pickers/pickModel.ts b/Core/Properties/Pickers/pickModel.ts
+index da9fdb9..02f7974 100644
+--- a/Core/Properties/Pickers/pickModel.ts
++++ b/Core/Properties/Pickers/pickModel.ts
+@@ -6,13 +6,15 @@ export type PickGroup = { id: string; options: PickOption[] }
+ export type PickCommit = { index: number; next: PropertyValue | null }
+ 
+ export const pickGroups = (column: ResolvedColumn, contextOptions?: PickOption[]): PickGroup[] =>
+-  contextOptions
++  (contextOptions
+     ? [{ id: column.id, options: contextOptions }]
+     : column.def
+-      ? optionGroupsOf(column.def)
+-          .map((g) => ({ id: g.id, options: groupOptions(g).map((o) => ({ ...o, value: o.id })) }))
+-          .filter((g) => g.options.length > 0)
++      ? optionGroupsOf(column.def).map((g) => ({
++          id: g.id,
++          options: groupOptions(g).map((o) => ({ ...o, value: o.id })),
++        }))
+       : []
++  ).filter((g) => g.options.length > 0)
+ 
+ export const toggleValue = (selected: string[], value: string): string[] =>
+   selected.includes(value) ? selected.filter((v) => v !== value) : [...selected, value]
+diff --git a/Core/Properties/Pickers/property-picker.css.ts b/Core/Properties/Pickers/property-picker.css.ts
+index 7278da8..98cbee9 100644
+--- a/Core/Properties/Pickers/property-picker.css.ts
++++ b/Core/Properties/Pickers/property-picker.css.ts
+@@ -1,7 +1,4 @@
+ import { style } from '@vanilla-extract/css'
+-import { topRow } from '@pommora/uix/Menus/menu-row.css'
+-
+-export const chooserTop = style([topRow, { vars: { '--row-pad-y': '0px' } }])
+ 
+ // Keeps the pane's proportions so an emptied option list doesn't collapse to nothing.
+ export const emptyPane = style({ minWidth: 96, height: 24 })
+diff --git a/Core/Properties/Pickers/valueClick.test.ts b/Core/Properties/Pickers/valueClick.test.ts
+index 08e8483..071db0e 100644
+--- a/Core/Properties/Pickers/valueClick.test.ts
++++ b/Core/Properties/Pickers/valueClick.test.ts
+@@ -19,9 +19,8 @@ describe('valueClickIntent', () => {
+   })
+ 
+   it('option kinds open their picker; a Date opens the calendar', () => {
+-    for (const t of ['status', 'select', 'multiSelect', 'context'] as const)
++    for (const t of ['status', 'select', 'multiSelect', 'context', 'dateTime'] as const)
+       expect(valueClickIntent(t, { kind: 'null' })).toEqual({ kind: 'picker' })
+-    expect(valueClickIntent('dateTime', { kind: 'null' })).toEqual({ kind: 'dateTime' })
+   })
+ 
+   it('a file value names the dialog — one arm for the table, the cards and both panes', () => {
+diff --git a/Core/Properties/Pickers/valueClick.ts b/Core/Properties/Pickers/valueClick.ts
+index 0de3295..2edb02c 100644
+--- a/Core/Properties/Pickers/valueClick.ts
++++ b/Core/Properties/Pickers/valueClick.ts
+@@ -1,6 +1,6 @@
+-// What a click or a value menu means on every surface: a checkbox toggles, the option kinds open their picker, a Date opens the calendar, and a stamp opens nothing; the value seat runs it.
++// What a click or a value menu means on every surface: a checkbox toggles, the option kinds and a Date open their picker, and a stamp opens nothing; the value seat runs it. An Add entry shows a value it holds, slides into a picker, or acts as that click.
+ 
+-import { checkboxValue, type PropertyValue } from '../propertyValue'
++import { checkboxValue, isBlankValue, type PropertyValue } from '../propertyValue'
+ import type { ColumnLook } from '../columnStyles'
+ import type { CellMenuAction } from '../../Actions/cellMenu'
+ import type { ConnEditAction, LinkAction } from '../../Actions/connectionMenu'
+@@ -9,8 +9,7 @@ import { barDivisor } from '../formatValue'
+ 
+ export type ValueIntent =
+   | { kind: 'commit'; value: PropertyValue | null }
+-  | { kind: 'picker' }
+-  | { kind: 'dateTime' }
++  | { kind: 'picker'; swept?: string[] }
+   | { kind: 'file' }
+   | { kind: 'edit'; seat?: ConnEditAction }
+   | { kind: 'popover'; seat?: ConnEditAction }
+@@ -33,9 +32,8 @@ export function valueClickIntent(
+     case 'select':
+     case 'multiSelect':
+     case 'context':
+-      return { kind: 'picker' }
+     case 'dateTime':
+-      return { kind: 'dateTime' }
++      return { kind: 'picker' }
+     case 'file':
+       return { kind: 'file' }
+     case 'number':
+@@ -46,6 +44,14 @@ export function valueClickIntent(
+   }
+ }
+ 
++export type EntryOutcome = 'show' | 'slide' | 'click'
++
++export function entryOutcome(type: ColumnType, value: PropertyValue): EntryOutcome {
++  const intent = valueClickIntent(type, value)
++  if (!intent || !isBlankValue(value)) return 'show'
++  return intent.kind === 'picker' ? 'slide' : 'click'
++}
++
+ const MENU_INTENTS: Partial<Record<CellMenuAction | LinkAction, ValueIntent>> = {
+   editLink: { kind: 'edit', seat: 'editLink' },
+   'cell:edit': { kind: 'edit' },
+diff --git a/Core/Properties/PropertyPanel.test.tsx b/Core/Properties/PropertyPanel.test.tsx
+index bfec488..9c6e8ac 100644
+--- a/Core/Properties/PropertyPanel.test.tsx
++++ b/Core/Properties/PropertyPanel.test.tsx
+@@ -494,6 +494,99 @@ describe('the Add row', () => {
+   })
+ })
+ 
++describe('the Add list', () => {
++  const tagsDef: PropertyDefinition = {
++    id: 'prop_tags',
++    label: 'Tags',
++    key: 'Tags',
++    type: 'multiSelect',
++    select_options: [
++      { id: 'opt_a', key: 'A', label: 'A' },
++      { id: 'opt_b', key: 'B', label: 'B' },
++    ],
++  }
++  const settle = async (): Promise<void> => {
++    await act(async () => {
++      await new Promise((r) => setTimeout(r, 30))
++    })
++  }
++  const portalRow = (name: string): HTMLElement | undefined =>
++    [...document.querySelectorAll<HTMLElement>('[data-picker-portal] [role="button"]')].find((e) =>
++      e.textContent?.includes(name),
++    )
++  const press = async (el: HTMLElement | undefined | null): Promise<void> => {
++    await act(async () => {
++      el?.click()
++    })
++    await settle()
++  }
++  const open = async (frontmatter: Record<string, unknown>, ids: string[]): Promise<void> => {
++    const tree = useSession.getState().tree as never as {
++      config: { registry: PropertyDefinition[] }
++      collections: { propertyIds: string[] }[]
++    }
++    tree.config.registry = [stageDef, noteDef, rankDef, tagsDef]
++    tree.collections[0].propertyIds = ids
++    cachePageDetail(detail({ path: 'Col/Page.md', frontmatter }))
++    await renderPanel(<PropertyPanel subject={PAGE} host="dropdown" />)
++    await settle()
++  }
++  const plus = (): HTMLElement | null => host.querySelector('[aria-label="Add Property"]')
++  const row = (id: string): Element | null => host.querySelector(`[data-property-row="${id}"]`)
++  const fieldRow = (name: string): HTMLElement | undefined =>
++    [...host.querySelectorAll<HTMLElement>('[data-ghost-root] [role="button"]')].find(
++      (e) => e.textContent === name,
++    )
++
++  it('a Select entry slides under ‹ Properties · Stage, and cancelling leaves no row', async () => {
++    await open({ Note: 1 }, [noteDef.id, stageDef.id])
++    await press(plus())
++    expect(portalRow('Stage')?.querySelector('.lucide-chevron-right')).not.toBeNull()
++    await press(portalRow('Stage'))
++    expect(portalRow('Properties')?.textContent).toContain('Stage')
++    expect(row('prop_stage')).toBeNull()
++    await act(async () => {
++      document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
++    })
++    await settle()
++    expect(row('prop_stage')).toBeNull()
++  })
++
++  it('the first pick from a group’s last entry shows its row and keeps its pane open', async () => {
++    await open({ Note: 1 }, [noteDef.id, tagsDef.id])
++    await press(plus())
++    await press(portalRow('Tags'))
++    await press(portalRow('A'))
++    expect(row('prop_tags')).not.toBeNull()
++    expect(plus()).not.toBeNull()
++    expect(portalRow('B')).toBeTruthy()
++    await press(portalRow('B'))
++    expect(portalRow('Properties')?.textContent).toContain('Tags')
++  })
++
++  it('a pick from a standing Add row keeps that row, and its pane, through the first row landing', async () => {
++    await open({}, [tagsDef.id])
++    const add = fieldRow('Add Property')
++    await press(add)
++    await press(portalRow('Tags'))
++    await press(portalRow('A'))
++    expect(row('prop_tags')).not.toBeNull()
++    expect(fieldRow('Add Property')).toBe(add)
++    expect(portalRow('B')).toBeTruthy()
++  })
++
++  it('a typed entry edits in its own row, with the list gone', async () => {
++    await open({ Stage: 'Alpha' }, [stageDef.id, noteDef.id])
++    await press(plus())
++    await press(portalRow('Note'))
++    expect(row('prop_note')?.querySelector('input')).not.toBeNull()
++    await act(async () => {
++      await new Promise((r) => setTimeout(r, 400))
++    })
++    expect(portalRow('Note')).toBeUndefined()
++  })
++})
++
+ describe('the property row drag', () => {
+   const row = (id: string): Element =>
+     host.querySelector(`[data-property-row="${id}"]`)!.closest('[data-line-row]')!
+diff --git a/Core/Properties/PropertyPanel.tsx b/Core/Properties/PropertyPanel.tsx
+index b303690..1ad5c20 100644
+--- a/Core/Properties/PropertyPanel.tsx
++++ b/Core/Properties/PropertyPanel.tsx
+@@ -15,10 +15,9 @@ import { useHeldPresence } from '@pommora/uix/Animations/useExitPresence'
+ import type { PropertyDefinition } from './properties'
+ import { isBlankValue, type PropertyValue } from './propertyValue'
+ import type { PageFrontmatter } from '../Nexus/schemas'
+-import type { ViewRow } from '../Views/viewRow'
++import type { ResolvedColumn, ViewRow } from '../Views/viewRow'
+ import { Cell } from './Cells/Cell'
+ import { useValueSeat, ValueSeat } from './Cells/ValueSeat'
+-import type { PickEntry } from './Pickers/PropertyPicker'
+ import { assignValue, useValueWriter } from './assignValue'
+ import { pageRowOf, spaceRowOf } from '../Views/pageRow'
+ import { holderSchema, owningCollection } from '../Nexus/treePatch'
+@@ -64,7 +63,6 @@ export function PropertyPanel({
+   const isSpace = subject.kind === 'space'
+   const tree = useSession((st) => st.tree)
+   const mutate = useSession((st) => st.mutate)
+-  const [addOpen, setAddOpen] = useState<{ key: GroupKey; fromRow: boolean } | null>(null)
+   const rootRef = useRef<HTMLDivElement>(null)
+   const addRefs = useRef<Record<GroupKey, HTMLButtonElement | null>>({
+     contexts: null,
+@@ -87,6 +85,11 @@ export function PropertyPanel({
+     style: () => null,
+     clear: (_, column) => emptyRow(column.id, true),
+     hide: { from: 'row', run: (_, column) => emptyRow(column.id, false) },
++    add: {
++      columns: () => ({ contexts: unshown('contexts'), properties: unshown('properties') }),
++      show: (column) => reveal(column.id),
++      inPlace: true,
++    },
+   })
+   const subjectId = subject.id
+   const spaceNode = isSpace ? spaceNodeOf(tree, subjectId) : null
+@@ -95,7 +98,6 @@ export function PropertyPanel({
+   if (editingFor !== path) {
+     setEditingFor(path)
+     seat.close()
+-    setAddOpen(null)
+   }
+ 
+   useEffect(() => {
+@@ -137,7 +139,6 @@ export function PropertyPanel({
+   const nexusId = tree?.nexus.id
+   useEffect(() => {
+     seat.close()
+-    setAddOpen(null)
+     setRevealed(new Set())
+   }, [nexusId])
+ 
+@@ -180,14 +181,16 @@ export function PropertyPanel({
+     contexts: fields.contexts.filter(isShown),
+     properties: fields.properties.filter(isShown),
+   }
+-  const hidden = (key: GroupKey): PickEntry[] =>
++  const unshown = (key: GroupKey): ResolvedColumn[] =>
+     fields[key]
+       .filter((f) => !isShown(f))
+-      .map((f) => ({ id: f.id, name: f.label, icon: f.icon, revealOnly: true, drillable: false }))
++      .map((f) => (f.def ? propertyColumn(f.def) : contextColumn(f.id)))
+   const entering = useEntrance([...shown.contexts, ...shown.properties], (f) => f.id, fm !== null)
++  const adding = seat.open?.mode === 'add' ? seat.open : null
++  const addKey = adding?.group ?? null
++  const addFromRow = addKey !== null && seat.anchor.current !== addRefs.current[addKey]
+   const openAdd = (key: GroupKey, anchor?: HTMLElement): void => {
+-    seat.anchor.current = anchor ?? addRefs.current[key]
+-    setAddOpen({ key, fromRow: anchor !== undefined })
++    if (row) seat.openAdd(row, anchor ?? addRefs.current[key], key)
+   }
+ 
+   const sendWithUndo = <T,>(send: (order: T) => void, next: T, prior: T): void => {
+@@ -247,9 +250,9 @@ export function PropertyPanel({
+   }
+   const ghostApi = useGhostAnchor({
+     ...FLUSH_GHOST,
+-    suppressed: () => seat.open !== null || addOpen !== null,
++    suppressed: () => seat.open !== null,
+   })
+-  const addSeat = useHeldPresence(addOpen?.fromRow ? addOpen.key : null, 'fast')
++  const addSeat = useHeldPresence(addFromRow ? addKey : null, 'fast')
+ 
+   const reveal = (id: string): void => setRevealed((prev) => new Set([...prev, id]))
+   const emptyRow = (id: string, keep: boolean): void => {
+@@ -257,16 +260,6 @@ export function PropertyPanel({
+     if (keep) reveal(id)
+     else setRevealed((prev) => new Set([...prev].filter((r) => r !== id)))
+   }
+-  const revealAndEdit = (id: string): void => {
+-    setAddOpen(null)
+-    reveal(id)
+-    requestAnimationFrame(() => {
+-      const column = resolveColumn(id, schema, contextIds)
+-      const el =
+-        rowEl(id) ?? addRefs.current[column?.kind === 'context' ? 'contexts' : 'properties']
+-      if (row && column && el) seat.run(row, column, seat.intentOf(row, column), el)
+-    })
+-  }
+ 
+   const body = (): React.ReactNode => {
+     if (!ctx || !row || !fm) return null
+@@ -315,8 +308,8 @@ export function PropertyPanel({
+             const rows = shown[key]
+             const addable = fields[key].some((f) => !isShown(f))
+             const standing = addable && rows.length === 0
+-            const opened = addOpen?.key === key
+-            const rowOpened = opened && addOpen.fromRow
++            const opened = addKey === key
++            const rowOpened = opened && addFromRow
+             const addHeld = rowOpened || addSeat?.held === key
+             const ghost =
+               addable && !standing && ghostApi.ghost?.anchorId === key ? ghostApi.ghost : null
+@@ -343,7 +336,7 @@ export function PropertyPanel({
+               <div key={key} data-reveal-host="" {...ghostAnchorProps(ghostApi, key)}>
+                 <div className={heading}>
+                   <span>{label}</span>
+-                  {addable && (
++                  {(addable || opened) && (
+                     <AccessoryButton
+                       ref={(el) => {
+                         addRefs.current[key] = el
+@@ -369,11 +362,10 @@ export function PropertyPanel({
+                     })}
+                   >
+                     {rows.map(renderRow)}
+-                    {standing && addRow((anchor) => openAdd(key, anchor))}
+-                    {(ghost || (addHeld && !standing)) && (
++                    {(standing || ghost || addHeld) && (
+                       <Reveal
+-                        open={rowOpened || (ghost !== null && !ghost.closing)}
+-                        enterOnMount
++                        open={standing || rowOpened || (ghost !== null && !ghost.closing)}
++                        enterOnMount={!standing}
+                         onCollapsed={ghostApi.closed}
+                       >
+                         {addRow(
+@@ -400,17 +392,7 @@ export function PropertyPanel({
+             </>
+           )}
+         </div>
+-        <ValueSeat
+-          seat={seat}
+-          chooser={
+-            addOpen && {
+-              row,
+-              entries: hidden(addOpen.key),
+-              onReveal: (entry: PickEntry) => revealAndEdit(entry.id),
+-              onDismiss: () => setAddOpen(null),
+-            }
+-          }
+-        />
++        <ValueSeat seat={seat} />
+       </>
+     )
+   }
+diff --git a/Core/Properties/columnDisplay.ts b/Core/Properties/columnDisplay.ts
+index 0931f24..fe3bdfc 100644
+--- a/Core/Properties/columnDisplay.ts
++++ b/Core/Properties/columnDisplay.ts
+@@ -16,3 +16,5 @@ export const columnIcon = (
+   { id, def, type }: ResolvedColumn,
+   contexts: ReadonlyMap<string, ContextIdentity>,
+ ): string => contexts.get(id)?.icon ?? (def ? propertyIcon(def) : propertyTypeIconName(type))
++
++export const GROUP_LABELS = { contexts: 'Spaces', properties: 'Properties' } as const
+diff --git a/Core/Properties/fieldValue.ts b/Core/Properties/fieldValue.ts
+index 5a5da4d..e678677 100644
+--- a/Core/Properties/fieldValue.ts
++++ b/Core/Properties/fieldValue.ts
+@@ -3,7 +3,7 @@
+ import type { ResolvedColumn, ViewRow } from '../Views/viewRow'
+ import type { PageFrontmatter } from '../Nexus/schemas'
+ import type { PropertyDefinition } from './properties'
+-import { decodeValue, NULL_VALUE, type PropertyValue } from './propertyValue'
++import { decodeValue, isBlankValue, NULL_VALUE, type PropertyValue } from './propertyValue'
+ 
+ const stampValue = (iso: string | null): PropertyValue =>
+   iso === null ? NULL_VALUE : { kind: 'dateTime', value: iso }
+@@ -40,3 +40,6 @@ export function resolveFieldValue(row: ViewRow, column: ResolvedColumn): Propert
+ 
+ // MEMOIZED per frontmatter object and definition: the decode was the measured grouped-view hot spot. A value write swaps the frontmatter and a definition edit mints a new definition, so entries self-expire.
+ const resolvedByFm = new WeakMap<PageFrontmatter, WeakMap<PropertyDefinition, PropertyValue>>()
++
++export const holdsValue = (row: ViewRow, column: ResolvedColumn): boolean =>
++  !isBlankValue(resolveFieldValue(row, column))
+diff --git a/Core/Views/Cards/CardsView.tsx b/Core/Views/Cards/CardsView.tsx
+index 312699e..0da6cb1 100644
+--- a/Core/Views/Cards/CardsView.tsx
++++ b/Core/Views/Cards/CardsView.tsx
+@@ -4,7 +4,6 @@ import type { SetNode } from '../../Nexus/tree'
+ import { isBlankValue, type PropertyValue } from '../../Properties/propertyValue'
+ import { type CardBanner, isCompact, type SavedView, viewOption } from '../views'
+ import type { ColumnStyle } from '../../Properties/columnStyles'
+-import { pickKindOf } from '../../Properties/properties'
+ import { Icon } from '@pommora/uix/Symbols'
+ import { isCmd } from '@pommora/uix/Interactions/chords'
+ import { entityIcon } from '../../Assets/entityIconPolicy'
+@@ -43,7 +42,7 @@ import { TAB_FAMILY } from '../../Navigation/tabRows'
+ import type { ViewHostApi } from '../Host/useViewHost'
+ import { GHOST_TRAVEL_HOLD_MS, GhostSuppress } from '@pommora/uix/Interactions/ghostCreate'
+ import { Reveal } from '@pommora/uix/Animations/Reveal'
+-import { columnIcon, columnLabel } from '../../Properties/columnDisplay'
++import { columnLabel } from '../../Properties/columnDisplay'
+ import { GroupBand } from '../Bands/GroupBand'
+ import { orderedChildren } from '../Pipeline/group'
+ import { rowHover, type TitleMenuContext, useViewInteractions } from '../Host/useViewInteractions'
+@@ -51,19 +50,13 @@ import type { ValueContext } from '../../Properties/valueContext'
+ import { NO_TRAIL, type TrailSegment } from '@pommora/uix/Elements/NavTrail'
+ import { ancestryOf } from '../../Nexus/treeIndex'
+ import { stabilize } from '../../Nexus/treeStabilize'
+-import type { PickEntry } from '../../Properties/Pickers/PropertyPicker'
+ import { Cell } from '../../Properties/Cells/Cell'
+ import { useValueSeat, ValueSeat, type ValueSeatApi } from '../../Properties/Cells/ValueSeat'
+ import { borderedField } from '@pommora/uix/Fields/fields.css'
+ import { overScrollEllipsis } from '@pommora/uix/Interactions/OverScroll'
+ import { type Personalization, TENTHS_SCALE } from '../../Settings/personalization'
+-import {
+-  type AddEntry,
+-  addEntriesFor,
+-  fillsBlank,
+-  orderAddableEntries,
+-  shownColumnsFor,
+-} from './cardColumns'
++import { cardAddColumns, fillsBlank, shownColumnsFor } from './cardColumns'
++import { itemColumns } from '../Pipeline/columns'
+ import { RenamableTitle } from '../../Interface/RenamableTitle'
+ import { titleInput } from '@pommora/uix/Menus'
+ import { popMenu } from '../../Actions/menuActions'
+@@ -73,11 +66,6 @@ import './cards-view.css'
+ 
+ // ── Types and constants ─────────────────────────────────────────────────────
+ 
+-type AddPickerRequest = {
+-  rowId: string
+-  anchor: HTMLElement
+-}
+-
+ /** What a card asks the one root banner seat to do. */
+ type BannerRequest = {
+   id: string
+@@ -94,11 +82,10 @@ type CardApi = {
+   pane: ValueSeatApi['pane']
+   editor: ValueSeatApi['editor']
+   open: (row: ViewRow, newTab: boolean) => void
+-  openAddPicker: (req: AddPickerRequest) => void
++  openAdd: ValueSeatApi['openAdd']
+   hover: (id: string, entering: boolean) => void
+   titleMenuContext: (row: ViewRow) => TitleMenuContext
+   titleAction: (action: string, row: ViewRow, anchor: HTMLElement) => boolean
+-  addableFor: (row: ViewRow) => AddEntry[]
+   openSet: (set: SetNode, newTab: boolean) => void
+   banner: (req: BannerRequest) => void
+ }
+@@ -159,7 +146,6 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
+   const hideLocation = viewOption(view, 'hide_location')
+ 
+   const [pendingSeat, setPendingSeat] = useState<{ anchor: string; id: string } | null>(null)
+-  const [addPicker, setAddPicker] = useState<AddPickerRequest | null>(null)
+   const ghostRowmate = (enteringId: string): boolean => {
+     const root = host.viewRootRef.current
+     const ghostEl = root?.querySelector('.ghost-card')
+@@ -173,10 +159,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
+     ghost: {
+       graceMs: CARDS_GHOST_GRACE_MS,
+       suppressed: () =>
+-        seat.open !== null ||
+-        addPicker !== null ||
+-        useSession.getState().renamingPath !== null ||
+-        glanceShown(),
++        seat.open !== null || useSession.getState().renamingPath !== null || glanceShown(),
+       travelHold: { inZone: ghostRowmate, holdMs: GHOST_TRAVEL_HOLD_MS },
+     },
+     rename: (target, fromCreate) => beginRename(target.path, fromCreate, 'detail'),
+@@ -202,6 +185,15 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
+     centered: true,
+     hold: interactions.holdGhost,
+     hide: { from: 'view', run: (_, column) => hideProperty(column.id) },
++    add: {
++      columns: (row) =>
++        cardAddColumns(
++          itemColumns(tree, ctx.schema, row.id),
++          row,
++          shownColumnsFor(row, columns, isCompact(view)),
++        ),
++      show: (column) => revealProperty(column.id),
++    },
+   })
+   // The ghost stands down while a value's inline field owns the pointer.
+   const inline = seat.open?.mode === 'editor'
+@@ -212,18 +204,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
+     return () => done()
+   }, [inline])
+ 
+-  // ── Value and add pickers ─────────────────────────────────────────────────
+-
+   const { styleById } = host
+-  useEffect(() => {
+-    if (addPicker && !rowById.get(addPicker.rowId)) setAddPicker(null)
+-  }, [addPicker, rowById])
+-
+-  const addRow = addPicker ? rowById.get(addPicker.rowId) : undefined
+-  const addEntries = addRow
+-    ? orderAddableEntries(addEntriesFor(addRow, view, ctx, columns, tree))
+-    : []
+-
+   // ── The root banner seat ──────────────────────────────────────────────────
+ 
+   const [bannerRequest, setBannerRequest] = useState<BannerRequest | null>(null)
+@@ -272,14 +253,10 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
+     pane: seat.pane,
+     editor: seat.editor,
+     open: interactions.openPage,
+-    openAddPicker: (req) => {
+-      seat.anchor.current = req.anchor
+-      setAddPicker(req)
+-    },
++    openAdd: seat.openAdd,
+     hover: interactions.ghost.onHover,
+     titleMenuContext: interactions.titleMenuContext,
+     titleAction: interactions.runTitleAction,
+-    addableFor: (row) => addEntriesFor(row, view, ctx, columns, tree),
+     openSet: interactions.openSet,
+     banner: setBannerRequest,
+   })
+@@ -471,40 +448,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
+         )}
+         {interactions.iconPicker}
+         {bannerEditor}
+-        <ValueSeat
+-          seat={seat}
+-          chooser={
+-            addPicker && addRow
+-              ? {
+-                  row: addRow,
+-                  entries: addEntries.map(
+-                    (e): PickEntry => ({
+-                      id: e.column.id,
+-                      name: e.name,
+-                      icon: columnIcon(e.column, ctx.contexts),
+-                      revealOnly: e.revealOnly,
+-                      drillable: !e.revealOnly && pickKindOf(e.column.type) !== null,
+-                      group: e.column.kind === 'context' ? 'Spaces' : 'Properties',
+-                    }),
+-                  ),
+-                  onReveal: (entry) => {
+-                    if (entry.revealOnly) return revealProperty(entry.id)
+-                    const column = seat.host.columnOf(entry.id)
+-                    if (!column) return
+-                    setAddPicker(null)
+-                    const intent = seat.intentOf(addRow, column)
+-                    seat.run(
+-                      addRow,
+-                      column,
+-                      intent?.kind === 'edit' ? { kind: 'popover' } : intent,
+-                      seat.anchor.current,
+-                    )
+-                  },
+-                  onDismiss: () => setAddPicker(null),
+-                }
+-              : null
+-          }
+-        />
++        <ValueSeat seat={seat} />
+       </div>
+     </GhostSuppress.Provider>
+   )
+@@ -911,8 +855,7 @@ const PageCard = memo(function PageCard({
+   const openAdd = useCallback(
+     (e: React.MouseEvent): void => {
+       e.stopPropagation()
+-      if (api.addableFor(row).length > 0 && textRef.current)
+-        api.openAddPicker({ rowId: row.id, anchor: textRef.current })
++      api.openAdd(row, textRef.current)
+     },
+     [api, row],
+   )
+diff --git a/Core/Views/Cards/cardColumns.test.ts b/Core/Views/Cards/cardColumns.test.ts
+index 97bbbdd..39ce28a 100644
+--- a/Core/Views/Cards/cardColumns.test.ts
++++ b/Core/Views/Cards/cardColumns.test.ts
+@@ -1,17 +1,9 @@
+ import { describe, expect, it } from 'vitest'
+ import { FILEDATA, type PropertyDefinition } from '../../Properties/properties'
+ import type { ResolvedColumn, ViewRow } from '../viewRow'
+-import type { SavedView } from '../views'
+-import type { ValueContext } from '../../Properties/valueContext'
+-import {
+-  type AddEntry,
+-  addEntriesFor,
+-  fillsBlank,
+-  orderAddableEntries,
+-  shownColumnsFor,
+-} from './cardColumns'
++import { fillsBlank, shownColumnsFor } from './cardColumns'
+ import { editorText, parseEditorValue } from '../../Properties/parseEditorValue'
+-import { contextColumn, propertyColumn, resolveColumn } from '../Pipeline/columns'
++import { propertyColumn, resolveColumn } from '../Pipeline/columns'
+ 
+ const TITLE_COLUMN = resolveColumn(FILEDATA.title.id, [], [])!
+ 
+@@ -59,27 +51,6 @@ describe('parseEditorValue', () => {
+   })
+ })
+ 
+-describe('orderAddableEntries', () => {
+-  const def = (id: string, type: 'number' | 'checkbox' | 'status' | 'link'): ResolvedColumn =>
+-    propertyColumn({ id, label: id, key: id, type })
+-  it('sinks reveal-only entries to the bottom; pane entries stay on top in order', () => {
+-    const entries: AddEntry[] = [
+-      { column: def('n', 'number'), name: 'N', revealOnly: false },
+-      { column: def('chk', 'checkbox'), name: 'Chk', revealOnly: true },
+-      { column: def('s', 'status'), name: 'S', revealOnly: false },
+-      { column: contextColumn('area'), name: 'Areas', revealOnly: true },
+-      { column: def('u', 'link'), name: 'U', revealOnly: false },
+-    ]
+-    expect(orderAddableEntries(entries).map((e) => e.column.id)).toEqual([
+-      'n',
+-      's',
+-      'u',
+-      'chk',
+-      'area',
+-    ])
+-  })
+-})
+-
+ describe('shownColumnsFor', () => {
+   const sel = {
+     id: 'sel',
+@@ -106,19 +77,7 @@ describe('shownColumnsFor', () => {
+   })
+ })
+ 
+-describe('addEntriesFor', () => {
+-  const ctx = { schema: [], contexts: new Map() } as unknown as ValueContext
+-  const view = { property_order: ['_title'], hidden_properties: [] } as unknown as SavedView
+-  const row = { id: 'p', title: 'P', path: 'P.md', frontmatter: {} } as unknown as ViewRow
+-
+-  it('a stamp entry carries its stamp type and only ever reveals, even while blank', () => {
+-    const entries = addEntriesFor(row, view, ctx, [TITLE_COLUMN])
+-    expect(entries.map((e) => [e.column.id, e.column.type, e.revealOnly])).toEqual([
+-      [FILEDATA.createdAt.id, 'createdTime', true],
+-      [FILEDATA.modifiedAt.id, 'lastEditedTime', true],
+-    ])
+-  })
+-
++describe('fillsBlank', () => {
+   it('fillsBlank: every type but the stamps', () => {
+     for (const t of [
+       'status',
+diff --git a/Core/Views/Cards/cardColumns.ts b/Core/Views/Cards/cardColumns.ts
+index 6066dac..7683fff 100644
+--- a/Core/Views/Cards/cardColumns.ts
++++ b/Core/Views/Cards/cardColumns.ts
+@@ -1,14 +1,8 @@
+ import { type ColumnType, PROPERTY_TYPES } from '../../Properties/properties'
+ import { isBlankValue } from '../../Properties/propertyValue'
+-import type { NexusTree } from '../../Nexus/tree'
+ import type { ResolvedColumn, ViewRow } from '../viewRow'
+-import { isCompact, type SavedView } from '../views'
+-import { hiddenListIds } from '../visibilityModel'
+-import { contextIdsOf, contextsByIdOf } from '../../Contexts/contextIdentity'
+-import { resolveFieldValue } from '../../Properties/fieldValue'
+-import { resolveColumn } from '../Pipeline/columns'
+-import { columnLabel } from '../../Properties/columnDisplay'
+-import type { ValueContext } from '../../Properties/valueContext'
++import { holdsValue, resolveFieldValue } from '../../Properties/fieldValue'
++import type { ItemColumns } from '../Pipeline/columns'
+ 
+ /** A blank value of this type fills in place, unless the type is Filedata, which has no fill path. */
+ export const fillsBlank = (type: ColumnType): boolean => PROPERTY_TYPES[type].origin !== 'filedata'
+@@ -28,42 +22,18 @@ export function shownColumnsFor(
+   )
+ }
+ 
+-export function addEntriesFor(
++export function cardAddColumns(
++  item: ItemColumns,
+   row: ViewRow,
+-  view: SavedView,
+-  ctx: ValueContext,
+-  columns: ResolvedColumn[],
+-  tree: NexusTree | null = null,
+-): AddEntry[] {
+-  const contextIds = contextIdsOf(tree)
+-  const shownIds = new Set(shownColumnsFor(row, columns, isCompact(view)).map((c) => c.id))
+-  const ids = [
+-    ...new Set([
+-      ...hiddenListIds(view, ctx.schema, contextIds),
+-      ...ctx.schema.map((d) => d.id),
+-      ...columns.filter((c) => c.kind === 'context').map((c) => c.id),
+-    ]),
+-  ]
+-  return ids.flatMap((id) => {
+-    const column = shownIds.has(id) ? undefined : resolveColumn(id, ctx.schema, contextIds)
+-    if (!column) return []
+-    const blank = isBlankValue(resolveFieldValue(row, column))
++  shown: ResolvedColumn[],
++): ItemColumns {
++  const drawn = new Set(shown.map((c) => c.id))
++  const listed = (columns: ResolvedColumn[]): ResolvedColumn[] => {
++    const unshown = columns.filter((c) => !drawn.has(c.id))
+     return [
+-      {
+-        column,
+-        name: columnLabel(column, contextsByIdOf(tree)),
+-        revealOnly: !fillsBlank(column.type) || !blank,
+-      },
++      ...unshown.filter((c) => !holdsValue(row, c)),
++      ...unshown.filter((c) => holdsValue(row, c)),
+     ]
+-  })
+-}
+-
+-export type AddEntry = {
+-  column: ResolvedColumn
+-  name: string
+-  revealOnly: boolean
+-}
+-
+-export function orderAddableEntries(entries: AddEntry[]): AddEntry[] {
+-  return [...entries.filter((e) => !e.revealOnly), ...entries.filter((e) => e.revealOnly)]
++  }
++  return { contexts: listed(item.contexts), properties: listed(item.properties) }
+ }
+diff --git a/Core/Views/Cards/cardGestures.test.tsx b/Core/Views/Cards/cardGestures.test.tsx
+index 8a836d3..7719c58 100644
+--- a/Core/Views/Cards/cardGestures.test.tsx
++++ b/Core/Views/Cards/cardGestures.test.tsx
+@@ -7,6 +7,7 @@ import type { CollectionNode } from '../../Nexus/tree'
+ import type { PropertyDefinition } from '../../Properties/properties'
+ import { ID_KEY } from '../../Nexus/identityMark'
+ import { useSession } from '../../Session/store'
++import { daySelected } from '@pommora/uix/Pickers/calendar-picker.css'
+ import { mountEachTest, renderView, settle } from '../../Testing/viewHarness'
+ import { STATUS_DEF } from '../../Testing/definitions'
+ import { propsAtRoot, valuesReply } from '../../Testing/pageValues'
+@@ -272,10 +273,52 @@ describe('the card’s Add chooser', () => {
+     expect(openPanes()).toBe(1)
+   })
+ 
+-  it('a Date entry opens its own calendar', async () => {
++  it('a Date entry slides into its calendar under ‹ Properties, in the same pane', async () => {
+     await choose('Due')
++    expect(entry('Properties')?.textContent).toContain('Due')
+     const shown = [...document.querySelectorAll('[data-picker-portal]')].map((e) => e.textContent)
+     expect(shown.join('')).toContain('Mon')
++    expect(openPanes()).toBe(1)
++  })
++
++  it('a second date slides in on its own value, not the one the last calendar held', async () => {
++    const startDef: PropertyDefinition = {
++      id: 'prop_start',
++      label: 'Start',
++      key: 'Start',
++      type: 'dateTime',
++    }
++    const defs = [STATUS_DEF, numberDef, dueDef, startDef]
++    useSession.setState({ tree: makeTree({ registry: defs }) })
++    await renderView(root, { ...source(), propertyIds: defs.map((d) => d.id) })
++    await act(async () => {
++      ;(card('p2').querySelector('.card-text') as HTMLElement).click()
++    })
++    await act(async () => {
++      entry('Due')?.click()
++    })
++    await settle(30)
++    const days = (): HTMLElement[] => [
++      ...document.querySelectorAll<HTMLElement>('[data-picker-portal] [data-k]'),
++    ]
++    const selected = (): number =>
++      days().filter((d) => d.querySelector(`.${daySelected}`) || d.classList.contains(daySelected))
++        .length
++    await act(async () => {
++      days()[10].click()
++    })
++    await settle(200)
++    expect(selected()).toBe(1)
++    await act(async () => {
++      entry('Properties')?.click()
++    })
++    await settle(300)
++    await act(async () => {
++      entry('Start')?.click()
++    })
++    await settle(30)
++    expect(entry('Properties')?.textContent).toContain('Start')
++    expect(selected()).toBe(0)
+   })
+ 
+   it('a Checkbox entry lands checked on the card with no pane open, and unchecking keeps it drawn', async () => {
+diff --git a/Core/Views/Pipeline/columns.ts b/Core/Views/Pipeline/columns.ts
+index 761b55d..4ee944f 100644
+--- a/Core/Views/Pipeline/columns.ts
++++ b/Core/Views/Pipeline/columns.ts
+@@ -3,6 +3,10 @@
+ import type { ResolvedColumn } from '../viewRow'
+ import type { SavedView } from '../views'
+ import { FILEDATA, FILEDATA_BY_ID, type PropertyDefinition } from '../../Properties/properties'
++import { contextIdsOf } from '../../Contexts/contextIdentity'
++import type { NexusTree } from '../../Nexus/tree'
++import { spaceNodeOf } from '../../Nexus/treeIndex'
++import { resolveRowOrder } from '@pommora/uix/Utilities/moveItem'
+ 
+ const TITLE: ResolvedColumn = { id: FILEDATA.title.id, kind: 'title', type: 'title' }
+ 
+@@ -33,6 +37,25 @@ export function resolveColumn(
+   return def && propertyColumn(def)
+ }
+ 
++export type ItemColumns = Record<'contexts' | 'properties', ResolvedColumn[]>
++
++/** Every Context and property an item can hold, in the order its panel lists them: the Nexus's Context order and its schema's, with a Space's own row order over both. */
++export function itemColumns(
++  tree: NexusTree | null,
++  schema: PropertyDefinition[],
++  itemId: string,
++): ItemColumns {
++  const rowOrder = spaceNodeOf(tree, itemId)?.rowOrder ?? []
++  const idOf = (c: ResolvedColumn): string => c.id
++  return {
++    contexts: resolveRowOrder(contextIdsOf(tree).map(contextColumn), idOf, [
++      ...rowOrder,
++      ...(tree?.config.order.contexts ?? []),
++    ]),
++    properties: resolveRowOrder(schema.map(propertyColumn), idOf, rowOrder),
++  }
++}
++
+ /** Context columns are default-OFF — they render only when the view's property_order explicitly reveals them. */
+ export function resolveColumns(
+   view: SavedView,
+diff --git a/Core/Views/Table/TableView.tsx b/Core/Views/Table/TableView.tsx
+index 4eed33c..634e6ae 100644
+--- a/Core/Views/Table/TableView.tsx
++++ b/Core/Views/Table/TableView.tsx
+@@ -1,15 +1,12 @@
+-import { memo, useEffect, useRef, useState } from 'react'
++import { memo, useEffect, useState } from 'react'
+ import type { ResolvedColumn, ResolvedGroup, ViewRow } from '../viewRow'
+ import type { ColumnStyle } from '../../Properties/columnStyles'
+ import { cellMenuModel } from '../../Actions/cellMenu'
+ import { type ColumnAlign, viewOption } from '../views'
+ import type { PropertyValue } from '../../Properties/propertyValue'
+ import { pickKindOf } from '../../Properties/properties'
+-import { resolveFieldValue } from '../../Properties/fieldValue'
+ import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
+ import { fillInput } from '@pommora/uix/Fields/fields.css'
+-import { MassPropertyPicker } from '../../Properties/Pickers/MassPropertyPicker'
+-import { groupUndo } from '../../Session/undo'
+ import { useValueSeat, ValueSeat } from '../../Properties/Cells/ValueSeat'
+ import type { ViewHostApi } from '../Host/useViewHost'
+ import { rowHover, useViewInteractions } from '../Host/useViewInteractions'
+@@ -96,6 +93,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
+     ...host.seatHost,
+     anchor: (el) => el.closest<HTMLElement>('.data-cell') ?? el,
+     hold: interactions.holdGhost,
++    onClose: () => cellSweep.clear(),
+   })
+ 
+   // ── Cell click ────────────────────────────────────────────────────────────
+@@ -160,20 +158,17 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
+ 
+   // ── The sweep ─────────────────────────────────────────────────────────────
+ 
+-  const [mass, setMass] = useState<{ colId: string; rowIds: string[] } | null>(null)
+-  const [massOpen, setMassOpen] = useState(false)
+-  const massTriggerRef = useRef<HTMLElement | null>(null)
+   const cellSweep = useCellSweep({
+     gridEl: () => host.viewRootRef.current,
+     onSettle: (colId, rowIds, settleRowId) => {
+       const at = columns.findIndex((c) => c.id === colId)
+-      const cell = host.viewRootRef.current
+-        ?.querySelector(`[data-rid="${CSS.escape(settleRowId)}"]`)
+-        ?.children.item(at)
+-      if (!(cell instanceof HTMLElement)) return cellSweep.clear()
+-      massTriggerRef.current = cell
+-      setMass({ colId, rowIds })
+-      setMassOpen(true)
++      const rowEl = host.viewRootRef.current?.querySelector(
++        `[data-rid="${CSS.escape(settleRowId)}"]`,
++      )
++      const cell = rowEl?.children.item(at)
++      const row = rowById.get(settleRowId)
++      if (!(cell instanceof HTMLElement) || !row) return cellSweep.clear()
++      seat.sweep(row, columns[at], rowIds, cell)
+     },
+   })
+   const startSweep = (row: ViewRow, col: ResolvedColumn, e: React.PointerEvent): boolean => {
+@@ -182,50 +177,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
+     cellSweep.begin(row.id, col.id, e)
+     return true
+   }
+-  const massDegraded =
+-    mass !== null &&
+-    massOpen &&
+-    (columns.every((c) => c.id !== mass.colId) ||
+-      mass.rowIds.filter((id) => rowById.has(id)).length < 2)
+-  useEffect(() => {
+-    if (!massDegraded) return
+-    setMassOpen(false)
+-    cellSweep.clear()
+-  })
+-
+-  const massPicker = (): React.ReactNode => {
+-    if (!mass) return null
+-    const col = columns.find((c) => c.id === mass.colId)
+-    if (!col) return null
+-    const rows = mass.rowIds.flatMap((id) => {
+-      const r = rowById.get(id)
+-      return r ? [r] : []
+-    })
+-    if (rows.length < 2) return null
+-    const target = seat.target(rows[0], col)
+-    if (target?.kind !== 'options') return null
+-    const currents = rows.map((r) => resolveFieldValue(r, col))
+-    return (
+-      <MassPropertyPicker
+-        key={`${mass.colId}:${mass.rowIds.join('.')}`}
+-        target={target}
+-        currents={currents}
+-        open={massOpen}
+-        triggerRef={massTriggerRef}
+-        onPick={(commits) => {
+-          if (commits.length)
+-            groupUndo(() => {
+-              for (const { index, next } of commits) commitValue(rows[index], col, next)
+-            })
+-        }}
+-        onDismiss={() => {
+-          setMassOpen(false)
+-          cellSweep.clear()
+-        }}
+-      />
+-    )
+-  }
+-
+   // ── The row api ───────────────────────────────────────────────────────────
+ 
+   const cellApi = useStableApi<RowCellApi>({
+@@ -250,7 +201,9 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
+         : null
+   const popoverTarget =
+     open?.mode === 'popover' ? { rowId: open.rowId, colId: open.columnId } : null
+-  const activeCell = overlayTarget ?? (open && { rowId: open.rowId, colId: open.columnId })
++  const activeCell =
++    overlayTarget ??
++    (open?.mode === 'picker' ? { rowId: open.rowId, colId: open.columnId } : popoverTarget)
+ 
+   // ── The render ────────────────────────────────────────────────────────────
+ 
+@@ -376,7 +329,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
+         </div>
+       </LineZone>
+       <ValueSeat seat={seat} />
+-      {massPicker()}
+     </div>
+   )
+ }
+diff --git a/Core/Views/Table/cellGestures.test.tsx b/Core/Views/Table/cellGestures.test.tsx
+index d6d6b1e..9acc2b8 100644
+--- a/Core/Views/Table/cellGestures.test.tsx
++++ b/Core/Views/Table/cellGestures.test.tsx
+@@ -578,7 +578,7 @@ describe('PropertyPicker (direct mount) — seed values', () => {
+             kind: 'options',
+             column: propertyColumn(seedDef),
+             pick: 'select',
+-            current: null,
++            currents: [null],
+           }}
+           open
+           triggerRef={{ current: host }}
+@@ -603,7 +603,7 @@ describe('PropertyPicker (direct mount) — multi-select', () => {
+             kind: 'options',
+             column: propertyColumn(multiDef),
+             pick: 'multiSelect',
+-            current: { kind: 'multiSelect', value: ['opt_a'] },
++            currents: [{ kind: 'multiSelect', value: ['opt_a'] }],
+           }}
+           open
+           triggerRef={{ current: host }}
+@@ -616,14 +616,18 @@ describe('PropertyPicker (direct mount) — multi-select', () => {
+     await act(async () => {
+       beta?.click()
+     })
+-    expect(onCommit).toHaveBeenCalledWith({ kind: 'multiSelect', value: ['opt_a', 'opt_b'] })
++    expect(onCommit).toHaveBeenCalledWith([
++      { index: 0, next: { kind: 'multiSelect', value: ['opt_a', 'opt_b'] } },
++    ])
+     expect(onDismiss).not.toHaveBeenCalled()
+ 
+     const alpha = pickerButtons().find((b) => b.textContent === 'a')
+     await act(async () => {
+       alpha?.click()
+     })
+-    expect(onCommit).toHaveBeenLastCalledWith({ kind: 'multiSelect', value: [] })
++    expect(onCommit).toHaveBeenLastCalledWith([
++      { index: 0, next: { kind: 'multiSelect', value: [] } },
++    ])
+   })
+ })
+ 
+diff --git a/UIX/Menus/MenuRows.tsx b/UIX/Menus/MenuRows.tsx
+index 660fc23..d54caf0 100644
+--- a/UIX/Menus/MenuRows.tsx
++++ b/UIX/Menus/MenuRows.tsx
+@@ -32,13 +32,11 @@ export function MenuTopRow({
+   onBack,
+   trailing,
+   current,
+-  className,
+ }: {
+   label: string
+   onBack: () => void
+   trailing?: ReactNode
+   current?: string
+-  className?: string
+ }): React.JSX.Element {
+   const right = trailing ? (
+     <span className={s.topBarTrailingSymbol}>{trailing}</span>
+@@ -48,7 +46,7 @@ export function MenuTopRow({
+   return (
+     <>
+       <MenuItem
+-        className={cx(s.topRow, className)}
++        className={s.topRow}
+         leading={
+           <span className={s.topBarLeadingSymbol}>
+             <Icon name="chevron-left" size={BAR_GLYPH} />
