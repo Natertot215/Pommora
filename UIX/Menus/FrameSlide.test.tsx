@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { act, useEffect, useRef } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { FrameSlide } from './FrameSlide'
+import { FrameSlide, SlideGrowth } from './FrameSlide'
 import * as s from './frame-slide.css'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -70,6 +70,28 @@ describe('FrameSlide', () => {
       { inert: false, hidden: false },
       { inert: false, hidden: false },
     ])
+  })
+
+  it('reports its growth only once the height transition is on, so the pane’s layout read never snaps it', async () => {
+    const navOnAtCall: boolean[] = []
+    const grew = (): void => {
+      navOnAtCall.push(host.querySelector(`.${s.viewportNav}`) !== null)
+    }
+    const slide = (open: boolean): React.JSX.Element => (
+      <SlideGrowth.Provider value={grew}>
+        <FrameSlide open={open} root={<div>alpha</div>} detail={open ? <div>beta</div> : null} />
+      </SlideGrowth.Provider>
+    )
+    await act(async () => {
+      root.render(slide(false))
+    })
+    await act(async () => {
+      root.render(slide(true))
+    })
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 50))
+    })
+    expect(navOnAtCall).toEqual([true])
   })
 
   it('never caps or scrolls a slot itself — a slot MenuScrollFrame owns that', async () => {

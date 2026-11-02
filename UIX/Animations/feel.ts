@@ -4,3 +4,4 @@ export type Feel = { duration: number; easing: string }
 
 export const DEFAULT_FEEL: Feel = { duration: ms(duration.menu), easing: easing.baseSnap }
 export const GLIDE_FEEL: Feel = { duration: ms(duration.slow), easing: easing.baseSnap }
+export const BASE_FEEL: Feel = { duration: ms(duration.base), easing: easing.baseEase }

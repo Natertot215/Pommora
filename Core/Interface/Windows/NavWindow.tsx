@@ -1,7 +1,8 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Button } from '@pommora/uix/Buttons/Button'
 import { cx } from '@pommora/uix/Utilities/cx'
-import { duration, easing, flipTransform, ms } from '@pommora/uix/Animations/motion'
+import { BASE_FEEL } from '@pommora/uix/Animations/feel'
+import { flipTransform } from '@pommora/uix/Animations/motion'
 import { WindowBase } from '@pommora/uix/Windows/WindowBase'
 import { Scrollbar } from '@pommora/uix/Interactions/Scrollbar'
 import type { NavRef } from '../../Navigation/navRef'
@@ -59,7 +60,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
     for (const a of el.getAnimations()) a.cancel()
     el.animate(
       [{ transform: flipTransform(el.getBoundingClientRect(), from) }, { transform: 'none' }],
-      { duration: ms(duration.base), easing: easing.baseEase },
+      BASE_FEEL,
     )
   }, [])
 

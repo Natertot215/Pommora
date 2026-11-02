@@ -1,10 +1,12 @@
 // @vitest-environment jsdom
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { useEffect, useRef } from 'react'
+import { useContext, useEffect, useRef } from 'react'
 import { PickerMenu } from './PickerMenu'
 import { FieldPicker } from './FieldPicker'
+import { SlideGrowth } from '../Menus/FrameSlide'
+import { BASE_FEEL } from '../Animations/feel'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 function Host({
@@ -528,5 +530,77 @@ describe('PickerMenu close render', () => {
     await render(<Anchored open at={{ x: 400, y: 100 }} direction="up" />)
     expect(layer().style.top).toBe(`${120 + 6}px`)
     expect(layer().style.bottom).toBe('')
+  })
+})
+
+describe('PickerMenu slide growth', () => {
+  let paneH = 300
+  let grew: ((by: number) => void) | null = null
+  const observers: (() => void)[] = []
+  const animate = vi.fn()
+  const realHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetHeight')
+  const realObserver = globalThis.ResizeObserver
+  const realAnimate = Element.prototype.animate
+
+  beforeEach(() => {
+    Object.defineProperty(HTMLElement.prototype, 'offsetHeight', {
+      configurable: true,
+      get: () => paneH,
+    })
+    globalThis.ResizeObserver = class {
+      constructor(fire: () => void) {
+        observers.push(fire)
+      }
+      observe(): void {}
+      unobserve(): void {}
+      disconnect(): void {}
+    } as unknown as typeof ResizeObserver
+    Element.prototype.animate = animate
+  })
+  afterEach(() => {
+    paneH = 300
+    grew = null
+    observers.length = 0
+    animate.mockReset()
+    if (realHeight) Object.defineProperty(HTMLElement.prototype, 'offsetHeight', realHeight)
+    globalThis.ResizeObserver = realObserver
+    Element.prototype.animate = realAnimate
+  })
+
+  function Slides(): React.JSX.Element {
+    grew = useContext(SlideGrowth)
+    return <span data-id="body">BODY</span>
+  }
+  const open = (y = 400): Promise<void> =>
+    render(
+      <PickerMenu open onDismiss={() => {}} at={{ x: 400, y, height: 20 }}>
+        <Slides />
+      </PickerMenu>,
+    )
+  const layer = (): HTMLElement => layerOf('body')
+
+  it('flips past the room a slide grows into, playing the crossing, and holds that side', async () => {
+    await open()
+    expect(layer().style.top).toBe('426px')
+    await act(async () => grew?.(100))
+    expect(layer().style.bottom).toBe('374px')
+    expect(layer().style.top).toBe('')
+    expect(animate).toHaveBeenCalledWith(
+      [{ transform: 'translateY(332px)' }, { transform: 'none' }],
+      BASE_FEEL,
+    )
+    paneH = 400
+    await act(async () => {
+      for (const fire of observers) fire()
+    })
+    expect(layer().style.top).toBe('')
+  })
+
+  it('keeps its side through a shrink, even where the room no longer holds it', async () => {
+    await open()
+    await open(600)
+    await act(async () => grew?.(-50))
+    expect(layer().style.top).toBe('460px')
+    expect(animate).not.toHaveBeenCalled()
   })
 })

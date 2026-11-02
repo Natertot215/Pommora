@@ -1,10 +1,18 @@
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react'
 import { cx } from '../Utilities/cx'
-import { duration, ms } from '../Animations/motion'
+import { BASE_FEEL } from '../Animations/feel'
 import { useExitPresence, useHeld } from '../Animations/useExitPresence'
 import * as s from './frame-slide.css'
 
-const SLIDE_MS = ms(duration.base)
+export const SlideGrowth = createContext<((by: number) => void) | null>(null)
 
 /** Never caps or scrolls a slot's height: a slot needing a ceiling wraps its content in a `MenuScrollFrame`, since two scrolling containers break the slide. */
 export function FrameSlide({
@@ -60,7 +68,7 @@ export function FrameSlide({
   // Armed only after the first paint, so the pane snaps to its measured size instead of growing.
   useEffect(() => setEnabled(true), [])
 
-  // Height eases only across a flip; an in-place resize tracks content live.
+  // Height eases only across a flip; an in-place resize tracks content live, and a layout read before `navigating` flushes styles with no height transition and snaps the height.
   const [navigating, setNavigating] = useState(false)
   const firstFlip = useRef(true)
   // Before paint, not after: a passive effect blinks the outgoing slot out at the head of a slide.
@@ -70,9 +78,14 @@ export function FrameSlide({
       return
     }
     setNavigating(true)
-    const t = setTimeout(() => setNavigating(false), SLIDE_MS)
+    const t = setTimeout(() => setNavigating(false), BASE_FEEL.duration)
     return () => clearTimeout(t)
   }, [active])
+
+  const grew = useContext(SlideGrowth)
+  useLayoutEffect(() => {
+    if (navigating) grew?.(open ? size.bh - size.ah : size.ah - size.bh)
+  }, [navigating, active])
 
   const width = active === 'a' ? size.aw : size.bw
   const height = active === 'a' ? size.ah : size.bh

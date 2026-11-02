@@ -17,7 +17,16 @@ import { useFocusScope } from '../Interactions/focusScope'
 import { keepFocus } from '../Interactions/shared'
 import { cx } from '../Utilities/cx'
 import { useLatest } from '../Utilities/stableApi'
-import { placePane, roomAround, sideFor, type PanePos, type PickerDirection } from './panePlacement'
+import { BASE_FEEL } from '../Animations/feel'
+import { SlideGrowth } from '../Menus/FrameSlide'
+import {
+  crossing,
+  placePane,
+  roomAround,
+  sideFor,
+  type PanePos,
+  type PickerDirection,
+} from './panePlacement'
 import type { PaneResize } from './usePaneResize'
 import * as s from './picker-base.css'
 
@@ -149,7 +158,8 @@ export function PickerMenu({
   }
 
   const paneBox = useRef({ w: 0, h: 0 })
-  const place = useRef<(() => void) | null>(null)
+  const place = useRef<((growth?: number) => void) | null>(null)
+  const slideGrew = useRef((by: number): void => place.current?.(by)).current
   useLayoutEffect(() => {
     const el = glassRef.current
     if (!el) return
@@ -170,17 +180,23 @@ export function PickerMenu({
     const trigger = triggerRef?.current ?? markerRef.current?.parentElement
     const rectOf = point ? () => point : trigger ? () => trigger.getBoundingClientRect() : null
     if (!rectOf) return
-    const measure = (): void => {
+    const measure = (growth = 0): void => {
       const t = rectOf()
       const pane = paneBox.current
       const view = { w: window.innerWidth, h: window.innerHeight }
-      let side = decidedDir.current ?? direction
-      if (decidedDir.current === null) {
+      const held = decidedDir.current
+      let side = held ?? direction
+      if (held === null || growth > 0) {
         const room = roomAround(t, view.h)
-        side = sideFor(side, pane.h, room)
-        decidedDir.current = side
-        placeResize?.({ dir: side, room: room[side] })
+        side = sideFor(side, pane.h + growth, room)
+        if (held === null) placeResize?.({ dir: side, room: room[side] })
+        else if (side !== held)
+          paneRef.current?.animate(
+            [{ transform: `translateY(${crossing(held, pane.h, t)}px)` }, { transform: 'none' }],
+            BASE_FEEL,
+          )
       }
+      decidedDir.current = side
       const { pos: next, centered } = placePane({
         t,
         pane,
@@ -204,7 +220,7 @@ export function PickerMenu({
         measure()
       })
     }
-    const ro = new ResizeObserver(measure)
+    const ro = new ResizeObserver(() => measure())
     if (trigger && !point) ro.observe(trigger)
     window.addEventListener('scroll', measureOnFrame, true)
     window.addEventListener('resize', measureOnFrame)
@@ -264,7 +280,7 @@ export function PickerMenu({
         } as CSSProperties
       }
     >
-      {body}
+      <SlideGrowth.Provider value={resize ? null : slideGrew}>{body}</SlideGrowth.Provider>
       {resize?.edges}
     </Shell>
   )

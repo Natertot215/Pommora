@@ -35,6 +35,9 @@ export function sideFor(
   return height > room[side] && room[other] > room[side] ? other : side
 }
 
+export const crossing = (from: PickerDirection, height: number, t: TriggerBox): number =>
+  (from === 'down' ? 1 : -1) * (t.height + 2 * GAP + height)
+
 export function placePane({
   t,
   pane,

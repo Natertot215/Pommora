@@ -2,7 +2,8 @@ import { useEffect, useRef } from 'react'
 import { footerLabel } from '../../Actions/toggleLabels'
 import type { WindowTarget } from '../../Navigation/navRef'
 import { cx } from '@pommora/uix/Utilities/cx'
-import { duration, easing, flipTransform, ms } from '@pommora/uix/Animations/motion'
+import { BASE_FEEL } from '@pommora/uix/Animations/feel'
+import { flipTransform } from '@pommora/uix/Animations/motion'
 import { WindowBase } from '@pommora/uix/Windows/WindowBase'
 import { useHeldPresence } from '@pommora/uix/Animations/useExitPresence'
 import { chromePartRect, publishChromePart } from '../chromeParts'
@@ -80,7 +81,7 @@ function PageWindowBody({
         { transform: 'none', opacity: 1 },
         { transform: flipTransform(el.getBoundingClientRect(), to), opacity: 0 },
       ],
-      { duration: ms(duration.base), easing: easing.baseEase, fill: 'forwards' },
+      { ...BASE_FEEL, fill: 'forwards' },
     )
   }, [closing])
 
