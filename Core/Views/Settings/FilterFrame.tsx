@@ -102,7 +102,7 @@ function FieldPicker({
         </OverScroll>
         {chevron ? <Icon name="chevrons-up-down" size="control" className={fp.chevron} /> : null}
       </button>
-      <PickerMenu open={open} onDismiss={() => setOpen(false)} triggerRef={ref}>
+      <PickerMenu ownShield open={open} onDismiss={() => setOpen(false)} triggerRef={ref}>
         {open ? children(() => setOpen(false)) : null}
       </PickerMenu>
     </>
@@ -176,7 +176,7 @@ function ChipsField({
           </OverScroll>
         )}
       </div>
-      <PickerMenu open={open} onDismiss={() => setOpen(false)} triggerRef={ref}>
+      <PickerMenu ownShield open={open} onDismiss={() => setOpen(false)} triggerRef={ref}>
         {open && (
           <PropertyOptionRows
             column={column}

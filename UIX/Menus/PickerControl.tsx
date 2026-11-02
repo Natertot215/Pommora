@@ -156,7 +156,6 @@ export function PickerControl<T extends string>({
           className={cx(s.trigger, chevronLead && s.chevronLead)}
           aria-label={ariaLabel}
           onClick={onTrigger}
-          // Reaches the trigger even when the menu took the left press.
           onContextMenu={
             typeable
               ? (e) => {

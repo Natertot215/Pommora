@@ -319,6 +319,46 @@ describe('PickerMenu focus contract', () => {
     expect(portals[1].contains(find('first'))).toBe(true)
   })
 
+  it('a dropdown list shields the pane beneath it, so a press on that pane closes only the list', async () => {
+    const log: string[] = []
+    function Nested(): React.JSX.Element {
+      const outerRef = useRef<HTMLButtonElement>(null)
+      const innerRef = useRef<HTMLButtonElement>(null)
+      return (
+        <>
+          <button ref={outerRef} type="button" data-id="trigger">
+            Trigger
+          </button>
+          <PickerMenu open onDismiss={() => log.push('outer')} triggerRef={outerRef}>
+            <button ref={innerRef} type="button" data-id="first">
+              First
+            </button>
+            <button type="button" data-id="last" onPointerDown={() => log.push('press:last')}>
+              Last
+            </button>
+          </PickerMenu>
+          <PickerMenu ownShield open onDismiss={() => log.push('list')} triggerRef={innerRef}>
+            <button type="button" data-id="nested">
+              Nested
+            </button>
+          </PickerMenu>
+        </>
+      )
+    }
+    await render(<Nested />)
+    const shields = document.querySelectorAll('[data-dismissal-shield]')
+    expect(shields.length).toBe(2)
+    Object.defineProperty(document, 'elementsFromPoint', {
+      value: () => [shields[1], find('last'), shields[0], document.body],
+      configurable: true,
+    })
+    await act(async () => {
+      shields[1].dispatchEvent(new PointerEvent('pointerdown', { button: 0, bubbles: true }))
+    })
+    Reflect.deleteProperty(document, 'elementsFromPoint')
+    expect(log).toEqual(['list'])
+  })
+
   it('yields to a child that focuses itself', async () => {
     function SelfFocusing(): React.JSX.Element {
       const input = useRef<HTMLInputElement>(null)

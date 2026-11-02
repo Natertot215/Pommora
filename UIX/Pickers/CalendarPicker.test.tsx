@@ -144,6 +144,20 @@ describe('CalendarPicker typing a time part', () => {
     expect(onChange).not.toHaveBeenCalled()
     expect(host.querySelector('input')).toBeNull()
   })
+
+  it('a press on a part while the other part’s list is open closes the list and opens nothing', () => {
+    mount({ at: new Date(2026, 5, 10, 14, 30), timed: true })
+    const [hour, minute] = host.querySelectorAll<HTMLButtonElement>(`.${s.timePart}`)
+    act(() => hour.click())
+    expect(document.querySelector('[data-picker-portal]')).not.toBeNull()
+    act(() => {
+      minute.dispatchEvent(new PointerEvent('pointerdown', { button: 0, bubbles: true }))
+      minute.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }))
+      minute.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+    })
+    act(() => vi.advanceTimersByTime(1000))
+    expect(document.querySelector('[data-picker-portal]')).toBeNull()
+  })
 })
 
 describe('CalendarPicker End Date', () => {

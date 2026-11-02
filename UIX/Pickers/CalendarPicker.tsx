@@ -7,6 +7,7 @@ import { Icon } from '../Symbols'
 import { DualSwitch } from '../Controls/DualSwitch'
 import { usePointerGesture } from '../Interactions/gesture'
 import { OverScroll } from '../Interactions/OverScroll'
+import { suppressReleaseClick } from '../Interactions/shared'
 import { PickerMenu } from './PickerMenu'
 import { optionRing } from './picker-base.css'
 import { MenuItem } from '../Menus/MenuRows'
@@ -260,10 +261,10 @@ export function CalendarPicker({
     )
   }
 
-  const toggleTitleMenu =
+  const openTitleMenu =
     (kind: 'month' | 'year') =>
     (e: React.MouseEvent<HTMLButtonElement>): void => {
-      setMenu(menu?.kind === kind ? null : { kind, at: anchorOf(e.currentTarget) })
+      setMenu({ kind, at: anchorOf(e.currentTarget) })
     }
   const monthRows = (): React.JSX.Element[] =>
     Array.from({ length: 12 }, (_, m) => (
@@ -298,7 +299,7 @@ export function CalendarPicker({
             size="button-inline"
             paddingX={TITLE_PAD_X}
             className={s.titleBtn}
-            onClick={toggleTitleMenu('month')}
+            onClick={openTitleMenu('month')}
           >
             {monthName(cursor.getMonth())}
           </Button>
@@ -306,7 +307,7 @@ export function CalendarPicker({
             size="button-inline"
             paddingX={TITLE_PAD_X}
             className={s.titleBtn}
-            onClick={toggleTitleMenu('year')}
+            onClick={openTitleMenu('year')}
           >
             {year}
           </Button>
@@ -413,6 +414,7 @@ export function CalendarPicker({
         </div>
       )}
       <PickerMenu
+        ownShield
         solid
         open={menu !== null}
         onDismiss={() => setMenu(null)}
@@ -488,7 +490,7 @@ function ClockField({
         className={s.timePart}
         onClick={(e) => {
           if (e.detail > 1) return
-          setTimeMenu(timeMenu?.part === part ? null : { part, at: anchorOf(e.currentTarget) })
+          setTimeMenu({ part, at: anchorOf(e.currentTarget) })
         }}
         onDoubleClick={() => {
           setTimeMenu(null)
@@ -534,7 +536,11 @@ function ClockField({
         solid
         direction="up"
         open={timeMenu !== null}
-        onDismiss={() => setTimeMenu(null)}
+        // A second press on a part is its double-click, which a shield would take, so this list drops the release instead.
+        onDismiss={() => {
+          suppressReleaseClick()
+          setTimeMenu(null)
+        }}
         triggerRef={timeMenuTrigger}
         at={timeMenu?.at}
       >

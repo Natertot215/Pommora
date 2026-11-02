@@ -80,6 +80,7 @@ export function PickerMenu({
   bareSurface = false,
   focus = 'trap',
   modal = true,
+  ownShield = false,
   contentClassName,
   style,
   resize,
@@ -105,6 +106,7 @@ export function PickerMenu({
   focus?: 'trap' | 'leave' | 'keep'
   /** A glance surface passes false and lets the app's own dismissals through. */
   modal?: boolean
+  ownShield?: boolean
   contentClassName?: string
   style?: CSSProperties
   /** A pane the user sizes from its free edges — `usePaneResize`'s, held by the host that applies the size. */
@@ -297,7 +299,7 @@ export function PickerMenu({
       <span ref={markerRef} hidden />
       {createPortal(
         <>
-          {drawsShield && !closing ? (
+          {(drawsShield || ownShield) && !closing ? (
             // biome-ignore lint/a11y/noStaticElementInteractions: a shield, not a control
             <div
               className={s.shield}

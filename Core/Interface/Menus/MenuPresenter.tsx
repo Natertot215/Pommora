@@ -97,6 +97,7 @@ export function MenuPresenter(): React.JSX.Element {
   }
   return (
     <PickerMenu
+      ownShield
       open={pending !== null}
       onDismiss={() => pending?.settle(null)}
       triggerRef={triggerRef}
