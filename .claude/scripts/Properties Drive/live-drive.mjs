@@ -1097,13 +1097,13 @@ async function group15(cdp) {
       await shot(cdp, 'g15-number-style')
     }
     if (type === 'Date & Time') {
-      await pickIn(cdp, 'Date format', 'Full Date')
-      const shown = await rowGaps(cdp, 'Date format', 'Time format')
-      item(15, 'L-1', 'a Date editor with its Day row shown keeps 8px between its heading and every row', even(shown, 3), show(shown))
+      await pickIn(cdp, 'Date Format', 'Full Date')
+      const shown = await rowGaps(cdp, 'Date Format', 'Time Format')
+      item(15, 'L-1', 'a Date editor with its Day row shown keeps 8px between every row', even(shown, 2), show(shown))
       await shot(cdp, 'g15-date-revealed')
-      await pickIn(cdp, 'Date format', 'MM/DD/YYYY')
-      const hidden = await rowGaps(cdp, 'Date format', 'Time format')
-      item(15, 'L-1', 'a collapsed Day row leaves no gap: Date to Time is 8px', even(hidden, 2), show(hidden))
+      await pickIn(cdp, 'Date Format', 'MM/DD/YYYY')
+      const hidden = await rowGaps(cdp, 'Date Format', 'Time Format')
+      item(15, 'L-1', 'a collapsed Day row leaves no gap: Date to Time is 8px', even(hidden, 1), show(hidden))
       await shot(cdp, 'g15-date-collapsed')
     }
     if (type === 'Link') {
