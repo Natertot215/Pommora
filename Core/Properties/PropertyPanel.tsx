@@ -89,6 +89,7 @@ export function PropertyPanel({
     },
   })
   const subjectId = subject.id
+  const nexusId = tree?.nexus.id
   const spaceNode = isSpace ? spaceNodeOf(tree, subjectId) : null
   const path = subject.kind === 'page' ? subject.path : (spaceNode?.path ?? '')
   const [editingFor, setEditingFor] = useState(path)
@@ -118,9 +119,10 @@ export function PropertyPanel({
   }, [path, isSpace])
 
   useEffect(() => {
+    seat.close()
     setOverride(null)
     setRevealed(new Set())
-  }, [subjectId])
+  }, [subjectId, nexusId])
   useValuesEpoch(
     isSpace ? null : relDirname(path),
     (v) => {
@@ -135,12 +137,6 @@ export function PropertyPanel({
   useEffect(() => {
     if (isSpace) setOverride((prev) => retireSettled(prev, null))
   }, [isSpace, spaceNode])
-
-  const nexusId = tree?.nexus.id
-  useEffect(() => {
-    seat.close()
-    setRevealed(new Set())
-  }, [nexusId])
 
   const title = subject.kind === 'page' ? (subject.title ?? fetchedTitle) : ''
   const schema = useMemo(() => holderSchema(tree, spaceNode ?? path), [tree, spaceNode, path])
