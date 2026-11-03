@@ -68,10 +68,6 @@ export function contextsByIdOf(tree: NexusTree | null): ReadonlyMap<string, Cont
   return identityOf(tree).contexts
 }
 
-export function spaceIdentityOf(tree: NexusTree | null, id: string): SpaceIdentity | undefined {
-  return identityOf(tree).spaces.get(id)
-}
-
 export function spacesByIdOf(tree: NexusTree | null): ReadonlyMap<string, SpaceIdentity> {
   return identityOf(tree).spaces
 }

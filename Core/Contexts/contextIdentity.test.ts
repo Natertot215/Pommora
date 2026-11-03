@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { contextsByIdOf, contextIdsOf, spaceIdentityOf, spacesByIdOf } from './contextIdentity'
+import { contextsByIdOf, contextIdsOf, spacesByIdOf } from './contextIdentity'
 import type { NexusTree } from '../Nexus/tree'
 
 const mkTree = (): NexusTree =>
@@ -99,8 +99,8 @@ describe('context accessors', () => {
   })
 
   it('resolves a Space id', () => {
-    expect(spaceIdentityOf(tree, 'a1')?.title).toBe('Personal')
-    expect(spaceIdentityOf(null, 'a1')).toBeUndefined()
+    expect(spacesByIdOf(tree).get('a1')?.title).toBe('Personal')
+    expect(spacesByIdOf(null).get('a1')).toBeUndefined()
   })
 })
 
@@ -110,8 +110,8 @@ it('an icon-less Space takes the USER default glyph, not the curated seed', () =
     ...mkTree(),
     config: { personalization: { defaultIcons: { space: 'folder-open' } } },
   } as NexusTree
-  expect(spaceIdentityOf(personalized, 'a1')?.icon).toBe('folder-open')
-  expect(spaceIdentityOf(personalized, 'a2')?.icon).toBe('anchor')
+  expect(spacesByIdOf(personalized).get('a1')?.icon).toBe('folder-open')
+  expect(spacesByIdOf(personalized).get('a2')?.icon).toBe('anchor')
 })
 
 // The two kinds resolve independently: a Context is not a Space, so neither default moves the other.
@@ -127,6 +127,6 @@ it('a Space default leaves a Context on its own glyph, and the Context default m
     config: { personalization: { defaultIcons: { context: 'folder-open' } } },
   } as NexusTree
   expect(contextsByIdOf(contextDefault).get('ctx_topics')?.icon).toBe('folder-open')
-  expect(spaceIdentityOf(contextDefault, 'a1')?.icon).toBe('layout-dashboard')
+  expect(spacesByIdOf(contextDefault).get('a1')?.icon).toBe('layout-dashboard')
   expect(contextsByIdOf(contextDefault).get('ctx_areas')?.icon).toBe('briefcase')
 })

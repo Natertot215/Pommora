@@ -25,6 +25,7 @@ it('names an icon favourite by its words, and announces that name on lift', asyn
       <IconPicker
         open
         onDismiss={() => {}}
+        onPick={() => {}}
         triggerRef={{ current: host }}
         iconFavorites={{ ids: ['alarm-clock'], onChange: () => {} }}
       />,
@@ -50,6 +51,7 @@ it('opens with an empty search after a close, whatever was typed before it', asy
         <IconPicker
           open={open}
           onDismiss={() => {}}
+          onPick={() => {}}
           triggerRef={{ current: host }}
           iconFavorites={{ ids: [], onChange: () => {} }}
         />,

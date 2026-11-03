@@ -27,7 +27,7 @@ interface IconPickerProps {
   /** An SVG glyph, so `Element`. */
   triggerRef: RefObject<Element | null>
   value?: string
-  onSelect?: (id: string) => void
+  onPick: (id: string) => void
   iconFavorites: IconFavorites
 }
 
@@ -42,7 +42,7 @@ export function IconPicker({
   onDismiss,
   triggerRef,
   value,
-  onSelect,
+  onPick,
   iconFavorites,
 }: IconPickerProps): React.JSX.Element | null {
   const iconFavs = iconFavorites.ids
@@ -55,11 +55,6 @@ export function IconPicker({
     else setQuery('')
   }, [open])
   const filtered = useMemo(() => set?.searchIcons(query) ?? [], [set, query])
-
-  const pick = (id: string): void => {
-    onSelect?.(id)
-    onDismiss()
-  }
 
   const toggleIconFav = (id: string): void => {
     iconFavorites.onChange(
@@ -106,7 +101,7 @@ export function IconPicker({
                     key={id}
                     id={id}
                     selected={id === value}
-                    onPick={pick}
+                    onPick={onPick}
                     onContext={openContext}
                   />
                 ))}
@@ -129,7 +124,7 @@ export function IconPicker({
                     key={entry.id}
                     entry={entry}
                     selected={entry.id === value}
-                    onPick={pick}
+                    onPick={onPick}
                     onContext={openContext}
                   />
                 ))}

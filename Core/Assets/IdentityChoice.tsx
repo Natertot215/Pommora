@@ -44,7 +44,7 @@ export function chooseColor(
 }
 
 export const useChoiceOpen = (trigger: RefObject<Element | null>): boolean =>
-  useSession((st) => st.pendingChoice !== null && st.pendingChoice.trigger === trigger.current)
+  useSession((st) => st.pendingChoice?.trigger === trigger.current)
 
 export function useIconChoice<E extends Element = HTMLButtonElement>(
   value: string | undefined,
@@ -64,22 +64,27 @@ export function IdentityChoice(): React.JSX.Element {
   const shown = useHeld(pending, pending !== null)
   const triggerRef = useLatest(shown?.trigger ?? null)
   const iconFavorites = useIconFavorites()
+  const icon = pending?.of === 'icon' ? pending : null
+  const color = pending?.of === 'color' ? pending : null
   return (
     <>
       <IconPicker
-        open={pending?.of === 'icon'}
+        open={icon !== null}
         onDismiss={dismiss}
         triggerRef={triggerRef}
-        value={pending?.value}
-        onSelect={pending?.of === 'icon' ? pending.onPick : undefined}
+        value={icon?.value}
+        onPick={(id) => {
+          icon?.onPick(id)
+          dismiss()
+        }}
         iconFavorites={iconFavorites}
       />
       <ColorPicker
-        greyscale={pending?.of === 'color' ? pending.greyscale : undefined}
-        open={pending?.of === 'color'}
-        selected={colorNameFor(pending?.value)}
-        onPick={(color) => {
-          if (pending?.of === 'color') pending.onPick(color)
+        open={color !== null}
+        greyscale={color?.greyscale}
+        selected={colorNameFor(color?.value)}
+        onPick={(picked) => {
+          color?.onPick(picked)
           dismiss()
         }}
         onDismiss={dismiss}

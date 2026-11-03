@@ -65,7 +65,6 @@ export function MatrixView(): React.JSX.Element {
     acting = surfaceId
     // Committed before the menu asks for it: the label seats its anchor on the node in the same pass.
     flushSync(() => setMenuId(rec.id))
-    const anchor = anchorRef.current?.dataset.nodeId === rec.id ? anchorRef.current : null
     await showEntityMenu(
       {
         kind: rec.kind,
@@ -76,7 +75,7 @@ export function MatrixView(): React.JSX.Element {
         host: 'matrix',
         ...(rec.kind === 'page' ? pageMoveContext(tree, rec.path) : {}),
       },
-      anchor,
+      anchorRef.current,
     )
     if (!pickOpen(useSession.getState())) setMenuId(null)
   }

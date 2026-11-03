@@ -1,12 +1,9 @@
 import { style } from '@vanilla-extract/css'
 import { track as switchTrack } from './dual-switch.css'
 
-/** Positioned: the ColorPicker anchors below it. */
 export const cluster = style({
-  position: 'relative',
   display: 'flex',
   alignItems: 'center',
-  gap: '4px',
 })
 
 export const chip = style({
