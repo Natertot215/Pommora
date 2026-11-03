@@ -1846,7 +1846,7 @@ In the same commit, `ViewItemMenu.tsx` should leave for `popMenu`, as `viewRowMe
 +              ref={menuRef}
 +              icon="ellipsis-vertical"
 +              size="body"
-+              ariaLabel="View menu"
++              ariaLabel="View Menu"
 +              onClick={() => menuRef.current && props.onMenu(menuRef.current)}
 +            />
 +          }
@@ -1875,7 +1875,7 @@ In the same commit, `ViewItemMenu.tsx` should leave for `popMenu`, as `viewRowMe
 +  )
 ```
 
-`SettingsFrame.tsx:177-184` becomes `<LayoutFrame door="flat" source={node} view={view} back={toRoot} />`. `toView` and `leafFor` (`:184-218`) move below the early return, since only the full form calls them and `props` narrows there, so `leafFor` reads `props.schema`. `ViewItemMenu`'s import at `LayoutFrame.tsx:32` leaves, and `useRef` joins `:1`. The button keeps `ariaLabel="View menu"`. The row menu's two rows carry the icons too, where they never draw, since it's always a system menu (`Desktop/Actions/menu.ts:19`).
+`SettingsFrame.tsx:177-184` becomes `<LayoutFrame door="flat" source={node} view={view} back={toRoot} />`. `toView` and `leafFor` (`:184-218`) move below the early return, since only the full form calls them and `props` narrows there, so `leafFor` reads `props.schema`. `ViewItemMenu`'s import at `LayoutFrame.tsx:32` leaves, and `useRef` joins `:1`. The button keeps `ariaLabel="View Menu"`. The row menu's two rows carry the icons too, where they never draw, since it's always a system menu (`Desktop/Actions/menu.ts:19`).
 
 **Tests:** `viewRowMenu.test.ts` gains `viewItemMenuItems`: rows, disabled states, its separator, and no leading separator. `ViewFrame` gains: deleting from the editor closes the dropdown.
 
