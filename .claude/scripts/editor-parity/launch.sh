@@ -1,13 +1,13 @@
 #!/bin/zsh
-# launch.sh <label> <app worktree> <port> [fixtures] — a scratch Pommora instance on its own userData, port, and fresh fixture Nexus.
+# launch.sh <label> <app worktree> <port> — a scratch Pommora instance on its own userData, port, and fresh fixture Nexus.
 set -e
 HERE=${0:A:h}
-LABEL=$1 APP=$2 PORT=$3 FIXTURES=${4:-$HERE/fixtures.mjs}
+LABEL=$1 APP=$2 PORT=$3
 ELECTRON="$HOME/The Studio/Projects/Project Pommora/node_modules/.bin/electron"
 "$HERE/stop.sh" $PORT
 rm -rf "$HERE/run/$LABEL" && mkdir -p "$HERE/run/$LABEL/ud"
 cp -R "$HOME/Test" "$HERE/run/$LABEL/nexus"
-node "$FIXTURES" "$HERE/run/$LABEL/nexus"
+node "$HERE/fixtures.mjs" "$HERE/run/$LABEL/nexus"
 printf '{"lastNexusPath":"%s"}\n' "$HERE/run/$LABEL/nexus" > "$HERE/run/$LABEL/ud/pommora.json"
 # A window behind others, or on a sleeping display, stops painting: no frames, no transitions, frozen hover styles.
 THROTTLE_OFF=(--disable-backgrounding-occluded-windows --disable-renderer-backgrounding --disable-background-timer-throttling)
