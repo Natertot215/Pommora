@@ -1323,7 +1323,7 @@ async function addEntries(cdp, s) {
     await until(`${s.name}'s Add list`, () => listUp(cdp))
     await sleep(500)
   }
-  const rowOf = (label) => `[...document.querySelectorAll('${s.scope ?? ''}[data-property-row]')].find((e) => e.getClientRects().length > 0 && e.closest('[role=button]')?.textContent.trim().startsWith(${JSON.stringify(label)}))`
+  const rowOf = (label) => `[...document.querySelectorAll('${s.scope ?? ''}[data-property-row]')].find((e) => e.getClientRects().length > 0 && e.closest('[data-line-row]')?.textContent.trim().startsWith(${JSON.stringify(label)}))`
   const choose = async (group, label) => {
     if (s.card) {
       await open(group)
