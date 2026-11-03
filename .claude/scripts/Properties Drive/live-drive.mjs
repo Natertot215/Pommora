@@ -5,7 +5,7 @@ import { ulid } from 'ulidx'
 import {
   mintOptionId, optionId,
   FM, frontmatter, frontRaw, pageFile, pageIds, pagePath,
-  activeTab, ask, BACK, boxOf, chooseNative, closePageWindow, closePanel, click, closeSettings, createPage, DIALOG, doubleClick, entry, escapeAll, field, inMain, labels, launch, META, mouseAt, mouseClick, must, NEXUS, notice,
+  activeTab, ask, BACK, boxOf, chooseInApp, chooseNative, closePageWindow, closePanel, click, closeSettings, createPage, DIALOG, doubleClick, entry, escapeAll, field, inMain, labels, launch, META, mouseAt, mouseClick, must, NEXUS, notice,
   openCollection, openPage, openPane, openPanel, openSettings, openSidePane, overlaps, pickNative, popNative, portalOpen, pressDialog, pressKey, read, relaunch, restore, ribbon, row, sel, selectField, SET,
   holds, hover, item, LIVE_ROWS, manageButton, nativeRows, PANE, PANE_LAYER, PORTAL_ROWS, press, SETTINGS_BUTTON, SHIFT, settles, shot, sleep, slideTo, statusDividers, sweep, SWITCH, tally, textEl, trashRowEl, typeText, until, viewFrame, watch, zoom,
 } from '../drive-harness.mjs'
@@ -42,13 +42,6 @@ async function pickerRows(cdp, ariaLabel) {
   await click(cdp, sel(`[aria-label="${ariaLabel}"]`))
   await until(`the ${ariaLabel} picker`, () => portalOpen(cdp))
   return rowsOf(cdp, PORTAL_ROWS)
-}
-async function chooseInApp(cdp, expr, label) {
-  await mouseClick(cdp, expr)
-  const drawn = await settles(() => cdp.evaluate(`!!${entry(label)}`), 3000)
-  if (drawn) await click(cdp, entry(label))
-  await sleep(800)
-  return drawn
 }
 /** Keeps each file's text, or that it was absent, and every file in each of `dirs`, and answers what puts them back. */
 function keep(rels, dirs = []) {

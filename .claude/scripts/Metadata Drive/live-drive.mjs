@@ -4,7 +4,7 @@ import { ulid } from 'ulidx'
 import { parse } from 'yaml'
 import {
   mintOptionId, optionId,
-  ask, check, chooseNative, click, COPY, drag, FM, holds, itemCount, launch, META, mintPageId, mouseAt, boxOf, mouseClick,
+  ask, check, chooseInApp, chooseNative, click, COPY, drag, FM, holds, itemCount, launch, META, mintPageId, mouseAt, boxOf, mouseClick,
   closePanel, closeSettings, DIALOG, must, NEXUS, openField, openPanel, openSettings, PORTAL_ROWS, portalOpen, pressKey, RAIL, read,
   restore, results, ribbon, selectField, SETTINGS_BUTTON, settles, shot, sleep, textEl, trashRowEl, typeText, until, viewFrame,
 } from '../drive-harness.mjs'
@@ -1486,7 +1486,7 @@ async function group9(cdp) {
 
   // Delete asks at any count.
   await openEditor(cdp, 'M9 Gone')
-  const { chosen: deleting } = await chooseNative(cdp, trigger('Property Menu'), 'Delete', { button: 'left' })
+  const deleting = await chooseInApp(cdp, trigger('Property Menu'), 'Delete')
   const deleteAsk = await settles(() => dialogUp(cdp), 2500) ? await cdp.evaluate(`({ message: ${DIALOG}.getAttribute('aria-label'), text: ${DIALOG}.textContent })`) : null
   if (deleteAsk) await click(cdp, dialogButton(true))
   await sleep(800)

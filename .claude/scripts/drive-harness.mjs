@@ -186,6 +186,15 @@ export async function chooseNative(cdp, expr, path, { edge = false, button } = {
   return { rows: labels(rows), chosen }
 }
 
+/** Presses `expr` and chooses `label` from the in-app menu it draws, answering whether that row drew. */
+export async function chooseInApp(cdp, expr, label) {
+  await mouseClick(cdp, expr)
+  const drawn = await settles(() => cdp.evaluate(`!!${entry(label)}`), 3000)
+  if (drawn) await click(cdp, entry(label))
+  await sleep(800)
+  return drawn
+}
+
 export const sel = (css) => `document.querySelector(${JSON.stringify(css)})`
 export const textEl = (scope, text) =>
   `[...document.querySelectorAll(${JSON.stringify(scope)})].find((e) => e.children.length === 0 && e.textContent.trim() === ${JSON.stringify(text)})`
