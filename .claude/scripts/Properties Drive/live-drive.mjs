@@ -1704,8 +1704,8 @@ const PLACE = {
   },
   notes: { id: 'prop_drive_place_notes', label: 'Place Notes', key: 'Place Notes', type: 'text' },
 }
-// Visibility lists every property, so these make it taller than the settings' root.
-const PLACE_FILLERS = fillers('Place', 10)
+// Visibility lists every property, so these make it taller than the settings' root and short of its ceiling, which the room above the tile holds.
+const PLACE_FILLERS = fillers('Place', 4)
 const onlyPlaces = { match: 'all', rules: [{ property_id: '_title', op: 'starts_with', value: 'Place ' }] }
 const PLACE_TABLE = {
   id: 'view_01KZPROPERTIESDRIVE18TBL', name: 'Place Table', type: 'table', hidden_properties: [],
@@ -2233,6 +2233,7 @@ async function group19(cdp) {
     await viewFrame(cdp, 'Properties')
     await click(cdp, `[...(${SETTINGS_PANE}).querySelectorAll('[role=button]')].find((e) => e.textContent.trim().startsWith(${JSON.stringify(PANES.due.label)}))`)
     await until("Panes Due's editor", () => cdp.evaluate(`!!${liveEl('Property Menu')}`))
+    await sleep(600)
     const menu = await readMenu(liveEl('Property Menu'), native, 'Remove')
     if (native) await pickNative([])
     else await pressKey(cdp, 'Escape')
