@@ -24,7 +24,7 @@
 | 3 · Small Folds | about −16; −4 built | +11 (+394 / −383) |
 | 4 · The Two Pickers | about −95; −96 (+386 / −482) built, and the back bar's label +1 | −110 (+769 / −879) |
 | 5 · Settings Panes | about −70 (+46 / −116) | −195 (+1029 / −1224), −85 its own |
-| 6 · One Icon and Color Request | about −170 | |
+| 6 · One Icon and Color Request | about −170 | −380 (+1418 / −1798), −185 its own |
 | 7 · Right-Click | about −140 (−125 to −155) | |
 | 8 · Closeout | 0 | |
 | **Total** | **about −470; 9 files leave, 4 arrive** | |
@@ -252,13 +252,13 @@ The order is what makes each step land once. Phase 0 readies the drives and pins
   - [x] Task 5-4 · Group 19 gains the panes
   - [x] Review Checkpoint
   - [x] Compaction Checkpoint
-- [ ] **Phase 6** — One Icon and Color Request
-  - [ ] Task 6-1 · The request and its one mount
-  - [ ] Task 6-2 · The header sites and F-5
-  - [ ] Task 6-3 · The row sites, `ColorSwatch`, and the store's fields
-  - [ ] Task 6-4 · The ghost
-  - [ ] Task 6-5 · Group 19 gains the choices
-  - [ ] Review Checkpoint
+- [x] **Phase 6** — One Icon and Color Request
+  - [x] Task 6-1 · The request and its one mount
+  - [x] Task 6-2 · The header sites and F-5
+  - [x] Task 6-3 · The row sites, `ColorSwatch`, and the store's fields
+  - [x] Task 6-4 · The ghost
+  - [x] Task 6-5 · Group 19 gains the choices
+  - [x] Review Checkpoint
 - [ ] **Phase 7** — Right-Click
   - [ ] Task 7-1 · One metadata menu, one page menu, and `MenuSeat`'s route
   - [ ] Task 7-2 · Group 17
@@ -2053,7 +2053,7 @@ The request and its one mount should land. `IdentityChoice` reads the slot and d
 
 **VERIFY**
 
-- [ ] Run the gates; each new test is watched red.
+- [x] Run the gates; each new test is watched red.
 
 #### Task 6-2
 
@@ -2079,7 +2079,7 @@ The seven header sites should spread `useIconChoice`, and the view editor's head
 
 **VERIFY**
 
-- [ ] Run the gates; `git grep -n "<IconChoice" -- Core` lists only the row sites Task 6-3 takes.
+- [x] Run the gates; `git grep -n "<IconChoice" -- Core` lists only the row sites Task 6-3 takes.
 
 #### Task 6-3
 
@@ -2160,10 +2160,10 @@ The row sites, the store's fields, `ColorSwatch`'s own picker, and both shells' 
 
 **VERIFY**
 
-- [ ] Run the gates; `Core/Assets/IconChoice.tsx`, `iconFavorites.ts`, and `NexusIconEditors.tsx` no longer exist, and `git grep -n "beginIcon\|beginColor\|iconPath\|colorPath\|setIconFor\|setColorFor\|<IconChoice" -- Core UIX` prints nothing.
-- [ ] A view's icon picker opens at its row, not the dropdown (F-1).
-- [ ] `git grep -n "<ColorPicker" -- Core UIX ':!*.test.*'` lists `IdentityChoice.tsx` alone.
-- [ ] From the repo root, `node ".claude/Planning/Metadata Picker/Scouts/Planning/Scripts/uixgraph.mjs" UIX` lists no path under its `MENUS ~> PICKERS` heading.
+- [x] Run the gates; `Core/Assets/IconChoice.tsx`, `iconFavorites.ts`, and `NexusIconEditors.tsx` no longer exist, and `git grep -n "beginIcon\|beginColor\|iconPath\|colorPath\|setIconFor\|setColorFor\|<IconChoice" -- Core UIX` prints nothing.
+- [x] A view's icon picker opens at its row, not the dropdown (F-1).
+- [x] `git grep -n "<ColorPicker" -- Core UIX ':!*.test.*'` lists `IdentityChoice.tsx` alone.
+- [x] From the repo root, `node ".claude/Planning/Metadata Picker/Scouts/Planning/Scripts/uixgraph.mjs" UIX` lists no path under its `MENUS ~> PICKERS` heading.
 
 #### Task 6-4
 
@@ -2185,7 +2185,7 @@ The hover ghost should stand down while a leaf or a choice is open, on every sur
 
 **VERIFY**
 
-- [ ] Run the gates; the pin is watched red without `pickOpen`.
+- [x] Run the gates; the pin is watched red without `pickOpen`.
 
 #### Task 6-5
 
@@ -2197,13 +2197,13 @@ Edit Icon from all 13 sites and Change Color from all 6 (a property's Color row 
 
 **VERIFY**
 
-- [ ] Group 19 passes from a worktree of this commit.
+- [x] Group 19 passes from a worktree of this commit.
 
 #### Review Checkpoint
 
-- [ ] Two reviewers per *§Constraints · Reviews*, reading `pendingChoice` and the trigger rule outward against every shell.
-- [ ] Drives per *§When Drives Run* (settings), plus the Option Picker Drive.
-- [ ] The Number recorded. The orchestrator reads and captions six shots: an icon picker at a view row, F-5's header, a color pick on a Space, a Matrix node's pick, a tile's strip through a pick, and an option's icon popup.
+- [x] Two reviewers per *§Constraints · Reviews*, reading `pendingChoice` and the trigger rule outward against every shell.
+- [x] Drives per *§When Drives Run* (settings), plus the Option Picker Drive.
+- [x] The Number recorded. The orchestrator reads and captions six shots: an icon picker at a view row, F-5's header, a color pick on a Space, a Matrix node's pick, a tile's strip through a pick, and an option's icon popup.
 
 ---
 
@@ -2471,7 +2471,7 @@ Edit Icon from all 13 sites and Change Color from all 6 (a property's Color row 
 +    )
 ```
 
-`ViewInteractionPolicy` gains `newPages: NewPageRows`: `'pair'` at `TableView.tsx:87`, `'single'` at `CardsView.tsx:172`. The return swaps `titleMenuContext, runTitleAction` for `pageMenu`, `chooseIcon`'s import leaves, `tree` leaves the destructure at `:91`, which lint would otherwise flag, and the head comment (`:1`) reads "the page menu" in place of "the title menu's page actions". `ownIconOf` stops serving pages, so its second arm reads `target.id ? spaceNodeOf(tree, target.id)?.icon : undefined`, as `changeColor` reads beside it, and `nodesByIdOf` leaves the imports. `pageMenu` must go through `useStableApi` on cards (`CardsView.tsx:268`) and the Table (`TableView.tsx:231`), as `runTitleAction` did. D-2 holds because `commitValue`, not `commitOnCard`, sits in `values`.
+`ViewInteractionPolicy` gains `newPages: NewPageRows`: `'pair'` at `TableView.tsx:87`, `'single'` at `CardsView.tsx:172`. The return swaps `titleMenuContext, runTitleAction` for `pageMenu`, `chooseIcon`'s import leaves, `tree` leaves the destructure at `:91`, which lint would otherwise flag, and the head comment (`:1`) reads "the page menu" in place of "the title menu's page actions". `ownIconOf` stops serving pages, so its second arm reads `target.id ? spaceNodeOf(tree, target.id)?.icon : undefined`, as `changeColor` reads beside it, and `nodesByIdOf` leaves the imports. Its Context arm and `creatorsFor`'s both read `contextAt(tree, target.path)` (`Core/Nexus/treePatch.ts`), the lookup `submitRename` already uses, in place of two copies of a find by title. `pageMenu` must go through `useStableApi` on cards (`CardsView.tsx:268`) and the Table (`TableView.tsx:231`), as `runTitleAction` did. D-2 holds because `commitValue`, not `commitOnCard`, sits in `values`.
 
 ```Core/Views/Table/TableView.tsx diff
 @@ openTitleMenu (:147-159) @@
@@ -2508,7 +2508,7 @@ Edit Icon from all 13 sites and Change Color from all 6 (a property's Color row 
 
 `CardApi` swaps `titleMenuContext` and `titleAction` for `pageMenu: (row: ViewRow, anchor: HTMLElement, editImage?: () => void) => Promise<void>`. `holdGhost` and `GhostSuppress.Provider` leave with their one reader at `CardsView.tsx:919`. `interactions.holdGhost` stays for the banner menu at `:262`, and `:261`'s comment leaves.
 
-`GhostSuppress` should leave the kit with this. `useBannerMenu`'s read only ever returns the default passthrough, since its callers sit above that Provider or under none, and the sidebar's two readers already hold `SidebarGhostApi`. `sidebarGhostApi` gains `suppressWrap` (`Sidebar.tsx:163-169,342`); `:115,250` leave and `:145,262` read `void api?.suppressWrap(…)`. `GhostSuppress` leaves `UIX/Interactions/ghostCreate.ts:10-11` and `Sidebar.tsx:12,413,441`. `useBannerMenu.tsx:6,33` leave, and `:66` calls `popMenu` directly. Cards and the Table gain Preview and Reveal Location with no runner work, since `runPageAction` already answers both.
+`GhostSuppress` should leave the kit with this. `useBannerMenu`'s read only ever returns the default passthrough, since its callers sit above that Provider or under none, and the sidebar's two readers already hold `SidebarGhostApi`. `sidebarGhostApi` gains `suppressWrap` (`Sidebar.tsx:163-169,342`); `:115,250` leave and `:145,262` read `void api?.suppressWrap(…)`. `LeafRow` takes `useLineEl()` and passes `rowEl(node.id)` as its trigger, as `ContextGroupDisclosure` does, so its `rowRef` and the wrapper `<div>` that only held it leave. `GhostSuppress` leaves `UIX/Interactions/ghostCreate.ts:10-11` and `Sidebar.tsx:12,413,441`. `useBannerMenu.tsx:6,33` leave, and `:66` calls `popMenu` directly. Cards and the Table gain Preview and Reveal Location with no runner work, since `runPageAction` already answers both.
 
 **The Route:** `MenuSeat` should resolve columns as every other seat host does, stop reading its registry through a kind branch, and take `holder` from `holderOf`.
 
@@ -2610,7 +2610,7 @@ Every doc should read true, replacively, under `r/studio-documentation`. *§Reco
 
 1. Apply every doc row, each as a replacement in place, adding no section.
 2. In `IssuesPM.md`: delete I-027's and I-042's blocks, index rows, and footnotes; rewrite I-075's `:1120` sentence and `[^75]`; re-anchor `[^51]` for whatever moved, in `~#-#` ranges.
-3. File `reveal-parity`'s missing fixtures as a new issue at the index's bar: cited, graded, reviewed by a read-only agent other than its finder, and placed in the Area it belongs to.
+3. File two new issues at the index's bar, each cited, graded, reviewed by a read-only agent other than its finder, and placed in the Area it belongs to: `reveal-parity`'s missing fixtures, and a parked tab keeping an open choice or pick (`pendingChoice`, `pendingPick`) floating over the tab that replaced it, where its pick lands on the parked tab's item, since `PickerMenu`'s trigger rule reads only `isConnected` and parking leaves a host connected.
 4. Run `python3 ~/"The Studio/.claude/scripts/index-issues/index-issues.py" .claude/IssuesPM.md` last. I-051 becomes I-049 and I-075 becomes I-073 before the new issue lands; the final report gives every changed number.
 
 **VERIFY**
@@ -2651,6 +2651,7 @@ The reviews run over `<BASELINE>..HEAD`, each wave closed before the next opens.
 Each row's exact wording is in *Investigation · §What Becomes False*.
 
 - `.claude/Features/PropertiesPM.md:115,117,119` — "one control … can open on a chooser pane"; "opens that group's chooser"; "A row shows once it holds a value"; "registry order" — Task 8-3
+- `.claude/Features/ViewTypesPM.md:71` — "the icon picker seated once per view", which Task 6-3 made false — Task 8-3
 - `.claude/Features/ViewTypesPM.md:122` — "A two-stage **add-picker**"; "The value, add, icon, and image pickers mount at the grid level", which drops "icon" — Task 8-3
 - `.claude/Features/ViewTypesPM.md:130` — a card's row list, already false — Task 8-3
 - `.claude/Features/InterfacePM.md:34,38,41` — the surfaces, the Open row, and New Page — Task 8-3
