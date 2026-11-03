@@ -228,6 +228,7 @@ export const actionRow = style([
 
 export const separator = style({
   height: '11px',
+  flexShrink: 0,
   display: 'flex',
   alignItems: 'center',
   padding: '0 8px',
