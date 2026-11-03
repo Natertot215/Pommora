@@ -1304,23 +1304,47 @@ const barOf = (cdp, bar = BACK) => cdp.evaluate(`(() => {
 async function addEntries(cdp, s) {
   const text = () => read(s.file)
   const start = text()
-  const seen = { bars: {} }
+  const seen = { bars: {}, rows: {} }
   const shows = (id) => cdp.evaluate(`!!document.querySelector('${s.scope ?? ''}[data-property-row="${id}"]')`)
   const reset = async () => {
     writeFileSync(join(NEXUS, s.file), start)
     if (s.view) await must(`${s.name}'s view as it was`, ask(cdp, 'views:save', COLLECTION, 'collection', s.view, layoutOf(s.view)))
     await sleep(900)
   }
+  const up = () => (s.card ? cdp.evaluate(`!!${BACK}`) : paneOpen(cdp))
+  const closed = () => settles(async () => !(await listUp(cdp)) && (s.card || !(await paneOpen(cdp))), 2000)
+  const leave = async () => {
+    if (s.card) return escapeAll(cdp)
+    for (let i = 0; i < 3 && (await paneOpen(cdp)); i++) await pressKey(cdp, 'Escape')
+  }
   const open = async (group) => {
-    if (s.card) await escapeAll(cdp)
-    else await leaveList(cdp)
+    await leave()
     await s.open(group)
     await until(`${s.name}'s Add list`, () => listUp(cdp))
     await sleep(500)
   }
-  const slide = async (group, label) => {
-    await open(group)
-    await slideTo(cdp, label)
+  const rowOf = (label) => `[...document.querySelectorAll('${s.scope ?? ''}[data-property-row]')].find((e) => e.getClientRects().length > 0 && e.closest('[role=button]')?.textContent.trim().startsWith(${JSON.stringify(label)}))`
+  const choose = async (group, label) => {
+    if (s.card) {
+      await open(group)
+      return slideTo(cdp, label)
+    }
+    if (await cdp.evaluate(`!!${rowOf(label)}`)) {
+      await leave()
+      await mouseClick(cdp, rowOf(label))
+    } else {
+      await open(group)
+      await click(cdp, entry(label))
+    }
+    await until(`${label}'s picker on its row`, async () => !(await listUp(cdp)) && (await paneOpen(cdp)))
+    await sleep(600)
+  }
+  const landing = async (type, label) => {
+    seen.bars[type] = await barOf(cdp)
+    if (s.card) return
+    const pane = await layerBox(cdp)
+    const row = await boxOf(cdp, rowOf(label))
+    seen.rows[type] = { pane, row, hangs: Math.abs(pane.top - row.bottom) <= 12 || Math.abs(row.top - pane.bottom) <= 12 }
   }
   const outside = async () => {
     const pane = await layerBox(cdp)
@@ -1342,57 +1366,61 @@ async function addEntries(cdp, s) {
     seen.plus = await cdp.evaluate(`getComputedStyle(${s.plus('properties')}).opacity`)
   }
 
-  await slide('properties', ADD.select.label)
-  seen.bars.Select = await barOf(cdp)
+  await choose('properties', ADD.select.label)
+  await landing('Select', ADD.select.label)
   seen.newOption = await newOptionShown(cdp)
   if (s.shoot) await shot(cdp, 'g16-slid-select', TOP_LAYER)
-  await mouseClick(cdp, BACK)
-  await sleep(600)
-  const back = { list: !!(await cdp.evaluate(`!!${entry(ADD.select.label)} && !${BACK}`)), kept: text() === start }
-  await slide('properties', ADD.select.label)
+  let back
+  if (s.card) {
+    await mouseClick(cdp, BACK)
+    await sleep(600)
+    back = { list: !!(await cdp.evaluate(`!!${entry(ADD.select.label)} && !${BACK}`)), kept: text() === start }
+    await choose('properties', ADD.select.label)
+  }
   await pressKey(cdp, 'Escape')
-  const escaped = { closed: !(await listUp(cdp)), kept: text() === start }
-  await slide('properties', ADD.select.label)
+  const escaped = { closed: await closed(), kept: text() === start }
+  await choose('properties', ADD.select.label)
   await outside()
-  const pressed = { closed: await settles(async () => !(await listUp(cdp)), 2000), kept: text() === start }
+  const pressed = { closed: await closed(), kept: text() === start }
   seen.leaving = { back, escaped, pressed }
-  await slide('properties', ADD.select.label)
+  await choose('properties', ADD.select.label)
   await pickOption('Red')
-  seen.select = { closed: !(await listUp(cdp)), wrote: await settles(async () => text().includes('Red')), row: s.card || (await shows(ADD.select.id)) }
+  seen.select = { closed: await closed(), wrote: await settles(async () => text().includes('Red')), row: s.card || (await shows(ADD.select.id)) }
 
-  await slide('properties', ADD.multi.label)
-  seen.bars.Multi = await barOf(cdp)
+  await choose('properties', ADD.multi.label)
+  await landing('Multi', ADD.multi.label)
   await pickOption('One')
-  const first = { open: await cdp.evaluate(`!!${BACK}`), left: await cdp.evaluate(`![...document.querySelectorAll('${PANE_LAYER} [role=button]')].some((e) => e.textContent.trim() === ${JSON.stringify(ADD.multi.label)})`) }
+  const first = { open: await up(), left: await cdp.evaluate(`![...document.querySelectorAll('${PANE_LAYER} [role=button]')].some((e) => e.textContent.trim() === ${JSON.stringify(ADD.multi.label)})`) }
   await pickOption('Two')
-  seen.multi = { first, open: await cdp.evaluate(`!!${BACK}`), wrote: await settles(async () => text().includes('One') && text().includes('Two')), row: s.card || (await shows(ADD.multi.id)) }
+  seen.multi = { first, open: await up(), wrote: await settles(async () => text().includes('One') && text().includes('Two')), row: s.card || (await shows(ADD.multi.id)) }
 
-  await slide('properties', ADD.status.label)
-  seen.bars.Status = await barOf(cdp)
+  await choose('properties', ADD.status.label)
+  await landing('Status', ADD.status.label)
   seen.status = { options: (await optionRows(cdp)).map((o) => o.label), groups: await statusDividers(cdp), newOption: await newOptionShown(cdp) }
   await pickOption('Open')
-  Object.assign(seen.status, { closed: !(await listUp(cdp)), wrote: await settles(async () => text().includes('Open')) })
+  Object.assign(seen.status, { closed: await closed(), wrote: await settles(async () => text().includes('Open')) })
 
-  await slide('contexts', 'Areas')
-  seen.bars.Context = await barOf(cdp)
-  if (s.spacesShot) await shot(cdp, 'g16-panel-spaces-bar', TOP_LAYER)
+  await choose('contexts', 'Areas')
+  await landing('Context', 'Areas')
+  if (s.spacesShot) await shot(cdp, 'g16-panel-spaces-row')
   const spaces = await optionRows(cdp)
   const before = text()
   await mouseClick(cdp, entry(spaces[0]?.label))
   await sleep(700)
-  seen.context = { spaces, open: await cdp.evaluate(`!!${BACK}`), newOption: await newOptionShown(cdp), wrote: await settles(async () => text() !== before && text().includes(spaces[0]?.label)) }
+  seen.context = { spaces, open: await up(), newOption: await newOptionShown(cdp), wrote: await settles(async () => text() !== before && text().includes(spaces[0]?.label)) }
 
-  await slide('contexts', EMPTY_CONTEXT)
-  seen.emptyContext = { options: await optionRows(cdp), back: await cdp.evaluate(`!!${BACK}`) }
-  await slide('properties', ADD.bare.label)
+  await choose('contexts', EMPTY_CONTEXT)
+  seen.emptyContext = { options: await optionRows(cdp), open: await up() }
+  await choose('properties', ADD.bare.label)
   seen.emptySelect = { options: await optionRows(cdp), newOption: await newOptionShown(cdp) }
 
-  const days = {}
-  for (const [leaveBy, n] of [['Back', 10], ['Escape', 11], ['an outside press', 12]]) {
+  const days = { leaves: {} }
+  const leaves = [['Back', 10], ['Escape', 11], ['an outside press', 12]].filter(([leaveBy]) => s.card || leaveBy !== 'Back')
+  for (const [leaveBy, n] of leaves) {
     await reset()
-    await slide('properties', ADD.due.label)
-    if (leaveBy === 'Back') {
-      seen.bars.Date = await barOf(cdp)
+    await choose('properties', ADD.due.label)
+    if (leaveBy === leaves[0][0]) {
+      await landing('Date', ADD.due.label)
       seen.calendarScrolls = await cdp.evaluate(scrolling(CAL))
       if (s.shoot) await shot(cdp, 'g16-slid-calendar', TOP_LAYER)
     }
@@ -1404,14 +1432,16 @@ async function addEntries(cdp, s) {
     else await outside()
     await sleep(900)
     const { writes } = await watcher.stop()
-    days[leaveBy] = { stays, writes: writes[s.file], held: text().includes(`-${n}`) }
+    days.leaves[leaveBy] = { stays, writes: writes[s.file], held: text().includes(`-${n}`) }
   }
   await reset()
-  await slide('properties', ADD.due.label)
+  await choose('properties', ADD.due.label)
   await mouseClick(cdp, dayOf(13))
   await mouseClick(cdp, dayOf(14))
-  await mouseClick(cdp, BACK, { settle: 0 })
-  await slideTo(cdp, ADD.start.label)
+  if (s.card) {
+    await mouseClick(cdp, BACK, { settle: 0 })
+    await slideTo(cdp, ADD.start.label)
+  } else await choose('properties', ADD.start.label)
   days.startSelected = await selectedDays(cdp)
   await pressKey(cdp, 'Escape')
   days.twoDays = await settles(async () => text().includes('-14') && !text().includes('-13'))
@@ -1455,11 +1485,11 @@ async function addEntries(cdp, s) {
     if (s.typedShot && k === 'number') await shot(cdp, 'g16-panel-typed-row', `document.activeElement.closest('[data-property-row]')`)
     await typeText(cdp, word)
     await pressKey(cdp, k === 'text' && s.card ? 'Escape' : 'Enter')
-    await leaveList(cdp)
+    await leave()
     typed[k] = { ...pane, landed: await settles(async () => text().includes(word)) }
   }
   seen.typed = typed
-  await leaveList(cdp)
+  await leave()
   return seen
 }
 
@@ -1583,14 +1613,16 @@ async function group16(cdp) {
   const all = Object.entries(ran).filter(([k]) => k !== 'hop')
   const every = (f) => all.every(([, r]) => f(r))
   const of = (f) => show(Object.fromEntries(all.map(([k, r]) => [k, f(r)])))
+  const cards = all.filter(([k]) => k.endsWith('card'))
+  const panels = all.filter(([k]) => !k.endsWith('card'))
 
   const slideRight = (r, name) => {
     const expected = name === 'Compact card' ? ENTRIES.filter((l) => l !== ADD.check.label) : ENTRIES
     const labels = r.listed.map((x) => x.label)
-    return expected.every((l) => labels.includes(l)) && r.listed.every((x) => x.slides === SLIDING.includes(x.label))
+    return expected.every((l) => labels.includes(l)) && r.listed.every((x) => x.slides === (name.endsWith('card') && SLIDING.includes(x.label)))
   }
   const standard = ran['Standard card']
-  item(16, 'MP-C-1 MP-B-5', `"›" draws on exactly the ${SLIDING.length} rows that slide, on every surface (at HEAD every fillable row wore one, Checkbox, Number, Text, Link, and File included)`,
+  item(16, 'MP-C-1 MP-B-5', `"›" draws on exactly the ${SLIDING.length} rows that slide on a card, and on no panel row (at HEAD every fillable row wore one, Checkbox, Number, Text, Link, and File included)`,
     all.every(([k, r]) => slideRight(r, k)), of((r) => r.listed.map((x) => `${x.label}${x.slides ? ' ›' : ''}`)))
   item(16, 'MP-C-5', 'a Compact card lists its blanks and leaves out the Checkbox it draws',
     !ran['Compact card'].listed.some((x) => x.label === ADD.check.label) && ran['Compact card'].listed.length === ENTRIES.length - 1, of((r) => r.listed.length))
@@ -1601,19 +1633,21 @@ async function group16(cdp) {
     ceiling?.height === 240 && ceiling.content > 240, show(standard.ceiling))
   item(16, 'MP-C-4', 'the calendar slid in from the Add list never scrolls', every((r) => r.calendarScrolls.length === 0), of((r) => r.calendarScrolls))
 
-  const bars = all.flatMap(([k, r]) => Object.entries(r.bars).map(([type, b]) => ({ at: `${k} ${type}`, ...b })))
+  const bars = cards.flatMap(([k, r]) => Object.entries(r.bars).map(([type, b]) => ({ at: `${k} ${type}`, ...b })))
   const ref = bars[0]
   const shape = (b) => `${b.height}px tall, ${b.padding} padding, a ${b.glyph}px glyph`
-  item(16, 'MP-C-3 MP-C-4', `the back bar stands ${shape(ref)} across Select, Multi, Status, Context, and Date on every surface, matching a settings pane's bar (at HEAD 14px tall, no padding, a 12px glyph)`,
-    bars.length === all.length * 5 && bars.every((b) => b.height === ref.height && b.padding === ref.padding && b.glyph === ref.glyph) &&
+  item(16, 'MP-C-3 MP-C-4', `the back bar stands ${shape(ref)} across Select, Multi, Status, Context, and Date on both cards, matching a settings pane's bar (at HEAD 14px tall, no padding, a 12px glyph)`,
+    bars.length === cards.length * 5 && bars.every((b) => b.height === ref.height && b.padding === ref.padding && b.glyph === ref.glyph) &&
       ref.height === settingsBar.height && ref.padding === settingsBar.padding && ref.glyph === settingsBar.glyph, show({ bars, settingsBar }))
-  item(16, 'MP-C-3', `on a picker's surface the bar's label sits ${ref.inset}px in from the pane's right edge on every type and surface, as far in as the chevron draws from its left (${ref.chevron}px)`,
+  item(16, 'MP-C-3', `on a picker's surface the bar's label sits ${ref.inset}px in from the pane's right edge on every type and card, as far in as the chevron draws from its left (${ref.chevron}px)`,
     bars.every((b) => Math.abs(b.inset - 8) <= 0.75 && Math.abs(b.inset - b.chevron) <= 1.5), show(bars.map((b) => ({ at: b.at, inset: b.inset, chevron: b.chevron }))))
-  item(16, 'MP-B-4', 'a slid Context\'s bar reads "Spaces" on cards and panels alike', every((r) => r.bars.Context.text.startsWith('Spaces')), of((r) => r.bars.Context.text))
+  item(16, 'MP-B-4', 'a slid Context\'s bar reads "Spaces" on both cards', cards.every(([, r]) => r.bars.Context.text.startsWith('Spaces')), show(cards.map(([k, r]) => [k, r.bars.Context.text])))
+  item(16, 'MP-B-1', "a panel's Select, Multi, Status, Context, and Date each show their row and open its own picker hanging from it, with no back bar",
+    panels.every(([, r]) => Object.values(r.rows).length === 5 && Object.values(r.rows).every((x) => x.hangs) && Object.values(r.bars).every((b) => b === null)), show(Object.fromEntries(panels.map(([k, r]) => [k, { rows: r.rows, bars: r.bars }]))))
 
   item(16, 'MP-C-1', 'a Select slides in with New Option', every((r) => r.newOption), of((r) => r.newOption))
-  item(16, 'MP-C-2', "Back, Escape, and an outside press from a slid Select each write nothing, Back returning to the list and the other two closing everything",
-    every((r) => r.leaving.back.list && r.leaving.back.kept && r.leaving.escaped.closed && r.leaving.escaped.kept && r.leaving.pressed.closed && r.leaving.pressed.kept), of((r) => r.leaving))
+  item(16, 'MP-C-2', "Escape and an outside press from a Select's pane each write nothing and close everything, and a card's Back returns to the list writing nothing",
+    all.every(([k, r]) => (!k.endsWith('card') || (r.leaving.back.list && r.leaving.back.kept)) && r.leaving.escaped.closed && r.leaving.escaped.kept && r.leaving.pressed.closed && r.leaving.pressed.kept), of((r) => r.leaving))
   item(16, 'MP-C-1 MP-C-2', "a Select's pick writes and closes everything, and the panel shows its row", every((r) => r.select.closed && r.select.wrote && r.select.row), of((r) => r.select))
   item(16, 'MP-C-1', 'a Multi-Select stays open across picks, outliving its entry leaving the list, and writes both',
     every((r) => r.multi.first.open && r.multi.first.left && r.multi.open && r.multi.wrote && r.multi.row), of((r) => r.multi))
@@ -1621,11 +1655,11 @@ async function group16(cdp) {
     every((r) => same(r.status.options, ['Open', 'Closed']) && r.status.groups === 1 && !r.status.newOption && r.status.closed && r.status.wrote), of((r) => r.status))
   item(16, 'MP-C-1', 'a Context slides into pick-only Space rows, no New Option, and stays open across a pick that writes',
     every((r) => r.context.spaces.length > 0 && r.context.spaces.every((o) => !o.lineRow) && !r.context.newOption && r.context.open && r.context.wrote), of((r) => r.context))
-  item(16, 'MP-C-1', 'an empty Select slides to New Option alone, and an empty Context to an empty pane under its back bar',
-    every((r) => r.emptySelect.options.length === 0 && r.emptySelect.newOption && r.emptyContext.options.length === 0 && r.emptyContext.back), of((r) => ({ select: r.emptySelect, context: r.emptyContext })))
-  item(16, 'MP-C-1 MP-C-2', 'a day picked in a slid calendar keeps the pane and writes once, left by Back, Escape, or an outside press',
-    every((r) => ['Back', 'Escape', 'an outside press'].every((k) => r.date[k].stays && r.date[k].writes === 1 && r.date[k].held)), of((r) => r.date))
-  item(16, 'MP-C-1', 'two days picked keep only the last, and a second date slides in blank', every((r) => r.date.twoDays && r.date.startSelected.length === 0), of((r) => ({ twoDays: r.date.twoDays, start: r.date.startSelected })))
+  item(16, 'MP-C-1', 'an empty Select opens to New Option alone, and an empty Context to an empty pane, under its back bar on a card and on its row in a panel',
+    every((r) => r.emptySelect.options.length === 0 && r.emptySelect.newOption && r.emptyContext.options.length === 0 && r.emptyContext.open), of((r) => ({ select: r.emptySelect, context: r.emptyContext })))
+  item(16, 'MP-C-1 MP-C-2', "a day picked in the Add list's calendar keeps the pane and writes once, left by a card's Back, Escape, or an outside press",
+    all.every(([k, r]) => Object.keys(r.date.leaves).length === (k.endsWith('card') ? 3 : 2) && Object.values(r.date.leaves).every((d) => d.stays && d.writes === 1 && d.held)), of((r) => r.date.leaves))
+  item(16, 'MP-C-1', 'two days picked keep only the last, and a second date opens blank', every((r) => r.date.twoDays && r.date.startSelected.length === 0), of((r) => ({ twoDays: r.date.twoDays, start: r.date.startSelected })))
   const checks = all.filter(([, r]) => r.check)
   item(16, 'MP-C-1', 'a Checkbox acts from the list, checked with nothing left open, and unchecking keeps it drawn',
     checks.length === all.length - 1 && checks.every(([, r]) => r.check.closed && r.check.wrote && r.check.unchecked && r.check.drawn), show(Object.fromEntries(checks.map(([k, r]) => [k, r.check]))))
@@ -1636,7 +1670,6 @@ async function group16(cdp) {
   item(16, 'MP-C-2', 'a Number pops a small empty window on a card and its row field in a panel, and typing lands', typed('number', (t) => t.layer), of((r) => r.typed.number))
   item(16, 'MP-C-2', 'a Text pops TextPane on a card and its row field in a panel, and typing lands', typed('text', (t) => t.textPane), of((r) => r.typed.text))
   item(16, 'MP-C-2', 'a Link pops an empty field on a card and its row field in a panel, and typing lands', typed('link', (t) => t.layer), of((r) => r.typed.link))
-  const panels = all.filter(([k]) => !k.endsWith('card'))
   item(16, 'MP-B-1', "a panel's + stays shown while its list is open", panels.every(([, r]) => r.plus === '1'), show(Object.fromEntries(panels.map(([k, r]) => [k, r.plus]))))
   const { pane, standing } = ran.hop
   item(16, 'MP-B-1', "a Space's standing Add row opens the list hanging from the row itself",
@@ -1887,12 +1920,12 @@ async function group18(cdp) {
     await until('the Add list', () => cdp.evaluate(`!!${entry(PLACE.tall.label)}`))
     await sleep(500)
     const frames = await framesOf(cdp, () => click(cdp, entry(PLACE.tall.label)))
-    panelEnd[name] = { frames: frames.length, inside: insideWindow(frames), pane: await layerBox(cdp) }
-    await leaveList(cdp)
+    panelEnd[name] = { frames: frames.length, inside: insideWindow(frames), pane: await layerBox(cdp), row: await boxOf(cdp, `document.querySelector('${scope}[data-property-row="${PLACE.tall.id}"]')`) }
+    await escapeAll(cdp)
   }
   await closePageWindow(cdp)
-  item(18, 'MP-E-1', "Add at a panel's end, in the dropdown and the SidePane, keeps a slid 40-option list inside the window on every frame",
-    Object.values(panelEnd).every((p) => p.inside), show(panelEnd))
+  item(18, 'MP-E-1', "Add at a panel's end, in the dropdown and the SidePane, shows the 40-option row and keeps its own picker inside the window on every frame",
+    Object.values(panelEnd).every((p) => p.inside && p.frames > 0), show(panelEnd))
 
   await showView(cdp, PLACE_TABLE)
   const optionCell = (title) => `${placeRow(title)}.querySelectorAll('.data-cell')[2]`

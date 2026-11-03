@@ -152,7 +152,7 @@ The drive's cases, derived from *Properties Restructure — Decisions & Intentio
 
 #### Group 16 — The Add List
 
-The surfaces are a Standard card, a Compact card, the page dropdown, the SidePane, and the Space dropdown, and every row below runs on each that lists it; a Compact card draws its Checkbox, so it doesn't list one.
+The surfaces are a Standard card, a Compact card, the page dropdown, the SidePane, and the Space dropdown, and every row below runs on each that lists it; a Compact card draws its Checkbox, so it doesn't list one. A card slides an entry's picker in under a back bar, while a panel shows the entry's row and opens that row's own picker on it; once a panel's row shows, a later open of it presses the row.
 
 | Case | Seeds | Operation | Expected | Decisions |
 | --- | --- | --- | --- | --- |
@@ -160,15 +160,16 @@ The surfaces are a Standard card, a Compact card, the page dropdown, the SidePan
 | Stamps in Visibility | as above | view settings › Visibility | Creation Time and Last Modified are listed | MP-C-6 |
 | A settings pane's bar | as above | as above | the bar's label ends flush with the bar and the controls beneath it, with no margin | MP-C-3 |
 | The panel leaves out what's held | as above | `Add Held`'s page dropdown › Add Property | `Add Select` and `Add Text` aren't listed | MP-C-5 |
-| The "›" | as above | open each surface's Add list | "›" on exactly the Contexts, Select, Multi-Select, Status, both Dates, and `Add Bare` (at HEAD on every fillable row); a Compact card lists every blank but the Checkbox; Creation Time and Last Modified are absent (at HEAD both listed); screenshot `g16-add-list` | MP-C-1, MP-B-5, MP-C-5, MP-C-6 |
+| The "›" | as above | open each surface's Add list | on a card, "›" on exactly the Contexts, Select, Multi-Select, Status, both Dates, and `Add Bare` (at HEAD on every fillable row), and on no panel row; a Compact card lists every blank but the Checkbox; Creation Time and Last Modified are absent (at HEAD both listed); screenshot `g16-add-list` | MP-C-1, MP-B-5, MP-C-5, MP-C-6 |
 | The ceiling | as above | the Standard card's 15-row list | it caps at 240px and scrolls (at HEAD it stood 365px); the slid calendar never scrolls | MP-C-4 |
-| The back bar | as above | slide into Select, Multi-Select, Status, Areas, and Add Due on each surface | every bar has one height, padding, and glyph size, matching a settings pane's bar (at HEAD 14px, no padding, a 12px glyph); its label sits 8px in from the pane's right edge, as far as the chevron draws from its left; a Context's reads "Spaces"; screenshots `g16-slid-select`, `g16-slid-calendar`, `g16-panel-spaces-bar` | MP-C-3, MP-C-4, MP-B-4 |
-| Select | as above | slide in, then Back; slide in, then Escape; slide in, then press outside; slide in and pick Red | New Option shows; Back returns to the list, and Escape and the outside press close everything, none writing; the pick writes and closes everything, and a panel shows its row | MP-C-1, MP-C-2 |
-| Multi-Select | as above | slide in, pick One, then Two | the pane stays across both picks, outliving its entry leaving the list, and both write | MP-C-1 |
-| Status | as above | slide in, pick Open | Open and Closed sit behind one divider with no New Option; the pick writes and closes everything | MP-C-1 |
-| Context | as above | slide into Areas, pick its first Space | pick-only rows with no New Option; the pane stays and the pick writes | MP-C-1 |
-| Nothing to pick | as above | slide into `Add Bare`, then `Add Empty` | New Option alone, then an empty pane under the back bar | MP-C-1 |
-| Date | as above | pick a day and leave by Back, by Escape, and by an outside press; pick two days, then press Back and slide straight into `Add Start` in the same list, before the calendar's exit ends | the pane stays after each day and each pick writes once; two days keep the last; `Add Start` opens with no day selected | MP-C-1, MP-C-2 |
+| The back bar | as above | slide into Select, Multi-Select, Status, Areas, and Add Due on each card | every bar has one height, padding, and glyph size, matching a settings pane's bar (at HEAD 14px, no padding, a 12px glyph); its label sits 8px in from the pane's right edge, as far as the chevron draws from its left; a Context's reads "Spaces"; screenshots `g16-slid-select`, `g16-slid-calendar` | MP-C-3, MP-C-4, MP-B-4 |
+| The panel's row | as above | choose Select, Multi-Select, Status, Areas, and Add Due in each panel | each shows its row and opens the row's own picker hanging from it, with no back bar; screenshot `g16-panel-spaces-row` | MP-B-1 |
+| Select | as above | open it, then Back on a card; open it, then Escape; open it, then press outside; open it and pick Red | New Option shows; a card's Back returns to the list, and Escape and the outside press close everything, none writing; the pick writes and closes everything, and a panel shows its row | MP-C-1, MP-C-2 |
+| Multi-Select | as above | open it, pick One, then Two | the pane stays across both picks, outliving its entry leaving the list, and both write | MP-C-1 |
+| Status | as above | open it, pick Open | Open and Closed sit behind one divider with no New Option; the pick writes and closes everything | MP-C-1 |
+| Context | as above | open Areas, pick its first Space | pick-only rows with no New Option; the pane stays and the pick writes | MP-C-1 |
+| Nothing to pick | as above | open `Add Bare`, then `Add Empty` | New Option alone, then an empty pane, under the back bar on a card and on its row in a panel | MP-C-1 |
+| Date | as above | pick a day and leave by Back on a card, by Escape, and by an outside press; pick two days, then open `Add Start`, on a card by pressing Back and sliding straight into it in the same list before the calendar's exit ends | the pane stays after each day and each pick writes once; two days keep the last; `Add Start` opens with no day selected | MP-C-1, MP-C-2 |
 | Checkbox | as above, but a Compact card | press `Add Check`, then the drawn box | it checks with nothing left open; unchecking keeps it drawn | MP-C-1 |
 | File | a path handed to the dialog stub for the Standard card's second press | press `Add File` with the dialog cancelled, then with the path | the dialog opens and the list closes; the cancel writes nothing and leaves no panel row; the path adopts a chip on the card | MP-C-2, MP-C-1 |
 | Typed values | as above | press `Add Number`, `Add Text`, and `Add Link`, and type | a card pops a small empty window, TextPane, and an empty field, and a panel focuses the row's own field; each value lands; screenshot `g16-panel-typed-row` | MP-C-2 |
@@ -193,7 +194,7 @@ The surfaces are a Standard card, a Compact card, the page dropdown, the SidePan
 | Back after the flip | as above | Back, sampled | the list returns above the card and the edge it hangs from never moves | MP-E-1 |
 | A 40-option list on a low card | as above | slide into `Place Tall`, sampled | every frame stays inside the window, capped | MP-E-1 |
 | The last card in a row | `Place Two`'s card, the row's last | open its Add list, slide into `Place Due` | the calendar stays inside the window | MP-E-1 |
-| Add at a panel's end | `Place One` in the page dropdown, then the SidePane | Add Property, slide into `Place Tall`, sampled | every frame stays inside the window | MP-E-1 |
+| Add at a panel's end | `Place One` in the page dropdown, then the SidePane | Add Property, choose `Place Tall`, sampled | its row shows, and every frame of the row's own picker stays inside the window | MP-E-1 |
 | A sweep's pane | `Place One` and `Place Two` in `Place Table` | click `Place Two`'s `Place Tall` cell, then sweep the column from `Place One` to `Place Two` | both panes share one rect (at HEAD the mass pane sat 29px right of the single one); screenshot `g18-sweep-pane` | MP-B-8 |
 
 #### Group 19 — Settings Panes
