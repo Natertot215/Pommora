@@ -16,18 +16,18 @@
 
 **Net Ledger** (Actionable column of `view-delta --exclude .claude`; Measured is cumulative from the BASELINE head, less commits another session landed in the range (`54b0636d8`, +16), and a phase's own delta, its Measured less the row above, is held against its per-phase Estimate):
 
-| Phase | Estimate | Measured |
-|---|---|---|
-| 0 · Drives and Pins | 0 | 0 (the BASELINE head) |
-| 1 · Kit Imports | about −54; −54 built for the barrel | −54 (+101 / −155) |
-| 2 · The Pane Shell | about +79 (+195 / −116); +72 built | +32 (+326 / −294) |
-| 3 · Small Folds | about −16; −4 built | +11 (+394 / −383) |
-| 4 · The Two Pickers | about −95; −96 (+386 / −482) built, and the back bar's label +1 | −110 (+769 / −879) |
-| 5 · Settings Panes | about −70 (+46 / −116) | −195 (+1029 / −1224), −85 its own |
-| 6 · One Icon and Color Request | about −170 | −380 (+1418 / −1798), −185 its own |
-| 7 · Right-Click | about −140 (−125 to −155) | |
-| 8 · Closeout | 0 | |
-| **Total** | **about −470; 9 files leave, 4 arrive** | |
+| Phase                          | Estimate                                                        | Measured                           |
+| ------------------------------ | --------------------------------------------------------------- | ---------------------------------- |
+| 0 · Drives and Pins            | 0                                                               | 0 (the BASELINE head)              |
+| 1 · Kit Imports                | about −54; −54 built for the barrel                             | −54 (+101 / −155)                  |
+| 2 · The Pane Shell             | about +79 (+195 / −116); +72 built                              | +32 (+326 / −294)                  |
+| 3 · Small Folds                | about −16; −4 built                                             | +11 (+394 / −383)                  |
+| 4 · The Two Pickers            | about −95; −96 (+386 / −482) built, and the back bar's label +1 | −110 (+769 / −879)                 |
+| 5 · Settings Panes             | about −70 (+46 / −116)                                          | −195 (+1029 / −1224), −85 its own  |
+| 6 · One Icon and Color Request | about −170                                                      | −380 (+1418 / −1798), −185 its own |
+| 7 · Right-Click                | about −140 (−125 to −155)                                       |                                    |
+| 8 · Closeout                   | 0                                                               |                                    |
+| **Total**                      | **about −470; 9 files leave, 4 arrive**                         |                                    |
 
 ### Context
 
@@ -178,7 +178,7 @@ The order is what makes each step land once. Phase 0 readies the drives and pins
   - **Call 10 (Placements):** all nine are approved as *§Placements* lists them.
 - **Placements:** every new, moved, renamed, or deleted file is one of these, and no other file is created.
   - **Approved in the Log:** `Core/Properties/Pickers/MetadataPicker.tsx` (B-3); `UIX/Pickers/ManageRow.tsx` and `manage-row.css.ts`, moved from `UIX/Menus/`; `UIX/Menus/PickerControl.tsx` and `picker-control.css.ts`, moved from `UIX/Pickers/` (E-2).
-  - **Awaiting Nathan (Call 10):** `Core/Properties/Pickers/ValueSeat.tsx` and `ValueSeat.test.tsx`, moved from `Core/Properties/Cells/`; `UIX/Pickers/panePlacement.ts` and `panePlacement.test.ts`, new; `Core/Actions/metadataMenu.ts` and `metadataMenu.test.ts`, new; `Core/Assets/IdentityChoice.tsx` and `IdentityChoice.test.tsx`, new; `Core/Assets/useNexusIcon.tsx`, renamed from `useNexusIcon.ts`; `UIX/Menus/PickerControl.test.tsx`, renamed from `UIX/Pickers/PickerControl.typeable.test.tsx`; `Core/Properties/parseEditorValue.test.ts`, new; `Core/Interface/Menus/pageMenuActions.test.ts`, new; and `itemColumns` inside the existing `Core/Views/Pipeline/columns.ts`.
+  - **Awaiting Nathan (Call 10):** `Core/Properties/Pickers/ValueSeat.tsx` and `ValueSeat.test.tsx`, moved from `Core/Properties/Cells/`; `UIX/Pickers/panePlacement.ts` and `panePlacement.test.ts`, new; `Core/Actions/metadataMenu.ts` and `metadataMenu.test.ts`, new; `Core/Assets/IdentityChoice.tsx` and `IdentityChoice.test.tsx`, new; `Core/Assets/useNexusIcon.tsx`, renamed from `useNexusIcon.ts`; `UIX/Menus/PickerControl.test.tsx`, renamed from `UIX/Pickers/PickerControl.typeable.test.tsx`; `Core/Properties/parseEditorValue.test.ts`, new; and `itemColumns` inside the existing `Core/Views/Pipeline/columns.ts`.
   - **Deleted:** `UIX/Menus/index.ts`, `UIX/Pickers/PickerControl.options.test.ts`, `Core/Properties/Pickers/MassPropertyPicker.tsx`, `Core/Views/Settings/ViewItemMenu.tsx`, `Core/Assets/IconChoice.tsx`, `Core/Assets/NexusIconEditors.tsx`, `Core/Assets/iconFavorites.ts`, `Core/Actions/cardMenu.ts`, `cardMenu.test.ts`, `propertyRows.ts`, `propertyRows.test.ts`, `Core/Interface/Menus/propertyMenuActions.ts`, and `propertyMenuActions.test.ts`.
 - **Plan Rules:** removal comes first in every phase. In an AFTER, a `-` line reads the tree as the tasks before it leave it, so an executor meets exactly that line. A `:line` cites `16d932567`; where an earlier task moved it, the named symbol or quoted text is the anchor. Tasks are written to their result, so no executor reads an opening to do more than they say. A cited hunk in `Scouts/Planning/` or `1 — Two Pickers.patch` is that task's AFTER as if inlined, with the differences the task names, and this plan stands wherever it and the Investigation or a report differ. A test that changes asserts the behavior a decision names rather than being bent to pass. Consolidation that's unambiguously right needs no sign-off, and dead or dormant code inside the surface leaves. An obvious fold Nathan would answer "fix it here" to, with no architectural risk or domino effect, is included without asking and recorded under *§Deviations*; anything larger is recorded there for him.
 - **Comments:** no task adds more comments than it removes, so the codebase's comment count doesn't grow. The budget is *Investigation · §The Comment Ledger* with this plan's three further removals (`NexusIconEditors.tsx:6`, `CardsView.tsx:261`, `ghostCreate.ts:10`): 4 added against 13 removed, and an executor adds none beyond it. A rewrite in place counts zero.
@@ -259,10 +259,10 @@ The order is what makes each step land once. Phase 0 readies the drives and pins
   - [x] Task 6-4 · The ghost
   - [x] Task 6-5 · Group 19 gains the choices
   - [x] Review Checkpoint
-- [ ] **Phase 7** — Right-Click
-  - [ ] Task 7-1 · One metadata menu, one page menu, and `MenuSeat`'s route
-  - [ ] Task 7-2 · Group 17
-  - [ ] Review Checkpoint
+- [x] **Phase 7** — Right-Click
+  - [x] Task 7-1 · One metadata menu, one page menu, and `MenuSeat`'s route
+  - [x] Task 7-2 · Group 17
+  - [x] Review Checkpoint
 - [ ] **Phase 8** — Closeout
   - [ ] Task 8-1 · The seat's move
   - [ ] Task 8-2 · All seven drives
@@ -2532,22 +2532,21 @@ Edit Icon from all 13 sites and Change Color from all 6 (a property's Color row 
 
 **Tests:**
 
-- `ValueSeat.test.tsx`: the menu seat resolves a Context and a stamp through the shared route. `:302-309` stays green, since it grows the store's registry.
-- `propertyMenuActions.test.ts` and `propertyRows.test.ts` merge into `Core/Actions/metadataMenu.test.ts`; `:90-99` flips to schema order, `stage, Tags, Count, Done`; `:50-87,171,270`'s harness takes `MetadataTarget`; new cases: `order.contexts` honored, and an empty Select reads `{ label: 'Stage', submenu: [] }`.
+- `ValueSeat.test.tsx:302-309` stays green, since it grows the store's registry; the old `columnOf` already answered a Context and a stamp from the held column, so the shared route changes no outcome a case could pin.
+- `propertyMenuActions.test.ts` and `propertyRows.test.ts` merge into `Core/Actions/metadataMenu.test.ts`; `:90-99` flips to schema order, `stage, Tags, Count, Done`; `:50-87,171,270`'s harness takes `MetadataTarget`; an empty Select reads `{ label: 'Stage', submenu: [] }`, and `columns.test.ts` already pins `order.contexts`.
 - `cardMenu.test.ts` and `cellMenu.test.ts:8-28` are reborn in `pageMenu.test.ts` with Preview and Reveal Location; `pageMenu.test.ts:17,60,79` take the signature and `:37` leaves; `pageMenuItems`' three knobs gain cases.
 - `cellMenu.test.ts:30-43,159-162,166-170,259` leave; `:272` moves its `hideable` case onto an empty Context.
 - `useBannerMenu.test.tsx:8,42-53` and `:78-88`'s ghost assertion leave.
-- `entityMenu.test.ts:20-40,126-140,143-149` move to `pageMenu.test.ts`, the Matrix case pinned through `showEntityMenu`; `:91-92`'s `spaces` and `properties` become `metadata`.
-- `Core/Interface/Menus/pageMenuActions.test.ts`, new: each host handler runs on its action, and an absent `newPage` draws no row.
+- `entityMenu.test.ts:20-40,126-140,143-149` move to `pageMenu.test.ts`, and the Matrix's "no New Page" moves to `entityMenuActions.test.ts`, pinned through `showEntityMenu`; `:91-92`'s `spaces` and `properties` become `metadata`. Each host's handlers stay pinned by `cardGestures.test.tsx`, `cellGestures.test.tsx`, and `Sidebar.test.tsx`.
 - `MatrixView.test.tsx:185-189`, `cardGestures.test.tsx:173-181,188-193`, `cellGestures.test.tsx:500-519`, and `Desktop/Actions/menu.test.ts:73` stay green untouched.
 
 **VERIFY**
 
-- [ ] Run the gates; Phase 0's D-2 pin passes unchanged.
-- [ ] `git grep -n "titleMenuContext\|runTitleAction\|pageMetaMenuItems\|propertyMenuBranches\|PropertyMenuRow\|cardMenuModel" -- Core` prints nothing.
-- [ ] `Core/Actions/metadataMenu.ts` stands near 100 lines against the 160 it replaces.
-- [ ] `Core/Contract/engineGraph.test.ts` and `Desktop/hostGraph.test.ts` pass, which fails if `MetadataAction` moves back to `metadataMenu.ts`.
-- [ ] `git grep -n "GhostSuppress" -- Core UIX` prints nothing.
+- [x] Run the gates; Phase 0's D-2 pin passes unchanged.
+- [x] `git grep -n "titleMenuContext\|runTitleAction\|pageMetaMenuItems\|propertyMenuBranches\|PropertyMenuRow\|cardMenuModel" -- Core` prints nothing.
+- [x] `Core/Actions/metadataMenu.ts` stands near 100 lines against the 160 it replaces.
+- [x] `Core/Contract/engineGraph.test.ts` and `Desktop/hostGraph.test.ts` pass, which fails if `MetadataAction` moves back to `metadataMenu.ts`.
+- [x] `git grep -n "GhostSuppress" -- Core UIX` prints nothing.
 
 #### Task 7-2
 
@@ -2559,19 +2558,19 @@ Every right-click outcome should run against the real app. Group 17 (Right-Click
 - **Value Rows:** Select, Multi, Status, Context, Checkbox Check and Uncheck, Date, Number, Text, Link, File through `__drive.dialogs`, and an empty Select reading `{ label, enabled: false }` (D-7).
 - **D-1:** every metadata menu is recorded by `Menu.popup`; none draws in `MenuPresenter`.
 - **D-2:** sidecar bytes unchanged after a right-click value on a hidden property, and the column stays hidden.
-- **D-3:** an option created mid-pick joins; no `.ghost-card` while a leaf is open, with a glance read as its control (the recipe: park off the card, step `mouseMoved` across `.card-text` four times at 60 ms, dwell 1.5 s).
+- **D-3:** no `.ghost-card` while a leaf is open, with a glance read as its control (the recipe: park off the card, step `mouseMoved` across `.card-text` four times at 60 ms, dwell 1.5 s).
 - **C-7:** after reordering Contexts and the schema, a card's Add, the panel, and both system branches read one order, and a Space uses its `$order`.
-- **The Matrix:** step the pointer over the canvas in 24px increments until `[data-node-id]` appears, then right-click there; confirm `Move To` is present, since the first node hit may not be a page; a label stays through an icon pick.
+- **The Matrix:** reach a page's node through group 19's `matrixNode`, which sweeps the canvas until the node's label shows, then right-click its anchor; confirm `Move To` is present.
 
 **VERIFY**
 
-- [ ] Group 17 passes from a worktree of this commit.
+- [x] Group 17 passes from a worktree of this commit.
 
 #### Review Checkpoint
 
-- [ ] Two reviewers per *§Constraints · Reviews*, reading `showPageMenu` outward against `tabMenu`, `navRowMenu`, `connectionMenu`, and `popPageActions`, which D-5 keeps separate, and against the Matrix.
-- [ ] Drives per *§When Drives Run* (menu).
-- [ ] The Number recorded. The orchestrator reads and captions six shots: a card's menu, the Table's menu, the Matrix node's menu, a Date leaf's pane, a Spaces branch in the panel's order, and a hidden property staying hidden.
+- [x] Two reviewers per *§Constraints · Reviews*, reading `showPageMenu` outward against `tabMenu`, `navRowMenu`, `connectionMenu`, and `popPageActions`, which D-5 keeps separate, and against the Matrix.
+- [x] Drives per *§When Drives Run* (menu).
+- [x] The Number recorded. The orchestrator reads and captions six shots: a card's menu, the Table's menu, the Matrix node's menu, a Date leaf's pane, a Spaces branch in the panel's order, and a hidden property staying hidden.
 
 ---
 
@@ -2651,7 +2650,7 @@ The reviews run over `<BASELINE>..HEAD`, each wave closed before the next opens.
 Each row's exact wording is in *Investigation · §What Becomes False*.
 
 - `.claude/Features/PropertiesPM.md:115,117,119` — "one control … can open on a chooser pane"; "opens that group's chooser"; "A row shows once it holds a value"; "registry order" — Task 8-3
-- `.claude/Features/ViewTypesPM.md:71` — "the icon picker seated once per view", which Task 6-3 made false — Task 8-3
+- `.claude/Features/ViewTypesPM.md:71` — "the icon picker seated once per view" and "the title menu's page actions", which Tasks 6-3 and 7-1 made false — Task 8-3
 - `.claude/Features/ViewTypesPM.md:122` — "A two-stage **add-picker**"; "The value, add, icon, and image pickers mount at the grid level", which drops "icon" — Task 8-3
 - `.claude/Features/ViewTypesPM.md:130` — a card's row list, already false — Task 8-3
 - `.claude/Features/InterfacePM.md:34,38,41` — the surfaces, the Open row, and New Page — Task 8-3
