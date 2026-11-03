@@ -25,7 +25,7 @@
 | 4 · The Two Pickers            | about −95; −96 (+386 / −482) built, and the back bar's label +1 | −110 (+769 / −879)                 |
 | 5 · Settings Panes             | about −70 (+46 / −116)                                          | −195 (+1029 / −1224), −85 its own  |
 | 6 · One Icon and Color Request | about −170                                                      | −380 (+1418 / −1798), −185 its own |
-| 7 · Right-Click                | about −140 (−125 to −155)                                       |                                    |
+| 7 · Right-Click                | about −140 (−125 to −155)                                       | −493 (+1858 / −2351), −113 its own |
 | 8 · Closeout                   | 0                                                               |                                    |
 | **Total**                      | **about −470; 9 files leave, 4 arrive**                         |                                    |
 
