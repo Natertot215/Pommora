@@ -2023,7 +2023,8 @@ const CHOICE = {
 const NEXUS_SETTINGS = '.nexus/settings.json'
 const MATRIX_FILE = '.nexus/interface/matrix.json'
 const nexusSettings = () => JSON.parse(read(NEXUS_SETTINGS))
-const homeView = () => JSON.parse(read(HOMEPAGE)).tiles.find((t) => t.type === 'view')
+const TILE_DOC = `${HOMEPAGE_DIR}/_tiles.json`
+const homeView = () => JSON.parse(read(TILE_DOC)).tiles.find((t) => t.type === 'view')
 /** The open icon picker, known by its grid, or the open color picker, known by its swatches. */
 const CHOICE_PANE = {
   icon: `${LAYERS}.findLast((e) => e.querySelector('.scroll-fade button[title]'))`,
@@ -2424,7 +2425,7 @@ async function group19(cdp) {
       held: { name: "a Matrix node's label stays through an icon pick, the pointer moved away", expr: `!!${nodeEl(areaOne)}` },
     },
     { name: "the Nexus photo's menu", reach: () => escapeAll(cdp), trigger: sel('.sidebar-ribbon [title="Right-click to set an icon or photo"]'), menu: 'Add Icon', file: NEXUS_SETTINGS, holds: () => nexusSettings().profile_icon },
-    { name: "a View Tile's title glyph", reach: atHome, trigger: TILE_GLYPH, menu: 'Edit Icon', file: HOMEPAGE, holds: () => homeView()?.display_icon },
+    { name: "a View Tile's title glyph", reach: atHome, trigger: TILE_GLYPH, menu: 'Edit Icon', file: TILE_DOC, holds: () => homeView()?.display_icon },
   ]
   const COLOR_SITES = [
     { name: "a property's Color row", reach: atEditor(CHOICE.check.label), trigger: liveEl('Color'), file: REGISTRY_REL, holds: () => registryFile().defs[CHOICE.check.id]?.checkbox_color, leave: toolbarDone },
@@ -2443,7 +2444,7 @@ async function group19(cdp) {
         await closeSettings(cdp)
       },
     },
-    { name: "a View Tile's strip row", reach: atHome, trigger: TILE_PILL, menu: 'Edit Color', file: HOMEPAGE, holds: () => homeView()?.views[0].config?.color },
+    { name: "a View Tile's strip row", reach: atHome, trigger: TILE_PILL, menu: 'Edit Color', file: TILE_DOC, holds: () => homeView()?.views[0].config?.color },
   ]
   const run = async (sites, of) => {
     for (const [i, site] of sites.entries()) {
@@ -2468,7 +2469,7 @@ async function group19(cdp) {
     held: { expr: `(${TILE_PILL}).closest('[data-reveal-host]').parentElement.getBoundingClientRect().height > 0` },
   }, 'icon', 1)
   await escapeAll(cdp)
-  item(19, 'MP-F-2', "a View Tile's hidden strip stays revealed through an icon pick from its row, the pointer moved away, and the pick lands in homepage.json",
+  item(19, 'MP-F-2', "a View Tile's hidden strip stays revealed through an icon pick from its row, the pointer moved away, and the pick lands in the homepage's _tiles.json",
     strip.open && strip.hung && strip.held === true && strip.landed, show(strip))
 
   await must('Panes Gone', ask(cdp, 'views:save', COLLECTION, 'collection', { ...PANES_TABLE, id: 'view_01KZPROPERTIESDRIVE19GONE', name: 'Panes Gone' }, {}))
