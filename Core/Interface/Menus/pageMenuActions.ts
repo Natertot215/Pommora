@@ -8,12 +8,13 @@ import { dialer } from '../../Platform/dialer'
 import { confirmArchive, confirmDelete } from '../Confirm/confirmations'
 import { popMenu } from '../../Actions/menuActions'
 import {
+  METADATA_PREFIX,
   type NewPageRows,
   PAGE_ACTION_ROWS,
   type PageMoveContext,
   pageMenuItems,
 } from '../../Actions/pageMenu'
-import { type MetadataTarget, metadataBranches, PREFIX } from '../../Actions/metadataMenu'
+import { type MetadataTarget, metadataBranches } from '../../Actions/metadataMenu'
 import { isOpenInTabs } from '../../Navigation/tabsModel'
 import { chooseIcon } from '../../Assets/IdentityChoice'
 import { contextIdsOf } from '../../Contexts/contextIdentity'
@@ -91,8 +92,8 @@ export function runMetadataAction(
   action: string,
   { row, schema, rowOf, commit, trigger, styleOf }: MetadataTarget,
 ): boolean {
-  if (!action.startsWith(PREFIX)) return false
-  const [id, ...rest] = action.slice(PREFIX.length).split(':')
+  if (!action.startsWith(METADATA_PREFIX)) return false
+  const [id, ...rest] = action.slice(METADATA_PREFIX.length).split(':')
   const value = rest.length > 0 ? rest.join(':') : null
   const s = useSession.getState()
   const column = resolveColumn(id, schema, contextIdsOf(s.tree))

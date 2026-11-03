@@ -1,5 +1,5 @@
 import { type ActionItem, joinGroups } from './menuModel'
-import type { MetadataAction } from './pageMenu'
+import { METADATA_PREFIX, type MetadataAction } from './pageMenu'
 import type { NexusTree } from '../Nexus/tree'
 import { pickKindOf, type PropertyDefinition } from '../Properties/properties'
 import { type PropertyValue, selectedValues } from '../Properties/propertyValue'
@@ -11,8 +11,6 @@ import { columnLabel, GROUP_LABELS } from '../Properties/columnDisplay'
 import { pickGroups } from '../Properties/Pickers/pickModel'
 import { resolveFieldValue } from '../Properties/fieldValue'
 import { itemColumns } from '../Views/Pipeline/columns'
-
-export const PREFIX = 'prop:'
 
 const CHECKBOX_OPTIONS = [
   { id: 'true', label: 'Check' },
@@ -35,7 +33,7 @@ export function metadataBranches(
   const contexts = contextsByIdOf(tree)
   const branchRow = (column: ResolvedColumn): ActionItem<MetadataAction> => {
     const label = columnLabel(column, contexts)
-    const leaf = `${PREFIX}${column.id}` as const
+    const leaf = `${METADATA_PREFIX}${column.id}` as const
     const option = (
       o: { id: string; label: string },
       checked: boolean,

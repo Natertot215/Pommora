@@ -16,7 +16,8 @@ export type PageMetaAction =
   | 'title:delete'
 
 export type PageMoveAction = `move:${string}`
-export type MetadataAction = `prop:${string}`
+export const METADATA_PREFIX = 'prop:'
+export type MetadataAction = `${typeof METADATA_PREFIX}${string}`
 export type NewPageRows = keyof typeof NEW_PAGE_ROWS
 type PageMenuAction = PageMetaAction | PageMoveAction | MetadataAction | 'image:edit'
 
