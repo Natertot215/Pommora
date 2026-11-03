@@ -250,7 +250,7 @@ export function PickerMenu({
   }, [
     mounted,
     triggerRef,
-    triggerRef?.current,
+    triggerRef?.current ?? decidedFor.current,
     open,
     origin,
     direction,

@@ -24,7 +24,11 @@ export interface PaneResize {
 
 type Axis = keyof Size
 
-const UNPLACED = { dir: 'down' as PickerDirection, ceiling: Number.POSITIVE_INFINITY }
+const UNPLACED = {
+  dir: 'down' as PickerDirection,
+  room: Number.POSITIVE_INFINITY,
+  inset: { w: 0, h: 0 },
+}
 
 const PULLS: Record<Axis, RegExp> = { w: /[ew]/, h: /[ns]/ }
 
@@ -63,8 +67,11 @@ export function usePaneResize(
 
   const { min } = bounds
   const max: Size = {
-    w: Math.min(bounds.max?.w ?? Number.POSITIVE_INFINITY, window.innerWidth - 2 * VIEWPORT_MARGIN),
-    h: Math.min(bounds.max?.h ?? Number.POSITIVE_INFINITY, placed.ceiling),
+    w: Math.min(
+      bounds.max?.w ?? Number.POSITIVE_INFINITY,
+      window.innerWidth - 2 * VIEWPORT_MARGIN - placed.inset.w,
+    ),
+    h: Math.min(bounds.max?.h ?? Number.POSITIVE_INFINITY, placed.room - placed.inset.h),
   }
   const stored = geometry?.initialSize
   const held = resized ?? { ...bounds.default, ...stored }
@@ -111,11 +118,14 @@ export function usePaneResize(
     },
   })
 
-  const place = useCallback<PaneResize['place']>(
-    ({ dir, room }, pane) =>
-      setPlaced({ dir, ceiling: room - (pane.offsetHeight - contentBox(pane).h) }),
-    [],
-  )
+  const place = useCallback<PaneResize['place']>(({ dir, room }, pane) => {
+    const content = contentBox(pane)
+    setPlaced({
+      dir,
+      room,
+      inset: { w: pane.offsetWidth - content.w, h: pane.offsetHeight - content.h },
+    })
+  }, [])
 
   return {
     size: { w: fit('w'), h: fit('h') },
