@@ -23,6 +23,7 @@ import { useExitPresence } from '@pommora/uix/Animations/useExitPresence'
 import type { SessionState } from '../Session/sessionState'
 import { useSession, useSetting } from '../Session/store'
 import { personalizationOf } from '../Session/configSlice'
+import { chooseColor } from '../Assets/IdentityChoice'
 import { DEVICE_DEFAULTS, DEVICE_RANGES, type DeviceDefaultKey, devicePref } from './devicePrefs'
 import { useExperimental } from './experimental'
 import { AssetDirectoryRow } from './AssetDirectoryRow'
@@ -209,8 +210,13 @@ function ColorRow({ row }: { row: RowOf<'color'> }): React.JSX.Element {
         label: row.label,
         selected: name,
         css,
-        greyscale: row.greyscale,
-        onPick: (next) => setPersonalization(row.key, next as never),
+        onPress: (chip) =>
+          chooseColor(
+            chip,
+            name,
+            (next) => setPersonalization(row.key, next as never),
+            row.greyscale ?? false,
+          ),
       })}
     />
   )

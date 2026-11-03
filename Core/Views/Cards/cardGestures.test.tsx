@@ -13,6 +13,7 @@ import { STATUS_DEF } from '../../Testing/definitions'
 import { propsAtRoot, valuesReply } from '../../Testing/pageValues'
 import { stubDialer } from '../../vitest.setup'
 import { makeTree } from '../../Testing/testTree'
+import { IdentityChoice } from '../../Assets/IdentityChoice'
 // Absent from property_order and blank on every page, so it is the card menu's one addable entry.
 const numberDef: PropertyDefinition = { id: 'prop_n', label: 'Count', key: 'Count', type: 'number' }
 const stageDef: PropertyDefinition = {
@@ -189,7 +190,7 @@ describe('the card menu', () => {
   })
 
   it('answering Icon mounts the one root icon picker', async () => {
-    await renderView(root, source())
+    await renderView(root, source(), <IdentityChoice />)
     expect(iconSeats()).toBe(0)
     await rightClick('p1', 'title:icon')
     expect(iconSeats()).toBe(1)

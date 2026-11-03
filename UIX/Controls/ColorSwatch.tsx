@@ -1,5 +1,3 @@
-import { useRef, useState } from 'react'
-import { ColorPicker } from '../Pickers/ColorPicker'
 import { cellPaint } from '../Theme/ramp'
 import { type CellKey, type ColorName, tintAt } from '../Theme/colors'
 import * as s from './color-swatch.css'
@@ -9,27 +7,22 @@ export function ColorSwatch({
   label,
   selected,
   css,
-  greyscale = false,
-  onPick,
+  onPress,
 }: {
   label: string
   selected: ColorName
   css: string
-  greyscale?: boolean
-  onPick: (color: string | undefined) => void
+  onPress: (chip: HTMLElement) => void
 }): React.JSX.Element {
   const cell = selected.startsWith('grey-') ? cellPaint(selected as CellKey) : null
-  const [open, setOpen] = useState(false)
-  const chipRef = useRef<HTMLButtonElement>(null)
 
   return (
     <span className={s.cluster}>
       <button
-        ref={chipRef}
         type="button"
         className={s.chip}
         aria-label={label}
-        onClick={() => setOpen((v) => !v)}
+        onClick={(e) => onPress(e.currentTarget)}
       >
         <span
           className={s.swatch}
@@ -42,17 +35,6 @@ export function ColorSwatch({
           }
         />
       </button>
-      <ColorPicker
-        greyscale={greyscale}
-        open={open}
-        selected={selected}
-        onPick={(next) => {
-          onPick(next)
-          setOpen(false)
-        }}
-        onDismiss={() => setOpen(false)}
-        triggerRef={chipRef}
-      />
     </span>
   )
 }

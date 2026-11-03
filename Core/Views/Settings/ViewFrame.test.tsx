@@ -65,7 +65,11 @@ beforeEach(() => {
     'views:reorder': reorder,
     'views:save': vi.fn(async () => ({ ok: true, value: { id: 'view_a' } })),
   })
-  useSession.setState({ load: vi.fn(async () => {}) as never, mutate: mutate as never })
+  useSession.setState({
+    load: vi.fn(async () => {}) as never,
+    mutate: mutate as never,
+    pendingChoice: null,
+  })
 })
 
 describe('ViewFrame — switching the active view', () => {
@@ -228,5 +232,25 @@ describe('ViewFrame — the view editor’s menu', () => {
     await act(async () => trigger.click())
     const choice = useSession.getState().pendingChoice
     expect([choice?.of, choice?.trigger === trigger, choice?.value]).toEqual(['icon', true, 'star'])
+  })
+})
+
+describe('ViewFrame — a row’s right-click', () => {
+  it.each([
+    'icon',
+    'color',
+  ] as const)('Edit Icon and Edit Color hang from the row (%s)', async (action) => {
+    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+      menu: () => ({ ok: true, value: action }),
+    })
+    await mount(source([view('view_a', 'Table'), view('view_b', 'Board')]))
+    const row = [...document.querySelectorAll('[role="button"]')].find((e) =>
+      e.textContent?.includes('Board'),
+    ) as HTMLElement
+    await act(async () => {
+      row.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
+    })
+    const choice = useSession.getState().pendingChoice
+    expect([choice?.of, choice?.trigger === row]).toEqual([action, true])
   })
 })

@@ -71,7 +71,8 @@ describe('MenuRowView', () => {
     expect(btn.disabled).toBe(true)
   })
 
-  it('renders a picker, a slider and a color trailing', () => {
+  it('renders a picker, a slider and a color trailing, whose press reports its chip', () => {
+    const onPress = vi.fn()
     row({
       kind: 'item',
       label: 'Order',
@@ -108,10 +109,12 @@ describe('MenuRowView', () => {
         label: 'Color',
         selected: 'default',
         css: 'red',
-        onPick: () => {},
+        onPress,
       },
     })
-    expect(host.querySelector('button')).not.toBeNull()
+    const chip = host.querySelector('button') as HTMLButtonElement
+    act(() => chip.click())
+    expect(onPress.mock.calls[0]?.[0]).toBe(chip)
   })
 
   it('passes a field trailing and a caption through', () => {

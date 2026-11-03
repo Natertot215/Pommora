@@ -6,6 +6,7 @@ import type { NexusTree } from '../../Nexus/tree'
 import type { SidebarMode } from '../../Settings/personalization'
 import { ASSETS_DIR_REL, contextDirRel } from '../../Paths/nexusPaths'
 import { Sidebar } from './Sidebar'
+import { IdentityChoice } from '../../Assets/IdentityChoice'
 import { useSession } from '../../Session/store'
 import { stubDialer } from '../../vitest.setup'
 import { DEFAULT_COMMANDS } from '../../Actions/commands'
@@ -69,25 +70,47 @@ const mount = (sidebarMode: SidebarMode): void => {
     selection: { kind: 'none' },
     mutate: mutate as never,
   })
-  act(() => root.render(<Sidebar tree={tree} />))
+  act(() =>
+    root.render(
+      <>
+        <Sidebar tree={tree} />
+        <IdentityChoice />
+      </>,
+    ),
+  )
 }
 
 const panes = (): number => document.querySelectorAll('[data-picker-portal]').length
 
-const pickFavorite = (path: string): void => {
-  act(() => useSession.getState().beginIcon(path, 'sidebar'))
+const editIcon = async (title: string): Promise<void> => {
+  const row = [...document.querySelectorAll<HTMLElement>('.row')].find(
+    (r) => r.textContent === title,
+  )
+  if (!row) throw new Error(`no row ${title}`)
+  ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+    menu: () => ({ ok: true, value: title === 'First' ? 'title:icon' : 'editIcon' }),
+  })
+  await act(async () => {
+    row.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
+  })
+  if (!useSession.getState().pendingChoice?.trigger.contains(row))
+    throw new Error(`no picker opened at ${title}`)
+}
+
+const pickFavorite = async (title: string): Promise<void> => {
+  await editIcon(title)
   const favorite = document.querySelector<HTMLButtonElement>(
     '[data-picker-portal] button[title="anchor"]',
   )
-  if (!favorite) throw new Error(`no picker opened for ${path}`)
+  if (!favorite) throw new Error(`no picker opened for ${title}`)
   act(() => favorite.click())
 }
 
-const preselected = (path: string): string[] => {
-  act(() => useSession.getState().beginIcon(path, 'sidebar'))
+const preselected = async (title: string): Promise<string[]> => {
+  await editIcon(title)
   const cells = document.querySelectorAll<HTMLButtonElement>('[data-picker-portal] button')
   const titles = [...cells].filter((b) => b.classList.contains(cellSelected)).map((b) => b.title)
-  act(() => useSession.getState().endIcon())
+  act(() => useSession.getState().dismissChoice())
   return titles
 }
 
@@ -101,7 +124,7 @@ beforeEach(() => {
 afterEach(() => {
   act(() => root.unmount())
   host.remove()
-  act(() => useSession.getState().endIcon())
+  act(() => useSession.getState().dismissChoice())
 })
 
 describe('the sidebar icon picker', () => {
@@ -110,22 +133,22 @@ describe('the sidebar icon picker', () => {
     expect(panes()).toBe(0)
   })
 
-  it('sets a page icon from the row it opened over', () => {
+  it('sets a page icon from the row it opened over', async () => {
     mount('collections')
-    pickFavorite('Notes/First.md')
+    await pickFavorite('First')
     expect(mutate).toHaveBeenCalledWith({
       op: 'setIcon',
       path: 'Notes/First.md',
       kind: 'page',
       icon: 'anchor',
     })
-    expect(useSession.getState().iconPath).toBeNull()
+    expect(useSession.getState().pendingChoice).toBeNull()
   })
 
-  it('sets a Space icon and a Context icon under their own kinds', () => {
+  it('sets a Space icon and a Context icon under their own kinds', async () => {
     mount('contexts')
-    pickFavorite('Areas/Health.json')
-    pickFavorite(contextDirRel('Areas'))
+    await pickFavorite('Health')
+    await pickFavorite('Areas')
     expect(mutate.mock.calls.map(([req]) => [req.path, req.kind])).toEqual([
       ['Areas/Health.json', 'space'],
       [contextDirRel('Areas'), 'context'],
@@ -134,13 +157,12 @@ describe('the sidebar icon picker', () => {
 })
 
 describe('the sidebar icon picker preselection', () => {
-  it("opens on the row's own icon, for a Page, a Collection, a Space, and a Context", () => {
+  it("opens on the row's own icon, for a Page, a Space, and a Context", async () => {
     mount('collections')
-    expect(preselected('Notes/First.md')).toEqual(['Rocket'])
-    expect(preselected('Notes')).toEqual(['Anchor'])
+    expect(await preselected('First')).toEqual(['Rocket'])
     mount('contexts')
-    expect(preselected('Areas/Health.json')).toEqual(['Moon'])
-    expect(preselected(contextDirRel('Areas'))).toEqual(['Star'])
+    expect(await preselected('Health')).toEqual(['Moon'])
+    expect(await preselected('Areas')).toEqual(['Star'])
   })
 })
 

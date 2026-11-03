@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import type { PropertyDefinition } from '../../Properties/properties'
 import { DEFAULT_VIEW_ID, mintNewView, type SavedView } from '../views'
@@ -26,10 +26,8 @@ import * as s from '@pommora/uix/Menus/frames.css'
 import { useSaveView } from '../viewWrite'
 import { pickView } from '../Pipeline/pickView'
 import { useLiveView } from '../Host/pendingView'
-import { ColorPicker } from '@pommora/uix/Pickers/ColorPicker'
-import { colorNameFor } from '@pommora/uix/Theme/ramp'
 import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
-import { IconChoice } from '../../Assets/IconChoice'
+import { chooseColor, chooseIcon } from '../../Assets/IdentityChoice'
 import { ARCHIVE_ICON, ARCHIVE_TITLE } from '../../Archive/archiveLabel'
 import { useSession } from '../../Session/store'
 import * as vd from '../../Interface/Toolbar/toolbar-menu.css'
@@ -53,9 +51,6 @@ export function ViewFrame({
   const saveView = useSaveView(node)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [renamingId, setRenamingId] = useState<string | null>(null)
-  const [iconFor, setIconFor] = useState<SavedView | null>(null)
-  const [colorFor, setColorFor] = useState<SavedView | null>(null)
-  const menuAnchorRef = useRef<HTMLElement | null>(null)
   const views = node.views ?? []
   const active = pickView(node)
   const rows = views.length ? views : [active]
@@ -98,15 +93,15 @@ export function ViewFrame({
   }
   const rowMenu = async (v: SavedView, e: React.MouseEvent<HTMLElement>): Promise<void> => {
     e.preventDefault()
-    menuAnchorRef.current = e.currentTarget
+    const anchor = e.currentTarget
     const action = await popMenu(viewRowMenuItems(itemContext))
     switch (action) {
       case 'rename':
         return setRenamingId(v.id)
       case 'icon':
-        return setIconFor(v)
+        return chooseIcon(anchor, v.icon, (icon) => void saveView(v, { icon }))
       case 'color':
-        return setColorFor(v)
+        return chooseColor(anchor, v.color, (color) => void saveView(v, { color }))
       case 'duplicate':
         return duplicate(v)
       case 'delete':
@@ -221,27 +216,5 @@ export function ViewFrame({
     />
   ) : null
 
-  return (
-    <>
-      <FrameSlide {...s.SETTINGS_PANE_FLOOR} open={!!editing} root={list} detail={detail} />
-      <IconChoice
-        open={!!iconFor}
-        onClose={() => setIconFor(null)}
-        value={iconFor?.icon}
-        onSelect={(icon) => {
-          if (iconFor) void saveView(iconFor, { icon })
-        }}
-      />
-      <ColorPicker
-        open={colorFor !== null}
-        selected={colorNameFor(colorFor?.color)}
-        onPick={(picked) => {
-          if (colorFor) void saveView(colorFor, { color: picked })
-          setColorFor(null)
-        }}
-        onDismiss={() => setColorFor(null)}
-        triggerRef={menuAnchorRef}
-      />
-    </>
-  )
+  return <FrameSlide {...s.SETTINGS_PANE_FLOOR} open={!!editing} root={list} detail={detail} />
 }

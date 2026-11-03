@@ -1,6 +1,6 @@
-// Everything a row, a band, or a page does in answer to the pointer, defined once for every view kind: band drops, row drops and where the order lands, opening a page, the hover ghost, the title menu's page actions, and the icon picker seat. A kind supplies the policy below and its own presentation, nothing else.
+// Everything a row, a band, or a page does in answer to the pointer, defined once for every view kind: band drops, row drops and where the order lands, opening a page, the hover ghost, and the title menu's page actions. A kind supplies the policy below and its own presentation, nothing else.
 
-import { useRef, useState } from 'react'
+import { useRef } from 'react'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import { UNGROUPED, type ViewRow } from '../viewRow'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
@@ -22,11 +22,12 @@ import { columnLabel } from '../../Properties/columnDisplay'
 import { resolveColumn } from '../Pipeline/columns'
 import { notify } from '../../Interface/Notifications/notifications'
 import { useSession } from '../../Session/store'
+import { pickOpen } from '../../Session/chromeSlice'
 import { hoverGlance, leaveGlance } from '../../Interface/Glance/glanceAction'
 import { pageMoveContext, runPageAction } from '../../Interface/Menus/pageMenuActions'
 import { propertyMenuBranches, runPropertyAction } from '../../Interface/Menus/propertyMenuActions'
 import { isOpenInTabs } from '../../Navigation/tabsModel'
-import { IconChoice } from '../../Assets/IconChoice'
+import { chooseIcon } from '../../Assets/IdentityChoice'
 import { type BandNode, memberDepth, nodeLabel, springsInto } from '../Bands/bandModel'
 import { bandRouting, bucketValueAt } from '../Bands/bandRouter'
 import { type BandView, bandSpec } from '../Bands/GroupBand'
@@ -366,27 +367,6 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     else openTarget(pageTarget(row), { newTab })
   }
 
-  const [iconOpen, setIconOpen] = useState(false)
-  const [iconTarget, setIconTarget] = useState<{ path: string; icon?: string } | null>(null)
-  const iconAnchor = useRef<HTMLElement | null>(null)
-  const openIconPicker = (row: ViewRow, anchor: HTMLElement): void => {
-    iconAnchor.current = anchor
-    setIconTarget({ path: row.path, icon: row.icon })
-    setIconOpen(true)
-  }
-  const iconPicker = (
-    <IconChoice
-      key={iconTarget?.path}
-      open={iconOpen}
-      onClose={() => setIconOpen(false)}
-      triggerRef={iconAnchor}
-      value={iconTarget?.icon}
-      onSelect={(icon) => {
-        if (iconTarget) void mutate({ op: 'setIcon', path: iconTarget.path, kind: 'page', icon })
-      }}
-    />
-  )
-
   const titleMenuContext = (row: ViewRow): TitleMenuContext => {
     const { tabs, pinned } = useSession.getState()
     return {
@@ -416,7 +396,11 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
         policy.rename(row, false)
         return true
       case 'title:icon':
-        openIconPicker(row, anchor)
+        chooseIcon(
+          anchor,
+          row.icon,
+          (icon) => void mutate({ op: 'setIcon', path: row.path, kind: 'page', icon }),
+        )
         return true
       case 'title:newabove':
         creation.createAdjacent(row, 'above')
@@ -434,7 +418,7 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
   const ghost = useGhostAnchor({
     dwellMs: REVEAL_DWELL_MS,
     graceMs: policy.ghost.graceMs,
-    suppressed: () => iconOpen || policy.ghost.suppressed(),
+    suppressed: () => pickOpen(useSession.getState()) || policy.ghost.suppressed(),
     travelHold: policy.ghost.travelHold,
   })
   useClearStrandedGhost(ghost, rowById)
@@ -469,7 +453,6 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     openSet,
     titleMenuContext,
     runTitleAction,
-    iconPicker,
     ghost,
     ghostStanding,
     ghostCreate,

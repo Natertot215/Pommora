@@ -2,7 +2,6 @@ import { useRef } from 'react'
 import { Icon } from '@pommora/uix/Symbols'
 import { DEFAULT_NEXUS_ICON } from '../../Assets/entityIconPolicy'
 import { ICON_PX, type IconSize } from '@pommora/uix/Theme/theme-vars.css'
-import { NexusIconEditors } from '../../Assets/NexusIconEditors'
 import { useNexusIcon } from '../../Assets/useNexusIcon'
 import { useAssetUrl } from '../../Assets/useAssetUrl'
 import { AssetImage } from '../../Assets/AssetImage'
@@ -12,8 +11,8 @@ import * as s from './nexus-photo.css'
 const GLYPH_SHARE = 0.85
 
 export function NexusPhoto({ size }: { size: IconSize }): React.JSX.Element {
-  const icon = useNexusIcon()
   const ref = useRef<HTMLSpanElement>(null)
+  const icon = useNexusIcon(ref)
   const photoUrl = useAssetUrl(icon.profileImage)
   const px = ICON_PX[size]
   const dim = { width: px, height: px }
@@ -36,7 +35,7 @@ export function NexusPhoto({ size }: { size: IconSize }): React.JSX.Element {
           <Icon name={icon.profileIcon ?? DEFAULT_NEXUS_ICON} size={Math.round(px * GLYPH_SHARE)} />
         )}
       </span>
-      <NexusIconEditors icon={icon} triggerRef={ref} />
+      {icon.editor}
     </>
   )
 }

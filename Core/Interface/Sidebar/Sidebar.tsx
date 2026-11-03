@@ -33,9 +33,8 @@ import { DEFAULT_NEW_NAME, type MutateRequest } from '../../Nexus/mutateRequest'
 import type { NodeKind } from '../../Nexus/entities'
 import { isTopContainer } from '../../Nexus/treePatch'
 import { type Creator, spaceCreator } from '../../Actions/createMenu'
-import { nodesByIdOf } from '../../Nexus/treeIndex'
 import { SidebarDnd } from './sidebarDnd'
-import { buildIndex, type Index } from './sidebarDndModel'
+import { buildIndex } from './sidebarDndModel'
 import { AgendaMode } from './AgendaMode'
 import { sidebarModeOf } from '../../Settings/experimental'
 import { pageMetaOf, useSession, useSetting } from '../../Session/store'
@@ -44,7 +43,6 @@ import { glanceShown, hoverGlance, leaveGlance } from '../Glance/glanceAction'
 import { pageMoveContext } from '../Menus/pageMenuActions'
 import { isOpenInTabs } from '../../Navigation/tabsModel'
 import { selectTargetOf } from '../../Navigation/navRef'
-import { IconChoice } from '../../Assets/IconChoice'
 import { showEntityMenu } from '../Menus/entityMenuActions'
 import { Leaf } from './sidebarRows'
 import { Disclosure, signalPeek } from './Disclosure'
@@ -90,7 +88,7 @@ function showContextFor(
       host: 'sidebar',
       ...(node.kind === 'page' ? pageMoveContext(tree, node.path) : {}),
     },
-    trigger ?? undefined,
+    trigger,
   )
 }
 
@@ -248,6 +246,7 @@ function ContextGroupDisclosure({ group }: { group: ContextGroup }): React.JSX.E
   const ghost = useContext(SidebarGhost)
   const api = useContext(SidebarGhostApi)
   const holdGhost = useContext(GhostSuppress)
+  const rowEl = useLineEl()
   const path = contextDirRel(group.def.title)
   const creator = spaceCreator(group.def)
   return (
@@ -260,7 +259,10 @@ function ContextGroupDisclosure({ group }: { group: ContextGroup }): React.JSX.E
       dragId={group.def.id}
       onContextMenu={() =>
         void holdGhost(() =>
-          showEntityMenu({ kind: 'context', path, title: group.def.title, host: 'sidebar' }),
+          showEntityMenu(
+            { kind: 'context', path, title: group.def.title, host: 'sidebar' },
+            rowEl(group.def.id),
+          ),
         )
       }
       onHeaderHover={(entering) => api?.onHover(group.def.id, entering)}
@@ -278,39 +280,6 @@ function ContextGroupDisclosure({ group }: { group: ContextGroup }): React.JSX.E
         <LeafRow key={s.id} node={s} depth={1} ghostLabel={creator.label} />
       ))}
     </Disclosure>
-  )
-}
-
-// The ref keeps the row through the picker's close, after the entry has gone.
-function SidebarIconChoice({ tree, index }: { tree: NexusTree; index: Index }): React.JSX.Element {
-  const iconPath = useSession((s) => (s.iconHost === 'sidebar' ? s.iconPath : null))
-  const endIcon = useSession((s) => s.endIcon)
-  const mutate = useSession((s) => s.mutate)
-  const rowEl = useLineEl()
-  const trigger = useRef<HTMLElement | null>(null)
-  const entry =
-    iconPath === null ? undefined : [...index.byId.values()].find((e) => e.path === iconPath)
-  if (entry) trigger.current = rowEl(entry.id) ?? null
-  const ownIcon =
-    entry?.kind === 'contextGroup'
-      ? contextWorldOf(tree.contexts).groupById.get(entry.id)?.def.icon
-      : entry && nodesByIdOf(tree).get(entry.id)?.ownIcon
-  return (
-    <IconChoice
-      open={entry !== undefined && trigger.current !== null}
-      onClose={endIcon}
-      triggerRef={trigger}
-      value={ownIcon}
-      onSelect={(icon) => {
-        if (entry)
-          void mutate({
-            op: 'setIcon',
-            path: entry.path,
-            kind: entry.kind === 'contextGroup' ? 'context' : entry.kind,
-            icon,
-          })
-      }}
-    />
   )
 }
 
@@ -367,7 +336,6 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
   const dndLayer = (section: React.ReactNode): React.JSX.Element => (
     <SidebarDnd index={dndIndex} onCommit={onCommit}>
       <div className="section">{section}</div>
-      <SidebarIconChoice tree={tree} index={dndIndex} />
     </SidebarDnd>
   )
 

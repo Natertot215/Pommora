@@ -3,6 +3,7 @@ import { type MenuRow, pickerRow, type Trailing } from '@pommora/uix/Menus/MenuI
 import { type PickerOption, pickerOptions } from '@pommora/uix/Menus/PickerControl'
 import { resolveColor } from '@pommora/uix/Theme/ramp'
 import { numberFrom } from '@pommora/uix/Utilities/numberUnit'
+import { chooseColor } from '../../Assets/IdentityChoice'
 import { DEFAULT_LINK_DISPLAY, type LinkDisplay } from '../../Connections/linkValue'
 import { reportRefusal } from '../../Interface/Notifications/notifications'
 import { dialer } from '../../Platform/dialer'
@@ -79,7 +80,13 @@ const colorItem = (
   onPick: (next: string | undefined) => void,
 ): MenuRow => {
   const { name, css } = resolveColor(value, fallback)
-  return item('Color', { kind: 'color', label: 'Color', selected: name, css, onPick })
+  return item('Color', {
+    kind: 'color',
+    label: 'Color',
+    selected: name,
+    css,
+    onPress: (chip) => chooseColor(chip, name, onPick, false),
+  })
 }
 
 function numberRows(

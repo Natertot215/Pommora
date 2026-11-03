@@ -1376,16 +1376,10 @@ describe('store — a Nexus switch lands every owed save first', () => {
     channels['nexus:state'] = vi.fn(async () => ok({ status: 'empty' }))
     const s = useSession.getState()
     s.beginRename('Notes', false, 'sidebar')
-    s.beginIcon('Notes', 'sidebar')
-    s.beginColor('Notes', 'sidebar')
     s.requestChoice({ of: 'icon', trigger: document.body, onPick: () => {} })
     await s.choose()
     expect(useSession.getState()).toMatchObject({
       renamingPath: null,
-      iconPath: null,
-      iconHost: null,
-      colorPath: null,
-      colorHost: null,
       pendingChoice: null,
     })
   })

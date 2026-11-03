@@ -3,6 +3,7 @@ import type { MenuRow } from '@pommora/uix/Menus/MenuIndex'
 import { dateDefaults } from '../columnStyles'
 import type { PropertyDefinition, PropertyType } from '../properties'
 import { rowsFor } from './typeRows'
+import { useSession } from '../../Session/store'
 
 type RowContext = Parameters<typeof rowsFor>[1]
 
@@ -117,7 +118,11 @@ describe('rowsFor', () => {
     const color = trailing(rows, 'Color')
     if (color.kind !== 'color') throw new Error('Color is no swatch')
     expect(color.css).toContain('var(--checkbox-base)')
-    color.onPick('blue-1')
+    const chip = {} as HTMLElement
+    color.onPress(chip)
+    const choice = useSession.getState().pendingChoice
+    expect(choice?.trigger === chip).toBe(true)
+    if (choice?.of === 'color') choice.onPick('blue-1')
     pick(rows, 'Style', 'checkbox')
     expect(c.configure).toHaveBeenCalledWith({ checkbox_color: 'blue-1' })
     expect(c.setStyle).toHaveBeenCalledWith({ look: 'checkbox' })

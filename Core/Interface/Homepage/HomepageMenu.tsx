@@ -7,7 +7,6 @@ import { Button } from '@pommora/uix/Buttons/Button'
 import { AssetImage } from '../../Assets/AssetImage'
 import { InputField } from '@pommora/uix/Fields/InputField'
 import { MenuFooting, MenuScrollFrame } from '@pommora/uix/Menus/MenuRows'
-import { NexusIconEditors } from '../../Assets/NexusIconEditors'
 import { useNexusIcon } from '../../Assets/useNexusIcon'
 import { HOMEPAGE_HOST } from '../../Tiles/tiles'
 import { BoardLock } from '../../Tiles/BoardLock'
@@ -15,8 +14,8 @@ import * as s from '@pommora/uix/Menus/frames.css'
 
 export function HomepageMenu(): React.JSX.Element | null {
   const tree = useSession((st) => st.tree)
-  const icon = useNexusIcon()
   const iconRef = useRef<HTMLButtonElement>(null)
+  const icon = useNexusIcon(iconRef)
   const photoUrl = useAssetUrl(icon.profileImage)
   if (!tree) return null
 
@@ -42,7 +41,7 @@ export function HomepageMenu(): React.JSX.Element | null {
           <InputField className={s.titleField}>{tree.nexus.name}</InputField>
         </div>
       </MenuScrollFrame>
-      <NexusIconEditors icon={icon} triggerRef={iconRef} />
+      {icon.editor}
     </>
   )
 }

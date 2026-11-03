@@ -68,7 +68,7 @@ export function IdentityChoice(): React.JSX.Element {
     <>
       <IconPicker
         open={pending?.of === 'icon'}
-        onClose={dismiss}
+        onDismiss={dismiss}
         triggerRef={triggerRef}
         value={pending?.value}
         onSelect={pending?.of === 'icon' ? pending.onPick : undefined}

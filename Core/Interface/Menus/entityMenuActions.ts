@@ -14,7 +14,8 @@ import type { ViewRow } from '../../Views/viewRow'
 import { assignValue, oneShotWriter } from '../../Properties/assignValue'
 import { fetchPageRow, spaceRowOf } from '../../Views/pageRow'
 import { holderSchema, NO_SCHEMA } from '../../Nexus/treePatch'
-import { spaceNodeOf } from '../../Nexus/treeIndex'
+import { nodesByIdOf, spaceNodeOf } from '../../Nexus/treeIndex'
+import type { NexusTree } from '../../Nexus/tree'
 import type { ContainerKind } from '../../Nexus/entities'
 import {
   propertyMenuBranches,
@@ -26,6 +27,7 @@ import { createNamed, newPageAdjacent } from '../../Actions/createActions'
 import { useSession } from '../../Session/store'
 import { confirmArchive, confirmDelete } from '../Confirm/confirmations'
 import { runPageAction, runPathAction } from './pageMenuActions'
+import { chooseColor, chooseIcon } from '../../Assets/IdentityChoice'
 
 function creatorsFor(target: EntityMenuTarget): Creator[] {
   switch (target.kind) {
@@ -41,10 +43,17 @@ function creatorsFor(target: EntityMenuTarget): Creator[] {
   }
 }
 
+const ownIconOf = (tree: NexusTree | null, target: EntityMenuTarget): string | undefined =>
+  target.kind === 'context'
+    ? tree?.contexts.find((g) => g.def.title === target.title)?.def.icon
+    : target.id && tree
+      ? nodesByIdOf(tree).get(target.id)?.ownIcon
+      : undefined
+
 /** Resolves on close, before the pick runs: a surface holding a hover affordance down needs the close to release it. */
 export async function showEntityMenu(
   target: EntityMenuTarget,
-  trigger?: HTMLElement,
+  trigger: HTMLElement | null = null,
 ): Promise<void> {
   const creators = creatorsFor(target)
   const s = useSession.getState()
@@ -73,13 +82,14 @@ export async function showEntityMenu(
     })
     if (done) return
   }
-  runEntityAction(shown, creators, action)
+  runEntityAction(shown, creators, action, trigger)
 }
 
 function runEntityAction(
   target: EntityMenuTarget,
   creators: Creator[],
   action: EntityMenuAction,
+  trigger: HTMLElement | null,
 ): void {
   const s = useSession.getState()
   const { path, id, kind } = target
@@ -101,10 +111,19 @@ function runEntityAction(
       return
     case 'title:icon':
     case 'editIcon':
-      s.beginIcon(path, target.host)
+      chooseIcon(
+        trigger,
+        ownIconOf(s.tree, target),
+        (icon) => void s.mutate({ op: 'setIcon', path, kind, icon }),
+      )
       return
     case 'changeColor':
-      if (target.host) s.beginColor(path, target.host)
+      if (id)
+        chooseColor(
+          trigger,
+          spaceNodeOf(s.tree, id)?.color,
+          (color) => void s.mutate({ op: 'setSpaceColor', spaceId: id, color }),
+        )
       return
     case 'title:newabove':
     case 'title:newbelow':

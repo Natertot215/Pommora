@@ -31,14 +31,6 @@ export interface EditSlice {
   beginRename: (path: string, create?: boolean, host?: RenameHost) => void
   cancelRename: () => void
   submitRename: (path: string, kind: RenameKind, newName: string) => Promise<boolean>
-  iconPath: string | null
-  iconHost: RenameHost | null
-  beginIcon: (path: string, host?: RenameHost) => void
-  endIcon: () => void
-  colorPath: string | null
-  colorHost: RenameHost | null
-  beginColor: (path: string, host: RenameHost) => void
-  endColor: () => void
   resetEdit: () => void
 }
 
@@ -56,10 +48,6 @@ const RENAME_CLEARED = {
 const PER_NEXUS = {
   ...RENAME_CLEARED,
   renameClaims: [],
-  iconPath: null,
-  iconHost: null,
-  colorPath: null,
-  colorHost: null,
 } satisfies Partial<EditSlice>
 
 function resolveRenameWinner(claims: RenameClaim[], fence: RenameFence): number | null {
@@ -150,9 +138,5 @@ export const createEditSlice: Slice<EditSlice> = (set, get) => ({
     })
   },
 
-  beginIcon: (path, host) => set({ iconPath: path, iconHost: host ?? 'sidebar' }),
-  endIcon: () => set({ iconPath: null, iconHost: null }),
-  beginColor: (path, host) => set({ colorPath: path, colorHost: host }),
-  endColor: () => set({ colorPath: null, colorHost: null }),
   resetEdit: () => set(PER_NEXUS),
 })

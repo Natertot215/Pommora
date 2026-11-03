@@ -21,11 +21,11 @@ const { CELL, COLS } = s
 
 const iconLabel = (id: string): string => id.split('-').map(capitalize).join(' ')
 
-export interface IconPickerProps {
+interface IconPickerProps {
   open: boolean
-  onClose: () => void
-  /** An SVG glyph, so `Element`. Omit ⇒ anchors to the picker's own mount point. */
-  triggerRef?: RefObject<Element | null>
+  onDismiss: () => void
+  /** An SVG glyph, so `Element`. */
+  triggerRef: RefObject<Element | null>
   value?: string
   onSelect?: (id: string) => void
   iconFavorites: IconFavorites
@@ -39,7 +39,7 @@ export type IconFavorites = {
 
 export function IconPicker({
   open,
-  onClose,
+  onDismiss,
   triggerRef,
   value,
   onSelect,
@@ -58,7 +58,7 @@ export function IconPicker({
 
   const pick = (id: string): void => {
     onSelect?.(id)
-    onClose()
+    onDismiss()
   }
 
   const toggleIconFav = (id: string): void => {
@@ -87,7 +87,7 @@ export function IconPicker({
   return (
     <PickerMenu
       open={open}
-      onDismiss={onClose}
+      onDismiss={onDismiss}
       triggerRef={triggerRef}
       origin="center"
       bareSurface

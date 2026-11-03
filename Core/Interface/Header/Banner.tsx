@@ -16,7 +16,6 @@ import { useBannerMenu } from './useBannerMenu'
 import { useWindowBannerSeat } from '../Windows/windowTabBanner'
 import { popMenu } from '../../Actions/menuActions'
 import { nexusTitleMenuItems, titleMenuItems, withSearchRow } from '../../Actions/identityMenus'
-import { NexusIconEditors } from '../../Assets/NexusIconEditors'
 import { useNexusIcon } from '../../Assets/useNexusIcon'
 
 /** The one banner: its image, menu, crop editor, and window seat; the caller brings the title and what stands when there is no banner. */
@@ -94,12 +93,12 @@ export function EntityBanner({
   const mutate = useSession((s) => s.mutate)
   const submitRename = useSession((s) => s.submitRename)
   const defaultIcons = useSession((s) => personalizationOf(s).defaultIcons)
-  const nexusIcon = useNexusIcon()
-  const homePhotoSrc = useAssetUrl(nexusIcon.profileImage)
   const iconChoice = useIconChoice<Element>(
     owner.icon,
     (icon) => void mutate({ op: 'setIcon', path: owner.path, kind: owner.kind as HeldKind, icon }),
   )
+  const nexusIcon = useNexusIcon(iconChoice.iconRef)
+  const homePhotoSrc = useAssetUrl(nexusIcon.profileImage)
   const contentHost = useContentHost()
   const searchTab = chrome === 'detail' && isContainer(owner) ? contentHost?.tabId : undefined
   const open = useSession((s) => (searchTab === undefined ? undefined : s.viewSearch[searchTab]))
@@ -130,7 +129,7 @@ export function EntityBanner({
       photo={home && homePhotoSrc ? nexusIcon.profileImage : undefined}
       iconHidden={iconHidden}
       {...iconChoice}
-      iconOpen={iconChoice.iconOpen || (home && nexusIcon.editor !== null)}
+      iconOpen={iconChoice.iconOpen || (home && nexusIcon.editing !== null)}
       onRename={(newName) => submitRename(owner.path, owner.kind as RenameKind, newName)}
       requestMenu={async () => {
         if (!home) {
@@ -178,7 +177,7 @@ export function EntityBanner({
           empty={empty}
         />
       )}
-      {home && <NexusIconEditors icon={nexusIcon} triggerRef={iconChoice.iconRef} />}
+      {home && nexusIcon.editor}
     </>
   )
 }

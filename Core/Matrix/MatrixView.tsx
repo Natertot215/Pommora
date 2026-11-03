@@ -15,6 +15,7 @@ import { TAB_FAMILY } from '../Navigation/tabRows'
 import type { NexusTree } from '../Nexus/tree'
 import { nodesOf } from '../Nexus/treeIndex'
 import { useSession } from '../Session/store'
+import { pickOpen } from '../Session/chromeSlice'
 import { MatrixCanvas, toWorldPoint } from './MatrixCanvas'
 import { MatrixLabel, recordOf } from './MatrixLabel'
 import * as s from './matrix.css'
@@ -34,15 +35,13 @@ export function MatrixView(): React.JSX.Element {
   const tree = useSession((st) => st.tree)
   const openTarget = useSession((st) => st.openTarget)
   const renamingPath = useSession((st) => (st.renamingHost === 'matrix' ? st.renamingPath : null))
-  const iconPath = useSession((st) => (st.iconHost === 'matrix' ? st.iconPath : null))
-  const colorPath = useSession((st) => (st.colorHost === 'matrix' ? st.colorPath : null))
   const locked = useSession((st) => st.matrixConfig.display.locked)
   usePublishCount(useMatrixCount())
   const begin = usePointerGesture()
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const anchorRef = useRef<HTMLDivElement>(null)
   const [menuId, setMenuId] = useState<string | null>(null)
-  const picking = useSession((st) => st.pendingPick !== null)
+  const picking = useSession(pickOpen)
   useEffect(() => {
     if (!picking) setMenuId(null)
   }, [picking])
@@ -66,7 +65,7 @@ export function MatrixView(): React.JSX.Element {
     acting = surfaceId
     // Committed before the menu asks for it: the label seats its anchor on the node in the same pass.
     flushSync(() => setMenuId(rec.id))
-    const anchor = anchorRef.current?.dataset.nodeId === rec.id ? anchorRef.current : undefined
+    const anchor = anchorRef.current?.dataset.nodeId === rec.id ? anchorRef.current : null
     await showEntityMenu(
       {
         kind: rec.kind,
@@ -79,7 +78,7 @@ export function MatrixView(): React.JSX.Element {
       },
       anchor,
     )
-    if (useSession.getState().pendingPick === null) setMenuId(null)
+    if (!pickOpen(useSession.getState())) setMenuId(null)
   }
 
   // The press holds the node's id, so a rebuild before the drag or tap lands can't hand it another node's slot.
@@ -108,21 +107,10 @@ export function MatrixView(): React.JSX.Element {
   // Read past the memo: a page the graph does not yet carry has no node to seat the field under, and a reply can add one without changing the tree. A hidden surface never claims either, or the field opens where nobody can see it.
   const editing =
     renamingId !== null && !parked && mine && matrixRuntime.graph.index.has(renamingId)
-  // The overlay names its node by id: an index taken here goes stale the moment a reply rebuilds the graph under it.
-  const pickingId = useMemo(
-    () => idAtPath(tree, iconPath ?? colorPath),
-    [tree, iconPath, colorPath],
-  )
-  const liveId = parked
-    ? null
-    : editing
-      ? renamingId
-      : ((mine ? (pickingId ?? menuId) : null) ?? hoveredId)
+  const liveId = parked ? null : editing ? renamingId : ((mine ? menuId : null) ?? hoveredId)
   // The overlay outlives its hover by one fade, and the canvas keeps skipping that title until the fade is over — otherwise the painted one lands under the leaving one. The live node shows at once; only a leaving one waits on the presence.
   const shown = useHeldPresence(liveId, 'slow')
   const labelId = liveId ?? shown?.held ?? null
-  const pickKind = iconPath !== null ? 'icon' : colorPath !== null ? 'color' : null
-  const picker = mine && labelId === pickingId ? pickKind : null
   return (
     <MatrixCanvas
       surface={surface}
@@ -159,7 +147,6 @@ export function MatrixView(): React.JSX.Element {
           id={labelId}
           closing={liveId === null && labelId !== null}
           editing={editing}
-          picking={picker}
           anchorRef={anchorRef}
           onPointerDown={(e) => {
             if (labelId !== null) nodeDown(e, labelId)

@@ -287,7 +287,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       }}
       className={cx('table table-view', overflowing && 'overflowing')}
     >
-      {interactions.iconPicker}
       <LineZone {...interactions.listZone(rowIndent)}>
         <div
           className={cx(

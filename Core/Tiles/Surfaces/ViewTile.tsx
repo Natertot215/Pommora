@@ -18,7 +18,6 @@ import {
 import { freeName } from '../../Paths/names'
 import { Icon, LockGlyph } from '@pommora/uix/Symbols'
 import { cellRing, colorNameFor } from '@pommora/uix/Theme/ramp'
-import { ColorPicker } from '@pommora/uix/Pickers/ColorPicker'
 import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
 import { FootingCreate, MenuFooting, MenuItem, MenuScrollFrame } from '@pommora/uix/Menus/MenuRows'
 import { titleInput as rowInput, rowDisabled, spacer } from '@pommora/uix/Menus/menu-row.css'
@@ -29,7 +28,7 @@ import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
 import { Scrollbar } from '@pommora/uix/Interactions/Scrollbar'
 import { PICKER_MAX_HEIGHT } from '@pommora/uix/Pickers/picker-base.css'
 import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
-import { IconChoice } from '../../Assets/IconChoice'
+import { chooseColor, chooseIcon, useChoiceOpen } from '../../Assets/IdentityChoice'
 import { entityIcon } from '../../Assets/entityIconPolicy'
 import { askDeleteView } from '../../Interface/Confirm/confirmations'
 import { notifyDeleted } from '../../Interface/Notifications/notifications'
@@ -233,10 +232,10 @@ export function ViewTile({
   const [listOpen, setListOpen] = useState(false)
   const [renaming, setRenaming] = useState<string | null>(null)
   const [titleEditing, setTitleEditing] = useState(false)
-  const [iconFor, setIconFor] = useState<{ view: string } | 'title' | null>(null)
-  const [colorFor, setColorFor] = useState<string | null>(null)
   const menuAnchorRef = useRef<Element | null>(null)
   const titleIconRef = useRef<SVGSVGElement>(null)
+  const titleIconOpen = useChoiceOpen(titleIconRef)
+  const rowChoiceOpen = useChoiceOpen(menuAnchorRef)
   const btnRef = useRef<HTMLButtonElement>(null)
   const dropRef = useRef<HTMLButtonElement>(null)
 
@@ -270,8 +269,8 @@ export function ViewTile({
     cfgOpen ||
     menuOpen ||
     viewById(renaming) !== undefined ||
-    iconFor !== null ||
-    colorFor !== null
+    rowChoiceOpen ||
+    titleIconOpen
   const reveal = useHoverReveal({
     dwellMs: REVEAL_DWELL_MS,
     held: !viewsShown && anchoredOpen,
@@ -430,10 +429,11 @@ export function ViewTile({
     if (locked) return
     const action = await popHeld(embedTitleMenuItems(iconShown, titleLevel, viewsShown))
     if (action === 'toggle-icon') patchEntry({ icon: iconShown ? false : null })
-    else if (action === 'change-icon') {
-      menuAnchorRef.current = titleIconRef.current
-      setIconFor('title')
-    } else if (action === 'hide-title') patchEntry({ title: false })
+    else if (action === 'change-icon')
+      chooseIcon(titleIconRef.current, entry.display_icon ?? source.icon, (icon) =>
+        patchEntry({ display_icon: icon }),
+      )
+    else if (action === 'hide-title') patchEntry({ title: false })
     else if (action === 'toggle-views') toggleViews()
     else if (action?.startsWith('size-')) {
       const n = Number(action.slice(5))
@@ -468,9 +468,13 @@ export function ViewTile({
       case 'rename':
         return setRenaming(id)
       case 'icon':
-        return setIconFor({ view: id })
+        return chooseIcon(menuAnchorRef.current, viewById(id)?.icon, (icon) =>
+          persistConfig(id, { icon }),
+        )
       case 'color':
-        return setColorFor(id)
+        return chooseColor(menuAnchorRef.current, viewById(id)?.color, (color) =>
+          persistConfig(id, { color }),
+        )
       case 'duplicate':
         return duplicate(id)
       case 'titles':
@@ -595,7 +599,7 @@ export function ViewTile({
                     s.titleIcon,
                     `md-h${titleLevel}`,
                     'title-icon-reveal',
-                    !iconShown && iconFor !== 'title' && 'is-hidden',
+                    !iconShown && !titleIconOpen && 'is-hidden',
                   )}
                 />
                 <RenamableLabel
@@ -670,32 +674,6 @@ export function ViewTile({
             </MenuScrollFrame>
           </div>
         </PickerMenu>
-        <IconChoice
-          open={iconFor !== null}
-          onClose={() => setIconFor(null)}
-          triggerRef={menuAnchorRef}
-          value={
-            iconFor === 'title'
-              ? (entry.display_icon ?? source.icon)
-              : viewById(iconFor?.view)?.icon
-          }
-          onSelect={(icon) => {
-            if (iconFor === 'title') return patchEntry({ display_icon: icon })
-            const v = viewById(iconFor?.view)
-            if (v) persistConfig(v.id, { icon })
-          }}
-        />
-        <ColorPicker
-          open={colorFor !== null}
-          selected={colorNameFor(viewById(colorFor)?.color)}
-          onPick={(picked) => {
-            const v = viewById(colorFor)
-            if (v) persistConfig(v.id, { color: picked })
-            setColorFor(null)
-          }}
-          onDismiss={() => setColorFor(null)}
-          triggerRef={menuAnchorRef}
-        />
       </div>
     </ViewTileScopeProvider>
   )

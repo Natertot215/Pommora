@@ -446,7 +446,6 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
         {interactions.ghostStanding && (
           <div className="cards-grid card-grid is-fill">{ghostCard}</div>
         )}
-        {interactions.iconPicker}
         {bannerEditor}
         <ValueSeat seat={seat} />
       </div>

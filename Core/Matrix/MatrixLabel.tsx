@@ -2,19 +2,15 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { useLineRow } from '@pommora/uix/Interactions/drag'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
 import { titleInput } from '@pommora/uix/Menus/menu-row.css'
-import { ColorPicker } from '@pommora/uix/Pickers/ColorPicker'
 import { sideFor, VIEWPORT_MARGIN } from '@pommora/uix/Pickers/panePlacement'
 import { clamp } from '@pommora/uix/Utilities/clamp'
-import { colorNameFor } from '@pommora/uix/Theme/ramp'
 import { text } from '@pommora/uix/Theme'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { EntityIcon } from '../Assets/EntityIcon'
-import { IconChoice } from '../Assets/IconChoice'
 import { glanceShown, hoverGlance, leaveGlanceFrom } from '../Interface/Glance/glanceAction'
 import { RenamableTitle } from '../Interface/RenamableTitle'
 import type { NexusTree } from '../Nexus/tree'
 import { ancestryOf, nodesByIdOf } from '../Nexus/treeIndex'
-import { spaceIdentityOf } from '../Contexts/contextIdentity'
 import { useSession } from '../Session/store'
 import { toScreen } from './Engine/viewport'
 import { lastShift } from './MatrixCanvas'
@@ -36,7 +32,6 @@ export function MatrixLabel({
   id,
   closing,
   editing,
-  picking,
   anchorRef,
   onPointerDown,
   onOpen,
@@ -46,16 +41,12 @@ export function MatrixLabel({
   id: string | null
   closing: boolean
   editing: boolean
-  picking: 'icon' | 'color' | null
   anchorRef: React.RefObject<HTMLDivElement | null>
   onPointerDown: (e: React.PointerEvent) => void
   onOpen: (e?: React.MouseEvent) => void
   onContextMenu: (e: React.MouseEvent) => void
 }): React.JSX.Element | null {
   const tree = useSession((st) => st.tree)
-  const endIcon = useSession((st) => st.endIcon)
-  const endColor = useSession((st) => st.endColor)
-  const mutate = useSession((st) => st.mutate)
   const hidePath = useSession((st) => st.matrixConfig.display.hidePath)
   const hideIcon = useSession((st) => st.matrixConfig.display.hideIcon)
   const locked = useSession((st) => st.matrixConfig.display.locked)
@@ -157,25 +148,6 @@ export function MatrixLabel({
         {...(locked ? { ...row.handle, onClick: onOpen } : { onPointerDown })}
         onContextMenu={onContextMenu}
       />
-      <IconChoice
-        open={picking === 'icon'}
-        onClose={endIcon}
-        triggerRef={anchorRef}
-        value={rec.icon}
-        onSelect={(icon) => void mutate({ op: 'setIcon', path: rec.path, kind: rec.kind, icon })}
-      />
-      {rec.kind === 'space' && (
-        <ColorPicker
-          open={picking === 'color'}
-          selected={colorNameFor(spaceIdentityOf(tree, rec.id)?.color)}
-          onPick={(color) => {
-            endColor()
-            void mutate({ op: 'setSpaceColor', spaceId: rec.id, color })
-          }}
-          onDismiss={endColor}
-          triggerRef={anchorRef}
-        />
-      )}
       <div
         key={rec.id}
         ref={labelRef}
