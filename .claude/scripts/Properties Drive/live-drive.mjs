@@ -7,7 +7,7 @@ import {
   FM, frontmatter, frontRaw, pageFile, pageIds, pagePath,
   activeTab, ask, BACK, boxOf, chooseInApp, chooseNative, closePageWindow, closePanel, click, closeSettings, createPage, DIALOG, doubleClick, entry, escapeAll, field, inMain, labels, launch, META, mouseAt, mouseClick, must, NEXUS, notice,
   openCollection, openPage, openPane, openPanel, openSettings, openSidePane, overlaps, pickNative, popNative, portalOpen, pressDialog, pressKey, read, relaunch, restore, ribbon, row, sel, selectField, SET,
-  holds, hover, item, LIVE_ROWS, manageButton, nativeRows, PANE, PANE_LAYER, PORTAL_ROWS, press, SETTINGS_BUTTON, SHIFT, settles, shot, sleep, slideTo, statusDividers, sweep, SWITCH, tally, textEl, trashRowEl, typeText, until, viewFrame, watch, zoom,
+  holds, hover, item, LIVE_ROWS, manageButton, nativeRows, PANE, PANE_LAYER, PORTAL_ROWS, press, resizeBy, SETTINGS_BUTTON, SHIFT, settles, shot, sleep, slideTo, statusDividers, sweep, SWITCH, tally, textEl, trashRowEl, typeText, until, viewFrame, watch, zoom,
 } from '../drive-harness.mjs'
 import { parse } from 'yaml'
 
@@ -695,7 +695,6 @@ const headTexts = () => `[...document.querySelectorAll('.table-head > *')].map((
 const activate = (cdp, viewId) =>
   must('show the view', ask(cdp, 'mutate', { op: 'setActiveView', path: COLLECTION, kind: 'collection', viewId }))
 
-const HOME = { kind: 'homepage' }
 const HOMEPAGE_DIR = '.nexus/interface/homepage'
 /** Writes `defs` into the registry and assigns them to Collection A, saves `seededViews`, and answers what puts the registry, the sidecar, and the homepage back. */
 async function seedCollection(cdp, defs, seededViews) {
@@ -1162,19 +1161,32 @@ async function group15(cdp) {
 /** The first element `css` matches that the window shows: a tab kept alive behind the shown one draws its copies off to the left. */
 const shownEl = (css) => `[...document.querySelectorAll(${JSON.stringify(css)})].find((e) => e.getClientRects().length > 0 && e.getBoundingClientRect().left >= 0)`
 const VIEW_SETTINGS = shownEl('.tile button[aria-label="View settings"]')
-/** A View Tile showing `viewId` between two filler tiles, so it sits in the window's lower half and the board scrolls. A board already drawn doesn't redraw from a tile written over the channel, so the window reloads before the homepage shows. */
-async function homeTile(cdp, viewId) {
-  const source = (await ask(cdp, 'nexus:state')).value.tree.collections.find((c) => c.path === COLLECTION).id
-  await must('a filler tile', ask(cdp, 'tiles:create', HOME, { kind: 'append', h: 300 }))
-  await must('the View Tile', ask(cdp, 'tiles:create', HOME, { kind: 'append' }, { kind: 'view', value: { source_id: source, view_id: viewId } }))
-  await must('a filler tile', ask(cdp, 'tiles:create', HOME, { kind: 'append', h: 600 }))
-  await cdp.evaluate('window.__beforeReload = true')
-  await cdp.send('Page.reload')
-  await until('the reloaded ribbon', () => cdp.evaluate(`!window.__beforeReload && !!${ribbon('Homepage')}`), 30000)
-  await sleep(1500)
+const BOARD = shownEl('.tile-host')
+const BOARD_TILES = `[...${BOARD}.querySelectorAll('.tile')]`
+/** A homepage View Tile showing `view` between a 300-pixel filler tile and a 600-pixel one, so it sits in the window's lower half and the board scrolls; the board ends where it started. */
+async function homeTile(cdp, view) {
   await mouseClick(cdp, ribbon('Homepage'))
+  const top = await cdp.evaluate(`${BOARD}.getBoundingClientRect().top`)
+  await newTile(cdp, ['New Page'], 50)
+  await newTile(cdp, ['Link View', COLLECTION, view.name])
+  await newTile(cdp, ['New Page'], 350)
+  await scrollTo(cdp, BOARD, top)
   await until('the View Tile', () => cdp.evaluate(`!!${VIEW_SETTINGS}`))
   await sleep(800)
+}
+/** Chooses `path` from the board's New Tile menu, then drags the new tile's bottom edge `grow` pixels down from its 250, scrolled to first. */
+async function newTile(cdp, path, grow = 0) {
+  const count = () => cdp.evaluate(`${BOARD_TILES}.length`)
+  const before = await count()
+  await click(cdp, `${BOARD}.querySelector('.add-strip, [data-ghost-root]')`)
+  await until('the New Tile menu', () => cdp.evaluate(`!!${entry(path[0])}`), 3000)
+  for (const label of path.slice(0, -1)) await slideTo(cdp, label)
+  await click(cdp, entry(path.at(-1)))
+  await until('the new tile', async () => (await count()) === before + 1)
+  if (!grow) return
+  const edge = `${BOARD_TILES}.reduce((a, b) => (b.getBoundingClientRect().bottom > a.getBoundingClientRect().bottom ? b : a)).querySelector('.resize-edge-s')`
+  await cdp.evaluate(`${edge}.scrollIntoView({ block: 'center' })`)
+  await resizeBy(cdp, edge, { dy: grow })
 }
 async function tileFrame(cdp, frame) {
   await mouseClick(cdp, VIEW_SETTINGS)
@@ -2086,7 +2098,7 @@ async function group18(cdp) {
     [PLACE.due.id]: { kind: 'dateTime', value: '2026-10-22T09:30' },
     [PLACE.notes.id]: { kind: 'text', value: 'words' },
   })
-  await homeTile(cdp, PLACE_TABLE.id)
+  await homeTile(cdp, PLACE_TABLE)
   const cell = (n) => `${shownEl(`.tile .data-row[data-rid="${pageIds['Place One']}"]`)}.querySelectorAll('.data-cell')[${n}]`
   await until('the tile’s row', () => cdp.evaluate(`!!${shownEl(`.tile .data-row[data-rid="${pageIds['Place One']}"]`)}`))
 
@@ -2447,7 +2459,7 @@ async function group19(cdp) {
 
   await must('the two filter rules', ask(cdp, 'views:save', COLLECTION, 'collection', cards, TWO_RULES))
   // The tile high in the window, so its Layout opens below with room for Card Scale's list beneath it, as the toolbar's does.
-  await homeTile(cdp, cards.id)
+  await homeTile(cdp, cards)
   await scrollTo(cdp, VIEW_SETTINGS, 100)
   await tileFrame(cdp, 'Layout')
   const tile = await pressBeside(cdp, liveEl('Card Scale'), liveEl('Card Image'))
