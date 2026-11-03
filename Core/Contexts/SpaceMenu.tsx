@@ -12,8 +12,7 @@ import { Icon } from '@pommora/uix/Symbols'
 import { ICON } from '@pommora/uix/Menus/frames.css'
 import { tintAt } from '@pommora/uix/Theme/colors'
 import { cellColor, colorNameFor } from '@pommora/uix/Theme/ramp'
-import { IconChoice } from '../Assets/IconChoice'
-import { ColorPicker } from '@pommora/uix/Pickers/ColorPicker'
+import { chooseColor, useChoiceOpen, useIconChoice } from '../Assets/IdentityChoice'
 import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
 import { spaceNodeOf } from '../Nexus/treeIndex'
 import { PropertyPanel } from '../Properties/PropertyPanel'
@@ -30,23 +29,25 @@ export function SpaceMenu(): React.JSX.Element | null {
   const mutate = useSession((st) => st.mutate)
   const defaultIcons = useSession((st) => personalizationOf(st).defaultIcons)
   const id = selection.kind === 'space' ? selection.id : null
-  const iconRef = useRef<HTMLButtonElement>(null)
   const colorRef = useRef<HTMLButtonElement>(null)
-  const colorAnchor = useRef<Element | null>(null)
-  const [pickerOpen, setPickerOpen] = useState(false)
-  const [colorOpen, setColorOpen] = useState(false)
   const [renaming, setRenaming] = useState(false)
   const experimental = useExperimental()
   const node = id === null ? null : spaceNodeOf(tree, id)
+  const colorOpen = useChoiceOpen(colorRef)
+  const iconChoice = useIconChoice(node?.icon, (icon) => {
+    if (node) void mutate({ op: 'setIcon', path: node.path, kind: 'space', icon })
+  })
   if (id === null || !node) return null
 
   const resolved = colorNameFor(node.color)
   const solid = resolved === 'default' ? null : cellColor(resolved)
 
-  const openColor = (anchor: Element | null): void => {
-    colorAnchor.current = anchor
-    setColorOpen(true)
-  }
+  const openColor = (anchor: Element | null): void =>
+    chooseColor(
+      anchor,
+      node.color,
+      (color) => void mutate({ op: 'setSpaceColor', spaceId: id, color }),
+    )
 
   const openHeaderMenu = async (e: React.MouseEvent): Promise<void> => {
     const target = e.target as HTMLElement
@@ -59,77 +60,53 @@ export function SpaceMenu(): React.JSX.Element | null {
       { label: 'Change Color', action: 'changeColor' },
     ])
     if (action === 'rename') setRenaming(true)
-    else if (action === 'editIcon') setPickerOpen(true)
+    else if (action === 'editIcon') iconChoice.onIconClick()
     else if (action === 'changeColor') openColor(field)
   }
 
   return (
-    <>
-      <MenuScrollFrame
-        footer={
-          <MenuFooting
-            leading={<BoardLock host={{ kind: 'space', id }} />}
-            trailing={
-              <FooterIconButton
-                ref={colorRef}
-                icon="palette"
-                ariaLabel="Change Color"
-                pressed={colorOpen && colorAnchor.current === colorRef.current}
-                quiet
-                onClick={() => openColor(colorRef.current)}
-              />
-            }
-          />
-        }
-      >
-        {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics */}
-        <div onContextMenu={(e) => void openHeaderMenu(e)}>
-          <InlineEditHeader
-            value={node.title}
-            icon={entityIcon('space', node.icon, defaultIcons)}
-            iconRef={iconRef}
-            outline={solid ? tintAt(solid, 'secondary') : undefined}
-            editing={renaming}
-            onEditingChange={setRenaming}
-            iconOpen={pickerOpen}
-            onIconClick={() => setPickerOpen(true)}
-            onCommit={(next) => {
-              if (next && next !== node.title)
-                void mutate({ op: 'renameSpace', spaceId: id, newName: next })
-            }}
-          />
-        </div>
-        <MenuSeparator flush />
-        <PropertyPanel subject={{ kind: 'space', id }} host="dropdown" />
-        {experimental && (
-          <MenuItem
-            leading={<Icon name="link-2" size={ICON.rootEntry} />}
-            trailing={<Icon name="chevron-right" />}
-          >
-            Connections
-          </MenuItem>
-        )}
-      </MenuScrollFrame>
-      <IconChoice
-        open={pickerOpen}
-        onClose={() => setPickerOpen(false)}
-        triggerRef={iconRef}
-        value={node.icon}
-        onSelect={(picked) => {
-          setPickerOpen(false)
-          void mutate({ op: 'setIcon', path: node.path, kind: 'space', icon: picked })
-        }}
-      />
-      <ColorPicker
-        open={colorOpen}
-        selected={resolved}
-        onPick={(picked) => {
-          setColorOpen(false)
-          void mutate({ op: 'setSpaceColor', spaceId: id, color: picked })
-        }}
-        onDismiss={() => setColorOpen(false)}
-        triggerRef={colorAnchor}
-      />
-    </>
+    <MenuScrollFrame
+      footer={
+        <MenuFooting
+          leading={<BoardLock host={{ kind: 'space', id }} />}
+          trailing={
+            <FooterIconButton
+              ref={colorRef}
+              icon="palette"
+              ariaLabel="Change Color"
+              pressed={colorOpen}
+              quiet
+              onClick={() => openColor(colorRef.current)}
+            />
+          }
+        />
+      }
+    >
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics */}
+      <div onContextMenu={(e) => void openHeaderMenu(e)}>
+        <InlineEditHeader
+          value={node.title}
+          icon={entityIcon('space', node.icon, defaultIcons)}
+          {...iconChoice}
+          outline={solid ? tintAt(solid, 'secondary') : undefined}
+          editing={renaming}
+          onEditingChange={setRenaming}
+          onCommit={(next) => {
+            if (next && next !== node.title)
+              void mutate({ op: 'renameSpace', spaceId: id, newName: next })
+          }}
+        />
+      </div>
+      <MenuSeparator flush />
+      <PropertyPanel subject={{ kind: 'space', id }} host="dropdown" />
+      {experimental && (
+        <MenuItem
+          leading={<Icon name="link-2" size={ICON.rootEntry} />}
+          trailing={<Icon name="chevron-right" />}
+        >
+          Connections
+        </MenuItem>
+      )}
+    </MenuScrollFrame>
   )
 }

@@ -1,9 +1,9 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { pageMetaOf, useSession, useSetting } from '../Session/store'
 import { personalizationOf } from '../Session/configSlice'
 import { useAssetUrl } from '../Assets/useAssetUrl'
-import { IconChoice } from '../Assets/IconChoice'
+import { useIconChoice } from '../Assets/IdentityChoice'
 import { entityIcon } from '../Assets/entityIconPolicy'
 import { Banner } from '../Interface/Header/Banner'
 import { AddBannerButton } from '../Interface/Header/AddBannerButton'
@@ -36,7 +36,6 @@ export function PageHeader({
   const defaultIcons = useSession((s) => personalizationOf(s).defaultIcons)
   const submitRename = useSession((s) => s.submitRename)
   const mutate = useSession((s) => s.mutate)
-  const [iconPickerOpen, setIconPickerOpen] = useState(false)
   const [renameSummon, setRenameSummon] = useState(0)
 
   const toggleTitleIcon = (): void => {
@@ -44,19 +43,20 @@ export function PageHeader({
     void mutate({ op: 'setPageMeta', path, patch: { title_icon: next === setting ? null : next } })
   }
 
-  const iconRef = useRef<Element>(null)
+  const iconChoice = useIconChoice<Element>(
+    meta?.icon,
+    (icon) => void mutate({ op: 'setIcon', path, kind: 'page', icon }),
+  )
 
   const glyph = entityIcon('page', meta?.icon, defaultIcons)
   const titleHeader = (
     <DetailTitleHeader
       title={title}
       icon={glyph}
-      iconRef={iconRef}
       iconHidden={!shown}
-      iconEditing={iconPickerOpen}
+      {...iconChoice}
       onRename={(newName) => submitRename(path, 'page', newName)}
       requestMenu={() => popMenu(titleMenuItems({ iconHidden: !shown }))}
-      onEditIcon={() => setIconPickerOpen(true)}
       onToggleIcon={toggleTitleIcon}
       renameSummon={renameSummon}
     />
@@ -86,15 +86,6 @@ export function PageHeader({
   if (chrome === 'window' && !coverSrc) return banner
 
   return (
-    <div className={cx('mdpm-header header-park', coverSrc !== null && 'has-banner')}>
-      {banner}
-      <IconChoice
-        open={iconPickerOpen}
-        onClose={() => setIconPickerOpen(false)}
-        triggerRef={iconRef}
-        value={meta?.icon}
-        onSelect={(chosen) => void mutate({ op: 'setIcon', path, kind: 'page', icon: chosen })}
-      />
-    </div>
+    <div className={cx('mdpm-header header-park', coverSrc !== null && 'has-banner')}>{banner}</div>
   )
 }

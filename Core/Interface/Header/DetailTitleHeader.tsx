@@ -32,10 +32,10 @@ interface Props {
   // biome-ignore lint/suspicious/noConfusingVoidType: the union is deliberate: a caller may hand back nothing or a promise, and `undefined` in place of `void` breaks assignability for the sync handlers.
   onRename: (newName: string) => void | Promise<boolean | void>
   requestMenu: () => Promise<TitleMenuAction | 'search' | null>
-  onEditIcon: () => void
+  onIconClick: () => void
   onToggleIcon?: () => void
   iconHidden?: boolean
-  iconEditing?: boolean
+  iconOpen?: boolean
   search?: TitleSearch
   renameSummon?: number
   /** Drawn after the title and its search's clear button, which pads against it. */
@@ -49,10 +49,10 @@ export function DetailTitleHeader({
   iconRef,
   onRename,
   requestMenu,
-  onEditIcon,
+  onIconClick,
   onToggleIcon,
   iconHidden,
-  iconEditing,
+  iconOpen,
   search,
   renameSummon,
   trailing,
@@ -109,7 +109,7 @@ export function DetailTitleHeader({
     e.stopPropagation()
     const action = await requestMenu()
     if (action === 'rename') beginRename()
-    else if (action === 'editIcon') onEditIcon()
+    else if (action === 'editIcon') onIconClick()
     else if (action === 'toggleIcon') onToggleIcon?.()
     else if (action === 'search') search?.start()
   }
@@ -142,7 +142,7 @@ export function DetailTitleHeader({
 
   const glyphClass = cx(
     'detail-title-icon title-icon-reveal',
-    iconHidden && !iconEditing && 'is-hidden',
+    iconHidden && !iconOpen && 'is-hidden',
   )
   const glyphMenu = editing ? undefined : openMenu
   const glyphRef = (el: Element | null): void => {

@@ -22,12 +22,13 @@ import {
 import { ICON, SETTINGS_PANE_FLOOR, SETTINGS_PANE_MAX_HEIGHT } from '@pommora/uix/Menus/frames.css'
 import { useSaveView } from '../viewWrite'
 import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
+import { useIconChoice } from '../../Assets/IdentityChoice'
 import { VisibilityFrame } from './VisibilityFrame'
 import { switchRows, type SwitchEntry } from './switchRows'
 import type { PickerOption } from '@pommora/uix/Menus/PickerControl'
 import { ViewLeaf, type ViewLeafId } from './ViewLeaf'
 import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
-import { iconForTypeSwitch } from '../viewIcon'
+import { iconForTypeSwitch, viewGlyph } from '../viewIcon'
 import { TENTHS_SCALE } from '../../Settings/personalization'
 import { cx } from '@pommora/uix/Utilities/cx'
 import * as vs from './layout-frame.css'
@@ -125,6 +126,7 @@ export function LayoutFrame(
   const [frame, setFrame] = useState<ViewRowId | null>(null)
   const saveView = useSaveView(source)
   const write = (patch: Partial<SavedView>): void => void saveView(view, patch)
+  const iconChoice = useIconChoice(view.icon, (icon) => write({ icon }))
   const options = LAYOUT_OPTIONS[view.type] ?? TABLE_LAYOUT
   const setType = (type: ViewType): void => {
     if (type === view.type) return
@@ -203,7 +205,6 @@ export function LayoutFrame(
   const rename = (name: string): void => {
     if (name && name !== view.name) write({ name })
   }
-  const title = <InlineEditHeader value={view.name} onCommit={rename} />
   const toView: MenuBack = { label: 'Views', onBack: () => setFrame(null) }
   const leafFor = (id: ViewRowId): React.JSX.Element => {
     if (id !== 'layout')
@@ -247,7 +248,12 @@ export function LayoutFrame(
       footer={cardsRows}
       maxHeight={SETTINGS_PANE_MAX_HEIGHT}
     >
-      {title}
+      <InlineEditHeader
+        value={view.name}
+        icon={viewGlyph(view)}
+        onCommit={rename}
+        {...iconChoice}
+      />
       <MenuSeparator flush />
       {grid}
       <MenuIndex

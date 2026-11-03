@@ -1,8 +1,8 @@
-import { type ReactNode, useRef, useState } from 'react'
+import { type ReactNode, useRef } from 'react'
 import type { BannerOwnerKind, RenameKind } from '../../Nexus/mutateRequest'
 import { type HeldKind, isContainer } from '../../Nexus/entities'
 import { DEFAULT_NEXUS_ICON, entityIcon } from '../../Assets/entityIconPolicy'
-import { IconChoice } from '../../Assets/IconChoice'
+import { useIconChoice } from '../../Assets/IdentityChoice'
 import { useSession } from '../../Session/store'
 import { personalizationOf } from '../../Session/configSlice'
 import { useContentHost } from '../contentHost'
@@ -96,8 +96,10 @@ export function EntityBanner({
   const defaultIcons = useSession((s) => personalizationOf(s).defaultIcons)
   const nexusIcon = useNexusIcon()
   const homePhotoSrc = useAssetUrl(nexusIcon.profileImage)
-  const [iconPickerOpen, setIconPickerOpen] = useState(false)
-  const iconRef = useRef<Element>(null)
+  const iconChoice = useIconChoice<Element>(
+    owner.icon,
+    (icon) => void mutate({ op: 'setIcon', path: owner.path, kind: owner.kind as HeldKind, icon }),
+  )
   const contentHost = useContentHost()
   const searchTab = chrome === 'detail' && isContainer(owner) ? contentHost?.tabId : undefined
   const open = useSession((s) => (searchTab === undefined ? undefined : s.viewSearch[searchTab]))
@@ -127,8 +129,8 @@ export function EntityBanner({
       }
       photo={home && homePhotoSrc ? nexusIcon.profileImage : undefined}
       iconHidden={iconHidden}
-      iconEditing={home ? nexusIcon.editor !== null : iconPickerOpen}
-      iconRef={iconRef}
+      {...iconChoice}
+      iconOpen={iconChoice.iconOpen || (home && nexusIcon.editor !== null)}
       onRename={(newName) => submitRename(owner.path, owner.kind as RenameKind, newName)}
       requestMenu={async () => {
         if (!home) {
@@ -140,7 +142,6 @@ export function EntityBanner({
         void nexusIcon.run(action)
         return null
       }}
-      onEditIcon={() => setIconPickerOpen(true)}
       onToggleIcon={() =>
         void mutate({
           op: 'setHeadingIconHidden',
@@ -151,24 +152,6 @@ export function EntityBanner({
       }
       search={search}
       trailing={trailing}
-    />
-  )
-  const iconPicker = home ? (
-    <NexusIconEditors icon={nexusIcon} triggerRef={iconRef} />
-  ) : (
-    <IconChoice
-      open={iconPickerOpen}
-      onClose={() => setIconPickerOpen(false)}
-      triggerRef={iconRef}
-      value={owner.icon}
-      onSelect={(id) =>
-        void mutate({
-          op: 'setIcon',
-          path: owner.path,
-          kind: owner.kind as HeldKind,
-          icon: id,
-        })
-      }
     />
   )
   const empty = (add?: () => void): React.JSX.Element => (
@@ -195,7 +178,7 @@ export function EntityBanner({
           empty={empty}
         />
       )}
-      {iconPicker}
+      {home && <NexusIconEditors icon={nexusIcon} triggerRef={iconChoice.iconRef} />}
     </>
   )
 }

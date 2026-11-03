@@ -36,7 +36,7 @@ const render = (s?: TitleSearch): Promise<void> =>
         title="Ideas"
         onRename={vi.fn()}
         requestMenu={async () => null}
-        onEditIcon={vi.fn()}
+        onIconClick={vi.fn()}
         search={s}
       />,
     )
@@ -133,7 +133,7 @@ describe('the title search', () => {
           title="Ideas"
           onRename={vi.fn()}
           requestMenu={async () => 'rename'}
-          onEditIcon={vi.fn()}
+          onIconClick={vi.fn()}
           search={s}
         />,
       )

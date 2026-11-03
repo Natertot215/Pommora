@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Icon } from '@pommora/uix/Symbols'
 import { useSession } from '../../Session/store'
 import {
@@ -34,7 +34,7 @@ import {
 import { titleInput, actionRow } from '@pommora/uix/Menus/menu-row.css'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { useEntrance } from '@pommora/uix/Animations/useEntrance'
-import { IconChoice } from '../../Assets/IconChoice'
+import { useIconChoice } from '../../Assets/IdentityChoice'
 import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
 import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
 import { OptionEditor } from './OptionEditor'
@@ -177,8 +177,6 @@ export function PropertyFrame({
   const bumpValuesEpoch = useSession((st) => st.bumpValuesEpoch)
   const [view, setView] = useState<SubView>({ kind: 'list' })
   const [renamingId, setRenamingId] = useState<string | null>(null)
-  const [iconFor, setIconFor] = useState<string | null>(null)
-  const iconRef = useRef<HTMLButtonElement>(null)
   const [allOpen, setAllOpen] = useState(false)
 
   const assignedIds = new Set(schema.map((d) => d.id))
@@ -209,6 +207,9 @@ export function PropertyFrame({
   }
   const configure = (propertyId: string, patch: PropertyConfig): void =>
     void mutate({ op: 'configureProperty', propertyId, patch })
+  const iconChoice = useIconChoice(editing?.icon, (icon) => {
+    if (editing) configure(editing.id, { icon })
+  })
   const saveColumnStyle = async (
     def: PropertyDefinition,
     patch: Partial<ColumnStyle>,
@@ -336,9 +337,7 @@ export function PropertyFrame({
         <InlineEditHeader
           value={def.label}
           icon={propertyIcon(def)}
-          iconRef={iconRef}
-          iconOpen={iconFor === def.id}
-          onIconClick={() => setIconFor(def.id)}
+          {...iconChoice}
           onCommit={(next) => void rename(def.id, next)}
         />
         <MenuSeparator flush />
@@ -399,22 +398,11 @@ export function PropertyFrame({
   )
 
   return (
-    <>
-      <FrameSlide
-        {...s.SETTINGS_PANE_FLOOR}
-        open={view.kind === 'type' || editing !== undefined}
-        root={list}
-        detail={view.kind === 'type' ? typePicker : editing && editor(editing)}
-      />
-      <IconChoice
-        open={iconFor === editing?.id}
-        onClose={() => setIconFor(null)}
-        triggerRef={iconRef}
-        value={editing?.icon}
-        onSelect={(icon) => {
-          if (editing) configure(editing.id, { icon })
-        }}
-      />
-    </>
+    <FrameSlide
+      {...s.SETTINGS_PANE_FLOOR}
+      open={view.kind === 'type' || editing !== undefined}
+      root={list}
+      detail={view.kind === 'type' ? typePicker : editing && editor(editing)}
+    />
   )
 }

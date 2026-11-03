@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { ZOOM } from '../../Settings/personalization'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import { Icon } from '@pommora/uix/Symbols'
@@ -25,7 +25,7 @@ import {
   MenuScrollFrame,
   MenuSeparator,
 } from '@pommora/uix/Menus/MenuRows'
-import { IconChoice } from '../../Assets/IconChoice'
+import { useIconChoice } from '../../Assets/IdentityChoice'
 import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
 import { useViewTileScope } from '../ViewTileScope'
 import { useSaveView } from '../viewWrite'
@@ -68,13 +68,15 @@ function ContainerSettings({
   const submitRename = useSession((st) => st.submitRename)
   const mutate = useSession((st) => st.mutate)
   const [pane, setPane] = useState<FrameId | 'root'>('root')
-  const [iconOpen, setIconOpen] = useState(false)
-  const iconRef = useRef<HTMLButtonElement>(null)
   const scope = useViewTileScope()
   const saveView = useSaveView(node)
 
   const schema = containerSchema(tree, schemaCollection)
   const view = useActiveView(node)
+  const iconChoice = useIconChoice(scope ? view.icon : node.icon, (icon) => {
+    if (scope) void saveView(view, { icon })
+    else void mutate({ op: 'setIcon', path: node.path, kind: node.kind, icon })
+  })
   const configLocked = scope?.locked ?? false
   const frozen = (id: FrameId): boolean => configLocked && id !== 'properties'
 
@@ -92,9 +94,7 @@ function ContainerSettings({
         value={scope ? view.name : node.title}
         readOnly={configLocked}
         icon={scope ? viewGlyph(view) : entityIcon(node.kind, node.icon, defaultIcons)}
-        iconRef={iconRef}
-        iconOpen={iconOpen}
-        onIconClick={() => setIconOpen(true)}
+        {...iconChoice}
         onCommit={(next) => {
           // The header is the VIEW's identity in scope — renaming the source folder from an embed is exactly the mutation the scope exists to prevent.
           if (scope) {
@@ -180,23 +180,11 @@ function ContainerSettings({
   }
 
   return (
-    <>
-      <FrameSlide
-        {...SETTINGS_PANE_FLOOR}
-        open={detailPane !== null}
-        root={scopedRoot || plainRoot}
-        detail={detailPane && detailFor(detailPane)}
-      />
-      <IconChoice
-        open={iconOpen}
-        onClose={() => setIconOpen(false)}
-        triggerRef={iconRef}
-        value={scope ? view.icon : node.icon}
-        onSelect={(id) => {
-          if (scope) void saveView(view, { icon: id })
-          else void mutate({ op: 'setIcon', path: node.path, kind: node.kind, icon: id })
-        }}
-      />
-    </>
+    <FrameSlide
+      {...SETTINGS_PANE_FLOOR}
+      open={detailPane !== null}
+      root={scopedRoot || plainRoot}
+      detail={detailPane && detailFor(detailPane)}
+    />
   )
 }

@@ -6,11 +6,12 @@ import { NO_PREFS } from '../Testing/editorHarness'
 import { makeTree } from '../Testing/testTree'
 import type { PageMeta } from '../Nexus/schemas'
 import type { Personalization } from '../Settings/personalization'
-import { act, createElement } from 'react'
+import { act, createElement, Fragment } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { useSession } from '../Session/store'
 import { EditorView } from '@codemirror/view'
 import { PageView } from './PageView'
+import { IdentityChoice } from '../Assets/IdentityChoice'
 import { stubDialer } from '../vitest.setup'
 import { undo } from '@codemirror/commands'
 import { machine } from '../Platform/machine'
@@ -235,7 +236,14 @@ describe('the title icon follows Show Icon In Title unless the page overrides it
       pages: slot('live', 'live'),
     })
     await act(async () => {
-      root.render(createElement(PageView, { tabId: 't1', pageId: 'a' }))
+      root.render(
+        createElement(
+          Fragment,
+          null,
+          createElement(PageView, { tabId: 't1', pageId: 'a' }),
+          createElement(IdentityChoice),
+        ),
+      )
     })
   }
 

@@ -1,4 +1,4 @@
-import { useRef, useState, type RefObject } from 'react'
+import type { RefObject } from 'react'
 import type { OptionAppearance, PropertyDefinition, PropertyType } from '../properties'
 import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
 import { ColorGrid } from '@pommora/uix/Pickers/ColorPicker'
@@ -9,7 +9,7 @@ import { MenuSeparator } from '@pommora/uix/Menus/MenuRows'
 import { footingLabel } from '@pommora/uix/Menus/menu-row.css'
 import { Icon } from '@pommora/uix/Symbols'
 import { colorNameFor } from '@pommora/uix/Theme/ramp'
-import { IconChoice } from '../../Assets/IconChoice'
+import { useIconChoice } from '../../Assets/IdentityChoice'
 import { optionGlyph, type OptionChipData } from '../Cells/OptionChip'
 import * as s from './option-edit-popup.css'
 
@@ -43,60 +43,50 @@ export function OptionEditPopup({
   onPickColor: (color: string | undefined) => void
   onPickAppearance: (appearance: OptionAppearance) => void
 }): React.JSX.Element {
-  const iconRef = useRef<HTMLButtonElement>(null)
-  const [iconOpen, setIconOpen] = useState(false)
+  const { iconRef, iconOpen, onIconClick } = useIconChoice(option.icon, onPickIcon)
   return (
-    <>
-      {/* Focus left where it was: opening is inspection, not an edit — nothing rings or selects on open. */}
-      <PickerMenu open={open} onDismiss={onDismiss} triggerRef={triggerRef} focus="leave">
-        <div key={contentKey} className={s.root}>
-          <div className={s.fieldRow}>
-            <button
-              ref={iconRef}
-              type="button"
-              aria-label="Edit Icon"
-              className={cx(s.iconSeat, iconOpen && s.iconSeatActive)}
-              onClick={() => setIconOpen(true)}
-            >
-              <Icon name={optionGlyph(type, option, def)} size="control" />
-            </button>
-            <EditableInput
-              key={option.label}
-              initial={option.label}
-              boxed
-              autoFocus={false}
-              required
-              className={s.titleField}
-              ariaLabel="Option Title"
-              onCommit={onRename}
-              onCancel={() => {}}
-            />
-          </div>
-          <MenuSeparator flush />
-          <ColorGrid
-            selected={colorNameFor(option.color)}
-            onPick={onPickColor}
-            className={s.gridFlush}
+    // Focus left where it was: opening is inspection, not an edit — nothing rings or selects on open.
+    <PickerMenu open={open} onDismiss={onDismiss} triggerRef={triggerRef} focus="leave">
+      <div key={contentKey} className={s.root}>
+        <div className={s.fieldRow}>
+          <button
+            ref={iconRef}
+            type="button"
+            aria-label="Edit Icon"
+            className={cx(s.iconSeat, iconOpen && s.iconSeatActive)}
+            onClick={onIconClick}
+          >
+            <Icon name={optionGlyph(type, option, def)} size="control" />
+          </button>
+          <EditableInput
+            key={option.label}
+            initial={option.label}
+            boxed
+            autoFocus={false}
+            required
+            className={s.titleField}
+            ariaLabel="Option Title"
+            onCommit={onRename}
+            onCancel={() => {}}
           />
-          <MenuSeparator flush />
-          <div className={s.footRow}>
-            <span className={footingLabel}>Appearance</span>
-            <PickerControl
-              ariaLabel="Appearance"
-              value={option.appearance ?? 'filled'}
-              options={APPEARANCE_OPTIONS}
-              onPick={onPickAppearance}
-            />
-          </div>
         </div>
-      </PickerMenu>
-      <IconChoice
-        open={iconOpen}
-        value={option.icon}
-        onSelect={onPickIcon}
-        onClose={() => setIconOpen(false)}
-        triggerRef={iconRef}
-      />
-    </>
+        <MenuSeparator flush />
+        <ColorGrid
+          selected={colorNameFor(option.color)}
+          onPick={onPickColor}
+          className={s.gridFlush}
+        />
+        <MenuSeparator flush />
+        <div className={s.footRow}>
+          <span className={footingLabel}>Appearance</span>
+          <PickerControl
+            ariaLabel="Appearance"
+            value={option.appearance ?? 'filled'}
+            options={APPEARANCE_OPTIONS}
+            onPick={onPickAppearance}
+          />
+        </div>
+      </div>
+    </PickerMenu>
   )
 }

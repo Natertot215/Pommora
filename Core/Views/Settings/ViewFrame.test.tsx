@@ -218,4 +218,15 @@ describe('ViewFrame — the view editor’s menu', () => {
     expect(deleted.mock.calls).toEqual(confirmed ? [['Col', 'collection', 'view_b']] : [])
     expect(onClose).toHaveBeenCalledTimes(confirmed ? 1 : 0)
   })
+
+  it("the editor's header icon requests the view's icon choice at itself", async () => {
+    await mount(source([view('view_a', 'Table'), { ...view('view_b', 'Board'), icon: 'star' }]))
+    await act(async () => {
+      ;(document.querySelector('[aria-label="Edit Board"]') as HTMLElement).click()
+    })
+    const trigger = document.querySelector('[aria-label="Edit Icon"]') as HTMLElement
+    await act(async () => trigger.click())
+    const choice = useSession.getState().pendingChoice
+    expect([choice?.of, choice?.trigger === trigger, choice?.value]).toEqual(['icon', true, 'star'])
+  })
 })
