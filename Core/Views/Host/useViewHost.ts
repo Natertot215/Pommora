@@ -33,7 +33,7 @@ import { columnStylePatch, styleFor } from './useColumnStyles'
 import type { ViewPatch, ViewWriteOpts } from '../views'
 import { groupKeyToValue, reassignable, reassignTarget } from '../reassign'
 import { resolveColumn } from '../Pipeline/columns'
-import type { SeatHost } from '../../Properties/Cells/ValueSeat'
+import type { SeatHost } from '../../Properties/Pickers/ValueSeat'
 
 export type ViewHostApi = NonNullable<ReturnType<typeof useViewHost>>
 

@@ -30,12 +30,12 @@ import { resolveFieldValue } from '../fieldValue'
 import { holderOf } from '../valueContext'
 import { pickKindOf } from '../properties'
 import { isBlankValue, type PropertyValue } from '../propertyValue'
-import { fileChipIndex, pickFileInto, runFileMenuAction } from '../Pickers/filePick'
-import { MetadataPicker } from '../Pickers/MetadataPicker'
-import type { PickCommit } from '../Pickers/pickModel'
-import { PropertyPicker, type PickTarget } from '../Pickers/PropertyPicker'
-import { PropertyValueInput } from '../Pickers/PropertyValueInput'
-import { type ValueIntent, valueClickIntent, valueMenuIntent } from '../Pickers/valueClick'
+import { fileChipIndex, pickFileInto, runFileMenuAction } from './filePick'
+import { MetadataPicker } from './MetadataPicker'
+import type { PickCommit } from './pickModel'
+import { PropertyPicker, type PickTarget } from './PropertyPicker'
+import { PropertyValueInput } from './PropertyValueInput'
+import { type ValueIntent, valueClickIntent, valueMenuIntent } from './valueClick'
 
 /** What a surface hands the seat: how it reads and writes a row, where a pane anchors, and the few things it does differently from the others. */
 export type SeatHost = {
