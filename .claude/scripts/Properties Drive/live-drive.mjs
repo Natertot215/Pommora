@@ -2462,6 +2462,9 @@ async function group19(cdp) {
     reach: async () => {
       await atHome()
       await chooseNative(cdp, TILE_GLYPH, 'Hide Views')
+      // The pointer leaves the title first, so the hover reaches it fresh.
+      await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 4, y: 4, button: 'none' })
+      await sleep(600)
       await hover(cdp, TILE_GLYPH, 1800)
       await until('the revealed strip', () => cdp.evaluate(`(${TILE_PILL}).closest('[data-reveal-host]').parentElement.getBoundingClientRect().height > 0`))
     },
