@@ -2021,6 +2021,7 @@ const CHOICE = {
   pick: { id: 'prop_drive_choice_pick', label: 'Choice Pick', key: 'Choice Pick', type: 'select', select_options: [{ id: 'opt_drive_choice_alpha', key: 'Alpha', label: 'Alpha' }] },
 }
 const NEXUS_SETTINGS = '.nexus/settings.json'
+const MATRIX_FILE = '.nexus/interface/matrix.json'
 const nexusSettings = () => JSON.parse(read(NEXUS_SETTINGS))
 const homeView = () => JSON.parse(read(HOMEPAGE)).tiles.find((t) => t.type === 'view')
 /** The open icon picker, known by its grid, or the open color picker, known by its swatches. */
@@ -2050,10 +2051,10 @@ async function matrixNode(cdp, id) {
   return false
 }
 
-/** Opens `site`'s icon or color choice as its user does, reads where the picker hangs and what `held` reads with the pointer away, and picks `pick`: the icon grid's `pick`th cell, or a color. */
+/** Opens `site`'s icon or color choice as its user does, pressing `at` when the trigger itself takes no press, reads where the picker hangs and what `held` reads with the pointer away, and picks `pick`: the icon grid's `pick`th cell, or a color. */
 async function choose(cdp, site, of, pick) {
   await site.reach()
-  if (site.menu) await chooseNative(cdp, site.trigger, site.menu)
+  if (site.menu) await chooseNative(cdp, site.at ?? site.trigger, site.menu)
   else await mouseClick(cdp, site.trigger)
   const pane = CHOICE_PANE[of]
   const open = await settles(() => cdp.evaluate(`!!${pane}`), 4000)
@@ -2323,9 +2324,11 @@ async function group19(cdp) {
     [inAppMenu, systemMenu].every((r) => r.copy && r.deleted && r.closed) && switchedOff, show({ inAppMenu, systemMenu, switchedOn, switchedOff }))
 
   const unchoose = await seedCollection(cdp, Object.values(CHOICE), [])
-  const kept = [SPACE_FILE, CONTEXTS_REL, NEXUS_SETTINGS].map((rel) => [rel, read(rel)])
+  const kept = [SPACE_FILE, CONTEXTS_REL, NEXUS_SETTINGS, MATRIX_FILE].map((rel) => [rel, existsSync(join(NEXUS, rel)) ? read(rel) : null])
   const shards = new Map(readdirSync(join(NEXUS, META_DIR)).map((name) => [name, read(`${META_DIR}/${name}`)]))
   const areaOne = JSON.parse(read(SPACE_FILE)).id
+  // The Matrix draws Spaces, which alone take Change Color, only when it groups by Space.
+  await must('the Matrix by Space', ask(cdp, 'matrix:write', { group: { mode: 'space' } }))
   const space = () => JSON.parse(read(SPACE_FILE))
   const atTable = async () => {
     await escapeAll(cdp)
@@ -2395,7 +2398,7 @@ async function group19(cdp) {
     { name: "a Table title's menu", reach: atTable, trigger: `${tableTitle}.firstElementChild`, menu: 'Edit Icon', file: 'the page metadata', holds: () => pageMetaOf('Panes One').icon },
     { name: "a view row's menu", reach: atViews, trigger: viewRow(PANES_TABLE.name), menu: 'Edit Icon', file: SIDECAR_A, holds: () => viewOnDisk(PANES_TABLE.id)?.icon, leave: leaveViews, shot: 'g19-icon-view-row' },
     { name: "a Collection's banner glyph", reach: atTable, trigger: shownEl('.detail-title-icon'), menu: 'Edit Icon', file: SIDECAR_A, holds: () => collectionSidecar(COLLECTION).icon },
-    { name: "a page's title glyph", reach: atPage, trigger: shownEl('.detail-title-icon'), menu: 'Edit Icon', file: 'the page metadata', holds: () => pageMetaOf('Panes One').icon },
+    { name: "a page's title", reach: atPage, at: shownEl('.detail-title-text'), trigger: shownEl('.detail-title-icon'), menu: 'Edit Icon', file: 'the page metadata', holds: () => pageMetaOf('Panes One').icon },
     {
       name: "a page dropdown's header",
       reach: async () => {
@@ -2410,6 +2413,7 @@ async function group19(cdp) {
         await escapeAll(cdp)
         if (!(await cdp.evaluate(`!!(${sidebarRow('Topics')})`))) await click(cdp, ribbon('Contexts'))
         await until('Topics in the sidebar', () => cdp.evaluate(`!!(${sidebarRow('Topics')})`))
+        await sleep(800)
       },
       trigger: `(${sidebarRow('Topics')}).closest('[data-line-row]')`, menu: 'Edit Icon', file: CONTEXTS_REL,
       holds: () => JSON.parse(read(CONTEXTS_REL)).contexts.find((c) => c.title === 'Topics')?.icon,
@@ -2494,7 +2498,7 @@ async function group19(cdp) {
   item(19, 'MP-F-5', "a pick from the view editor's header lands on the view and draws in the header", f5.landed && drawn === f5.glyph, show({ value: f5.value, landed: f5.landed, same: drawn === f5.glyph }))
 
   await unchoose([])
-  for (const [rel, text] of kept) writeFileSync(join(NEXUS, rel), text)
+  for (const [rel, text] of kept) text === null ? rmSync(join(NEXUS, rel), { force: true }) : writeFileSync(join(NEXUS, rel), text)
   for (const name of readdirSync(join(NEXUS, META_DIR))) if (!shards.has(name)) rmSync(join(NEXUS, META_DIR, name))
   for (const [name, text] of shards) writeFileSync(join(NEXUS, META_DIR, name), text)
   await unfill([])
