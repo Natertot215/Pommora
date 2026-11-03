@@ -74,6 +74,7 @@ const held = (type: string, at: { clientX: number; clientY: number }) => {
 
 const canvas = (): HTMLCanvasElement => host.querySelector('canvas') as HTMLCanvasElement
 const label = (): HTMLElement | null => host.querySelector(`.${s.label.split(' ')[0]}`)
+const seated = (): HTMLElement => host.querySelector(`.${s.anchor.split(' ')[0]}`) as HTMLElement
 
 const fire = (el: EventTarget, e: Event): Event => {
   act(() => {
@@ -186,7 +187,9 @@ describe('MatrixView', () => {
     fire(canvas(), pointer('contextmenu', CENTRE))
     expect(showEntityMenu).toHaveBeenCalledTimes(1)
     const anchor = vi.mocked(showEntityMenu).mock.calls[0][1]
-    expect(anchor?.dataset.nodeId).toBe('p1')
+    expect(anchor).toBe(seated())
+    expect(anchor?.nextElementSibling).toBe(label())
+    expect(label()?.textContent).toContain('Alpha')
   })
 
   it('leaves a right-click off the canvas to the system menu', () => {
@@ -250,7 +253,6 @@ describe('MatrixView', () => {
   })
 
   describe('locked', () => {
-    const anchor = (): HTMLElement => host.querySelector('[data-node-id="p1"]') as HTMLElement
     const hoverP1 = (locked: boolean): void => {
       const display = { ...DEFAULT_MATRIX_CONFIG.display, locked }
       act(() => useSession.setState({ matrixConfig: { ...DEFAULT_MATRIX_CONFIG, display } }))
@@ -262,7 +264,7 @@ describe('MatrixView', () => {
       hoverP1(true)
       const zone = host.querySelector('.line-zone') as HTMLElement
       vi.spyOn(zone, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 800, 600))
-      fire(anchor(), pointer('pointerdown', CENTRE))
+      fire(seated(), pointer('pointerdown', CENTRE))
       fire(window, held('pointermove', { clientX: 400, clientY: 320 }))
       expect(loose).toBeNull()
       fire(window, held('pointermove', { clientX: 400, clientY: -40 }))
@@ -276,9 +278,9 @@ describe('MatrixView', () => {
       for (const locked of [true, false]) {
         select.mockClear()
         hoverP1(locked)
-        fire(anchor(), pointer('pointerdown', CENTRE))
+        fire(seated(), pointer('pointerdown', CENTRE))
         fire(window, pointer('pointerup', CENTRE))
-        fire(anchor(), new MouseEvent('click', { bubbles: true }))
+        fire(seated(), new MouseEvent('click', { bubbles: true }))
         expect(select).toHaveBeenCalledTimes(1)
         expect(select.mock.calls[0][0]).toMatchObject({ id: 'p1' })
       }

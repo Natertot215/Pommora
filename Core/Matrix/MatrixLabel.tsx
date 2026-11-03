@@ -143,7 +143,6 @@ export function MatrixLabel({
       {/* biome-ignore lint/a11y/noStaticElementInteractions: the hovered node made real — its own drag, click and menu, which the canvas cannot carry */}
       <div
         ref={seat}
-        data-node-id={rec.id}
         className={cx(s.anchor, closing && s.anchorClosing)}
         {...(locked ? { ...row.handle, onClick: onOpen } : { onPointerDown })}
         onContextMenu={onContextMenu}

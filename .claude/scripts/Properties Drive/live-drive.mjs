@@ -2056,10 +2056,10 @@ const glyphOf = (expr) => `(${expr}).querySelector('svg')?.innerHTML ?? null`
 const TILE = `(${VIEW_SETTINGS}).closest('.tile')`
 const TILE_GLYPH = `${TILE}.querySelector('.title-icon-reveal')`
 const TILE_PILL = `[...${TILE}.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Cards')`
-const nodeEl = (id) => `document.querySelector('[data-node-id="${id}"]')`
+const nodeEl = (title) => `[...(${shownEl('canvas')})?.parentElement.querySelectorAll('span') ?? []].find((t) => t.textContent === ${JSON.stringify(title)})?.parentElement.parentElement.previousElementSibling`
 
-/** Steps the pointer across the Matrix's canvas until `id`'s node is under it, leaving it there. */
-async function matrixNode(cdp, id) {
+/** Steps the pointer across the Matrix's canvas until `title`'s node is under it, leaving it there. */
+async function matrixNode(cdp, title) {
   await mouseClick(cdp, ribbon('Matrix'))
   await until('the Matrix', () => cdp.evaluate(`!!${shownEl('canvas')}`))
   await sleep(2500)
@@ -2067,7 +2067,7 @@ async function matrixNode(cdp, id) {
   for (let y = box.top + 12; y < box.bottom; y += 24)
     for (let x = box.left + 12; x < box.right; x += 24) {
       await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y, button: 'none' })
-      if (await cdp.evaluate(`!!${nodeEl(id)}`)) return true
+      if (await cdp.evaluate(`!!${nodeEl(title)}`)) return true
     }
   return false
 }
@@ -2347,7 +2347,7 @@ async function group19(cdp) {
   const unchoose = await seedCollection(cdp, Object.values(CHOICE), [])
   const kept = [SPACE_FILE, CONTEXTS_REL, NEXUS_SETTINGS, MATRIX_FILE].map((rel) => [rel, existsSync(join(NEXUS, rel)) ? read(rel) : null])
   const shards = new Map(readdirSync(join(NEXUS, META_DIR)).map((name) => [name, read(`${META_DIR}/${name}`)]))
-  const areaOne = JSON.parse(read(SPACE_FILE)).id
+  const areaOne = 'Area One'
   // The Matrix draws Spaces, which alone take Change Color, only when it groups by Space.
   await must('the Matrix by Space', ask(cdp, 'matrix:write', { group: { mode: 'space' } }))
   const space = () => JSON.parse(read(SPACE_FILE))
