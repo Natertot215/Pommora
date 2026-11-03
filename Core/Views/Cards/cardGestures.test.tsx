@@ -8,6 +8,7 @@ import type { PropertyDefinition } from '../../Properties/properties'
 import { ID_KEY } from '../../Nexus/identityMark'
 import { useSession } from '../../Session/store'
 import { daySelected } from '@pommora/uix/Pickers/calendar-picker.css'
+import { REVEAL_DWELL_MS } from '@pommora/uix/Interactions/hoverReveal'
 import { mountEachTest, renderView, settle } from '../../Testing/viewHarness'
 import { STATUS_DEF } from '../../Testing/definitions'
 import { propsAtRoot, valuesReply } from '../../Testing/pageValues'
@@ -81,6 +82,8 @@ beforeEach(() => {
     tree: makeTree({ registry: [STATUS_DEF, numberDef] }),
     selection: { kind: 'none' } as never,
     renamingPath: null,
+    pendingPick: null,
+    pendingChoice: null,
     tabs: [] as never,
     pinned: [] as never,
     mutate: mutateSpy as never,
@@ -222,6 +225,40 @@ describe('the card menu', () => {
       expect.anything(),
     )
     expect(saveSpy).not.toHaveBeenCalled()
+  })
+
+  it('a leaf’s open pane holds back the ghost until it closes', async () => {
+    const hover = async (id: string, entering: boolean): Promise<void> => {
+      await act(async () => {
+        card(id).dispatchEvent(
+          new MouseEvent(entering ? 'pointerover' : 'pointerout', {
+            bubbles: true,
+            relatedTarget: document.body,
+          }),
+        )
+        if (entering) window.dispatchEvent(new MouseEvent('pointermove'))
+      })
+    }
+    const dwell = async (): Promise<void> => {
+      await act(async () => {
+        vi.advanceTimersByTime(REVEAL_DWELL_MS)
+      })
+    }
+    useSession.setState({ tree: makeTree({ registry: [STATUS_DEF, numberDef, dueDef] }) })
+    await renderView(root, { ...source(), propertyIds: [STATUS_DEF.id, numberDef.id, dueDef.id] })
+    await rightClick('p1', 'prop:prop_due')
+    vi.useFakeTimers()
+    await hover('p2', true)
+    await dwell()
+    expect(host.querySelector('.ghost-card')).toBeNull()
+
+    await act(async () => {
+      useSession.getState().dismissPick()
+    })
+    await hover('p2', false)
+    await hover('p2', true)
+    await dwell()
+    expect(host.querySelector('.ghost-card')).not.toBeNull()
   })
 })
 

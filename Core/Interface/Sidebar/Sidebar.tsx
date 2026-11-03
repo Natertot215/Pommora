@@ -39,6 +39,7 @@ import { AgendaMode } from './AgendaMode'
 import { sidebarModeOf } from '../../Settings/experimental'
 import { pageMetaOf, useSession, useSetting } from '../../Session/store'
 import { personalizationOf } from '../../Session/configSlice'
+import { pickOpen } from '../../Session/chromeSlice'
 import { glanceShown, hoverGlance, leaveGlance } from '../Glance/glanceAction'
 import { pageMoveContext } from '../Menus/pageMenuActions'
 import { isOpenInTabs } from '../../Navigation/tabsModel'
@@ -294,7 +295,10 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
   const ghostApi = useGhostAnchor({
     dwellMs: SIDEBAR_GHOST_DWELL_MS,
     graceMs: SIDEBAR_GHOST_GRACE_MS,
-    suppressed: () => useSession.getState().renamingPath !== null || glanceShown(),
+    suppressed: () => {
+      const s = useSession.getState()
+      return s.renamingPath !== null || pickOpen(s) || glanceShown()
+    },
   })
   const dndIndexRef = useLatest(dndIndex)
 
