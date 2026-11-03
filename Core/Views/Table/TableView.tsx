@@ -172,6 +172,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     cellSweep.begin(row.id, col.id, e)
     return true
   }
+
   // ── The row api ───────────────────────────────────────────────────────────
 
   const cellApi = useStableApi<RowCellApi>({

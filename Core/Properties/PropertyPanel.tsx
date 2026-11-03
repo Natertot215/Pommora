@@ -92,10 +92,13 @@ export function PropertyPanel({
   const nexusId = tree?.nexus.id
   const spaceNode = isSpace ? spaceNodeOf(tree, subjectId) : null
   const path = subject.kind === 'page' ? subject.path : (spaceNode?.path ?? '')
-  const [editingFor, setEditingFor] = useState(path)
-  if (editingFor !== path) {
-    setEditingFor(path)
+  const subjectKey = `${nexusId}/${subjectId}`
+  const [editingFor, setEditingFor] = useState(subjectKey)
+  if (editingFor !== subjectKey) {
+    setEditingFor(subjectKey)
     seat.close()
+    setOverride(null)
+    setRevealed(new Set())
   }
 
   useEffect(() => {
@@ -118,11 +121,6 @@ export function PropertyPanel({
     }
   }, [path, isSpace])
 
-  useEffect(() => {
-    seat.close()
-    setOverride(null)
-    setRevealed(new Set())
-  }, [subjectId, nexusId])
   useValuesEpoch(
     isSpace ? null : relDirname(path),
     (v) => {

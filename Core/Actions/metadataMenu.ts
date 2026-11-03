@@ -2,18 +2,17 @@ import { type ActionItem, joinGroups } from './menuModel'
 import type { MetadataAction } from './pageMenu'
 import type { NexusTree } from '../Nexus/tree'
 import { pickKindOf, type PropertyDefinition } from '../Properties/properties'
-import { checkboxValue, type PropertyValue, selectedValues } from '../Properties/propertyValue'
+import { type PropertyValue, selectedValues } from '../Properties/propertyValue'
 import type { ColumnStyle } from '../Properties/columnStyles'
 import type { ResolvedColumn, ViewRow } from '../Views/viewRow'
-import { contextIdsOf, contextsByIdOf } from '../Contexts/contextIdentity'
+import { contextsByIdOf } from '../Contexts/contextIdentity'
 import { contextOptionsFor } from '../Contexts/contextOptions'
 import { columnLabel, GROUP_LABELS } from '../Properties/columnDisplay'
-import { pickedValue, pickGroups } from '../Properties/Pickers/pickModel'
+import { pickGroups } from '../Properties/Pickers/pickModel'
 import { resolveFieldValue } from '../Properties/fieldValue'
-import { useSession } from '../Session/store'
-import { itemColumns, resolveColumn } from '../Views/Pipeline/columns'
+import { itemColumns } from '../Views/Pipeline/columns'
 
-const PREFIX = 'prop:'
+export const PREFIX = 'prop:'
 
 const CHECKBOX_OPTIONS = [
   { id: 'true', label: 'Check' },
@@ -64,22 +63,4 @@ export function metadataBranches(
   return (['contexts', 'properties'] as const).flatMap((key) =>
     item[key].length > 0 ? [{ label: GROUP_LABELS[key], submenu: item[key].map(branchRow) }] : [],
   )
-}
-
-export function runMetadataAction(
-  action: string,
-  { row, schema, rowOf, commit, trigger, styleOf }: MetadataTarget,
-): boolean {
-  if (!action.startsWith(PREFIX)) return false
-  const [id, ...rest] = action.slice(PREFIX.length).split(':')
-  const value = rest.length > 0 ? rest.join(':') : null
-  const s = useSession.getState()
-  const column = resolveColumn(id, schema, contextIdsOf(s.tree))
-  // The property can leave between the menu opening and the pick; the pick then writes nothing.
-  if (!column) return true
-  const pick = pickKindOf(column.type)
-  if (value === null) s.requestPick({ rowOf, column, trigger, commit, style: styleOf?.(column) })
-  else if (column.type === 'checkbox') commit(column, checkboxValue(value === 'true'))
-  else if (pick) commit(column, pickedValue(pick, resolveFieldValue(row, column), value))
-  return true
 }

@@ -17,16 +17,12 @@ import { contextAt, holderSchema } from '../../Nexus/treePatch'
 import { spaceNodeOf } from '../../Nexus/treeIndex'
 import type { NexusTree } from '../../Nexus/tree'
 import type { ContainerKind } from '../../Nexus/entities'
-import {
-  type MetadataTarget,
-  metadataBranches,
-  runMetadataAction,
-} from '../../Actions/metadataMenu'
+import { type MetadataTarget, metadataBranches } from '../../Actions/metadataMenu'
 import { popMenu } from '../../Actions/menuActions'
 import { createNamed, newPageAdjacent } from '../../Actions/createActions'
 import { useSession } from '../../Session/store'
 import { confirmArchive, confirmDelete } from '../Confirm/confirmations'
-import { runPathAction, showPageMenu } from './pageMenuActions'
+import { runMetadataAction, runPathAction, showPageMenu } from './pageMenuActions'
 import { chooseColor, chooseIcon } from '../../Assets/IdentityChoice'
 
 function creatorsFor(target: EntityMenuTarget): Creator[] {

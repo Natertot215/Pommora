@@ -13,13 +13,15 @@ import {
   type PageMoveContext,
   pageMenuItems,
 } from '../../Actions/pageMenu'
-import {
-  type MetadataTarget,
-  metadataBranches,
-  runMetadataAction,
-} from '../../Actions/metadataMenu'
+import { type MetadataTarget, metadataBranches, PREFIX } from '../../Actions/metadataMenu'
 import { isOpenInTabs } from '../../Navigation/tabsModel'
 import { chooseIcon } from '../../Assets/IdentityChoice'
+import { contextIdsOf } from '../../Contexts/contextIdentity'
+import { pickKindOf } from '../../Properties/properties'
+import { checkboxValue } from '../../Properties/propertyValue'
+import { pickedValue } from '../../Properties/Pickers/pickModel'
+import { resolveFieldValue } from '../../Properties/fieldValue'
+import { resolveColumn } from '../../Views/Pipeline/columns'
 
 export function pageMoveContext(tree: NexusTree | null, path: string): PageMoveContext {
   return {
@@ -83,6 +85,24 @@ export function runPageAction(
     default:
       return false
   }
+}
+
+export function runMetadataAction(
+  action: string,
+  { row, schema, rowOf, commit, trigger, styleOf }: MetadataTarget,
+): boolean {
+  if (!action.startsWith(PREFIX)) return false
+  const [id, ...rest] = action.slice(PREFIX.length).split(':')
+  const value = rest.length > 0 ? rest.join(':') : null
+  const s = useSession.getState()
+  const column = resolveColumn(id, schema, contextIdsOf(s.tree))
+  // The property can leave between the menu opening and the pick; the pick then writes nothing.
+  if (!column) return true
+  const pick = pickKindOf(column.type)
+  if (value === null) s.requestPick({ rowOf, column, trigger, commit, style: styleOf?.(column) })
+  else if (column.type === 'checkbox') commit(column, checkboxValue(value === 'true'))
+  else if (pick) commit(column, pickedValue(pick, resolveFieldValue(row, column), value))
+  return true
 }
 
 export async function popPageActions(

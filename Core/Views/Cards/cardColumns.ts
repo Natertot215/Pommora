@@ -19,6 +19,7 @@ export function shownColumnsFor(
   )
 }
 
+/** What a card's Add list offers: the columns it doesn't draw, those it can fill ahead of those it only shows. */
 export function cardAddColumns(
   item: ItemColumns,
   row: ViewRow,
