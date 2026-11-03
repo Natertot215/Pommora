@@ -26,7 +26,7 @@
 | 5 · Settings Panes             | about −70 (+46 / −116)                                          | −195 (+1029 / −1224), −85 its own  |
 | 6 · One Icon and Color Request | about −170                                                      | −380 (+1418 / −1798), −185 its own |
 | 7 · Right-Click                | about −140 (−125 to −155)                                       | −493 (+1858 / −2351), −113 its own |
-| 8 · Closeout                   | 0                                                               |                                    |
+| 8 · Closeout                   | 0                                                               | −493 (+1866 / −2359), ±0 its own   |
 | **Total**                      | **about −470; 9 files leave, 4 arrive**                         |                                    |
 
 ### Context
@@ -263,10 +263,10 @@ The order is what makes each step land once. Phase 0 readies the drives and pins
   - [x] Task 7-1 · One metadata menu, one page menu, and `MenuSeat`'s route
   - [x] Task 7-2 · Group 17
   - [x] Review Checkpoint
-- [ ] **Phase 8** — Closeout
+- [x] **Phase 8** — Closeout
   - [x] Task 8-1 · The seat's move
   - [x] Task 8-2 · All seven drives
-  - [ ] Task 8-3 · Docs and issues
+  - [x] Task 8-3 · Docs and issues
 - [ ] *§Final Verification* over `<BASELINE>..HEAD`
 - [ ] `[Stop: the final report, per §Final Verification]`
 
@@ -2614,9 +2614,9 @@ Every doc should read true, replacively, under `r/studio-documentation`. *§Reco
 
 **VERIFY**
 
-- [ ] Run the gates; `node .claude/scripts/check-atlas.mjs` exits 0.
-- [ ] `git grep -n "chooser\|add-picker\|behind one barrel" -- .claude/Features .claude/Resources .claude/Guidelines .claude/scripts` prints nothing.
-- [ ] The Number recorded for Phase 8; its own delta ±0 in production.
+- [x] Run the gates; `node .claude/scripts/check-atlas.mjs` exits 0.
+- [x] `git grep -n "chooser\|add-picker\|behind one barrel" -- .claude/Features .claude/Resources .claude/Guidelines .claude/scripts` prints nothing.
+- [x] The Number recorded for Phase 8; its own delta ±0 in production.
 
 ---
 
