@@ -7,7 +7,7 @@ import {
   FM, frontmatter, frontRaw, pageFile, pageIds, pagePath,
   activeTab, ask, BACK, boxOf, chooseNative, closePageWindow, closePanel, click, closeSettings, createPage, DIALOG, doubleClick, entry, escapeAll, field, inMain, labels, launch, META, mouseAt, mouseClick, must, NEXUS, notice,
   openCollection, openPage, openPane, openPanel, openSettings, openSidePane, overlaps, pickNative, popNative, portalOpen, pressDialog, pressKey, read, relaunch, restore, ribbon, row, sel, selectField, SET,
-  holds, hover, item, LIVE_ROWS, PANE, PANE_LAYER, PORTAL_ROWS, press, SETTINGS_BUTTON, SHIFT, settles, shot, sleep, slideTo, statusDividers, sweep, SWITCH, tally, textEl, trashRowEl, typeText, until, viewFrame, watch, zoom,
+  holds, hover, item, LIVE_ROWS, manageButton, PANE, PANE_LAYER, PORTAL_ROWS, press, SETTINGS_BUTTON, SHIFT, settles, shot, sleep, slideTo, statusDividers, sweep, SWITCH, tally, textEl, trashRowEl, typeText, until, viewFrame, watch, zoom,
 } from '../drive-harness.mjs'
 import { parse } from 'yaml'
 
@@ -91,7 +91,7 @@ async function group1(cdp) {
   await shot(cdp, 'g1-properties-pane')
 
   await escapeAll(cdp)
-  if (await cdp.evaluate(`(${SETTINGS_BUTTON}).getAttribute('aria-pressed') === 'true'`)) await mouseClick(cdp, SETTINGS_BUTTON)
+  await closeToolbarSettings(cdp)
   writeFileSync(REGISTRY, stored)
   await until('the registry as it was', async () => !(await held(cdp, witness.id)))
 }
@@ -2003,14 +2003,7 @@ const VIEWS_BUTTON = sel('button[title="Views"]')
 const NEW_VIEW = shownEl('[aria-label="New View"]')
 /** The view list's slide: the box around its track. */
 const VIEW_SLIDE = `(() => { let e = ${NEW_VIEW}; while (e && !e.style.transform.startsWith('translateX')) e = e.parentElement; return e?.parentElement })()`
-const VIEW_MENU = shownEl('[aria-label="View menu"]')
-/** Open In Preview's Manage: the first one up from its label. */
-const MANAGE_PREVIEW = `(() => {
-  const manage = (r) => [...r.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Manage')
-  let r = ${textEl('*', 'Open In Preview')}
-  while (r && !manage(r)) r = r.parentElement
-  return manage(r)
-})()`
+const VIEW_MENU = shownEl('[aria-label="View Menu"]')
 
 async function group19(cdp) {
   const putBack = await seedCollection(cdp, Object.values(PANES), [PANES_TABLE])
@@ -2171,7 +2164,7 @@ async function group19(cdp) {
   const keptRules = (await config(cdp)).personalization.openInPreview ?? { rules: null, enabled: true }
   await must('the preview rules', ask(cdp, 'personalization:set', 'openInPreview', PREVIEW_RULES))
   await openSettings(cdp, 'Navigation')
-  await press(cdp, MANAGE_PREVIEW)
+  await press(cdp, manageButton('Open In Preview'))
   await until('the Preview Rules pane', () => cdp.evaluate(`!!${TOP_LAYER}?.querySelector('[aria-label="Filter property"]')`))
   await sleep(600)
   const rules = await paneFrame(cdp, `${TOP_LAYER}.querySelector('.scroll-fade')`)
@@ -2194,6 +2187,20 @@ async function group19(cdp) {
     await until(`${name}'s editor`, () => cdp.evaluate(`!!${VIEW_MENU} && !${VIEW_MENU}.closest('[inert]')`))
     await sleep(600)
   }
+  const readMenu = async (menu, native, first) => {
+    const seq = await inMain('__drive.seq')
+    let rows
+    if (native) {
+      rows = await popNative(cdp, await boxOf(cdp, menu), 'left')
+      await sleep(400)
+    } else {
+      await mouseClick(cdp, menu)
+      await until('the in-app menu', () => cdp.evaluate(`!!${entry(first)}`))
+      await sleep(400)
+      rows = await liveRows(cdp)
+    }
+    return { rows, popped: (await inMain('__drive.seq')) !== seq, drawn: await cdp.evaluate(`!!${entry(first)}`) }
+  }
   /** Duplicates Panes Table from its editor's ⋮ and deletes the copy from the copy's own, answering what the menu drew and what each choice did. */
   const viewMenu = async (native) => {
     const before = (await views(cdp)).map((v) => v.id)
@@ -2201,20 +2208,8 @@ async function group19(cdp) {
     await until('the view list', () => cdp.evaluate(`!!${NEW_VIEW}`))
     await sleep(500)
     await openEditor(PANES_TABLE.name)
-    const seq = await inMain('__drive.seq')
-    let rows
-    if (native) {
-      rows = await popNative(cdp, await boxOf(cdp, VIEW_MENU), 'left')
-      await sleep(400)
-    } else {
-      await mouseClick(cdp, VIEW_MENU)
-      await until('the in-app menu', () => cdp.evaluate(`!!${entry('Duplicate')}`))
-      await sleep(400)
-      rows = await cdp.evaluate(`${LIVE_ROWS}.map((e) => ({ label: e.textContent.trim() }))`)
-      await shot(cdp, 'g19-view-menu-in-app', TOP_LAYER)
-    }
-    const popped = (await inMain('__drive.seq')) !== seq
-    const drawn = await cdp.evaluate(`!!${entry('Duplicate')}`)
+    const { rows, popped, drawn } = await readMenu(VIEW_MENU, native, 'Duplicate')
+    if (!native) await shot(cdp, 'g19-view-menu-in-app', TOP_LAYER)
     if (native) await pickNative(['Duplicate'])
     else await click(cdp, entry('Duplicate'))
     const copy = await until('the copy', async () => (await views(cdp)).find((v) => !before.includes(v.id)))
@@ -2233,14 +2228,29 @@ async function group19(cdp) {
     const closed = await settles(async () => !(await cdp.evaluate(`!!${NEW_VIEW}`)))
     return { rows, popped, drawn, copy: copy.name, deleted, closed }
   }
+  /** Reads Panes Due's editor's ⋮ and closes it unchosen. */
+  const propertyMenu = async (native) => {
+    await viewFrame(cdp, 'Properties')
+    await click(cdp, `[...(${SETTINGS_PANE}).querySelectorAll('[role=button]')].find((e) => e.textContent.trim().startsWith(${JSON.stringify(PANES.due.label)}))`)
+    await until("Panes Due's editor", () => cdp.evaluate(`!!${liveEl('Property Menu')}`))
+    const menu = await readMenu(liveEl('Property Menu'), native, 'Remove')
+    if (native) await pickNative([])
+    else await pressKey(cdp, 'Escape')
+    await closeToolbarSettings(cdp)
+    return menu
+  }
   const inAppMenu = await viewMenu(false)
+  const inAppProperty = await propertyMenu(false)
   const switchedOn = await nativeMenus(true)
   const systemMenu = await viewMenu(true)
+  const systemProperty = await propertyMenu(true)
   const switchedOff = await nativeMenus(false)
-  item(19, 'MP-F-6', "with Use Native Menus off, the view editor's ⋮ draws Duplicate and Delete in-app in [data-picker-portal] and pops no native menu",
-    same(labels(inAppMenu.rows), ['Duplicate', 'Delete']) && inAppMenu.drawn && !inAppMenu.popped, show(inAppMenu))
-  item(19, 'MP-F-6', 'with Use Native Menus on, the ⋮ pops Duplicate and Delete as a system menu, a separator between them, and draws nothing in-app',
-    switchedOn && systemMenu.popped && !systemMenu.drawn && same(labels(systemMenu.rows), ['Duplicate', 'Delete']) && systemMenu.rows?.[1]?.separator === true, show(systemMenu))
+  const drawsInApp = (r, rows) => same(labels(r.rows), rows) && r.drawn && !r.popped
+  const popsNative = (r, rows) => r.popped && !r.drawn && same(labels(r.rows), rows) && r.rows?.[1]?.separator === true
+  item(19, 'MP-F-6', "with Use Native Menus off, the view editor's ⋮ draws Duplicate and Delete, and the property editor's Remove and Delete, in-app in [data-picker-portal] and pops no native menu",
+    drawsInApp(inAppMenu, ['Duplicate', 'Delete']) && drawsInApp(inAppProperty, ['Remove', 'Delete']), show({ inAppMenu, inAppProperty }))
+  item(19, 'MP-F-6', 'with Use Native Menus on, each ⋮ pops its two rows as a system menu, a separator between them, and draws nothing in-app',
+    switchedOn && popsNative(systemMenu, ['Duplicate', 'Delete']) && popsNative(systemProperty, ['Remove', 'Delete']), show({ systemMenu, systemProperty }))
   item(19, 'MP-F-6', "the ⋮'s Duplicate adds a view, and its Delete removes the copy and closes the dropdown, with Use Native Menus off and on",
     [inAppMenu, systemMenu].every((r) => r.copy && r.deleted && r.closed) && switchedOff, show({ inAppMenu, systemMenu, switchedOn, switchedOff }))
 

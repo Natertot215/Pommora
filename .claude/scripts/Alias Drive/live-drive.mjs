@@ -3,7 +3,7 @@ import { join } from 'node:path'
 import {
   mintOptionId,
   against, ask, boxOf, check, chooseNative, click, closePageWindow, closePanel, createPage, doubleClick, drag, escapeAll, field, frontmatter,
-  launch, measure, metrics, mouseAt, mouseClick, must, NEXUS, openCollection, openPage, openPane, openPanel, openSidePane,
+  launch, manageButton, manageRow, measure, metrics, mouseAt, mouseClick, must, NEXUS, openCollection, openPage, openPane, openPanel, openSidePane,
   closeSettings, openSettings, PAGE_VIEW, pageFile, pageIds, pagePath, PANE, PANE_VIEW, portalOpen, pressKey, printMetrics, read, refusal, restore, results,
   row, sel, selectField, SETTINGS_BUTTON, settles, shot, sleep, sweep, typeText, until, writeBody, writeMetrics,
 } from '../drive-harness.mjs'
@@ -127,9 +127,6 @@ const dragChrome = (cdp, S) => cdp.evaluate(`({ line: !!(${S})?.querySelector('.
 const shownIn = (cdp, S) => cdp.evaluate(`${rows(S)}.map((r) => r.querySelector('input')?.value ?? r.textContent.trim())`)
 const editingIn = (cdp, S) => cdp.evaluate(`(() => { const i = ${inputOf(S)}; return i ? { value: i.value, focused: document.activeElement === i } : null })()`)
 
-const manageRow = (label, scope = 'document') =>
-  `[...(${scope}).querySelectorAll('[data-reveal-host]')].find((r) => [...r.querySelectorAll('button')].some((b) => b.textContent.trim() === 'Manage') && [...r.querySelectorAll('span')].some((e) => e.textContent.trim() === ${JSON.stringify(label)}))`
-const manageButton = (label, scope) => `[...(${manageRow(label, scope)}).querySelectorAll('button')].find((b) => b.textContent.trim() === 'Manage')`
 const countOf = (cdp, label, scope) =>
   cdp.evaluate(`[...(${manageRow(label, scope)})?.querySelectorAll('span') ?? []].find((e) => e.children.length === 0 && /^\\d+$/.test(e.textContent.trim()))?.textContent.trim() ?? null`)
 // The element holding a Manage pane's shared 250 minimum, with its width and both bounds; null where nothing computes it.

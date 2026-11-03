@@ -670,6 +670,9 @@ export async function press(cdp, expr) {
   await mouseClick(cdp, expr)
 }
 export const SWITCH = (label) => `document.querySelector('[role="switch"][aria-label="${label}"]')`
+export const manageRow = (label, scope = 'document') =>
+  `[...(${scope}).querySelectorAll('[data-reveal-host]')].find((r) => [...r.querySelectorAll('button')].some((b) => b.textContent.trim() === 'Manage') && [...r.querySelectorAll('span')].some((e) => e.textContent.trim() === ${JSON.stringify(label)}))`
+export const manageButton = (label, scope) => `[...(${manageRow(label, scope)}).querySelectorAll('button')].find((b) => b.textContent.trim() === 'Manage')`
 export async function closeSettings(cdp) {
   if (await cdp.evaluate(`!!document.querySelector('.settings-rail')`)) await mouseClick(cdp, ribbon('Settings'))
   await sleep(600)
