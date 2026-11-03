@@ -1,5 +1,4 @@
 import { type ActionItem, joinGroups, openOrder } from './menuModel'
-import { type PropertyAction, type PropertyMenuRow, propertyBranchRows } from './propertyRows'
 import { openLabel } from './toggleLabels'
 
 export type PageMetaAction =
@@ -17,6 +16,9 @@ export type PageMetaAction =
   | 'title:delete'
 
 export type PageMoveAction = `move:${string}`
+export type MetadataAction = `prop:${string}`
+export type NewPageRows = keyof typeof NEW_PAGE_ROWS
+type PageMenuAction = PageMetaAction | PageMoveAction | MetadataAction | 'image:edit'
 
 /** `path` is the move's `newParentPath`; `id` is what a restore resolves its parent by. */
 export interface MoveTarget {
@@ -26,11 +28,9 @@ export interface MoveTarget {
   children?: MoveTarget[]
 }
 
-export interface PageMenuContext {
+export interface PageMoveContext {
   moveTargets?: MoveTarget[]
   currentParentPath?: string
-  spaces?: PropertyMenuRow[]
-  properties?: PropertyMenuRow[]
 }
 
 export const RENAME_ROW = { label: 'Rename', action: 'title:rename' } as const
@@ -80,7 +80,7 @@ export function pageOpenRows({
 export type PageSendAction = 'title:copylink' | 'title:copypath' | 'title:history' | 'title:reveal'
 
 export function pageSendGroups(
-  ctx: PageMenuContext,
+  ctx: PageMoveContext,
   reveal = false,
 ): ActionItem<PageSendAction | PageMoveAction>[][] {
   const move: ActionItem<PageMoveAction>[] = ctx.moveTargets?.length
@@ -116,22 +116,22 @@ const NEW_PAGE_ROWS: Record<'pair' | 'single', readonly ActionItem<PageMetaActio
   single: [{ label: 'New Page', action: 'title:newbelow' }],
 }
 
-export function pageMetaMenuItems(
-  alreadyOpen?: boolean,
-  opts: {
-    window?: boolean
-    newPages?: keyof typeof NEW_PAGE_ROWS
-    move?: PageMenuContext
-    spaces?: PropertyMenuRow[]
-    properties?: PropertyMenuRow[]
-    reveal?: boolean
-  } = {},
-): ActionItem<PageMetaAction | PageMoveAction | PropertyAction>[] {
-  return joinGroups<PageMetaAction | PageMoveAction | PropertyAction>([
-    pageOpenRows({ alreadyOpen, window: opts.window }),
-    [RENAME_ROW, { label: 'Edit Icon', action: 'title:icon' }, ...propertyBranchRows(opts)],
-    opts.newPages ? NEW_PAGE_ROWS[opts.newPages] : [],
-    ...pageSendGroups(opts.move ?? {}, opts.reveal),
+export function pageMenuItems(
+  ctx: PageMoveContext & {
+    alreadyOpen?: boolean
+    newPages?: NewPageRows
+    editImage?: boolean
+    metadata?: readonly ActionItem<MetadataAction>[]
+  },
+): ActionItem<PageMenuAction>[] {
+  return joinGroups<PageMenuAction>([
+    [
+      ...(ctx.editImage ? [{ label: 'Edit Image', action: 'image:edit' as const }] : []),
+      ...pageOpenRows({ alreadyOpen: ctx.alreadyOpen, window: true }),
+    ],
+    [RENAME_ROW, { label: 'Edit Icon', action: 'title:icon' }, ...(ctx.metadata ?? [])],
+    ctx.newPages ? NEW_PAGE_ROWS[ctx.newPages] : [],
+    ...pageSendGroups(ctx, true),
     REMOVAL_ROWS,
   ])
 }

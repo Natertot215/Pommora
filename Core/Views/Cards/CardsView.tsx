@@ -1,4 +1,4 @@
-import { memo, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ResolvedColumn, ViewRow } from '../viewRow'
 import type { SetNode } from '../../Nexus/tree'
 import { isBlankValue, type PropertyValue } from '../../Properties/propertyValue'
@@ -40,12 +40,12 @@ import { useBannerMenu } from '../../Interface/Header/useBannerMenu'
 import { navKey, selectTargetOf } from '../../Navigation/navRef'
 import { TAB_FAMILY } from '../../Navigation/tabRows'
 import type { ViewHostApi } from '../Host/useViewHost'
-import { GHOST_TRAVEL_HOLD_MS, GhostSuppress } from '@pommora/uix/Interactions/ghostCreate'
+import { GHOST_TRAVEL_HOLD_MS } from '@pommora/uix/Interactions/ghostCreate'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { columnLabel } from '../../Properties/columnDisplay'
 import { GroupBand } from '../Bands/GroupBand'
 import { orderedChildren } from '../Pipeline/group'
-import { rowHover, type TitleMenuContext, useViewInteractions } from '../Host/useViewInteractions'
+import { rowHover, useViewInteractions } from '../Host/useViewInteractions'
 import type { ValueContext } from '../../Properties/valueContext'
 import { NO_TRAIL, type TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { ancestryOf } from '../../Nexus/treeIndex'
@@ -59,8 +59,6 @@ import { cardAddColumns, fillsBlank, shownColumnsFor } from './cardColumns'
 import { itemColumns } from '../Pipeline/columns'
 import { RenamableTitle } from '../../Interface/RenamableTitle'
 import { titleInput } from '@pommora/uix/Menus/menu-row.css'
-import { popMenu } from '../../Actions/menuActions'
-import { cardMenuModel } from '../../Actions/cardMenu'
 import { useGhostFlip } from './useGhostFlip'
 import './cards-view.css'
 
@@ -84,8 +82,7 @@ type CardApi = {
   open: (row: ViewRow, newTab: boolean) => void
   openAdd: ValueSeatApi['openAdd']
   hover: (id: string, entering: boolean) => void
-  titleMenuContext: (row: ViewRow) => TitleMenuContext
-  titleAction: (action: string, row: ViewRow, anchor: HTMLElement) => boolean
+  pageMenu: (row: ViewRow, anchor: HTMLElement, editImage?: () => void) => Promise<void>
   openSet: (set: SetNode, newTab: boolean) => void
   banner: (req: BannerRequest) => void
 }
@@ -164,6 +161,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
       travelHold: { inZone: ghostRowmate, holdMs: GHOST_TRAVEL_HOLD_MS },
     },
     rename: (target, fromCreate) => beginRename(target.path, fromCreate, 'detail'),
+    newPages: 'single',
   })
   const effectiveZoom = useElementZoom(host.viewRootRef)
   const reorderSets = (id: string, beforeId: string | null): boolean =>
@@ -239,7 +237,6 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
   useEffect(() => {
     if (!bannerRequest) return
     bannerFrameRef.current = bannerRequest.frame
-    // The seat sits above the ghost's Provider, so the hold is applied here rather than read from context.
     if (bannerRequest.mode === 'menu') void interactions.holdGhost(openBannerMenu)
     else openBannerEditor()
   }, [bannerRequest])
@@ -255,8 +252,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     open: interactions.openPage,
     openAdd: seat.openAdd,
     hover: interactions.ghost.onHover,
-    titleMenuContext: interactions.titleMenuContext,
-    titleAction: interactions.runTitleAction,
+    pageMenu: interactions.pageMenu,
     openSet: interactions.openSet,
     banner: setBannerRequest,
   })
@@ -355,101 +351,99 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
   }
 
   return (
-    <GhostSuppress.Provider value={interactions.holdGhost}>
-      <div
-        ref={(el) => {
-          host.viewRootRef.current = el
-        }}
-        className={shellClass}
-        data-view-id={view.id}
-        style={{ '--card-scale': cardScale } as React.CSSProperties}
-      >
-        {showSetCards && (
-          <div className="set-cards-row">
+    <div
+      ref={(el) => {
+        host.viewRootRef.current = el
+      }}
+      className={shellClass}
+      data-view-id={view.id}
+      style={{ '--card-scale': cardScale } as React.CSSProperties}
+    >
+      {showSetCards && (
+        <div className="set-cards-row">
+          <SortableZone
+            items={sets.map((s) => s.id)}
+            fixed={searching}
+            label={(id) => host.sets.node.get(id)?.title ?? ''}
+            carry={[
+              carries(TAB_FAMILY, (id) => {
+                const set = host.sets.node.get(id)
+                return set ? selectTargetOf(set) : null
+              }),
+            ]}
+            onMove={reorderSets}
+            renderOverlay={setOverlay}
+          >
+            <DropSlot />
+            {sets.map((s) => (
+              <SetCard key={s.id} set={s} defaultIcons={defaultIcons} api={cardApi} />
+            ))}
+          </SortableZone>
+        </div>
+      )}
+      <LineZone {...interactions.bandZone()}>
+        {groups.map((g) => (
+          <GroupBand key={g.key} node={bands.byKey.get(g.key)} bands={interactions.bandView} fill>
             <SortableZone
-              items={sets.map((s) => s.id)}
-              fixed={searching}
-              label={(id) => host.sets.node.get(id)?.title ?? ''}
-              carry={[
-                carries(TAB_FAMILY, (id) => {
-                  const set = host.sets.node.get(id)
-                  return set ? selectTargetOf(set) : null
-                }),
-              ]}
-              onMove={reorderSets}
-              renderOverlay={setOverlay}
+              items={g.items.map((r) => r.id)}
+              label={(id) => rowById.get(id)?.title ?? ''}
+              fixed={host.dragDisabled}
+              family={crossBand ? scope : undefined}
+              disclose={crossBand}
+              carry={cardCarry}
+              resolveIndex={(index, id) => interactions.folderSlot(g.key, index, id)}
+              onMove={(id, beforeId) => interactions.onDrop(id, g.key, beforeId)}
+              receive={(item, beforeId) => interactions.onDrop(item, g.key, beforeId)}
+              renderOverlay={cardOverlay}
+              className="cards-grid card-grid is-fill"
             >
               <DropSlot />
-              {sets.map((s) => (
-                <SetCard key={s.id} set={s} defaultIcons={defaultIcons} api={cardApi} />
-              ))}
+              {g.items.flatMap((row) => {
+                const card = (
+                  <PageCard
+                    key={row.id}
+                    row={row}
+                    view={view}
+                    banner={banner}
+                    nexusId={nexusId}
+                    columns={columns}
+                    ctx={ctx}
+                    loc={trailBySet[row.parentSetId ?? '']}
+                    defaultIcons={defaultIcons}
+                    styleById={styleById}
+                    api={cardApi}
+                    allowInlineRemove={effectiveZoom >= 0.8}
+                    editing={
+                      seat.open?.mode === 'editor' && seat.open.rowId === row.id
+                        ? seat.open.columnId
+                        : null
+                    }
+                  />
+                )
+                if (ghostShown !== row.id && ghostSeat !== row.id) return [card]
+                return [
+                  card,
+                  // FLIP seats the ghost among its neighbors on the way in; Reveal collapses it on the way out, so an aborted ghost animates away like the sidebar and table ones instead of vanishing.
+                  <Reveal
+                    key={`ghost-${row.id}`}
+                    open={!interactions.ghost.ghost?.closing}
+                    fill
+                    onCollapsed={interactions.ghost.closed}
+                  >
+                    {ghostCard}
+                  </Reveal>,
+                ]
+              })}
             </SortableZone>
-          </div>
-        )}
-        <LineZone {...interactions.bandZone()}>
-          {groups.map((g) => (
-            <GroupBand key={g.key} node={bands.byKey.get(g.key)} bands={interactions.bandView} fill>
-              <SortableZone
-                items={g.items.map((r) => r.id)}
-                label={(id) => rowById.get(id)?.title ?? ''}
-                fixed={host.dragDisabled}
-                family={crossBand ? scope : undefined}
-                disclose={crossBand}
-                carry={cardCarry}
-                resolveIndex={(index, id) => interactions.folderSlot(g.key, index, id)}
-                onMove={(id, beforeId) => interactions.onDrop(id, g.key, beforeId)}
-                receive={(item, beforeId) => interactions.onDrop(item, g.key, beforeId)}
-                renderOverlay={cardOverlay}
-                className="cards-grid card-grid is-fill"
-              >
-                <DropSlot />
-                {g.items.flatMap((row) => {
-                  const card = (
-                    <PageCard
-                      key={row.id}
-                      row={row}
-                      view={view}
-                      banner={banner}
-                      nexusId={nexusId}
-                      columns={columns}
-                      ctx={ctx}
-                      loc={trailBySet[row.parentSetId ?? '']}
-                      defaultIcons={defaultIcons}
-                      styleById={styleById}
-                      api={cardApi}
-                      allowInlineRemove={effectiveZoom >= 0.8}
-                      editing={
-                        seat.open?.mode === 'editor' && seat.open.rowId === row.id
-                          ? seat.open.columnId
-                          : null
-                      }
-                    />
-                  )
-                  if (ghostShown !== row.id && ghostSeat !== row.id) return [card]
-                  return [
-                    card,
-                    // FLIP seats the ghost among its neighbors on the way in; Reveal collapses it on the way out, so an aborted ghost animates away like the sidebar and table ones instead of vanishing.
-                    <Reveal
-                      key={`ghost-${row.id}`}
-                      open={!interactions.ghost.ghost?.closing}
-                      fill
-                      onCollapsed={interactions.ghost.closed}
-                    >
-                      {ghostCard}
-                    </Reveal>,
-                  ]
-                })}
-              </SortableZone>
-            </GroupBand>
-          ))}
-        </LineZone>
-        {interactions.ghostStanding && (
-          <div className="cards-grid card-grid is-fill">{ghostCard}</div>
-        )}
-        {bannerEditor}
-        <ValueSeat seat={seat} />
-      </div>
-    </GhostSuppress.Provider>
+          </GroupBand>
+        ))}
+      </LineZone>
+      {interactions.ghostStanding && (
+        <div className="cards-grid card-grid is-fill">{ghostCard}</div>
+      )}
+      {bannerEditor}
+      <ValueSeat seat={seat} />
+    </div>
   )
 }
 
@@ -858,26 +852,26 @@ const PageCard = memo(function PageCard({
     },
     [api, row],
   )
-  const holdGhost = useContext(GhostSuppress)
   const cover = coverOf(row)
 
-  const onCardContextMenu = async (e: React.MouseEvent): Promise<void> => {
+  const onCardContextMenu = (e: React.MouseEvent): void => {
     e.preventDefault()
     e.stopPropagation()
     if (drag.isDragging) return
     const anchor = textRef.current ?? (e.currentTarget as HTMLElement)
-    const action = await holdGhost(() =>
-      popMenu(
-        cardMenuModel({
-          editableImage: banner === 'banner' && !!cover,
-          ...api.titleMenuContext(row),
-        }),
-      ),
+    void api.pageMenu(
+      row,
+      anchor,
+      banner === 'banner' && cover
+        ? () =>
+            api.banner({
+              id: row.id,
+              kind: 'page',
+              frame: thumbRef.current ?? anchor,
+              mode: 'edit',
+            })
+        : undefined,
     )
-    if (!action) return
-    if (api.titleAction(action, row, anchor)) return
-    if (action === 'image:edit')
-      api.banner({ id: row.id, kind: 'page', frame: thumbRef.current ?? anchor, mode: 'edit' })
   }
 
   const iconName = entityIcon('page', row.icon, defaultIcons)

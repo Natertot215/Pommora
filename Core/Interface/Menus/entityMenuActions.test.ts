@@ -17,8 +17,12 @@ vi.mock('../Confirm/confirmations', async (importOriginal) => ({
 const picked = vi.fn<() => string | null>()
 const copyPath = vi.fn(async () => ok(null))
 const reveal = vi.fn(async () => ok(null))
+let shown: { action?: string }[] = []
 ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
-  menu: async () => ok(picked()),
+  menu: async (req: { items: { action?: string }[] }) => {
+    shown = req.items
+    return ok(picked())
+  },
   'path:copy': copyPath,
   'path:reveal': reveal,
 })
@@ -60,5 +64,16 @@ describe('Archive and Delete reach their confirmations', () => {
         title: 'Work',
       }),
     )
+  })
+})
+
+describe('a Matrix page', () => {
+  it('draws no New Page, since a graph holds no slot for a sibling', async () => {
+    picked.mockReturnValueOnce(null)
+    await showEntityMenu({ kind: 'page', id: 'p1', path: 'Notes/A.md', title: 'A', host: 'matrix' })
+    const actions = shown.map((i) => i.action)
+    expect(actions).not.toContain('title:newabove')
+    expect(actions).not.toContain('title:newbelow')
+    expect(actions).toContain('title:rename')
   })
 })

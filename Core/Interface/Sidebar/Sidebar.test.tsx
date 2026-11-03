@@ -44,6 +44,7 @@ const tree = {
     assetDirectory: ASSETS_DIR_REL,
     excluded: [],
     registry: [],
+    order: { spaces: {} },
   },
 } as unknown as NexusTree
 

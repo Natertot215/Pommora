@@ -1,8 +1,7 @@
 import type { ActionItem, MenuOptions } from '../Actions/menuModel'
-import type { ConnPage } from '../Connections/pageIndex'
+import type { MetadataTarget } from '../Actions/metadataMenu'
 import type { ColumnStyle } from '../Properties/columnStyles'
-import type { PropertyValue } from '../Properties/propertyValue'
-import type { ResolvedColumn, ViewRow } from '../Views/viewRow'
+import type { ResolvedColumn } from '../Views/viewRow'
 import type { ConfirmRequest } from '../Interface/Confirm/confirmations'
 import type { PageStats } from '../MarkdownPM/Engine/subfieldStats'
 import type { Slice } from './sessionState'
@@ -14,12 +13,8 @@ interface MenuPending extends MenuOptions {
   settle: (action: string | null) => void
 }
 
-interface ValuePickRequest {
-  rowOf: () => ViewRow | undefined
+type ValuePickRequest = Pick<MetadataTarget, 'rowOf' | 'commit' | 'trigger'> & {
   column: ResolvedColumn
-  holder?: ConnPage
-  trigger: HTMLElement
-  commit: (column: ResolvedColumn, value: PropertyValue | null) => void
   style?: ColumnStyle
 }
 

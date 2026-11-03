@@ -1,18 +1,10 @@
 import { styleBranch, type StyleAction } from './columnMenu'
 import type { ColumnStyle } from '../Properties/columnStyles'
-import {
-  type PageMetaAction,
-  type PageMoveAction,
-  type PageMenuContext,
-  pageMetaMenuItems,
-} from './pageMenu'
-import type { PropertyAction } from './propertyRows'
 import { type ColumnType, PROPERTY_TYPES } from '../Properties/properties'
 import { type ActionItem, joinGroups } from './menuModel'
 import { type ConnCellAction, type ConnEditAction, cellClosingRows } from './connectionMenu'
 
 type CellMenuKind =
-  | ({ kind: 'title'; alreadyOpen?: boolean } & PageMenuContext)
   | {
       kind: 'style-only'
       type: ColumnType
@@ -29,9 +21,6 @@ export type HideFrom = 'view' | 'row'
 export type CellMenuContext = CellMenuKind & { hideable?: HideFrom }
 
 export type CellMenuAction =
-  | PageMetaAction
-  | PageMoveAction
-  | PropertyAction
   | ConnEditAction
   | ConnCellAction
   | 'cell:edit'
@@ -43,7 +32,7 @@ export type CellMenuAction =
 type CellMenuFlags = { hideable?: HideFrom; barCapable?: boolean; onChip?: boolean }
 
 export function cellMenuContextFor(
-  type: ColumnType | undefined,
+  type: ColumnType,
   style: ColumnStyle | null,
   filled: boolean,
   { hideable, barCapable = false, onChip = false }: CellMenuFlags = {},
@@ -55,14 +44,12 @@ export function cellMenuContextFor(
 
 // With no column look in hand there's no Style to offer, so a styled value is bare, its Clear standing alone.
 function baseCellMenu(
-  type: ColumnType | undefined,
+  type: ColumnType,
   style: ColumnStyle | null,
   filled: boolean,
   barCapable: boolean,
   onChip: boolean,
 ): CellMenuKind | null {
-  if (type === 'title') return { kind: 'title' }
-  if (type === undefined) return null
   const { kind, origin } = PROPERTY_TYPES[type]
   switch (kind) {
     case 'link':
@@ -92,7 +79,7 @@ export function cellMenuModel(ctx: CellMenuContext): ActionItem<CellMenuAction>[
     ...baseCellMenuModel(ctx),
     cellClosingRows(
       clearable(ctx),
-      !!ctx.hideable && ctx.kind !== 'title',
+      !!ctx.hideable,
       ctx.kind === 'file' && ctx.hideable === 'view' ? 'Remove from View' : 'Remove',
     ),
   ])
@@ -106,7 +93,6 @@ function clearable(ctx: CellMenuContext): boolean {
     case 'link':
     case 'text':
       return ctx.filled
-    case 'title':
     case 'file':
       return false
   }
@@ -114,16 +100,6 @@ function clearable(ctx: CellMenuContext): boolean {
 
 function baseCellMenuModel(ctx: CellMenuContext): ActionItem<CellMenuAction>[][] {
   switch (ctx.kind) {
-    case 'title':
-      return [
-        pageMetaMenuItems(ctx.alreadyOpen, {
-          window: true,
-          newPages: 'pair',
-          move: ctx,
-          spaces: ctx.spaces,
-          properties: ctx.properties,
-        }),
-      ]
     case 'style-only':
       return [styleBranch({ type: ctx.type, current: ctx.current, barCapable: ctx.barCapable })]
     case 'link':

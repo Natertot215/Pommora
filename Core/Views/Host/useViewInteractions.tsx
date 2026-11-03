@@ -1,10 +1,10 @@
-// Everything a row, a band, or a page does in answer to the pointer, defined once for every view kind: band drops, row drops and where the order lands, opening a page, the hover ghost, and the title menu's page actions. A kind supplies the policy below and its own presentation, nothing else.
+// Everything a row, a band, or a page does in answer to the pointer, defined once for every view kind: band drops, row drops and where the order lands, opening a page, the hover ghost, and the page menu. A kind supplies the policy below and its own presentation, nothing else.
 
 import { useRef } from 'react'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import { UNGROUPED, type ViewRow } from '../viewRow'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
-import type { PageMenuContext } from '../../Actions/pageMenu'
+import type { NewPageRows } from '../../Actions/pageMenu'
 import { type PageTarget, selectTargetOf } from '../../Navigation/navRef'
 import { nextOrder } from '@pommora/uix/Utilities/moveItem'
 import {
@@ -24,10 +24,7 @@ import { notify } from '../../Interface/Notifications/notifications'
 import { useSession } from '../../Session/store'
 import { pickOpen } from '../../Session/chromeSlice'
 import { hoverGlance, leaveGlance } from '../../Interface/Glance/glanceAction'
-import { pageMoveContext, runPageAction } from '../../Interface/Menus/pageMenuActions'
-import { propertyMenuBranches, runPropertyAction } from '../../Interface/Menus/propertyMenuActions'
-import { isOpenInTabs } from '../../Navigation/tabsModel'
-import { chooseIcon } from '../../Assets/IdentityChoice'
+import { showPageMenu } from '../../Interface/Menus/pageMenuActions'
 import { type BandNode, memberDepth, nodeLabel, springsInto } from '../Bands/bandModel'
 import { bandRouting, bucketValueAt } from '../Bands/bandRouter'
 import { type BandView, bandSpec } from '../Bands/GroupBand'
@@ -46,9 +43,8 @@ interface ViewInteractionPolicy {
   }
   /** Opens the renderer's naming surface over a page that already exists on disk. */
   rename: (target: { id: string; path: string }, fromCreate: boolean) => void
+  newPages: NewPageRows
 }
-
-export type TitleMenuContext = PageMenuContext & { alreadyOpen: boolean }
 
 function pageTarget(row: ViewRow): PageTarget {
   return { kind: 'page', id: row.id, path: row.path }
@@ -89,7 +85,6 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     toggleCollapse,
     schema,
     identity,
-    tree,
     ctx,
     groupPropId,
     canReassign,
@@ -103,7 +98,6 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     persistView,
     commitValue,
     commitGroupValue,
-    mutate,
     openTarget,
     styleOf,
   } = host
@@ -367,51 +361,27 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     else openTarget(pageTarget(row), { newTab })
   }
 
-  const titleMenuContext = (row: ViewRow): TitleMenuContext => {
-    const { tabs, pinned } = useSession.getState()
-    return {
-      alreadyOpen: isOpenInTabs(tabs, pinned, pageTarget(row)),
-      ...pageMoveContext(tree, row.path),
-      ...propertyMenuBranches({ tree, schema, row }),
-    }
-  }
   const liveRows = useLatest(rowById)
-  /** The page half of any title menu; `anchor` seats the icon picker. Returns false for an action the caller owns. */
-  const runTitleAction = (action: string, row: ViewRow, anchor: HTMLElement): boolean => {
-    if (runPageAction(action, row)) return true
-    if (
-      runPropertyAction(action, {
-        tree,
-        schema,
-        row,
-        rowOf: () => liveRows.current.get(row.id) ?? row,
+  const pageMenu = (row: ViewRow, anchor: HTMLElement, editImage?: () => void): Promise<void> =>
+    ghost.suppressWrap(() =>
+      showPageMenu(row, {
         trigger: anchor,
-        commit: (column, value) => commitValue(row, column, value),
-        styleOf,
-      })
+        rename: () => policy.rename(row, false),
+        newPage: {
+          rows: policy.newPages,
+          create: (where) => void creation.createAdjacent(row, where),
+        },
+        editImage,
+        values: {
+          row,
+          schema,
+          rowOf: () => liveRows.current.get(row.id) ?? row,
+          commit: (column, value) => void commitValue(row, column, value),
+          trigger: anchor,
+          styleOf,
+        },
+      }),
     )
-      return true
-    switch (action) {
-      case 'title:rename':
-        policy.rename(row, false)
-        return true
-      case 'title:icon':
-        chooseIcon(
-          anchor,
-          row.icon,
-          (icon) => void mutate({ op: 'setIcon', path: row.path, kind: 'page', icon }),
-        )
-        return true
-      case 'title:newabove':
-        creation.createAdjacent(row, 'above')
-        return true
-      case 'title:newbelow':
-        creation.createAdjacent(row, 'below')
-        return true
-      default:
-        return false
-    }
-  }
 
   // ── Ghost ─────────────────────────────────────────────────────────────────
 
@@ -451,8 +421,7 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     folderSlot,
     openPage,
     openSet,
-    titleMenuContext,
-    runTitleAction,
+    pageMenu,
     ghost,
     ghostStanding,
     ghostCreate,

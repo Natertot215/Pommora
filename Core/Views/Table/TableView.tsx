@@ -1,7 +1,6 @@
 import { memo, useEffect, useState } from 'react'
 import type { ResolvedColumn, ResolvedGroup, ViewRow } from '../viewRow'
 import type { ColumnStyle } from '../../Properties/columnStyles'
-import { cellMenuModel } from '../../Actions/cellMenu'
 import { type ColumnAlign, viewOption } from '../views'
 import type { PropertyValue } from '../../Properties/propertyValue'
 import { pickKindOf } from '../../Properties/properties'
@@ -34,7 +33,6 @@ import './table-view.css'
 import type { GhostAnchor } from '@pommora/uix/Interactions/ghostCreate'
 import { useCellSweep } from './cellSweep'
 import { LineZone, useLineRow } from '@pommora/uix/Interactions/drag'
-import { popMenu } from '../../Actions/menuActions'
 
 export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const {
@@ -88,6 +86,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     },
     rename: (target, fromCreate) =>
       setRenaming({ rowId: target.id, ...(fromCreate ? { fromCreate: true } : {}) }),
+    newPages: 'pair',
   })
   const seat = useValueSeat({
     ...host.seatHost,
@@ -142,18 +141,15 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
 
   // ── The title menu ────────────────────────────────────────────────────────
 
-  /** The page's own menu: its answer runs the page half, and its Icon seats the picker on the title's glyph. */
-  const openTitleMenu = async (row: ViewRow, e: React.MouseEvent): Promise<void> => {
+  const openTitleMenu = (row: ViewRow, e: React.MouseEvent): void => {
     e.preventDefault()
     e.stopPropagation()
-    // Captured before the await, since React recycles the synthetic event.
     const el = e.currentTarget as HTMLElement
-    const cellEl = el.closest<HTMLElement>('.data-cell') ?? el
-    const action = await interactions.holdGhost(() =>
-      popMenu(cellMenuModel({ kind: 'title', ...interactions.titleMenuContext(row) })),
+    const cell = el.closest<HTMLElement>('.data-cell') ?? el
+    void interactions.pageMenu(
+      row,
+      cell.querySelector<HTMLElement>('.cell-title > :first-child') ?? cell,
     )
-    const glyph = cellEl.querySelector<HTMLElement>('.cell-title > :first-child') ?? cellEl
-    if (action) interactions.runTitleAction(action, row, glyph)
   }
 
   // ── The sweep ─────────────────────────────────────────────────────────────

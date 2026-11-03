@@ -10,23 +10,23 @@ import {
   spaceCreator,
 } from '../../Actions/createMenu'
 import { isWindowTarget, selectTargetOf } from '../../Navigation/navRef'
-import type { ViewRow } from '../../Views/viewRow'
+import { isOpenInTabs } from '../../Navigation/tabsModel'
 import { assignValue, oneShotWriter } from '../../Properties/assignValue'
 import { fetchPageRow, spaceRowOf } from '../../Views/pageRow'
-import { holderSchema, NO_SCHEMA } from '../../Nexus/treePatch'
-import { nodesByIdOf, spaceNodeOf } from '../../Nexus/treeIndex'
+import { contextAt, holderSchema } from '../../Nexus/treePatch'
+import { spaceNodeOf } from '../../Nexus/treeIndex'
 import type { NexusTree } from '../../Nexus/tree'
 import type { ContainerKind } from '../../Nexus/entities'
 import {
-  propertyMenuBranches,
-  type PropertyMenuTarget,
-  runPropertyAction,
-} from './propertyMenuActions'
+  type MetadataTarget,
+  metadataBranches,
+  runMetadataAction,
+} from '../../Actions/metadataMenu'
 import { popMenu } from '../../Actions/menuActions'
 import { createNamed, newPageAdjacent } from '../../Actions/createActions'
 import { useSession } from '../../Session/store'
 import { confirmArchive, confirmDelete } from '../Confirm/confirmations'
-import { runPageAction, runPathAction } from './pageMenuActions'
+import { runPathAction, showPageMenu } from './pageMenuActions'
 import { chooseColor, chooseIcon } from '../../Assets/IdentityChoice'
 
 function creatorsFor(target: EntityMenuTarget): Creator[] {
@@ -35,7 +35,8 @@ function creatorsFor(target: EntityMenuTarget): Creator[] {
     case 'set':
       return containerCreators(target.kind, target.path)
     case 'context': {
-      const group = useSession.getState().tree?.contexts.find((g) => g.def.title === target.title)
+      const { tree } = useSession.getState()
+      const group = tree && contextAt(tree, target.path)
       return group ? [spaceCreator(group.def)] : []
     }
     default:
@@ -45,43 +46,64 @@ function creatorsFor(target: EntityMenuTarget): Creator[] {
 
 const ownIconOf = (tree: NexusTree | null, target: EntityMenuTarget): string | undefined =>
   target.kind === 'context'
-    ? tree?.contexts.find((g) => g.def.title === target.title)?.def.icon
-    : target.id && tree
-      ? nodesByIdOf(tree).get(target.id)?.ownIcon
+    ? (tree && contextAt(tree, target.path))?.def.icon
+    : target.id
+      ? spaceNodeOf(tree, target.id)?.icon
       : undefined
+
+async function readTarget(
+  target: EntityMenuTarget,
+  trigger: HTMLElement,
+): Promise<MetadataTarget | null> {
+  const { tree } = useSession.getState()
+  const node = target.kind === 'space' && target.id ? spaceNodeOf(tree, target.id) : null
+  const row =
+    node && tree
+      ? spaceRowOf(tree, node)
+      : target.kind === 'page'
+        ? await fetchPageRow(tree, target)
+        : null
+  if (!row) return null
+  const writer = oneShotWriter(row)
+  return {
+    row,
+    schema: holderSchema(tree, node ?? target.path),
+    rowOf: () => writer.current.rowOf(row.id),
+    commit: (column, value) => void assignValue(writer, row, column, value),
+    trigger,
+  }
+}
 
 /** Resolves on close, before the pick runs: a surface holding a hover affordance down needs the close to release it. */
 export async function showEntityMenu(
   target: EntityMenuTarget,
   trigger: HTMLElement | null = null,
 ): Promise<void> {
-  const creators = creatorsFor(target)
+  const values = trigger && target.id ? await readTarget(target, trigger) : null
   const s = useSession.getState()
-  const node = target.kind === 'space' && target.id ? spaceNodeOf(s.tree, target.id) : null
-  let row: ViewRow | null = null
-  if (trigger && target.id) {
-    if (target.kind === 'page')
-      row = await fetchPageRow(s.tree, { id: target.id, path: target.path, title: target.title })
-    else if (node && s.tree) row = spaceRowOf(s.tree, node)
-  }
-  const schema = row ? holderSchema(s.tree, node ?? target.path) : NO_SCHEMA
-  const propertyTarget: PropertyMenuTarget | null = row ? { tree: s.tree, schema, row } : null
-  const shown: EntityMenuTarget = {
+  const { path, host } = target
+  if (target.kind === 'page')
+    return showPageMenu(target, {
+      trigger,
+      rename: () => s.beginRename(path, false, host),
+      // A graph holds no slot for a sibling to land in.
+      newPage:
+        host === 'matrix'
+          ? undefined
+          : { rows: 'pair', create: (where) => void newPageAdjacent(path, where, host) },
+      values,
+    })
+  const creators = creatorsFor(target)
+  const shown = {
     ...target,
-    ...(propertyTarget ? propertyMenuBranches(propertyTarget) : {}),
+    alreadyOpen:
+      target.kind !== 'context' &&
+      target.id !== undefined &&
+      isOpenInTabs(s.tabs, s.pinned, selectTargetOf({ ...target, id: target.id })),
+    metadata: values ? metadataBranches(values, s.tree) : undefined,
   }
   const action = await popMenu(entityMenuItems(shown, creators))
-  if (action === null) return
-  if (propertyTarget && trigger) {
-    const writer = oneShotWriter(propertyTarget.row)
-    const done = runPropertyAction(action, {
-      ...propertyTarget,
-      rowOf: () => writer.current.rowOf(propertyTarget.row.id),
-      commit: (column, value) => void assignValue(writer, propertyTarget.row, column, value),
-      trigger,
-    })
-    if (done) return
-  }
+  if (action === null || (values && runMetadataAction(action, values))) return
   runEntityAction(shown, creators, action, trigger)
 }
 
@@ -93,7 +115,6 @@ function runEntityAction(
 ): void {
   const s = useSession.getState()
   const { path, id, kind } = target
-  if (kind === 'page' && id && runPageAction(action, { id, path, title: target.title })) return
   if (runPathAction(action, path)) return
   const ref = target.id ? { kind: target.kind, id: target.id, path } : undefined
   switch (action) {
@@ -109,7 +130,6 @@ function runEntityAction(
     case 'rename':
       s.beginRename(path, false, target.host)
       return
-    case 'title:icon':
     case 'editIcon':
       chooseIcon(
         trigger,
@@ -124,10 +144,6 @@ function runEntityAction(
           spaceNodeOf(s.tree, id)?.color,
           (color) => void s.mutate({ op: 'setSpaceColor', spaceId: id, color }),
         )
-      return
-    case 'title:newabove':
-    case 'title:newbelow':
-      void newPageAdjacent(path, action === 'title:newabove' ? 'above' : 'below', target.host)
       return
     case 'title:archive':
       void confirmArchive({ path, kind: 'set', title: target.title })

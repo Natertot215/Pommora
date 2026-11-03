@@ -22,8 +22,10 @@ export interface ValueContext {
 }
 
 /** The page a row's values sit on; a Space's sit on none. */
-export const holderOf = (row: ViewRow, ctx: ValueContext): ConnPage | undefined =>
-  ctx.spaces.has(row.id) ? undefined : row
+export const holderOf = (
+  row: ViewRow,
+  { spaces }: Pick<ValueContext, 'spaces'>,
+): ConnPage | undefined => (spaces.has(row.id) ? undefined : row)
 
 /** The one context a view or the panel renders its values through; `hostConnections` is a window's own link routing, preview otherwise. */
 export function useValueContext(

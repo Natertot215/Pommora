@@ -1,9 +1,8 @@
-import { type ReactNode, type RefObject, useContext, useState } from 'react'
+import { type ReactNode, type RefObject, useState } from 'react'
 import { valueOr } from '../../Contract/result'
 import { useSession } from '../../Session/store'
 import type { BannerOwnerKind } from '../../Nexus/mutateRequest'
 import type { Crop } from '../../Nexus/schemas'
-import { GhostSuppress } from '@pommora/uix/Interactions/ghostCreate'
 import { dialer } from '../../Platform/dialer'
 import { ImagePicker } from '../../Assets/ImagePicker'
 import { popMenu } from '../../Actions/menuActions'
@@ -30,7 +29,6 @@ export function useBannerMenu(
 } {
   const { value, frame, noun, noRemove, onDone, autoEdit } = opts
   const mutate = useSession((s) => s.mutate)
-  const holdGhost = useContext(GhostSuppress)
   const [editing, setEditing] = useState(false)
   const [boxAspect, setBoxAspect] = useState(1)
   const add = !value
@@ -63,7 +61,7 @@ export function useBannerMenu(
   }
   const openMenu = async (onSearch?: () => void): Promise<void> => {
     const items = bannerMenuItems({ noun, add, noRemove })
-    const action = await holdGhost(() => popMenu(onSearch ? withSearchRow(items) : items))
+    const action = await popMenu(onSearch ? withSearchRow(items) : items)
     if (action === 'search') onSearch?.()
     else if (action) await run(action)
   }

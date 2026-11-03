@@ -6,10 +6,8 @@ import { usePointerGesture } from '@pommora/uix/Interactions/gesture'
 import { isCmd } from '@pommora/uix/Interactions/chords'
 import { EntityIcon } from '../Assets/EntityIcon'
 import { showEntityMenu } from '../Interface/Menus/entityMenuActions'
-import { pageMoveContext } from '../Interface/Menus/pageMenuActions'
 import { usePublishCount } from '../Interface/Subfield/publish'
 import { useContentHost } from '../Interface/contentHost'
-import { isOpenInTabs } from '../Navigation/tabsModel'
 import { selectTargetOf } from '../Navigation/navRef'
 import { TAB_FAMILY } from '../Navigation/tabRows'
 import type { NexusTree } from '../Nexus/tree'
@@ -59,8 +57,7 @@ export function MatrixView(): React.JSX.Element {
   }
 
   const menu = async (id: string): Promise<void> => {
-    const { tabs, pinned, tree } = useSession.getState()
-    const rec = recordOf(tree, id)
+    const rec = recordOf(useSession.getState().tree, id)
     if (!rec) return
     acting = surfaceId
     // Committed before the menu asks for it: the label seats its anchor on the node in the same pass.
@@ -71,9 +68,7 @@ export function MatrixView(): React.JSX.Element {
         id: rec.id,
         path: rec.path,
         title: rec.title,
-        alreadyOpen: isOpenInTabs(tabs, pinned, selectTargetOf(rec)),
         host: 'matrix',
-        ...(rec.kind === 'page' ? pageMoveContext(tree, rec.path) : {}),
       },
       anchorRef.current,
     )

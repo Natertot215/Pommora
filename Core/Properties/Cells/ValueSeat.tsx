@@ -4,7 +4,7 @@ import { isSecondaryClick } from '@pommora/uix/Interactions/chords'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import type { ResolvedColumn, ViewRow } from '../../Views/viewRow'
-import { type ItemColumns, propertyColumn } from '../../Views/Pipeline/columns'
+import { type ItemColumns, resolveColumn } from '../../Views/Pipeline/columns'
 import type { ConnPage } from '../../Connections/pageIndex'
 import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
 import { readLinkText, resolveLink } from '../../Connections/linkValue'
@@ -19,12 +19,15 @@ import { type ConnEditAction, type LinkAction, linkMenuTarget } from '../../Acti
 import { popMenu } from '../../Actions/menuActions'
 import { showConnectionMenu } from '../../Interface/Menus/connectionMenuActions'
 import { contextOptionsFor } from '../../Contexts/contextOptions'
+import { contextIdsOf, identityOf } from '../../Contexts/contextIdentity'
+import { NO_SCHEMA } from '../../Nexus/treePatch'
 import { previewConnections } from '../../Session/pageConnections'
 import { useSession } from '../../Session/store'
 import { groupUndo } from '../../Session/undo'
 import type { ColumnStyle } from '../columnStyles'
 import { numberBarCapable } from '../formatValue'
 import { resolveFieldValue } from '../fieldValue'
+import { holderOf } from '../valueContext'
 import { pickKindOf } from '../properties'
 import { isBlankValue, type PropertyValue } from '../propertyValue'
 import { fileChipIndex, pickFileInto, runFileMenuAction } from '../Pickers/filePick'
@@ -349,24 +352,19 @@ export function ValueSeat({ seat }: { seat: ValueSeatApi }): React.JSX.Element {
 export function MenuSeat(): React.JSX.Element {
   const pending = useSession((s) => s.pendingPick)
   const dismiss = useSession((s) => s.dismissPick)
-  const registry = useSession((s) => s.tree?.config.registry)
+  const tree = useSession((s) => s.tree)
   const held = useHeld(pending, pending !== null)
   // The request's row lives in its writer, so the seat reads it again after each commit.
   const [, reread] = useReducer((n: number) => n + 1, 0)
   const seat = useValueSeat({
     rowOf: () => held?.rowOf(),
-    // A definition can change under its open picker, so a property's column resolves from the live registry.
-    columnOf: (id) => {
-      if (held?.column.kind !== 'property') return held?.column
-      const def = registry?.find((d) => d.id === id)
-      return def && propertyColumn(def)
-    },
+    columnOf: (id) => resolveColumn(id, tree?.config.registry ?? NO_SCHEMA, contextIdsOf(tree)),
     commit: (_, column, value) => {
       held?.commit(column, value)
       reread()
     },
     anchor: (el) => el,
-    holder: () => held?.holder,
+    holder: (row) => holderOf(row, identityOf(tree)),
     connections: previewConnections,
     style: () => held?.style ?? null,
     onClose: dismiss,

@@ -17,28 +17,6 @@ const SPACE = {
 }
 
 describe('the sidebar entity menu', () => {
-  it('a page draws the whole page menu, Reveal included', () => {
-    const items = entityMenuItems(
-      { kind: 'page', id: 'p1', path: 'Notes/A.md', title: 'A', alreadyOpen: true },
-      [],
-    )
-    expect(items.map((i) => i.action)).toEqual([
-      'title:newtab',
-      'title:window',
-      'title:rename',
-      'title:icon',
-      'title:newabove',
-      'title:newbelow',
-      'title:copylink',
-      'title:copypath',
-      'title:history',
-      'title:reveal',
-      'title:archive',
-      'title:delete',
-    ])
-    expect(items[0].label).toBe('Open')
-  })
-
   it('a sidebar collection opens, creates, renames, locks, copies its path, and reveals, closing on Delete alone', () => {
     const items = entityMenuItems(
       { kind: 'collection', id: 'c1', path: 'Notes', title: 'Notes', host: 'sidebar' },
@@ -88,8 +66,11 @@ describe('the sidebar entity menu', () => {
   })
 
   it('a Space draws its identity rows, then its two branches', () => {
-    const half = [{ id: 'g1', name: 'Realms', options: [] }]
-    expect(shape(entityMenuItems({ ...SPACE, spaces: half, properties: half }, []))).toEqual([
+    const metadata = [
+      { label: 'Spaces', submenu: [] },
+      { label: 'Properties', submenu: [] },
+    ]
+    expect(shape(entityMenuItems({ ...SPACE, metadata }, []))).toEqual([
       'Preview',
       'New Tab',
       '—',
@@ -123,30 +104,7 @@ describe('the sidebar entity menu', () => {
     ])
   })
 
-  it('a page carries the same two branches, after Edit Icon', () => {
-    const items = entityMenuItems(
-      {
-        kind: 'page',
-        id: 'p1',
-        path: 'Notes/A.md',
-        title: 'A',
-        spaces: [{ id: 'g1', name: 'Realms', options: [] }],
-        properties: [{ id: 'p1', name: 'Stage', options: [] }],
-      },
-      [],
-    )
-    const at = items.findIndex((i) => i.label === 'Edit Icon')
-    expect(items.slice(at + 1, at + 3).map((i) => i.label)).toEqual(['Spaces', 'Properties'])
-  })
-
-  it('a Matrix node neither creates siblings nor locks', () => {
-    const page = entityMenuItems(
-      { kind: 'page', id: 'p1', path: 'Notes/A.md', title: 'A', host: 'matrix' },
-      [],
-    ).map((i) => i.action)
-    expect(page).not.toContain('title:newabove')
-    expect(page).not.toContain('title:newbelow')
-    expect(page).toContain('title:rename')
+  it('a Matrix Set never locks', () => {
     const set = entityMenuItems(
       { kind: 'set', id: 's1', path: 'Notes/S', title: 'S', host: 'matrix' },
       [],

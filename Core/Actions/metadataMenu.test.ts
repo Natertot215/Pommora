@@ -1,17 +1,18 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest'
-import type { MutateRequest } from '../../Nexus/mutateRequest'
-import type { PageFrontmatter } from '../../Nexus/schemas'
-import type { NexusTree } from '../../Nexus/tree'
-import type { PropertyDefinition } from '../../Properties/properties'
-import { assignValue, oneShotWriter } from '../../Properties/assignValue'
-import { pageRowOf, spaceRowOf } from '../../Views/pageRow'
-import type { ViewRow } from '../../Views/viewRow'
-import { makeTree } from '../../Testing/testTree'
-import { propertyMenuBranches, runPropertyAction } from './propertyMenuActions'
-import { dateDefaults } from '../../Properties/columnStyles'
-import { useSession } from '../../Session/store'
-import { encodeValue } from '../../Properties/propertyValue'
+import type { MutateRequest } from '../Nexus/mutateRequest'
+import type { PageFrontmatter } from '../Nexus/schemas'
+import type { NexusTree } from '../Nexus/tree'
+import type { PropertyDefinition } from '../Properties/properties'
+import { assignValue, oneShotWriter } from '../Properties/assignValue'
+import { pageRowOf, spaceRowOf } from '../Views/pageRow'
+import type { ViewRow } from '../Views/viewRow'
+import { makeTree } from '../Testing/testTree'
+import { type MetadataTarget, metadataBranches, runMetadataAction } from './metadataMenu'
+import type { ActionItem } from './menuModel'
+import { dateDefaults } from '../Properties/columnStyles'
+import { useSession } from '../Session/store'
+import { encodeValue } from '../Properties/propertyValue'
 
 const SCHEMA: PropertyDefinition[] = [
   {
@@ -47,103 +48,123 @@ const treeWithSchema = (): NexusTree => {
   return tree
 }
 
-function harness(frontmatter: Record<string, unknown> = {}) {
-  const tree = treeWithSchema()
-  const row = pageRowOf(tree, { id: 'p1', path: 'Notes/Alpha.md', title: 'Alpha' }, {
-    ID: 'p1',
-    ...frontmatter,
-  } as unknown as PageFrontmatter)
-  const sent: MutateRequest[] = []
-  useSession.setState({
-    mutate: async (req) => {
-      sent.push(req)
-      return {}
-    },
-  })
-  const writer = oneShotWriter(row)
-  const run = (action: string): boolean =>
-    runPropertyAction(action, {
-      tree,
-      schema: SCHEMA,
-      row,
-      rowOf: () => writer.current.rowOf(row.id),
-      trigger: {} as HTMLElement,
-      commit: (column, value) => {
-        assignValue(writer, row, column, value)
-      },
-    })
-  return { run, sent }
-}
-
 const row = (frontmatter: Record<string, unknown> = {}): ViewRow =>
   pageRowOf(treeWithSchema(), { id: 'p1', path: 'Notes/Alpha.md', title: 'Alpha' }, {
     ID: 'p1',
     ...frontmatter,
   } as unknown as PageFrontmatter)
 
-const branchesFor = (
-  frontmatter: Record<string, unknown> = {},
-): ReturnType<typeof propertyMenuBranches> =>
-  propertyMenuBranches({ tree: treeWithSchema(), schema: SCHEMA, row: row(frontmatter) })
+const target = (r: ViewRow, schema = SCHEMA): MetadataTarget => ({
+  row: r,
+  schema,
+  rowOf: () => r,
+  commit: () => undefined,
+  trigger: {} as HTMLElement,
+})
 
-describe('propertyMenuBranches', () => {
-  it('hands back the registry contexts and the schema apart', () => {
-    const { spaces, properties } = branchesFor()
-    expect(spaces.map((r) => r.name)).toEqual(['Realms'])
-    expect(properties.map((r) => [r.name, r.options !== undefined])).toEqual([
+const branch = (
+  items: ActionItem<string>[],
+  label: 'Spaces' | 'Properties',
+): readonly ActionItem<string>[] => items.find((i) => i.label === label)?.submenu ?? []
+
+const rowsFor = (
+  frontmatter: Record<string, unknown> = {},
+): { spaces: readonly ActionItem<string>[]; properties: readonly ActionItem<string>[] } => {
+  const items = metadataBranches(target(row(frontmatter)), treeWithSchema())
+  return { spaces: branch(items, 'Spaces'), properties: branch(items, 'Properties') }
+}
+
+function harness(frontmatter: Record<string, unknown> = {}) {
+  const tree = treeWithSchema()
+  const page = row(frontmatter)
+  const sent: MutateRequest[] = []
+  useSession.setState({
+    tree,
+    mutate: async (req) => {
+      sent.push(req)
+      return {}
+    },
+  })
+  const writer = oneShotWriter(page)
+  const run = (action: string): boolean =>
+    runMetadataAction(action, {
+      row: page,
+      schema: SCHEMA,
+      rowOf: () => writer.current.rowOf(page.id),
+      trigger: {} as HTMLElement,
+      commit: (column, value) => {
+        assignValue(writer, page, column, value)
+      },
+    })
+  return { run, sent }
+}
+
+describe('metadataBranches', () => {
+  it('draws Spaces then Properties, the schema in its own order, and leaves out an empty half', () => {
+    const { spaces, properties } = rowsFor()
+    expect(spaces.map((r) => r.label)).toEqual(['Realms'])
+    expect(properties.map((r) => [r.label, r.submenu !== undefined])).toEqual([
       ['stage', true],
       ['Tags', true],
-      ['Done', true],
       ['Count', false],
+      ['Done', true],
     ])
+    const labels = (tree: NexusTree, schema: PropertyDefinition[]): string[] =>
+      metadataBranches(target(row(), schema), tree).map((i) => i.label)
+    const bare = { ...treeWithSchema(), contexts: [] }
+    expect(labels(treeWithSchema(), SCHEMA)).toEqual(['Spaces', 'Properties'])
+    expect(labels(treeWithSchema(), [])).toEqual(['Spaces'])
+    expect(labels(bare, SCHEMA)).toEqual(['Properties'])
+    expect(labels(bare, [])).toEqual([])
   })
 
   it('a context offers its spaces, checked against the page', () => {
-    const [realms] = branchesFor({ '<Realms>': ['Reading'] }).spaces
-    expect(realms.options).toEqual([
-      [
-        { value: 'a1', label: 'Work', checked: false },
-        { value: 't1', label: 'Reading', checked: true },
-        { value: 'pr1', label: 'Pommora', checked: false },
-      ],
+    const [realms] = rowsFor({ '<Realms>': ['Reading'] }).spaces
+    expect(realms.submenu).toEqual([
+      { label: 'Work', action: `prop:${CONTEXT_ID}:a1`, checked: false },
+      { label: 'Reading', action: `prop:${CONTEXT_ID}:t1`, checked: true },
+      { label: 'Pommora', action: `prop:${CONTEXT_ID}:pr1`, checked: false },
     ])
   })
 
   it('a checkbox offers Check and Uncheck, marking the standing state', () => {
     const done = (fm?: Record<string, unknown>) =>
-      branchesFor(fm).properties.find((r) => r.name === 'Done')?.options
+      rowsFor(fm).properties.find((r) => r.label === 'Done')?.submenu
     expect(done()).toEqual([
-      [
-        { value: 'true', label: 'Check', checked: false },
-        { value: '', label: 'Uncheck', checked: true },
-      ],
+      { label: 'Check', action: 'prop:prop_box:true', checked: false },
+      { label: 'Uncheck', action: 'prop:prop_box:', checked: true },
     ])
-    expect(done({ Done: true })?.[0][0].checked).toBe(true)
+    expect(done({ Done: true })?.[0].checked).toBe(true)
   })
 
   it('a select marks the held option; a number stays a leaf for its own picker', () => {
-    const { properties } = branchesFor({ stage: 'b' })
-    expect(properties.find((r) => r.name === 'stage')?.options).toEqual([
-      [
-        { value: 'opt_a', label: 'a', checked: false },
-        { value: 'opt_b', label: 'b', checked: true },
-      ],
+    const { properties } = rowsFor({ stage: 'b' })
+    expect(properties.find((r) => r.label === 'stage')?.submenu).toEqual([
+      { label: 'a', action: 'prop:prop_sel:opt_a', checked: false },
+      { label: 'b', action: 'prop:prop_sel:opt_b', checked: true },
     ])
-    expect(properties.find((r) => r.name === 'Count')?.options).toBeUndefined()
+    expect(properties.find((r) => r.label === 'Count')).toEqual({
+      label: 'Count',
+      action: 'prop:prop_num',
+    })
   })
 
   it("leaves a Space out of its own Context's options", () => {
     const tree = treeWithSchema()
-    const node = tree.contexts[0].spaces[0]
-    const { spaces } = propertyMenuBranches({
-      tree,
-      schema: tree.config.registry,
-      row: spaceRowOf(tree, node),
-    })
-    expect(spaces[0].options?.flat().map((o) => o.value)).toEqual(['t1', 'pr1'])
+    const [realms] = branch(
+      metadataBranches(
+        target(spaceRowOf(tree, tree.contexts[0].spaces[0]), tree.config.registry),
+        tree,
+      ),
+      'Spaces',
+    )
+    expect(realms.submenu?.map((o) => o.action)).toEqual([
+      `prop:${CONTEXT_ID}:t1`,
+      `prop:${CONTEXT_ID}:pr1`,
+    ])
   })
 
-  it('a status offers its non-empty groups as runs, in group order', () => {
+  it('a status offers its non-empty groups as runs, each divided from the one before it', () => {
     const status: PropertyDefinition = {
       id: 'prop_st',
       label: 'Phase',
@@ -168,15 +189,28 @@ describe('propertyMenuBranches', () => {
         },
       ],
     }
-    const { properties } = propertyMenuBranches({
-      tree: treeWithSchema(),
-      schema: [status],
-      row: row(),
-    })
-    expect(properties[0].options?.map((run) => run.map((o) => o.value))).toEqual([
-      ['opt_Open'],
-      ['opt_Done', 'opt_Dropped'],
+    const [phase] = branch(
+      metadataBranches(target(row(), [status]), treeWithSchema()),
+      'Properties',
+    )
+    expect(phase.submenu?.map((o) => [o.action, o.separatorBefore ?? false])).toEqual([
+      ['prop:prop_st:opt_Open', false],
+      ['prop:prop_st:opt_Done', true],
+      ['prop:prop_st:opt_Dropped', false],
     ])
+  })
+
+  it('a property with no options to offer is an empty branch, which both renderers grey out', () => {
+    const stage: PropertyDefinition = {
+      id: 'prop_stage',
+      label: 'Stage',
+      key: 'Stage',
+      type: 'select',
+      select_options: [],
+    }
+    expect(
+      branch(metadataBranches(target(row(), [stage]), treeWithSchema()), 'Properties'),
+    ).toEqual([{ label: 'Stage', submenu: [] }])
   })
 })
 
@@ -264,16 +298,10 @@ describe('a property pick from the page menu', () => {
   })
 
   it('hands a value picker the style of the view column the menu came from', () => {
-    const tree = treeWithSchema()
+    useSession.setState({ tree: treeWithSchema() })
     const style = { ...dateDefaults('relative'), time_format: 'twentyFourHour' as const }
-    const page = row()
-    runPropertyAction('prop:prop_num', {
-      tree,
-      schema: SCHEMA,
-      row: page,
-      rowOf: () => page,
-      trigger: {} as HTMLElement,
-      commit: () => undefined,
+    runMetadataAction('prop:prop_num', {
+      ...target(row()),
       styleOf: (column) => (column.id === 'prop_num' ? style : dateDefaults('full')),
     })
     const pick = useSession.getState().pendingPick

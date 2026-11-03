@@ -5,43 +5,6 @@ import { dateDefaults } from '../Properties/columnStyles'
 const DATES = dateDefaults('full')
 
 describe('cellMenuModel', () => {
-  it('title: Preview + stateful Open row + Rename + Edit Icon + New Page pair + the send block + separator-gated Archive and Delete', () => {
-    const m = cellMenuModel({ kind: 'title' })
-    expect(m.map((i) => [i.label, i.action])).toEqual([
-      ['Preview', 'title:window'],
-      ['New Tab', 'title:newtab'],
-      ['Rename', 'title:rename'],
-      ['Edit Icon', 'title:icon'],
-      ['New Page Above', 'title:newabove'],
-      ['New Page Below', 'title:newbelow'],
-      ['Copy Link', 'title:copylink'],
-      ['Copy Path', 'title:copypath'],
-      ['View History', 'title:history'],
-      ['Archive', 'title:archive'],
-      ['Delete', 'title:delete'],
-    ])
-    expect(cellMenuModel({ kind: 'title', alreadyOpen: true })[0].label).toBe('Open')
-    expect(m.find((i) => i.action === 'title:rename')?.separatorBefore).toBe(true)
-    expect(m.find((i) => i.action === 'title:archive')?.separatorBefore).toBe(true)
-    expect(m.find((i) => i.action === 'title:delete')?.separatorBefore).toBeUndefined()
-    expect(m.some((i) => i.submenu)).toBe(false)
-  })
-
-  it('title: Move To leads the send block only where the cell was given somewhere to send to', () => {
-    const withTargets = cellMenuModel({
-      kind: 'title',
-      moveTargets: [{ id: 'c1', label: 'Notes', path: 'Notes' }],
-    })
-    const labels = withTargets.map((i) => i.label)
-    const at = labels.indexOf('Move To')
-    expect(labels.slice(at, at + 4)).toEqual(['Move To', 'Copy Link', 'Copy Path', 'View History'])
-    expect(withTargets[at].separatorBefore).toBe(true)
-    expect(withTargets[at + 1].separatorBefore).toBeUndefined()
-    expect(cellMenuModel({ kind: 'title', moveTargets: [] })).not.toContainEqual(
-      expect.objectContaining({ label: 'Move To' }),
-    )
-  })
-
   it('style-only: the per-type Style ▸ row alone', () => {
     const m = cellMenuModel({
       kind: 'style-only',
@@ -155,20 +118,9 @@ describe('cellMenuModel', () => {
       ['Remove', 'cell:hide', true],
     ])
   })
-
-  it('a hideable title never gets Remove — the title can never be dropped', () => {
-    const m = cellMenuModel({ kind: 'title', hideable: 'view' })
-    expect(m.some((i) => i.action === 'cell:hide')).toBe(false)
-  })
 })
 
 describe('cellMenuContextFor', () => {
-  it('a title column → the page-meta title menu', () => {
-    expect(cellMenuContextFor('title', DATES, true)).toEqual({
-      kind: 'title',
-    })
-  })
-
   it('a context column → a clearable bare cell when filled, no menu when empty', () => {
     expect(cellMenuContextFor('context', DATES, true)).toEqual({ kind: 'bare', clearable: true })
     expect(cellMenuContextFor('context', DATES, false)).toBeNull()
@@ -255,10 +207,6 @@ describe('cellMenuContextFor', () => {
     expect(empty.some((i) => i.action === 'cell:clear')).toBe(false)
   })
 
-  it('an unsupported/undefined type → no menu', () => {
-    expect(cellMenuContextFor(undefined, DATES, true)).toBeNull()
-  })
-
   it('hideable (cards): a styled cell carries hideable; a menu-less cell becomes an unclearable bare cell', () => {
     expect(cellMenuContextFor('select', DATES, true, { hideable: 'view' })).toEqual({
       kind: 'style-only',
@@ -269,7 +217,7 @@ describe('cellMenuContextFor', () => {
     })
     const ctx = cellMenuContextFor('select', DATES, false, { hideable: 'view' })
     expect(cellMenuModel(ctx as CellMenuContext).at(-1)?.action).toBe('cell:hide')
-    expect(cellMenuContextFor(undefined, DATES, true, { hideable: 'view' })).toEqual({
+    expect(cellMenuContextFor('context', DATES, false, { hideable: 'view' })).toEqual({
       kind: 'bare',
       clearable: false,
       hideable: 'view',

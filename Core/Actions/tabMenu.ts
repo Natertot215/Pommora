@@ -3,14 +3,14 @@ import type { BannerMenuAction } from './identityMenus'
 import {
   type PageMoveAction,
   type PageSendAction,
-  type PageMenuContext,
+  type PageMoveContext,
   pageSendGroups,
   RENAME_ROW,
 } from './pageMenu'
 import { pinLabel } from './toggleLabels'
 import { isWindowTarget, type TabTarget, type WindowTarget } from '../Navigation/navRef'
 
-interface TabMainContext extends PageMenuContext {
+interface TabMainContext extends PageMoveContext {
   row: 'main'
   kind: TabTarget['kind']
   pinned: boolean
@@ -18,7 +18,7 @@ interface TabMainContext extends PageMenuContext {
   matrixWindowOpen?: boolean
 }
 
-interface TabWindowContext extends PageMenuContext {
+interface TabWindowContext extends PageMoveContext {
   row: 'window'
   kind: WindowTarget['kind']
   active?: boolean

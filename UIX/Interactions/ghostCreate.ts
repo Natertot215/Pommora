@@ -1,4 +1,4 @@
-import { createContext, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useLatest } from '../Utilities/stableApi'
 import { gestureLive } from './gesture'
 
@@ -6,9 +6,6 @@ export const GHOST_TRAVEL_HOLD_MS = 1500 // KNOB
 
 // Watchdog for a consumer that never delivers `closed()`; a stranded `closing` reopens with no dwell.
 const GHOST_EXIT_BEAT_MS = 1000
-
-/** For native menus popped inside memoized children, past caller-side wrapping. */
-export const GhostSuppress = createContext<GhostAnchor['suppressWrap']>((menu) => menu())
 
 interface GhostAnchorOptions {
   dwellMs: number

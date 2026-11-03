@@ -1,5 +1,4 @@
 import { pageLinkText } from '../../Connections/connections'
-import type { PageMenuContext } from '../../Actions/pageMenu'
 import type { NexusTree } from '../../Nexus/tree'
 import { relDirname, titleFromPath } from '../../Paths/posix'
 import { containerTargets } from '../../Actions/destinationTree'
@@ -8,9 +7,21 @@ import { pageIndexOf } from '../../Nexus/record'
 import { dialer } from '../../Platform/dialer'
 import { confirmArchive, confirmDelete } from '../Confirm/confirmations'
 import { popMenu } from '../../Actions/menuActions'
-import { PAGE_ACTION_ROWS } from '../../Actions/pageMenu'
+import {
+  type NewPageRows,
+  PAGE_ACTION_ROWS,
+  type PageMoveContext,
+  pageMenuItems,
+} from '../../Actions/pageMenu'
+import {
+  type MetadataTarget,
+  metadataBranches,
+  runMetadataAction,
+} from '../../Actions/metadataMenu'
+import { isOpenInTabs } from '../../Navigation/tabsModel'
+import { chooseIcon } from '../../Assets/IdentityChoice'
 
-export function pageMoveContext(tree: NexusTree | null, path: string): PageMenuContext {
+export function pageMoveContext(tree: NexusTree | null, path: string): PageMoveContext {
   return {
     moveTargets: containerTargets(tree),
     currentParentPath: relDirname(path),
@@ -81,4 +92,46 @@ export async function popPageActions(
   const action = await popMenu(PAGE_ACTION_ROWS)
   if (action === 'title:rename') rename()
   else if (action) runPageAction(action, page)
+}
+
+interface PageMenuHost {
+  trigger: HTMLElement | null
+  rename: () => void
+  newPage?: { rows: NewPageRows; create: (where: 'above' | 'below') => void }
+  editImage?: () => void
+  values?: MetadataTarget | null
+}
+
+export async function showPageMenu(
+  page: { id: string; path: string; title: string },
+  { trigger, rename, newPage, editImage, values }: PageMenuHost,
+): Promise<void> {
+  const { tree, tabs, pinned, mutate } = useSession.getState()
+  const action = await popMenu(
+    pageMenuItems({
+      ...pageMoveContext(tree, page.path),
+      alreadyOpen: isOpenInTabs(tabs, pinned, { kind: 'page', id: page.id, path: page.path }),
+      newPages: newPage?.rows,
+      editImage: editImage !== undefined,
+      metadata: values ? metadataBranches(values, tree) : undefined,
+    }),
+  )
+  if (!action || (values && runMetadataAction(action, values)) || runPageAction(action, page))
+    return
+  switch (action) {
+    case 'title:rename':
+      return rename()
+    case 'title:icon':
+      return chooseIcon(
+        trigger,
+        tree?.config.pageMetadata[page.id]?.icon,
+        (icon) => void mutate({ op: 'setIcon', path: page.path, kind: 'page', icon }),
+      )
+    case 'title:newabove':
+      return newPage?.create('above')
+    case 'title:newbelow':
+      return newPage?.create('below')
+    case 'image:edit':
+      return editImage?.()
+  }
 }

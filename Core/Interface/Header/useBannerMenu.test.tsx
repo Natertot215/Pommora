@@ -5,7 +5,6 @@ import { act, type ReactElement, useRef } from 'react'
 import type { ImagePicker } from '../../Assets/ImagePicker'
 import { createRoot, type Root } from 'react-dom/client'
 import { useBannerMenu } from './useBannerMenu'
-import { GhostSuppress } from '@pommora/uix/Interactions/ghostCreate'
 import { useSession } from '../../Session/store'
 import { stubDialer } from '../../vitest.setup'
 
@@ -38,21 +37,6 @@ function Inner({ autoEdit }: { autoEdit?: boolean }): React.JSX.Element {
   api = useBannerMenu('Notes/A.md', 'page', { value: '[[Cover.png]]', frame, onDone, autoEdit })
   return <div ref={frame} />
 }
-function Probe({
-  ghost,
-  autoEdit,
-}: {
-  ghost?: (fn: () => Promise<unknown>) => Promise<unknown>
-  autoEdit?: boolean
-}): React.JSX.Element {
-  return ghost ? (
-    <GhostSuppress.Provider value={ghost as never}>
-      <Inner autoEdit={autoEdit} />
-    </GhostSuppress.Provider>
-  ) : (
-    <Inner autoEdit={autoEdit} />
-  )
-}
 
 const mount = (el: React.ReactNode): Promise<void> => act(async () => root.render(el))
 
@@ -66,7 +50,7 @@ describe('useBannerMenu', () => {
         return Promise.resolve(ok('search'))
       },
     })
-    await mount(<Probe />)
+    await mount(<Inner />)
     await act(async () => {
       await api.openMenu(onSearch)
     })
@@ -75,17 +59,15 @@ describe('useBannerMenu', () => {
     expect(editor().open).toBe(false)
   })
 
-  it("opens the editor on 'edit' and pops through the ghost wrap", async () => {
-    const ghost = vi.fn((fn: () => Promise<unknown>) => fn())
+  it("opens the editor on 'edit'", async () => {
     ;(window as { nexus?: unknown }).nexus = stubDialer({
       menu: () => Promise.resolve(ok('edit')),
     })
-    await mount(<Probe ghost={ghost} />)
+    await mount(<Inner />)
     expect(editor().open).toBe(false)
     await act(async () => {
       await api.openMenu()
     })
-    expect(ghost).toHaveBeenCalled()
     expect(editor().open).toBe(true)
   })
 
@@ -93,7 +75,7 @@ describe('useBannerMenu', () => {
     ;(window as { nexus?: unknown }).nexus = stubDialer({
       menu: () => Promise.resolve(ok('edit')),
     })
-    await mount(<Probe />)
+    await mount(<Inner />)
     await act(async () => {
       await api.openMenu()
     })
@@ -114,7 +96,7 @@ describe('useBannerMenu', () => {
       menu: () => Promise.resolve(ok('change')),
       'nexus:pickFile': () => Promise.resolve(ok('/abs/Picked.png')),
     })
-    await mount(<Probe autoEdit />)
+    await mount(<Inner autoEdit />)
     await act(async () => {
       await api.openMenu()
     })
@@ -132,7 +114,7 @@ describe('useBannerMenu', () => {
       menu: () => Promise.resolve(ok('change')),
       'nexus:pickFile': () => Promise.resolve(ok('/abs/Picked.png')),
     })
-    await mount(<Probe />)
+    await mount(<Inner />)
     await act(async () => {
       await api.openMenu()
     })
@@ -142,7 +124,7 @@ describe('useBannerMenu', () => {
 
   it('onRepick adopts the source through setBanner', async () => {
     ;(window as { nexus?: unknown }).nexus = stubDialer({})
-    await mount(<Probe />)
+    await mount(<Inner />)
     let adopted: string | undefined
     await act(async () => {
       adopted = await editor().onRepick?.('/abs/New.png')

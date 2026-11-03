@@ -1,35 +1,38 @@
 import { type ActionItem, joinGroups, openOrder } from './menuModel'
 import { type CreateMenuAction, type Creator, createMenuItems } from './createMenu'
 import {
-  type PageMenuContext,
+  type MetadataAction,
   type PageMetaAction,
-  type PageMoveAction,
   COPY_PATH_ROW,
   DELETE_ROW,
-  pageMetaMenuItems,
   REMOVAL_ROWS,
   RENAME_ROW,
   REVEAL_ROW,
 } from './pageMenu'
 import { type TitleMenuAction, titleMenuItems } from './identityMenus'
-import { type PropertyAction, propertyBranchRows } from './propertyRows'
 import { lockLabel, openLabel } from './toggleLabels'
 import { isContainer, type NodeKind } from '../Nexus/entities'
 import type { RenameHost } from '../Session/editSlice'
 
-export type EntityMenuTarget = PageMenuContext &
-  ({ kind: NodeKind; id?: string } | { kind: 'context'; id?: never }) & {
-    path: string
-    title: string
-    alreadyOpen?: boolean
-    disclosureLocked?: boolean
-    host?: RenameHost
-  }
+export type EntityMenuTarget = (
+  | { kind: 'page'; id: string }
+  | { kind: Exclude<NodeKind, 'page'>; id?: string }
+  | { kind: 'context'; id?: never }
+) & {
+  path: string
+  title: string
+  alreadyOpen?: boolean
+  disclosureLocked?: boolean
+  host?: RenameHost
+  metadata?: readonly ActionItem<MetadataAction>[]
+}
 
 export type EntityMenuAction =
-  | PageMetaAction
-  | PageMoveAction
-  | PropertyAction
+  | Extract<
+      PageMetaAction,
+      'title:rename' | 'title:copypath' | 'title:reveal' | 'title:archive' | 'title:delete'
+    >
+  | MetadataAction
   | CreateMenuAction
   | 'open'
   | 'preview'
@@ -41,15 +44,6 @@ export function entityMenuItems(
   target: EntityMenuTarget,
   creators: readonly Creator[],
 ): ActionItem<EntityMenuAction>[] {
-  if (target.kind === 'page')
-    return pageMetaMenuItems(target.alreadyOpen, {
-      window: true,
-      newPages: target.host === 'matrix' ? undefined : 'pair',
-      move: target,
-      spaces: target.spaces,
-      properties: target.properties,
-      reveal: true,
-    })
   // Only the renderer knows the tab set; an already-open entity reads "Open" and focuses its tab.
   const open: ActionItem<EntityMenuAction>[] = target.id
     ? openOrder<EntityMenuAction>(
@@ -85,7 +79,7 @@ export function entityMenuItems(
           ...(target.host === 'matrix'
             ? [{ label: 'Change Color', action: 'changeColor' as const }]
             : []),
-          ...propertyBranchRows(target),
+          ...(target.metadata ?? []),
         ]
       : titleMenuItems()
   return joinGroups<EntityMenuAction>([open, create, identity, [DELETE_ROW]])

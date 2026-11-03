@@ -1,14 +1,14 @@
 import { type ActionItem, joinGroups, openOrder } from './menuModel'
 import {
   type PageMoveAction,
-  type PageMenuContext,
+  type PageMoveContext,
   type PageSendAction,
   pageSendGroups,
 } from './pageMenu'
 import { openLabel, pinLabel } from './toggleLabels'
 import { isWindowTarget, type NavRef } from '../Navigation/navRef'
 
-export interface NavRowMenuContext extends PageMenuContext {
+export interface NavRowMenuContext extends PageMoveContext {
   canOpenNewTab: boolean
   alreadyOpen: boolean
   kind: NavRef['kind']

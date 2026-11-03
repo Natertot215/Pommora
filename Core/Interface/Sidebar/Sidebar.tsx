@@ -9,7 +9,7 @@ import {
   useState,
 } from 'react'
 import {
-  GhostSuppress,
+  type GhostAnchor,
   useClearStrandedGhost,
   useGhostAnchor,
 } from '@pommora/uix/Interactions/ghostCreate'
@@ -41,8 +41,6 @@ import { pageMetaOf, useSession, useSetting } from '../../Session/store'
 import { personalizationOf } from '../../Session/configSlice'
 import { pickOpen } from '../../Session/chromeSlice'
 import { glanceShown, hoverGlance, leaveGlance } from '../Glance/glanceAction'
-import { pageMoveContext } from '../Menus/pageMenuActions'
-import { isOpenInTabs } from '../../Navigation/tabsModel'
 import { selectTargetOf } from '../../Navigation/navRef'
 import { showEntityMenu } from '../Menus/entityMenuActions'
 import { Leaf } from './sidebarRows'
@@ -76,18 +74,14 @@ function showContextFor(
   },
   trigger?: HTMLElement | null,
 ): Promise<void> {
-  const { tabs, pinned, tree } = useSession.getState()
-  const alreadyOpen = isOpenInTabs(tabs, pinned, selectTargetOf(node))
   return showEntityMenu(
     {
       kind: node.kind,
       id: node.id,
       path: node.path,
       title: node.title,
-      alreadyOpen,
       disclosureLocked: node.disclosureLocked,
       host: 'sidebar',
-      ...(node.kind === 'page' ? pageMoveContext(tree, node.path) : {}),
     },
     trigger,
   )
@@ -111,8 +105,7 @@ const LeafRow = memo(function LeafRow({
   const pageIcon = useSession(pageMetaOf(node.kind === 'page' ? node.id : undefined))?.icon
   const ghost = useContext(SidebarGhost)
   const api = useContext(SidebarGhostApi)
-  const holdGhost = useContext(GhostSuppress)
-  const rowRef = useRef<HTMLDivElement>(null)
+  const rowEl = useLineEl()
   return (
     <>
       <LineRow
@@ -134,17 +127,15 @@ const LeafRow = memo(function LeafRow({
           if (node.kind === 'page') leaveGlance()
         }}
       >
-        <div ref={rowRef}>
-          <Leaf
-            icon={entityIcon(node.kind, node.kind === 'page' ? pageIcon : node.icon, defaultIcons)}
-            title={node.title}
-            depth={depth}
-            selected={selected}
-            onSelect={(e) => selectRow(node, e)}
-            onContextMenu={() => void holdGhost(() => showContextFor(node, rowRef.current))}
-            rename={{ path: node.path, kind: node.kind }}
-          />
-        </div>
+        <Leaf
+          icon={entityIcon(node.kind, node.kind === 'page' ? pageIcon : node.icon, defaultIcons)}
+          title={node.title}
+          depth={depth}
+          selected={selected}
+          onSelect={(e) => selectRow(node, e)}
+          onContextMenu={() => void api?.suppressWrap(() => showContextFor(node, rowEl(node.id)))}
+          rename={{ path: node.path, kind: node.kind }}
+        />
       </LineRow>
       {ghost.anchorId === node.id && (
         <GhostLeaf depth={depth} kind={node.kind} label={ghostLabel} />
@@ -165,6 +156,7 @@ const SidebarGhostApi = createContext<{
   onGhostLeave: () => void
   create: () => void
   closed: () => void
+  suppressWrap: GhostAnchor['suppressWrap']
 } | null>(null)
 
 function GhostLeaf({
@@ -246,7 +238,6 @@ function ContextGroupDisclosure({ group }: { group: ContextGroup }): React.JSX.E
   const defaultIcons = useSession((s) => personalizationOf(s).defaultIcons)
   const ghost = useContext(SidebarGhost)
   const api = useContext(SidebarGhostApi)
-  const holdGhost = useContext(GhostSuppress)
   const rowEl = useLineEl()
   const path = contextDirRel(group.def.title)
   const creator = spaceCreator(group.def)
@@ -259,7 +250,7 @@ function ContextGroupDisclosure({ group }: { group: ContextGroup }): React.JSX.E
       persistKey={`context:${group.def.id}`}
       dragId={group.def.id}
       onContextMenu={() =>
-        void holdGhost(() =>
+        void api?.suppressWrap(() =>
           showEntityMenu(
             { kind: 'context', path, title: group.def.title, host: 'sidebar' },
             rowEl(group.def.id),
@@ -309,7 +300,15 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
         signalPeek(req.newParentPath, id)
     })
   }
-  const { onHover, onGhostEnter, onGhostLeave, closed, take, clear: clearGhost } = ghostApi
+  const {
+    onHover,
+    onGhostEnter,
+    onGhostLeave,
+    closed,
+    take,
+    clear: clearGhost,
+    suppressWrap,
+  } = ghostApi
   useEffect(() => clearGhost(), [mode, clearGhost])
   useClearStrandedGhost(ghostApi, dndIndex.byId)
   const [sidebarGhostApi] = useState(() => ({
@@ -317,6 +316,7 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
     onGhostEnter,
     onGhostLeave,
     closed,
+    suppressWrap,
     create: (): void => {
       const anchorId = take()
       const entry = anchorId ? dndIndexRef.current.byId.get(anchorId) : undefined
@@ -382,35 +382,33 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
   return (
     <SidebarGhost.Provider value={ghostValue}>
       <SidebarGhostApi.Provider value={sidebarGhostApi}>
-        <GhostSuppress.Provider value={ghostApi.suppressWrap}>
-          <nav ref={navRef} className="sidebar scroll-fade">
-            <div className="sidebar-mode-stage">
-              {exit && (
-                <div
-                  key={exit.epoch}
-                  className="sidebar-mode mode-exit"
-                  style={{ transform: `translateY(${-exit.scroll}px)` }}
-                  onAnimationEnd={(e) => e.target === e.currentTarget && setExit(null)}
-                >
-                  {modeView(exit.mode).layer}
-                </div>
-              )}
-              <div key={mode} className={cx('sidebar-mode', exit !== null && 'mode-enter')}>
-                {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics */}
-                <div
-                  className={cx('mode-body', exit !== null && 'mode-enter-slide')}
-                  onContextMenu={(e) => {
-                    if (!active.creator || e.target !== e.currentTarget) return
-                    e.preventDefault()
-                    void createFromMenu(active.creator)
-                  }}
-                >
-                  {active.layer}
-                </div>
+        <nav ref={navRef} className="sidebar scroll-fade">
+          <div className="sidebar-mode-stage">
+            {exit && (
+              <div
+                key={exit.epoch}
+                className="sidebar-mode mode-exit"
+                style={{ transform: `translateY(${-exit.scroll}px)` }}
+                onAnimationEnd={(e) => e.target === e.currentTarget && setExit(null)}
+              >
+                {modeView(exit.mode).layer}
+              </div>
+            )}
+            <div key={mode} className={cx('sidebar-mode', exit !== null && 'mode-enter')}>
+              {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics */}
+              <div
+                className={cx('mode-body', exit !== null && 'mode-enter-slide')}
+                onContextMenu={(e) => {
+                  if (!active.creator || e.target !== e.currentTarget) return
+                  e.preventDefault()
+                  void createFromMenu(active.creator)
+                }}
+              >
+                {active.layer}
               </div>
             </div>
-          </nav>
-        </GhostSuppress.Provider>
+          </div>
+        </nav>
       </SidebarGhostApi.Provider>
     </SidebarGhost.Provider>
   )
