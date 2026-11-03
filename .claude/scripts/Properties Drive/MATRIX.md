@@ -1,6 +1,6 @@
 ## Properties Drive — Matrix
 
-The drive's cases, derived from *Properties Restructure — Decisions & Intention* and written to the end-state contract of the Properties Restructure plan's AFTER blocks. Groups 16, 18, and 19 derive from *Metadata Picker — Decisions & Intention* instead, and print its letters with an `MP-` prefix so they're never read as the Restructure's. Each group lands with the plan phase that adds it and drives the channels and surfaces the interface uses. Every check prints as `[g<group> <decisions>] <name>`, so a run reads against the tables below line for line. Each group seeds what it needs in `~/Test` and puts it back; the harness restores `~/Test` when the run ends.
+The drive's cases, derived from *Properties Restructure — Decisions & Intention* and written to the end-state contract of the Properties Restructure plan's AFTER blocks. Groups 16 to 19 derive from *Metadata Picker — Decisions & Intention* instead, and print its letters with an `MP-` prefix so they're never read as the Restructure's. Each group lands with the plan phase that adds it and drives the channels and surfaces the interface uses. Every check prints as `[g<group> <decisions>] <name>`, so a run reads against the tables below line for line. Each group seeds what it needs in `~/Test` and puts it back; the harness restores `~/Test` when the run ends.
 
 #### Group 1 — What Counts as a Property
 
@@ -176,6 +176,23 @@ The surfaces are a Standard card, a Compact card, the page dropdown, the SidePan
 | The `+` held | as above | open a panel's Add list, the pointer moved away | the `+` stays shown | MP-B-1 |
 | The standing row | Area One, holding nothing | press its standing Add Property row | the list hangs from the row; screenshot `g16-panel-row-anchored` | MP-B-1 |
 | A held hidden value | `Add Held` on the Standard card | open its Add list, press `Add Text` | the two held rows list last with no "›"; the press shows `Add Text` in the saved view and closes the list | MP-C-5, MP-C-7 |
+
+#### Group 17 — Right-Click
+
+The surfaces are a sidebar page, a Table title, a Table grip, a Matrix node, a sidebar Space, and a card, each reached as a pointer reaches it and read through the harness's record of `Menu.popup`. The Matrix keeps its default grouping by connection, which draws page nodes, and its node is found by sweeping the pointer across the canvas until the page's label shows.
+
+| Case | Seeds | Operation | Expected | Decisions |
+| --- | --- | --- | --- | --- |
+| Each surface's rows | `Click Select`, `Click Multi`, `Click Status`, `Click Check`, `Click Due`, `Click Number`, `Click Text`, `Click Link`, `Click File`, and the option-less `Click Bare` on Collection A; `Click One`, holding Collection A's banner as its cover; the views `Click Table` and `Click Cards` (cards hiding every property) | right-click each surface | a page reads its open pair (Open and Preview once a tab holds it, Preview and New Tab otherwise), Rename, Edit Icon, Spaces, Properties, New Page Above and Below on the sidebar and the Table, Move To, Copy Link, Copy Path, View History, Reveal Location, Archive, and Delete; a card reads Edit Image first and one New Page; the Matrix reads no New Page; a Space reads its open pair, Rename, Edit Icon, Spaces, Properties, and Delete; screenshots `g17-table-menu`, `g17-matrix-menu`, `g17-card-menu` | MP-D-4 |
+| System menus | as above | as above | every menu is recorded by `Menu.popup` and none draws in-app | MP-D-1 |
+| An empty Select | as above | the card's Properties branch | `Click Bare` reads as a disabled row with no submenu | MP-D-7 |
+| One order | the panel's Context order reversed and `Click Link` moved to the schema's head | a card's Add list, the page dropdown's Add Context and Add Property lists, and the card's Spaces and Properties branches | all read the reordered Contexts, then the reordered schema; screenshot `g17-panel-spaces-order` | MP-C-7 |
+| A Space's `$order` | `Area One`'s `$order` naming `Click Text` and the panel's last Context | the Space's Spaces and Properties branches | each leads with what `$order` names, the rest in their own order | MP-C-7 |
+| The value rows | as above | from the card: Red, One, Open, Area One, Check, Uncheck, a day in the Date leaf, then a typed Number, Text, and Link, and the File leaf | each lands in the page's file; the File leaf opens the dialog stub and writes nothing on its cancel; screenshot `g17-date-leaf` | MP-D-4, MP-D-3 |
+| Hidden stays hidden | as above | as above | the Collection's sidecar is byte-for-byte unchanged, every property stays hidden, and the card draws none of the values; screenshot `g17-hidden-stays-hidden` | MP-D-2 |
+| The ghost | as above | park the pointer off the card, step across its text four times at 60 ms, and dwell 1.5 s, first with nothing open and then under a Date leaf from the card's menu | `.ghost-card` shows with nothing open, as the control; under the leaf it doesn't, and no glance shows | MP-D-3 |
+| Every leaf type | as above | Date, Number, Text, Link, and File from the sidebar page, the Table title, and the Matrix node, each then left | each opens its own pane, or the dialog stub, and leaving writes nothing | MP-D-3 |
+| Every row runs | as above | run each row a surface lists there | Rename focuses the title's field; Edit Icon opens with the current icon preselected and the pick lands; New Page creates a sibling; Edit Image opens the image editor; Preview opens the PageWindow; Reveal Location records the page's path; Move To lands in Set Beta; Copy Link and Copy Path copy `[[Click One]]` and the page's path; View History opens the history reader; Archive and Delete ask by the page's or Space's title and are cancelled, except on the card, where the Archive restores and the Trash empties | MP-D-4 |
 
 #### Group 18 — Placement
 

@@ -13,7 +13,7 @@ import { parse } from 'yaml'
 
 const PORT = 9403
 // The drive's groups in order, each landed by the plan phase that adds it.
-const LANDED = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '18', '19']
+const LANDED = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19']
 const GROUPS = new Set(process.argv.slice(2))
 if (GROUPS.size === 0 || [...GROUPS].some((g) => !LANDED.includes(g))) {
   console.error(`usage: node live-drive.mjs <group…>   (groups ${LANDED.join(', ')})`)
@@ -931,6 +931,13 @@ async function showView(cdp, view) {
   await must(`show ${view.name}`, ask(cdp, 'mutate', { op: 'setActiveView', path: COLLECTION, kind: 'collection', viewId: view.id }))
   await openCollection(cdp)
 }
+/** `view` shown from the Collections sidebar, with every pane closed first. */
+async function atView(cdp, view) {
+  await escapeAll(cdp)
+  if (!(await cdp.evaluate(`!!(${sidebarRow(COLLECTION)})`))) await click(cdp, ribbon('Collections'))
+  await until('Collection A in the sidebar', () => cdp.evaluate(`!!(${sidebarRow(COLLECTION)})`))
+  await showView(cdp, view)
+}
 
 async function group14(cdp) {
   const putBack = await seedCollection(cdp, Object.values(SEAT), [SEAT_TABLE, SEAT_CARDS])
@@ -1306,6 +1313,8 @@ const CONTEXT_TITLES = ['Areas', 'Topics', 'Projects', EMPTY_CONTEXT]
 const SLIDING = [...CONTEXT_TITLES, ...['select', 'multi', 'status', 'due', 'start', 'bare'].map((k) => ADD[k].label)]
 const ENTRIES = [...CONTEXT_TITLES, ...Object.values(ADD).map((d) => d.label)]
 const STAMPS = ['Creation Time', 'Last Modified']
+/** Where a press opens a card's Add list: its property rows, or its text when it draws none. */
+const addZone = (title) => `(() => { const c = ${shownEl(`[data-rid="${pageIds[title]}"]`)}; return c.querySelector('.card-props') ?? c.querySelector('.card-text') })()`
 /** Area One's dropdown, its tab shown from the Contexts sidebar first. */
 async function spacePanel(cdp) {
   if ((await activeTab(cdp)) !== 'Area One') {
@@ -1580,10 +1589,9 @@ async function group16(cdp) {
   await closePanel(cdp)
   item(16, 'MP-C-5', "the panel's Add list leaves out what the item holds", !heldPanel.includes(ADD.select.label) && !heldPanel.includes(ADD.text.label), show(heldPanel))
 
-  const zone = (title) => `(() => { const c = ${shownEl(`[data-rid="${pageIds[title]}"]`)}; return c.querySelector('.card-props') ?? c.querySelector('.card-text') })()`
   const cardSurface = (name, view, extra) => ({
     name, view, card: true, file: pagePath('Add Blank'), checkbox: `[data-rid="${pageIds['Add Blank']}"] `,
-    open: () => click(cdp, zone('Add Blank')),
+    open: () => click(cdp, addZone('Add Blank')),
     ...extra,
   })
   const plusOf = (scope) => (group) => `document.querySelector('${scope}[aria-label="${group === 'contexts' ? 'Add Context' : 'Add Property'}"]')`
@@ -1706,7 +1714,7 @@ async function group16(cdp) {
     hangsFrom(pane, standing), show(ran.hop))
 
   await showView(cdp, ADD_STANDARD)
-  await click(cdp, zone('Add Held'))
+  await click(cdp, addZone('Add Held'))
   await until("Add Held's list", () => cdp.evaluate(`!!${entry(ADD.text.label)}`))
   await sleep(500)
   const held = await liveRows(cdp)
@@ -1722,6 +1730,342 @@ async function group16(cdp) {
   writeFileSync(join(NEXUS, CONTEXTS_REL), keptContexts)
   rmSync(join(NEXUS, '.nexus/contexts', EMPTY_CONTEXT), { recursive: true, force: true })
   await until('the empty Context leaves', async () => !(await ask(cdp, 'nexus:state')).value.tree.contexts.some((g) => g.def.title === EMPTY_CONTEXT))
+}
+
+// ── Group 17 — Right-Click ──────────────────────────────────────────────────
+
+const CLICK = {
+  select: { id: 'prop_drive_click_select', label: 'Click Select', key: 'Click Select', type: 'select', select_options: [{ id: 'opt_drive_click_red', key: 'Red', label: 'Red' }] },
+  multi: { id: 'prop_drive_click_multi', label: 'Click Multi', key: 'Click Multi', type: 'multiSelect', select_options: [{ id: 'opt_drive_click_one', key: 'One', label: 'One' }] },
+  status: { id: 'prop_drive_click_status', label: 'Click Status', key: 'Click Status', type: 'status', status_groups: [{ id: 'todo', label: 'To Do', color: 'grey', options: [{ id: 'opt_drive_click_open', key: 'Open', label: 'Open' }] }] },
+  check: { id: 'prop_drive_click_check', label: 'Click Check', key: 'Click Check', type: 'checkbox' },
+  due: { id: 'prop_drive_click_due', label: 'Click Due', key: 'Click Due', type: 'dateTime' },
+  number: { id: 'prop_drive_click_number', label: 'Click Number', key: 'Click Number', type: 'number' },
+  text: { id: 'prop_drive_click_text', label: 'Click Text', key: 'Click Text', type: 'text' },
+  link: { id: 'prop_drive_click_link', label: 'Click Link', key: 'Click Link', type: 'link' },
+  file: { id: 'prop_drive_click_file', label: 'Click File', key: 'Click File', type: 'file' },
+  bare: { id: 'prop_drive_click_bare', label: 'Click Bare', key: 'Click Bare', type: 'select' },
+}
+const CLICK_IDS = Object.values(CLICK).map((d) => d.id)
+const CLICK_TABLE = { id: 'view_01KZPROPERTIESDRIVE17TBL', name: 'Click Table', type: 'table', property_order: ['_title'], hidden_properties: [] }
+// Every property hidden, so a value the menu writes shows nowhere on the card.
+const CLICK_CARDS = { id: 'view_01KZPROPERTIESDRIVE17CRD', name: 'Click Cards', type: 'cards', property_order: ['_title'], hidden_properties: CLICK_IDS }
+const CLICK_PAGE = 'Click One'
+const CLICK_SPACE = 'Area One'
+const STATE_FILE = '.nexus/state.json'
+const opens = (open) => (open ? ['Open', 'Preview'] : ['Preview', 'New Tab'])
+const NEW_PAGES = { pair: ['New Page Above', 'New Page Below'], single: ['New Page'] }
+/** A page menu's labels: Edit Image only on a card holding a cover, the open pair ordered by whether a tab holds the page, and New Page as a list or a grid places one, or none on a graph. */
+const pageMenu = ({ newPages, editImage }) => (open) => [
+  ...(editImage ? ['Edit Image'] : []), ...opens(open), 'Rename', 'Edit Icon', 'Spaces', 'Properties', ...(NEW_PAGES[newPages] ?? []),
+  'Move To', 'Copy Link', 'Copy Path', 'View History', 'Reveal Location', 'Archive', 'Delete',
+]
+const branch = (rows, label) => (rows ?? []).find((r) => r.label === label)?.submenu ?? []
+// An editor's text is its document, since its placeholder draws inside its content.
+const FOCUSED_TEXT = `(() => { const a = document.activeElement; return a && a !== document.body ? (a.cmTile?.root.view.state.doc.toString() ?? a.value ?? a.textContent).trim() : null })()`
+
+async function group17(cdp) {
+  const putBack = await seedCollection(cdp, Object.values(CLICK), [CLICK_TABLE, CLICK_CARDS])
+  const kept = [STATE_FILE, SPACE_FILE, `${SET}/_pageset.json`, `${COLLECTION}/Set Beta/_pageset.json`].map((rel) => [rel, read(rel)])
+  const shards = new Map(readdirSync(join(NEXUS, META_DIR)).map((name) => [name, read(`${META_DIR}/${name}`)]))
+  const stores = ['.trash', '.nexus/archive'].filter((rel) => existsSync(join(NEXUS, rel)))
+  const clipboard = (await ask(cdp, 'clipboard:read')).value
+  await createPage(cdp, CLICK_PAGE)
+  writeFileSync(join(NEXUS, pagePath(CLICK_PAGE)), pageFile(CLICK_PAGE).replace(/^---\n/, '---\nbanner: "[[Collection A Banner.jpg]]"\n'))
+  const tree = async () => (await ask(cdp, 'nexus:state')).value.tree
+  const id = pageIds[CLICK_PAGE]
+  const tableRow = shownEl(`.data-row[data-rid="${id}"]`)
+  const card = shownEl(`[data-rid="${id}"]`)
+  const pageSurface = (name, reach, trigger, rows, extra) => ({ name, reach, trigger, menu: pageMenu(rows), title: CLICK_PAGE, iconOf: () => pageMetaOf(CLICK_PAGE).icon, ...extra })
+  const sidebarPage = async () => {
+    await atView(cdp, CLICK_TABLE)
+    await unfold(cdp, COLLECTION, 'Set Alpha')
+    await unfold(cdp, 'Set Alpha', CLICK_PAGE)
+  }
+  const matrix = async () => {
+    await escapeAll(cdp)
+    await until(`${CLICK_PAGE}'s node`, () => matrixNode(cdp, CLICK_PAGE), 60000)
+  }
+  // The card runs last, where Archive and Delete are confirmed.
+  const SURFACES = [
+    pageSurface('sidebar page', sidebarPage, sidebarRow(CLICK_PAGE), { newPages: 'pair' }, { leaves: true }),
+    pageSurface('Table title', () => atView(cdp, CLICK_TABLE), `${tableRow}.querySelector('.cell-title')`, { newPages: 'pair' }, { leaves: true, shot: ['g17-table-menu', tableRow] }),
+    pageSurface('Table grip', () => atView(cdp, CLICK_TABLE), `${tableRow}.querySelector('.row-grip')`, { newPages: 'pair' }),
+    pageSurface('Matrix node', matrix, nodeEl(CLICK_PAGE), {}, { leaves: true, shot: ['g17-matrix-menu', nodeEl(CLICK_PAGE)] }),
+    {
+      name: 'sidebar Space', title: CLICK_SPACE, trigger: sidebarRow(CLICK_SPACE), iconOf: () => JSON.parse(read(SPACE_FILE)).$icon,
+      reach: async () => {
+        await escapeAll(cdp)
+        if (!(await cdp.evaluate(`!!(${sidebarRow(CLICK_SPACE)})`))) await click(cdp, ribbon('Contexts'))
+        await until(`${CLICK_SPACE} in the sidebar`, () => cdp.evaluate(`!!(${sidebarRow(CLICK_SPACE)})`))
+        await sleep(800)
+      },
+      menu: (open) => [...opens(open), 'Rename', 'Edit Icon', 'Spaces', 'Properties', 'Delete'],
+    },
+    pageSurface('card', () => atView(cdp, CLICK_CARDS), `${card}.querySelector('.card-text')`, { newPages: 'single', editImage: true }, { shot: ['g17-card-menu', card], confirm: true }),
+  ]
+  const at = Object.fromEntries(SURFACES.map((s) => [s.name, s]))
+  /** The surface reached only when its trigger isn't already drawn, so the Matrix sweeps once while its node stays under the pointer. */
+  const ready = async (s) => {
+    await escapeAll(cdp)
+    if (!(await cdp.evaluate(`(() => { try { return !!(${s.trigger}) } catch { return false } })()`))) await s.reach()
+  }
+  const tabbed = (title) => cdp.evaluate(`!!document.querySelector('[role=tab][title=${JSON.stringify(title)}]')`)
+
+  const menus = {}
+  for (const s of SURFACES) {
+    await s.reach()
+    const open = await tabbed(s.title)
+    const rows = await popNative(cdp, await boxOf(cdp, s.trigger))
+    const inApp = await paneOpen(cdp)
+    if (s.shot) await shot(cdp, ...s.shot)
+    await pickNative([])
+    menus[s.name] = { rows, inApp }
+    item(17, 'MP-D-4', `the ${s.name}'s menu reads ${labels(rows).join(', ')}`, same(labels(rows), s.menu(open)), show({ expected: s.menu(open), rows }))
+  }
+  item(17, 'MP-D-1', 'every surface pops its menu through Menu.popup and draws none in-app',
+    Object.values(menus).every((m) => m.rows !== null && !m.inApp), show(Object.fromEntries(Object.entries(menus).map(([k, m]) => [k, { popped: m.rows !== null, inApp: m.inApp }]))))
+  const bare = branch(menus.card.rows, 'Properties').find((r) => r.label === CLICK.bare.label)
+  item(17, 'MP-D-7', "an empty Select's branch reads as a disabled row with no submenu", same(bare, { label: CLICK.bare.label, enabled: false }), show(bare))
+
+  // C-7: the panel's Context order reversed and the Link moved to the schema's head, read on the blank page.
+  const contexts = (await tree()).contexts.map((g) => g.def).reverse()
+  await must('the panel order', ask(cdp, 'mutate', { op: 'reorderPanelContexts', ids: contexts.map((c) => c.id) }))
+  await must('the schema order', ask(cdp, 'mutate', { op: 'reorderAssigned', containerPath: COLLECTION, propertyId: CLICK.link.id, toIndex: 0 }))
+  const titles = contexts.map((c) => c.title)
+  const props = collectionSidecar(COLLECTION).properties.map((p) => Object.values(CLICK).find((d) => d.id === p).label)
+  const ours = (list) => list.filter((l) => titles.includes(l) || props.includes(l))
+  const listOf = async (open) => {
+    await open()
+    await until('the list', () => cdp.evaluate(`${LIVE_ROWS}.length > 0`))
+    await sleep(500)
+    return ours((await liveRows(cdp)).map((r) => r.label))
+  }
+  await atView(cdp, CLICK_CARDS)
+  const cardList = await listOf(() => click(cdp, addZone(CLICK_PAGE)))
+  await escapeAll(cdp)
+  const cardRows = await popNative(cdp, await boxOf(cdp, at.card.trigger))
+  await pickNative([])
+  const system = [...ours(labels(branch(cardRows, 'Spaces'))), ...ours(labels(branch(cardRows, 'Properties')))]
+  await atView(cdp, CLICK_TABLE)
+  await openPage(cdp, CLICK_PAGE)
+  await openPanel(cdp)
+  const panelContexts = await listOf(() => mouseClick(cdp, sel('[aria-label="Add Context"]')))
+  await shot(cdp, 'g17-panel-spaces-order', TOP_LAYER)
+  await escapeAll(cdp)
+  const panelProps = await listOf(() => mouseClick(cdp, sel('[aria-label="Add Property"]')))
+  await escapeAll(cdp)
+  await closePanel(cdp)
+  const order = [...titles, ...props]
+  item(17, 'MP-C-7', `after reordering Contexts and the schema, a card's Add, the panel, and both system branches read ${order.join(', ')}`,
+    same(cardList, order) && same([...panelContexts, ...panelProps], order) && same(system, order), show({ cardList, panel: [...panelContexts, ...panelProps], system }))
+  const spacePath = (await tree()).contexts.flatMap((g) => g.spaces).find((s) => s.path.endsWith(`/${CLICK_SPACE}`)).path
+  await must(`${CLICK_SPACE}'s order`, ask(cdp, 'mutate', { op: 'setSpaceRowOrder', path: spacePath, ids: [CLICK.text.id, contexts.at(-1).id] }))
+  await sleep(800)
+  const space = at['sidebar Space']
+  await space.reach()
+  const spaceRows = await popNative(cdp, await boxOf(cdp, space.trigger))
+  await pickNative([])
+  const spaceOrder = { spaces: ours(labels(branch(spaceRows, 'Spaces'))), properties: ours(labels(branch(spaceRows, 'Properties'))) }
+  const rowOrdered = { spaces: [titles.at(-1), ...titles.slice(0, -1)], properties: [CLICK.text.label, ...Object.values(CLICK).map((d) => d.label).filter((l) => l !== CLICK.text.label)] }
+  item(17, 'MP-C-7', `a Space's branches lead with its $order: ${rowOrdered.spaces[0]} and ${rowOrdered.properties[0]}`, same(spaceOrder, rowOrdered), show({ spaceOrder, rowOrdered }))
+
+  // The value rows, from the card whose view hides every property.
+  await at.card.reach()
+  const sidecar = read(SIDECAR_A)
+  const fill = (text, key) => async () => {
+    await until('the focused field', () => cdp.evaluate(`${FOCUSED_TEXT} === ''`))
+    await typeText(cdp, text)
+    await pressKey(cdp, key)
+  }
+  const VALUES = [
+    ['Select', 'MP-D-4', ['Properties', CLICK.select.label, 'Red'], (fm) => same(fm[CLICK.select.key], ['Red'])],
+    ['Multi-Select', 'MP-D-4', ['Properties', CLICK.multi.label, 'One'], (fm) => same(fm[CLICK.multi.key], ['One'])],
+    ['Status', 'MP-D-4', ['Properties', CLICK.status.label, 'Open'], (fm) => same(fm[CLICK.status.key], ['Open'])],
+    ['Context', 'MP-D-4', ['Spaces', 'Areas', CLICK_SPACE], (fm) => same(fm['<Areas>'], [CLICK_SPACE])],
+    ['Checkbox Check', 'MP-D-4', ['Properties', CLICK.check.label, 'Check'], (fm) => fm[CLICK.check.key] === true],
+    ['Checkbox Uncheck', 'MP-D-4', ['Properties', CLICK.check.label, 'Uncheck'], (fm) => fm[CLICK.check.key] !== true],
+    ['Date', 'MP-D-3', ['Properties', CLICK.due.label], (fm) => String(fm[CLICK.due.key]).includes('-12'), async () => {
+      await until('the calendar', () => cdp.evaluate(`!!${CAL}`))
+      await sleep(500)
+      await shot(cdp, 'g17-date-leaf', CAL)
+      await mouseClick(cdp, dayOf(12))
+    }],
+    ['Number', 'MP-D-3', ['Properties', CLICK.number.label], (fm) => fm[CLICK.number.key] === 7, fill('7', 'Enter')],
+    ['Text', 'MP-D-3', ['Properties', CLICK.text.label], (fm) => fm[CLICK.text.key] === 'typed words', fill('typed words', 'Escape')],
+    ['Link', 'MP-D-3', ['Properties', CLICK.link.label], (fm) => fm[CLICK.link.key] === 'https://example.org', fill('https://example.org', 'Enter')],
+    ['File', 'MP-D-3', ['Properties', CLICK.file.label], (fm, dialogs) => dialogs === 1 && !(CLICK.file.key in fm)],
+  ]
+  for (const [name, decision, path, lands, act] of VALUES) {
+    const dialogs = await inMain('__drive.dialogs')
+    const { chosen } = await chooseNative(cdp, at.card.trigger, path)
+    if (act) await act()
+    const landed = await settles(async () => lands(frontmatter(CLICK_PAGE), (await inMain('__drive.dialogs')) - dialogs), 3000)
+    await escapeAll(cdp)
+    item(17, decision, `${name} chosen from a card's menu (${path.join(' › ')}) lands`, chosen && landed, show({ chosen, landed, front: frontmatter(CLICK_PAGE) }))
+  }
+  const unchanged = await holds(async () => read(SIDECAR_A) === sidecar, 2000)
+  const hidden = viewOnDisk(CLICK_CARDS.id).hidden_properties
+  const drawn = await cdp.evaluate(`${card}.textContent`)
+  await shot(cdp, 'g17-hidden-stays-hidden', card)
+  item(17, 'MP-D-2', "values written from the menu onto hidden properties leave the Collection's sidecar unchanged and every column hidden on the card",
+    unchanged && CLICK_IDS.every((p) => hidden.includes(p)) && !['Red', 'typed words', 'example.org'].some((v) => drawn.includes(v)), show({ unchanged, hidden, drawn }))
+
+  // D-3: the recipe that summons the ghost, run with nothing open as the control and then under a leaf, a glance read as the other reason a ghost stands down.
+  const recipe = async () => {
+    await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 4, y: 4, button: 'none' })
+    await sleep(300)
+    const b = await boxOf(cdp, at.card.trigger)
+    for (let i = 1; i <= 4; i++) {
+      await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: b.left + ((b.right - b.left) * i) / 5, y: b.y, button: 'none' })
+      await sleep(60)
+    }
+    await sleep(1500)
+    return cdp.evaluate(`({ ghost: !!document.querySelector('.ghost-card'), glance: !!document.querySelector('[data-glance]') })`)
+  }
+  const idle = await recipe()
+  await chooseNative(cdp, at.card.trigger, ['Properties', CLICK.due.label])
+  const leafUp = await settles(() => cdp.evaluate(`!!${CAL}`), 3000)
+  const underLeaf = await recipe()
+  await escapeAll(cdp)
+  item(17, 'MP-D-3', 'control: the recipe summons .ghost-card over the card with nothing open', idle.ghost, show(idle))
+  item(17, 'MP-D-3', "no .ghost-card while a Date leaf opened from the card's menu is up, and no glance stands in for it", leafUp && !underLeaf.ghost && !underLeaf.glance, show({ leafUp, underLeaf }))
+
+  // D-3: every leaf type opens its own pane, or the file dialog, from the sidebar, a Table title, and a Matrix node, and leaving writes nothing.
+  const LEAVES = [CLICK.due, CLICK.number, CLICK.text, CLICK.link, CLICK.file]
+  for (const s of SURFACES.filter((x) => x.leaves)) {
+    const opened = {}
+    for (const def of LEAVES) {
+      await ready(s)
+      const before = frontRaw(CLICK_PAGE)
+      const dialogs = await inMain('__drive.dialogs')
+      await chooseNative(cdp, s.trigger, ['Properties', def.label])
+      const up = await settles(async () => (await paneOpen(cdp)) || (await cdp.evaluate(`!!document.querySelector('${PANE}')`)) || (await inMain('__drive.dialogs')) > dialogs, 3000)
+      await escapeAll(cdp)
+      opened[def.label] = up && (await holds(async () => frontRaw(CLICK_PAGE) === before, 1000))
+    }
+    item(17, 'MP-D-3', `every leaf type opens from the ${s.name}'s menu and writes nothing on leaving`, Object.values(opened).every(Boolean), show(opened))
+  }
+
+  // Every row each surface lists, run there; a removal is asked and cancelled, and confirmed on the card, where the Archive restores and the Trash empties.
+  let picks = 0
+  // The icon picker's cells drawn as selected: the ones carrying a class their neighbours don't.
+  const selectedIcons = `(() => { const cells = ${ICON_CELLS}; const base = Math.min(...cells.map((c) => c.classList.length)); return cells.filter((c) => c.classList.length > base).map((c) => c.title) })()`
+  const asked = async (s, verb) => {
+    await until('the confirmation', () => cdp.evaluate(`!!${DIALOG}`))
+    const text = await dialogText(cdp)
+    await pressDialog(cdp, s.confirm ? verb : 'Cancel')
+    return text.includes(`“${s.title}”`)
+  }
+  const removed = async (store, verb) => {
+    const gone = await settles(async () => !existsSync(join(NEXUS, pagePath(CLICK_PAGE))))
+    const colId = (await tree()).collections.find((c) => c.path === COLLECTION).id
+    const bundle = await until(`the ${verb} bundle`, async () => (await must('bundles:list', ask(cdp, 'bundles:list', store === 'trash' ? { kind: 'trash' } : { kind: 'archive', id: colId }))).find((r) => r.title === CLICK_PAGE))
+    return { gone, bundle: bundle.bundlePath }
+  }
+  const newPage = async (s, before) => {
+    const made = await until('the new page', async () => readdirSync(join(NEXUS, SET)).find((n) => !before.includes(n)), 5000).catch(() => null)
+    await pressKey(cdp, 'Escape')
+    await sleep(600)
+    if (made) rmSync(join(NEXUS, SET, made), { force: true })
+    await sleep(600)
+    return [!!made, made]
+  }
+  const RUNS = {
+    Rename: async (s) => {
+      const focused = await settles(async () => (await cdp.evaluate(FOCUSED_TEXT)) === s.title, 3000)
+      await pressKey(cdp, 'Escape')
+      return [focused, await cdp.evaluate(FOCUSED_TEXT)]
+    },
+    'Edit Icon': async (s) => {
+      const open = await settles(() => cdp.evaluate(`!!${CHOICE_PANE.icon}`), 4000)
+      if (!open) return [false, { open }]
+      await sleep(500)
+      const was = s.iconOf()
+      const preselected = await cdp.evaluate(selectedIcons)
+      const cell = `${ICON_CELLS}[${++picks}]`
+      const icon = await cdp.evaluate(`${cell}.title`)
+      await click(cdp, cell)
+      const landed = await settles(async () => s.iconOf() === icon)
+      return [same(preselected, was ? [was] : []) && landed, { was, preselected, icon, landed }]
+    },
+    'New Page': newPage,
+    'New Page Above': newPage,
+    'New Page Below': newPage,
+    'Edit Image': async () => {
+      const editor = await settles(() => cdp.evaluate(`!!${sel('[role=slider][aria-label="Zoom"]')}`), 4000)
+      if (editor) await click(cdp, `[...document.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Cancel')`)
+      return [editor, { editor }]
+    },
+    Preview: async () => {
+      const shown = await settles(() => cdp.evaluate(`!!document.querySelector('.page-window')`), 4000)
+      if (shown) await closePageWindow(cdp)
+      return [shown, { shown }]
+    },
+    'Reveal Location': async () => {
+      const revealed = await until('the reveal', async () => (await inMain('__drive.revealed')).at(-1), 3000).catch(() => null)
+      return [revealed?.endsWith(pagePath(CLICK_PAGE)), revealed]
+    },
+    'Move To': async () => {
+      const moved = `${COLLECTION}/Set Beta/${CLICK_PAGE}.md`
+      const there = await settles(async () => existsSync(join(NEXUS, moved)))
+      if (there) await must('move it back', ask(cdp, 'mutate', { op: 'movePage', path: moved, newParentPath: SET }))
+      const back = await settles(async () => existsSync(join(NEXUS, pagePath(CLICK_PAGE))))
+      return [there && back, { there, back }]
+    },
+    'Copy Link': async () => {
+      const copied = await until('the link', async () => (await ask(cdp, 'clipboard:read')).value, 3000).catch(() => null)
+      return [copied === `[[${CLICK_PAGE}]]`, copied]
+    },
+    'Copy Path': async () => {
+      const copied = await until('the path', async () => (await ask(cdp, 'clipboard:read')).value, 3000).catch(() => null)
+      return [/\/Test\/Collection A\/Set Alpha\/Click One(\.md)?$/.test(copied ?? ''), copied]
+    },
+    'View History': async () => {
+      const shown = await settles(() => cdp.evaluate(`!!document.querySelector('.page-history-row')`), 4000)
+      if (shown) await mouseClick(cdp, sel('[aria-label="File History"] button[title="Close"]'))
+      const closed = await settles(() => cdp.evaluate(`!document.querySelector('.page-history-row')`), 4000)
+      return [shown && closed, { shown, closed }]
+    },
+    Archive: async (s) => {
+      const named = await asked(s, 'Archive')
+      if (!s.confirm) return [named, { named }]
+      const { gone, bundle } = await removed('archive', 'Archive')
+      await must('restore it', ask(cdp, 'mutate', { op: 'restore', bundlePath: bundle }))
+      const back = await settles(async () => existsSync(join(NEXUS, pagePath(CLICK_PAGE))))
+      return [named && gone && back, { named, gone, bundle, back }]
+    },
+    Delete: async (s) => {
+      const named = await asked(s, 'Delete')
+      if (!s.confirm) return [named, { named }]
+      const { gone, bundle } = await removed('trash', 'Delete')
+      await must('empty it', ask(cdp, 'mutate', { op: 'emptyBundle', bundlePath: bundle }))
+      delete pageIds[CLICK_PAGE]
+      return [named && gone, { named, gone, bundle }]
+    },
+  }
+  for (const s of SURFACES) {
+    const ran = {}
+    for (const label of s.menu(await tabbed(s.title)).filter((l) => l in RUNS)) {
+      await ready(s)
+      await inMain('__drive.revealed.length = 0')
+      await ask(cdp, 'clipboard:write', '')
+      const path = label === 'Move To' ? ['Move To', COLLECTION, 'Set Beta', 'Set Beta'] : [label]
+      const files = readdirSync(join(NEXUS, SET))
+      const { chosen } = await chooseNative(cdp, s.trigger, path)
+      const [ok, detail] = await RUNS[label](s, files)
+      ran[label] = { chosen, ok, detail }
+    }
+    item(17, 'MP-D-4', `every row the ${s.name} lists runs there: ${Object.keys(ran).join(', ')}`, Object.values(ran).every((r) => r.chosen && r.ok), show(ran))
+  }
+
+  await escapeAll(cdp)
+  await ask(cdp, 'clipboard:write', clipboard)
+  for (const [rel, text] of kept) writeFileSync(join(NEXUS, rel), text)
+  for (const name of readdirSync(join(NEXUS, META_DIR))) if (!shards.has(name)) rmSync(join(NEXUS, META_DIR, name))
+  for (const [name, text] of shards) writeFileSync(join(NEXUS, META_DIR, name), text)
+  for (const rel of ['.trash', '.nexus/archive']) if (!stores.includes(rel)) rmSync(join(NEXUS, rel), { recursive: true, force: true })
+  await putBack(CLICK_PAGE in pageIds ? [CLICK_PAGE] : [])
 }
 
 // ── Group 18 — Placement ────────────────────────────────────────────────────
@@ -2351,12 +2695,7 @@ async function group19(cdp) {
   // The Matrix draws Spaces, which alone take Change Color, only when it groups by Space.
   await must('the Matrix by Space', ask(cdp, 'matrix:write', { group: { mode: 'space' } }))
   const space = () => JSON.parse(read(SPACE_FILE))
-  const atTable = async () => {
-    await escapeAll(cdp)
-    if (!(await cdp.evaluate(`!!(${sidebarRow(COLLECTION)})`))) await click(cdp, ribbon('Collections'))
-    await until('Collection A in the sidebar', () => cdp.evaluate(`!!(${sidebarRow(COLLECTION)})`))
-    await showView(cdp, PANES_TABLE)
-  }
+  const atTable = () => atView(cdp, PANES_TABLE)
   const atPage = async () => {
     await atTable()
     await openPage(cdp, 'Panes One')
@@ -2550,6 +2889,7 @@ try {
   if (GROUPS.has('14')) await group14(cdp)
   if (GROUPS.has('15')) await group15(cdp)
   if (GROUPS.has('16')) await group16(cdp)
+  if (GROUPS.has('17')) await group17(cdp)
   if (GROUPS.has('18')) await group18(cdp)
   if (GROUPS.has('19')) await group19(cdp)
   cdp.close()

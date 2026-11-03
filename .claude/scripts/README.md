@@ -92,7 +92,7 @@ the decision each proves. It takes the groups to run as arguments —
 `Collection A` and puts the settings back, on debug port 9393, and exits non-zero on any failed check.
 
 `Properties Drive/live-drive.mjs` drives the Properties Restructure's and the Metadata Picker's visible
-surfaces against the real app, in eighteen groups. `MATRIX.md` beside it holds each group's
+surfaces against the real app, in nineteen groups. `MATRIX.md` beside it holds each group's
 cases and the decision each proves. It takes the groups to run as arguments —
 `node live-drive.mjs 1 15` — puts back what each group seeds, on debug port 9403, and exits
 non-zero on any failed check.
