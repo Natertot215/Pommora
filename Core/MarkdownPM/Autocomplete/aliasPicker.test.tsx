@@ -506,9 +506,7 @@ describe('the heading slide’s top row marks how it arrived', () => {
     closed: true,
     embed: false,
     title: 'Notes',
-    caretX: 0,
-    caretTop: 0,
-    caretBottom: 16,
+    at: { x: 0, y: 0, height: 16 },
     bounds: { left: 0, right: 1024 },
   }
   const rows: HeadingRow[] = [{ kind: 'heading', value: 'Setup', level: 1 }]

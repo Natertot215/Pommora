@@ -32,7 +32,7 @@ import { ARCHIVE_ICON, ARCHIVE_TITLE } from '../../Archive/archiveLabel'
 import { useSession } from '../../Session/store'
 import * as vd from '../../Interface/Toolbar/toolbar-menu.css'
 import { dialer } from '../../Platform/dialer'
-import { popMenu } from '../../Actions/menuActions'
+import { EDITOR_MENU, popMenu } from '../../Actions/menuActions'
 import { viewItemMenuItems, viewRowMenuItems } from '../../Actions/viewRowMenu'
 import { selectTargetOf } from '../../Navigation/navRef'
 
@@ -84,10 +84,7 @@ export function ViewFrame({
   const duplicate = (v: SavedView): void =>
     void dialer().ask('views:duplicate', node.path, node.kind, v.id).then(reportRefusal)
   const editorMenu = async (v: SavedView, trigger: HTMLElement): Promise<void> => {
-    const action = await popMenu(viewItemMenuItems(itemContext), trigger, {
-      solid: true,
-      compact: true,
-    })
+    const action = await popMenu(viewItemMenuItems(itemContext), trigger, EDITOR_MENU)
     if (action === 'duplicate') duplicate(v)
     else if (action === 'delete' && (await deleteViewWithUndo(node, v))) onClose()
   }

@@ -198,7 +198,7 @@ export function AutocompletePane({
     )
 
   return (
-    <CaretPane open={open} at={v.ac} className="mdpm-ac" resize={resize}>
+    <CaretPane open={open} caret={v.ac} className="mdpm-ac" resize={resize}>
       <FrameSlide
         open={sliding}
         minWidth={w ?? AC_BOUNDS.min.w}

@@ -1,11 +1,6 @@
 import { style } from '@vanilla-extract/css'
 import { track as switchTrack } from './dual-switch.css'
 
-export const cluster = style({
-  display: 'flex',
-  alignItems: 'center',
-})
-
 export const chip = style({
   border: 'none',
   background: 'none',

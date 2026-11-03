@@ -1,7 +1,7 @@
 import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
 import { MenuItem, MenuScrollFrame, MenuSeparator, MenuTopRow } from '@pommora/uix/Menus/MenuRows'
 import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
-import { PICKER_MAX_HEIGHT } from '@pommora/uix/Pickers/picker-base.css'
+import { PICKER_MAX_HEIGHT, PICKER_WIDTH } from '@pommora/uix/Pickers/picker-base.css'
 import { Icon } from '@pommora/uix/Symbols'
 import { contextsByIdOf } from '../../Contexts/contextIdentity'
 import { useSession } from '../../Session/store'
@@ -49,19 +49,20 @@ export function MetadataPicker({ seat }: { seat: ValueSeatApi }): React.JSX.Elem
   }
   const item = row && host.add?.columns(row)
   const spaces = item && adding?.group !== 'properties' ? item.contexts : []
-  const rest = item && adding?.group !== 'contexts' ? item.properties : []
+  const properties = item && adding?.group !== 'contexts' ? item.properties : []
+  const listed = spaces.length + properties.length > 0
 
   return (
     <PickerMenu solid open={adding !== null} onDismiss={seat.close} triggerRef={seat.anchor}>
       <FrameSlide
         open={target !== null}
-        minWidth={120}
+        minWidth={PICKER_WIDTH.minWidth}
         root={
-          row && spaces.length + rest.length > 0 ? (
+          row && listed ? (
             <MenuScrollFrame maxHeight={PICKER_MAX_HEIGHT}>
               {spaces.map((c) => entryRow(row, c))}
-              {spaces.length > 0 && rest.length > 0 && <MenuSeparator />}
-              {rest.map((c) => entryRow(row, c))}
+              {spaces.length > 0 && properties.length > 0 && <MenuSeparator />}
+              {properties.map((c) => entryRow(row, c))}
             </MenuScrollFrame>
           ) : (
             <div className={emptyPane} />
@@ -78,7 +79,7 @@ export function MetadataPicker({ seat }: { seat: ValueSeatApi }): React.JSX.Elem
                 <MenuTopRow
                   label={GROUP_LABELS[column.kind === 'context' ? 'contexts' : 'properties']}
                   current={columnLabel(column, contexts)}
-                  onBack={() => (spaces.length + rest.length > 0 ? seat.slide() : seat.close())}
+                  onBack={() => (listed ? seat.slide() : seat.close())}
                 />
               }
               onCommit={(commits) => seat.commitPicks([row], column, commits)}

@@ -23,7 +23,7 @@ import { resolveColumn } from '../Pipeline/columns'
 import { notify } from '../../Interface/Notifications/notifications'
 import { useSession } from '../../Session/store'
 import { pickOpen } from '../../Session/chromeSlice'
-import { hoverGlance, leaveGlance } from '../../Interface/Glance/glanceAction'
+import { glanceShown, hoverGlance, leaveGlance } from '../../Interface/Glance/glanceAction'
 import { showPageMenu } from '../../Interface/Menus/pageMenuActions'
 import { type BandNode, memberDepth, nodeLabel, springsInto } from '../Bands/bandModel'
 import { bandRouting, bucketValueAt } from '../Bands/bandRouter'
@@ -388,7 +388,7 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
   const ghost = useGhostAnchor({
     dwellMs: REVEAL_DWELL_MS,
     graceMs: policy.ghost.graceMs,
-    suppressed: () => pickOpen(useSession.getState()) || policy.ghost.suppressed(),
+    suppressed: () => pickOpen(useSession.getState()) || glanceShown() || policy.ghost.suppressed(),
     travelHold: policy.ghost.travelHold,
   })
   useClearStrandedGhost(ghost, rowById)

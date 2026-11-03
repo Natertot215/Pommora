@@ -12,7 +12,7 @@ import {
 } from '@pommora/uix/Menus/MenuRows'
 import { pickRuns } from '@pommora/uix/Menus/pickRuns'
 import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
-import { PICKER_MAX_HEIGHT } from '@pommora/uix/Pickers/picker-base.css'
+import { PICKER_MAX_HEIGHT, PICKER_WIDTH } from '@pommora/uix/Pickers/picker-base.css'
 import { Icon } from '@pommora/uix/Symbols'
 import { useSession } from '../../Session/store'
 import { menuRows, type PresenterRow } from './menuRows'
@@ -62,8 +62,7 @@ function Level({
   return (
     <FrameSlide
       open={branch !== undefined}
-      minWidth={compact ? undefined : 120}
-      maxWidth={compact ? undefined : 180}
+      {...(compact ? {} : PICKER_WIDTH)}
       root={
         <MenuScrollFrame
           maxHeight={PICKER_MAX_HEIGHT}

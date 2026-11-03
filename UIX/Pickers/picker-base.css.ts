@@ -7,6 +7,9 @@ import { viewport as frameViewport } from '../Menus/frame-slide.css'
 /** KNOB — a picker's height ceiling; below MENU_MAX_HEIGHT because a picker hangs off a control rather than filling a pane. */
 export const PICKER_MAX_HEIGHT = 240
 
+/** KNOB — an in-app menu's width bounds; the Add list takes the floor alone, since the ceiling would clip the 215px calendar it slides in. */
+export const PICKER_WIDTH = { minWidth: 120, maxWidth: 180 }
+
 export const treePane = style({
   minWidth: 140, // KNOB
   maxWidth: 260, // KNOB

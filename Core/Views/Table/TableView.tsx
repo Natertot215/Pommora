@@ -10,7 +10,6 @@ import { useValueSeat, ValueSeat } from '../../Properties/Pickers/ValueSeat'
 import type { ViewHostApi } from '../Host/useViewHost'
 import { rowHover, useViewInteractions } from '../Host/useViewInteractions'
 import { useSession } from '../../Session/store'
-import { glanceShown } from '../../Interface/Glance/glanceAction'
 import type { ValueContext } from '../../Properties/valueContext'
 import { isCmd, isSecondaryClick } from '@pommora/uix/Interactions/chords'
 import { Cell } from '../../Properties/Cells/Cell'
@@ -82,7 +81,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const interactions = useViewInteractions(host, {
     ghost: {
       graceMs: 0,
-      suppressed: () => seat.open !== null || renaming !== null || glanceShown(),
+      suppressed: () => seat.open !== null || renaming !== null,
     },
     rename: (target, fromCreate) =>
       setRenaming({ rowId: target.id, ...(fromCreate ? { fromCreate: true } : {}) }),

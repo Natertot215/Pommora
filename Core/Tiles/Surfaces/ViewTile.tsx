@@ -28,7 +28,7 @@ import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
 import { Scrollbar } from '@pommora/uix/Interactions/Scrollbar'
 import { PICKER_MAX_HEIGHT } from '@pommora/uix/Pickers/picker-base.css'
 import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
-import { chooseColor, chooseIcon, useChoiceOpen } from '../../Assets/IdentityChoice'
+import { chooseColor, chooseIcon, useChoiceOpen, useIconChoice } from '../../Assets/IdentityChoice'
 import { entityIcon } from '../../Assets/entityIconPolicy'
 import { askDeleteView } from '../../Interface/Confirm/confirmations'
 import { notifyDeleted } from '../../Interface/Notifications/notifications'
@@ -233,8 +233,6 @@ export function ViewTile({
   const [renaming, setRenaming] = useState<string | null>(null)
   const [titleEditing, setTitleEditing] = useState(false)
   const menuAnchorRef = useRef<Element | null>(null)
-  const titleIconRef = useRef<SVGSVGElement>(null)
-  const titleIconOpen = useChoiceOpen(titleIconRef)
   const rowChoiceOpen = useChoiceOpen(menuAnchorRef)
   const btnRef = useRef<HTMLButtonElement>(null)
   const dropRef = useRef<HTMLButtonElement>(null)
@@ -251,6 +249,9 @@ export function ViewTile({
     embedded && tree
       ? (findCollection(tree, embedded.source_id) ?? findSet(tree, embedded.source_id))
       : undefined
+  const titleIcon = useIconChoice<SVGSVGElement>(entry.display_icon ?? source?.icon, (icon) =>
+    patchEntry({ display_icon: icon }),
+  )
 
   const views = useMemo(() => {
     if (!source) return []
@@ -270,7 +271,7 @@ export function ViewTile({
     menuOpen ||
     viewById(renaming) !== undefined ||
     rowChoiceOpen ||
-    titleIconOpen
+    titleIcon.iconOpen
   const reveal = useHoverReveal({
     dwellMs: REVEAL_DWELL_MS,
     held: !viewsShown && anchoredOpen,
@@ -429,10 +430,7 @@ export function ViewTile({
     if (locked) return
     const action = await popHeld(embedTitleMenuItems(iconShown, titleLevel, viewsShown))
     if (action === 'toggle-icon') patchEntry({ icon: iconShown ? false : null })
-    else if (action === 'change-icon')
-      chooseIcon(titleIconRef.current, entry.display_icon ?? source.icon, (icon) =>
-        patchEntry({ display_icon: icon }),
-      )
+    else if (action === 'change-icon') titleIcon.onIconClick()
     else if (action === 'hide-title') patchEntry({ title: false })
     else if (action === 'toggle-views') toggleViews()
     else if (action?.startsWith('size-')) {
@@ -593,13 +591,13 @@ export function ViewTile({
             <div className={s.titleRow} onContextMenu={(e) => void titleMenu(e)} {...peekHover}>
               <span className={cx(s.titleSlide, !titleShown && s.titleSlideHidden)}>
                 <Icon
-                  ref={titleIconRef}
+                  ref={titleIcon.iconRef}
                   name={entityIcon(source.kind, entry.display_icon ?? source.icon, defaultIcons)}
                   className={cx(
                     s.titleIcon,
                     `md-h${titleLevel}`,
                     'title-icon-reveal',
-                    !iconShown && !titleIconOpen && 'is-hidden',
+                    !iconShown && !titleIcon.iconOpen && 'is-hidden',
                   )}
                 />
                 <RenamableLabel

@@ -17,24 +17,22 @@ export function ColorSwatch({
   const cell = selected.startsWith('grey-') ? cellPaint(selected as CellKey) : null
 
   return (
-    <span className={s.cluster}>
-      <button
-        type="button"
-        className={s.chip}
-        aria-label={label}
-        onClick={(e) => onPress(e.currentTarget)}
-      >
-        <span
-          className={s.swatch}
-          style={
-            {
-              '--sw': tintAt(cell?.base ?? css, 'primary'),
-              // A grey cell brings its own outline; every other leaves the box's own standing.
-              borderColor: cell?.outline,
-            } as React.CSSProperties
-          }
-        />
-      </button>
-    </span>
+    <button
+      type="button"
+      className={s.chip}
+      aria-label={label}
+      onClick={(e) => onPress(e.currentTarget)}
+    >
+      <span
+        className={s.swatch}
+        style={
+          {
+            '--sw': tintAt(cell?.base ?? css, 'primary'),
+            // A grey cell brings its own outline; every other leaves the box's own standing.
+            borderColor: cell?.outline,
+          } as React.CSSProperties
+        }
+      />
+    </button>
   )
 }

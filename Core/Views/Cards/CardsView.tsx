@@ -34,7 +34,6 @@ import { useThumb } from '../../Assets/useThumb'
 import { coverOf } from '../../Pages/pageDetail'
 import { useSession } from '../../Session/store'
 import { personalizationOf } from '../../Session/configSlice'
-import { glanceShown } from '../../Interface/Glance/glanceAction'
 import { AssetImage } from '../../Assets/AssetImage'
 import { useBannerMenu } from '../../Interface/Header/useBannerMenu'
 import { navKey, selectTargetOf } from '../../Navigation/navRef'
@@ -156,8 +155,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const interactions = useViewInteractions(host, {
     ghost: {
       graceMs: CARDS_GHOST_GRACE_MS,
-      suppressed: () =>
-        seat.open !== null || useSession.getState().renamingPath !== null || glanceShown(),
+      suppressed: () => seat.open !== null || useSession.getState().renamingPath !== null,
       travelHold: { inZone: ghostRowmate, holdMs: GHOST_TRAVEL_HOLD_MS },
     },
     rename: (target, fromCreate) => beginRename(target.path, fromCreate, 'detail'),

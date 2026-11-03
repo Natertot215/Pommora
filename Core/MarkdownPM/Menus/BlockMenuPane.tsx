@@ -30,7 +30,7 @@ export function BlockMenuPane({ state, selected, onPick, geometry }: Props): Rea
   const keepInView = useKeepInView(v.selected)
 
   return (
-    <CaretPane open={open} at={v.state} className="mdpm-block-menu" resize={resize}>
+    <CaretPane open={open} caret={v.state} className="mdpm-block-menu" resize={resize}>
       <MenuScrollFrame maxHeight={resize.size.h}>
         {v.state.matches.map((m) => (
           <Fragment key={m.title}>

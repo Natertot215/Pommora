@@ -915,7 +915,6 @@ const rowLabel = (id, name) =>
 /** The first element of `scope`, or inside it, showing exactly `text`: a chip draws its label more than once, so a cell's own text repeats it. */
 const valueIn = (scope, text) => `[...document.querySelectorAll(${JSON.stringify(scope)})].flatMap((e) => [e, ...e.querySelectorAll('*')]).find((e) => e.getClientRects().length > 0 && e.textContent.trim() === ${JSON.stringify(text)})`
 const paneOpen = (cdp) => cdp.evaluate(`!!${sel(PANE_LAYER)}`)
-const paneRows = (cdp) => cdp.evaluate(`[...document.querySelectorAll('${PANE_LAYER} [role="button"]')].map((b) => b.textContent.trim())`)
 // Seat One holds every seat property, so the panel draws no Add Property for the harness's `openPanel` to wait on; its rows say it's open.
 const PANEL_ROWS = `!!document.querySelector('[data-property-row]')`
 async function seatPanel(cdp, open) {
@@ -957,7 +956,7 @@ async function group14(cdp) {
     await until(`${name}'s value`, () => cdp.evaluate(`!!${valueIn(scope(), 'Seat Open')}`))
     await mouseClick(cdp, valueIn(scope(), 'Seat Open'))
     await until(`${name}'s option picker`, () => paneOpen(cdp))
-    const options = await paneRows(cdp)
+    const options = (await liveRows(cdp)).map((r) => r.label)
     await escapeAll(cdp)
     const { rows } = await chooseNative(cdp, valueIn(scope(), 'Seat Open'), [])
     await mouseClick(cdp, valueIn(scope(), 'words'))

@@ -6,7 +6,7 @@ import {
   mintOptionId, optionId,
   ask, check, chooseInApp, chooseNative, click, COPY, drag, FM, holds, itemCount, launch, META, mintPageId, mouseAt, boxOf, mouseClick,
   closePanel, closeSettings, DIALOG, must, NEXUS, openField, openPanel, openSettings, PORTAL_ROWS, portalOpen, pressKey, RAIL, read,
-  restore, results, ribbon, selectField, SETTINGS_BUTTON, settles, shot, sleep, textEl, trashRowEl, typeText, until, viewFrame,
+  restore, results, ribbon, selectField, settles, shot, sleep, textEl, trashRowEl, typeText, until, viewFrame,
 } from '../drive-harness.mjs'
 
 const PORT = 9363

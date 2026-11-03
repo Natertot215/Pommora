@@ -3,6 +3,8 @@ import { valueOr } from '../Contract/result'
 import { useSession } from '../Session/store'
 import { dialer } from '../Platform/dialer'
 
+export const EDITOR_MENU = { solid: true, compact: true } as const
+
 export async function popMenu<A extends string>(
   items: readonly ActionItem<A>[],
   trigger?: HTMLElement | null,

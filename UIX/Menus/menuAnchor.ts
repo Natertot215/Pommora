@@ -1,6 +1,6 @@
 import type { StyleRule } from '@vanilla-extract/css'
 
-/** KNOB — trigger → pane distance; PickerMenu's portal placement reads it too. */
+/** KNOB — trigger → pane distance; panePlacement's portal placement reads it too. */
 export const MENU_GAP = 6
 
 type MenuPlacement = 'center' | 'right'

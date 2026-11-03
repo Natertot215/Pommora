@@ -292,25 +292,6 @@ export function PropertyPanel({
             const addHeld = rowOpened || addSeat?.held === key
             const ghost =
               addable && !standing && ghostApi.ghost?.anchorId === key ? ghostApi.ghost : null
-            const addRow = (
-              onClick: (anchor: HTMLElement) => void,
-              hover?: { onPointerEnter: () => void; onPointerLeave: () => void },
-            ): React.JSX.Element => (
-              <div
-                data-ghost-root
-                data-reveal-held={rowOpened || undefined}
-                className={cx(s.addSlot, 'ghost-worn')}
-                {...hover}
-              >
-                <MenuItem
-                  className={s.row}
-                  leading={<Icon name="plus" size="control" />}
-                  onClick={(e) => onClick(e.currentTarget)}
-                >
-                  {add}
-                </MenuItem>
-              </div>
-            )
             return (
               <div key={key} data-reveal-host="" {...ghostAnchorProps(ghostApi, key)}>
                 <div className={heading}>
@@ -350,16 +331,24 @@ export function PropertyPanel({
                         enterOnMount={!standing}
                         onCollapsed={ghostApi.closed}
                       >
-                        {addRow(
-                          (anchor) => {
-                            ghostApi.take()
-                            openAdd(key, anchor)
-                          },
-                          {
-                            onPointerEnter: ghostApi.onGhostEnter,
-                            onPointerLeave: ghostApi.onGhostLeave,
-                          },
-                        )}
+                        <div
+                          data-ghost-root
+                          data-reveal-held={rowOpened || undefined}
+                          className={cx(s.addSlot, 'ghost-worn')}
+                          onPointerEnter={ghostApi.onGhostEnter}
+                          onPointerLeave={ghostApi.onGhostLeave}
+                        >
+                          <MenuItem
+                            className={s.row}
+                            leading={<Icon name="plus" size="control" />}
+                            onClick={(e) => {
+                              ghostApi.take()
+                              openAdd(key, e.currentTarget)
+                            }}
+                          >
+                            {add}
+                          </MenuItem>
+                        </div>
                       </Reveal>
                     )}
                   </LineZone>

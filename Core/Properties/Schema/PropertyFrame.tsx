@@ -48,7 +48,7 @@ import { propertyIcon, propertyTypeIconName, propertyTypeLabel } from '../typeDi
 import { cx } from '@pommora/uix/Utilities/cx'
 import * as s from '@pommora/uix/Menus/frames.css'
 import { askRewrite, confirmDelete } from '../../Interface/Confirm/confirmations'
-import { popMenu } from '../../Actions/menuActions'
+import { EDITOR_MENU, popMenu } from '../../Actions/menuActions'
 import { propertyMenuModel } from '../../Actions/propertyMenu'
 
 type SubView = { kind: 'list' } | { kind: 'type' } | { kind: 'edit'; id: string }
@@ -241,10 +241,7 @@ export function PropertyFrame({
   }
 
   const editorMenu = async (def: PropertyDefinition, trigger: HTMLElement): Promise<void> => {
-    const action = await popMenu(propertyMenuModel({ kind: 'editor' }), trigger, {
-      solid: true,
-      compact: true,
-    })
+    const action = await popMenu(propertyMenuModel({ kind: 'editor' }), trigger, EDITOR_MENU)
     if (action === 'property:remove') await remove(def.id)
     else if (
       action === 'property:destroy' &&

@@ -3,21 +3,18 @@ import { type Extension, StateEffect, StateField } from '@codemirror/state'
 import type { EditorView, KeyBinding } from '@codemirror/view'
 import { scrollContainer } from '@pommora/uix/Interactions/autoscroll'
 import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
+import type { PanePoint } from '@pommora/uix/Pickers/panePlacement'
 import type { PaneResize } from '@pommora/uix/Pickers/usePaneResize'
 import type { PaneCtl } from '@pommora/uix/Interactions/paneCtl'
 import { cx } from '@pommora/uix/Utilities/cx'
 
 export interface CaretGeometry {
-  caretX: number
-  caretTop: number
-  caretBottom: number
+  at: PanePoint
   bounds: { left: number; right: number }
 }
 
 export const CLOSED_GEOMETRY: CaretGeometry = {
-  caretX: 0,
-  caretTop: 0,
-  caretBottom: 0,
+  at: { x: 0, y: 0, height: 0 },
   bounds: { left: 0, right: 0 },
 }
 
@@ -38,10 +35,9 @@ export function caretGeometry(view: EditorView, pos: number): CaretGeometry | nu
   const c = view.coordsAtPos(pos)
   if (!c) return null
   const b = surfaceOf(view).getBoundingClientRect()
+  const top = Math.round(c.top)
   return {
-    caretX: Math.round(c.left),
-    caretTop: Math.round(c.top),
-    caretBottom: Math.round(c.bottom),
+    at: { x: Math.round(c.left), y: top, height: Math.round(c.bottom) - top },
     bounds: { left: Math.round(b.left), right: Math.round(b.right) },
   }
 }
@@ -63,13 +59,13 @@ export const paneHeld = StateField.define<boolean>({
 // No `onDismiss`, and focus kept by contract: the editor's keymap owns arrows, Return and Escape, and only a field inside the pane takes focus, which the editor holds its place through.
 export function CaretPane({
   open,
-  at,
+  caret,
   className,
   resize,
   children,
 }: {
   open: boolean
-  at: CaretGeometry
+  caret: CaretGeometry
   className: string
   resize: PaneResize
   children: ReactNode
@@ -78,8 +74,8 @@ export function CaretPane({
     <PickerMenu
       glass="window"
       open={open}
-      at={{ x: at.caretX, y: at.caretTop, height: at.caretBottom - at.caretTop }}
-      bounds={at.bounds}
+      at={caret.at}
+      bounds={caret.bounds}
       origin="center"
       focus="keep"
       contentClassName={cx(CARET_PANE, className)}
