@@ -197,7 +197,7 @@ The surfaces are a Standard card, a Compact card, the page dropdown, the SidePan
 | Add at a panel's end | `Place One` in the page dropdown, then the SidePane | Add Property, choose `Place Tall`, sampled | its row shows, and every frame of the row's own picker stays inside the window | MP-E-1 |
 | A sweep's pane | `Place One` and `Place Two` in `Place Table` | click `Place Two`'s `Place Tall` cell, then sweep the column from `Place One` to `Place Two` | both panes share one rect (at HEAD the mass pane sat 29px right of the single one); screenshot `g18-sweep-pane` | MP-B-8 |
 
-#### Group 19 — Settings Panes
+#### Group 19 — Settings Panes and Choices
 
 | Case | Seeds | Operation | Expected | Decisions |
 | --- | --- | --- | --- | --- |

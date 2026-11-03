@@ -62,6 +62,7 @@ const FILEDATA = [
 const showsFiledata = (rows) => FILEDATA.every((f) => rows.some((r) => r.label === f.label && r.glyph === f.glyph))
 
 async function group1(cdp) {
+  const storedSidecar = read(SIDECAR_A)
   const view = { id: 'view_01KZPROPERTIESDRIVE00TBL', name: 'Drive Filedata', type: 'table', property_order: FILEDATA.map((f) => f.id), hidden_properties: [], hide_column_icons: false }
   await must('save the Drive Filedata view', ask(cdp, 'views:save', COLLECTION, 'collection', view, {}))
   await showView(cdp, view)
@@ -99,6 +100,7 @@ async function group1(cdp) {
 
   await escapeAll(cdp)
   await closeToolbarSettings(cdp)
+  writeFileSync(join(NEXUS, SIDECAR_A), storedSidecar)
   writeFileSync(REGISTRY, stored)
   await until('the registry as it was', async () => !(await held(cdp, witness.id)))
 }
@@ -113,21 +115,21 @@ async function headerMenu(cdp, label) {
   return labels(rows)
 }
 
+const LOOKS = {
+  number: { id: 'prop_drive_looks_number', label: 'Looks Number', key: 'Looks Number', type: 'number', number_family: 'percent' },
+  link: { id: 'prop_drive_looks_link', label: 'Looks Link', key: 'Looks Link', type: 'link' },
+  select: { id: 'prop_drive_looks_select', label: 'Looks Select', key: 'Looks Select', type: 'select', select_options: [{ id: 'opt_drive_looks_alpha', key: 'Alpha', label: 'Alpha' }] },
+}
+const LOOKS_TABLE = {
+  id: 'view_01KZPROPDRIVE00000LOOKSTABL', name: 'Looks Table', type: 'table',
+  property_order: ['_title', ...Object.values(LOOKS).map((d) => d.id)], hidden_properties: [],
+  column_styles: { [LOOKS.select.id]: { look: 'compact' } },
+}
+
 async function group2(cdp) {
-  const ids = {}
-  for (const [label, type] of [['Looks Number', 'number'], ['Looks Link', 'link'], ['Looks Select', 'select']])
-    ids[label] = (await must(`add ${label}`, ask(cdp, 'mutate', { op: 'addProperty', containerPath: COLLECTION, draft: { label, type } }))).created.propertyId
-  await must('Looks Number as a percent', ask(cdp, 'mutate', { op: 'configureProperty', propertyId: ids['Looks Number'], patch: { number_family: 'percent' } }))
-  await must('Looks Select gains Alpha', ask(cdp, 'mutate', { op: 'editOption', propertyId: ids['Looks Select'], edit: { op: 'add', groupId: 'select', id: mintOptionId(), label: 'Alpha' } }))
-  const view = {
-    id: 'view_01KZPROPDRIVE00000LOOKSTABL', name: 'Looks Table', type: 'table',
-    property_order: ['_title', ids['Looks Number'], ids['Looks Link'], ids['Looks Select']], hidden_properties: [],
-    column_styles: { [ids['Looks Select']]: { look: 'compact' } },
-  }
-  await must('save the Looks Table', ask(cdp, 'views:save', COLLECTION, 'collection', view, {}))
-  await must('show the Looks Table', ask(cdp, 'mutate', { op: 'setActiveView', path: COLLECTION, kind: 'collection', viewId: view.id }))
-  await createPage(cdp, 'Looks One', { [ids['Looks Select']]: { kind: 'select', value: optionId(defNamed('Looks Select'), 'Alpha') } })
-  await openCollection(cdp)
+  const putBack = await seedCollection(cdp, Object.values(LOOKS), [LOOKS_TABLE])
+  await createPage(cdp, 'Looks One', { [LOOKS.select.id]: { kind: 'select', value: 'opt_drive_looks_alpha' } })
+  await showView(cdp, LOOKS_TABLE)
   await until('the Looks Table headers', () => cdp.evaluate(`!!(${header('Looks Select')})`))
 
   const number = await headerMenu(cdp, 'Looks Number')
@@ -136,6 +138,7 @@ async function group2(cdp) {
   item(2, 'I-4', "a Link column's right-click names its look Format", link.includes('Format') && !link.includes('Style'), show(link))
   const tagged = await settles(() => cdp.evaluate(`!!${row('Looks One')}?.querySelector('.cell-chips svg.lucide-tag')`))
   item(2, 'M-1', 'a compact Select chip keeps its tag glyph', tagged, show({ tagged }))
+  await putBack(['Looks One'])
 }
 
 // ── Group 3 · The Value Write's One Home ────────────────────────────────────
@@ -237,7 +240,14 @@ async function group4() {
 
 // ── Group 5 · Undo From the File ────────────────────────────────────────────
 
-const UNDO_VIEW = { id: 'view_01KZPROPDRIVE0000UNDOTABLE', name: 'Drive Undo Table' }
+const UNDO = {
+  pick: {
+    id: 'prop_drive_undo_pick', label: 'Drive Undo Pick', key: 'Drive Undo Pick', type: 'select',
+    select_options: [{ id: 'opt_drive_undo_doing', key: 'Doing', label: 'Doing' }, { id: 'opt_drive_undo_done', key: 'Done', label: 'Done' }],
+  },
+  link: { id: 'prop_drive_undo_link', label: 'Drive Undo Link', key: 'Drive Undo Link', type: 'link' },
+}
+const UNDO_VIEW = { id: 'view_01KZPROPDRIVE0000UNDOTABLE', name: 'Drive Undo Table', type: 'table', property_order: ['_title', UNDO.pick.id, UNDO.link.id], hidden_properties: [] }
 const META_DIR = '.nexus/metadata'
 const pageMetaOf = (title) =>
   readdirSync(join(NEXUS, META_DIR)).filter((n) => n.endsWith('.json'))
@@ -246,10 +256,7 @@ const aliasesOf = (title) => pageMetaOf(title).aliases ?? []
 const holdsLine = (title, key) => frontRaw(title).split('\n').some((l) => l.startsWith(`${key}:`))
 
 async function group5(cdp) {
-  const pick = await must('Drive Undo Pick', ask(cdp, 'mutate', { op: 'addProperty', containerPath: COLLECTION, draft: { label: 'Drive Undo Pick', type: 'select' } }))
-  const link = await must('Drive Undo Link', ask(cdp, 'mutate', { op: 'addProperty', containerPath: COLLECTION, draft: { label: 'Drive Undo Link', type: 'link' } }))
-  for (const label of ['Doing', 'Done']) await must(`Drive Undo Pick ${label}`, ask(cdp, 'mutate', { op: 'editOption', propertyId: pick.created.propertyId, edit: { op: 'add', groupId: 'select', id: mintOptionId(), label } }))
-  await must('the undo table', ask(cdp, 'views:save', COLLECTION, 'collection', { ...UNDO_VIEW, type: 'table', property_order: ['_title', pick.created.propertyId, link.created.propertyId], hidden_properties: [] }, {}))
+  const putBack = await seedCollection(cdp, Object.values(UNDO), [UNDO_VIEW])
   for (const title of ['Drive Undo Page', 'Drive Undo Target']) await createPage(cdp, title)
   await must('Drive Undo Target keeps an alias', ask(cdp, 'mutate', { op: 'editAliases', path: pagePath('Drive Undo Target'), edit: { op: 'add', alias: 'kept' } }))
   const text = pageFile('Drive Undo Page')
@@ -283,6 +290,7 @@ async function group5(cdp) {
   await pressKey(cdp, 'z', META)
   const gone = await settles(async () => JSON.stringify(aliasesOf('Drive Undo Target')) === '["kept"]' && !Object.hasOwn(frontmatter('Drive Undo Page'), 'Drive Undo Link'))
   item(5, 'E-3', 'undoing a Link value takes back the alias it added and keeps the one the page had', added && gone, JSON.stringify(aliasesOf('Drive Undo Target')))
+  await putBack(['Drive Undo Page', 'Drive Undo Target'])
 }
 
 // ── Group 6 — One Door for Property Changes (P7) ────────────────────────────
@@ -406,6 +414,7 @@ const optionRoles = (v) => ({ sort: v.sort, group: v.group, filter: v.filter, co
 
 async function group7(cdp) {
   const G = 7
+  const stored = [REGISTRY_REL, SIDECAR_A].map((rel) => [rel, read(rel)])
   const added = await must('P8 Stage', ask(cdp, 'mutate', { op: 'addProperty', containerPath: COLLECTION, draft: { label: 'P8 Stage', type: 'select' } }))
   const propertyId = added.created.propertyId
   const seedId = optionsOf(propertyId)[0]?.id
@@ -443,6 +452,12 @@ async function group7(cdp) {
   item(G, 'D-2', 'the table shows the new label in the band the view keeps collapsed, in its saved order',
     bands[0].text.includes('Finished') && bands[0].collapsed && bands[1].text.includes('Option 1') && !bands[1].collapsed, JSON.stringify(bands))
   await escapeAll(cdp)
+  for (const title of ['P8 One', 'P8 Two']) {
+    rmSync(join(NEXUS, pagePath(title)))
+    delete pageIds[title]
+  }
+  for (const [rel, text] of stored) writeFileSync(join(NEXUS, rel), text)
+  await until('the definitions leave', async () => !(await held(cdp, propertyId)))
 }
 
 // ── Group 8 · One Finder ─────────────────────────────────────────────────────
@@ -476,7 +491,8 @@ async function group8(cdp) {
     return same(space?.contextValues?.[contextId], [beta])
   })
   item(8, 'G-1', 'the Matrix keeps Alpha linked to Beta', linked)
-  await must('trash the Context', ask(cdp, 'mutate', { op: 'delete', path: `.nexus/contexts/${renamed}`, kind: 'context' }))
+  const { bundlePath } = (await must('trash the Context', ask(cdp, 'mutate', { op: 'delete', path: `.nexus/contexts/${renamed}`, kind: 'context' }))).undo
+  await must('empty the Context', ask(cdp, 'mutate', { op: 'emptyBundle', bundlePath }))
 }
 
 // ── Group 9 · One Note per Item ──────────────────────────────────────────────
@@ -783,10 +799,11 @@ async function group11(cdp) {
   await shot(cdp, 'g11-columns')
 
   await escapeAll(cdp)
+  rmSync(join(NEXUS, path))
+  delete pageIds['Drive Columns']
   writeFileSync(join(NEXUS, SIDECAR_A), storedSidecar)
   writeFileSync(REGISTRY, storedRegistry)
   await until('the registry as it was', async () => !(await config(cdp)).registry.some((d) => d.id === 'prop_drive_select'))
-  delete pageIds['Drive Columns']
 }
 
 // ── Group 12 · The Per-Kind View Record ─────────────────────────────────────
@@ -849,23 +866,23 @@ async function group12(cdp) {
 
 // ── Group 13 — The Filter's Clock ───────────────────────────────────────────
 
+const CLOCK_DUE = { id: 'prop_drive_clock_due', label: 'Drive Due', key: 'Drive Due', type: 'dateTime' }
+const CLOCK_TABLE = {
+  id: 'view_01KZPROPERTIESDRIVE13CLK', name: 'Drive Clock', type: 'table', property_order: ['_title', CLOCK_DUE.id], hidden_properties: [],
+  column_styles: { [CLOCK_DUE.id]: { time_format: 'twentyFourHour' } },
+  filter: { match: 'all', rules: [{ property_id: CLOCK_DUE.id, op: 'is', value: '2026-10-22T15:30' }] },
+}
+
 async function group13(cdp) {
-  const added = await must('add Drive Due', ask(cdp, 'mutate', { op: 'addProperty', containerPath: COLLECTION, draft: { label: 'Drive Due', type: 'dateTime' } }))
-  const due = added.created.propertyId
-  const view = {
-    id: 'view_01KZPROPERTIESDRIVE13CLK', name: 'Drive Clock', type: 'table', property_order: ['_title', due], hidden_properties: [],
-    column_styles: { [due]: { time_format: 'twentyFourHour' } },
-    filter: { match: 'all', rules: [{ property_id: due, op: 'is', value: '2026-10-22T15:30' }] },
-  }
-  await must('save the Drive Clock view', ask(cdp, 'views:save', COLLECTION, 'collection', view, {}))
-  await showView(cdp, view)
+  const putBack = await seedCollection(cdp, [CLOCK_DUE], [CLOCK_TABLE])
+  await showView(cdp, CLOCK_TABLE)
   await viewFrame(cdp, 'Filter')
   await click(cdp, sel('[aria-label="Filter date"]'))
   await until('the filter date picker', () => portalOpen(cdp))
   const pane = await cdp.evaluate(`${sel(PANE_LAYER)}?.textContent ?? ''`)
   item(13, 'J-1', "a filter's date picker opens on its column's 24-hour clock under a 12-hour Nexus, with no End Date", pane.includes('15:30') && !/\b(AM|PM)\b/.test(pane) && !pane.includes('End Date'), JSON.stringify(pane.slice(0, 160)))
   await shot(cdp, 'g13-filter-clock')
-  await escapeAll(cdp)
+  await putBack([])
 }
 
 // ── Group 14 — One Value Seat ───────────────────────────────────────────────
@@ -1068,6 +1085,7 @@ async function typeInto(cdp, ariaLabel, text) {
 
 async function group15(cdp) {
   const kept = G15_FILES.map((rel) => readFileSync(join(NEXUS, rel), 'utf8'))
+  const bundles = new Set((await trashRows(cdp)).map((r) => r.bundlePath))
   await openCollection(cdp)
   await viewFrame(cdp, 'Properties')
 
@@ -1135,6 +1153,8 @@ async function group15(cdp) {
   await escapeAll(cdp)
   G15_FILES.forEach((rel, i) => writeFileSync(join(NEXUS, rel), kept[i]))
   await until('the registry as it was', async () => (await config(cdp)).registry.length === JSON.parse(kept[0]).order.length)
+  for (const { bundlePath } of await trashRows(cdp))
+    if (!bundles.has(bundlePath)) await must('empty a bundle', ask(cdp, 'mutate', { op: 'emptyBundle', bundlePath }))
 }
 
 // ── Groups 16, 18, and 19 — the Metadata Picker ─────────────────────────────
@@ -1683,7 +1703,7 @@ async function group16(cdp) {
   item(16, 'MP-B-1', "a panel's + stays shown while its list is open", panels.every(([, r]) => r.plus === '1'), show(Object.fromEntries(panels.map(([k, r]) => [k, r.plus]))))
   const { pane, standing } = ran.hop
   item(16, 'MP-B-1', "a Space's standing Add row opens the list hanging from the row itself",
-    Math.abs(pane.top - standing.bottom) <= 12 || Math.abs(standing.top - pane.bottom) <= 12, show(ran.hop))
+    hangsFrom(pane, standing), show(ran.hop))
 
   await showView(cdp, ADD_STANDARD)
   await click(cdp, zone('Add Held'))
@@ -1956,7 +1976,7 @@ async function group18(cdp) {
   await putBack(['Place One', 'Place Two'])
 }
 
-// ── Group 19 — Settings Panes ───────────────────────────────────────────────
+// ── Group 19 — Settings Panes and Choices ───────────────────────────────────
 
 /** Opens `open`'s list, then presses `press` beside it as a pointer does, reading what the press hit and left behind, and unless `again` is false presses it once more. A click listener on the pressed control counts what reached it. */
 async function pressBeside(cdp, open, press, { again = true } = {}) {
