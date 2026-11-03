@@ -36,7 +36,7 @@ export interface PageMoveContext {
 export const RENAME_ROW = { label: 'Rename', action: 'title:rename' } as const
 export const COPY_LINK_ROW = { label: 'Copy Link', action: 'title:copylink' } as const
 export const COPY_PATH_ROW = { label: 'Copy Path', action: 'title:copypath' } as const
-export const HISTORY_ROW = { label: 'View History', action: 'title:history' } as const
+const HISTORY_ROW = { label: 'View History', action: 'title:history' } as const
 export const REVEAL_ROW = { label: 'Reveal Location', action: 'title:reveal' } as const
 const ARCHIVE_ROW = { label: 'Archive', action: 'title:archive' } as const
 export const DELETE_ROW = { label: 'Delete', action: 'title:delete' } as const

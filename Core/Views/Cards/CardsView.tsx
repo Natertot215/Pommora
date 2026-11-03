@@ -182,7 +182,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     commit: commitOnCard,
     anchor: (el) => el.closest<HTMLElement>('.value-seat') ?? el,
     centered: true,
-    hold: interactions.holdGhost,
+    hold: interactions.ghost.suppressWrap,
     hide: { from: 'view', run: (_, column) => hideProperty(column.id) },
     add: {
       columns: (row) =>
@@ -199,7 +199,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
   useEffect(() => {
     if (!inline) return
     let done = (): void => {}
-    void interactions.holdGhost(() => new Promise<void>((settle) => (done = settle)))
+    void interactions.ghost.suppressWrap(() => new Promise<void>((settle) => (done = settle)))
     return () => done()
   }, [inline])
 
@@ -237,7 +237,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
   useEffect(() => {
     if (!bannerRequest) return
     bannerFrameRef.current = bannerRequest.frame
-    if (bannerRequest.mode === 'menu') void interactions.holdGhost(openBannerMenu)
+    if (bannerRequest.mode === 'menu') void interactions.ghost.suppressWrap(openBannerMenu)
     else openBannerEditor()
   }, [bannerRequest])
 

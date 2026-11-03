@@ -91,7 +91,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const seat = useValueSeat({
     ...host.seatHost,
     anchor: (el) => el.closest<HTMLElement>('.data-cell') ?? el,
-    hold: interactions.holdGhost,
+    hold: interactions.ghost.suppressWrap,
     onClose: () => cellSweep.clear(),
   })
 
@@ -139,9 +139,9 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     )
   }
 
-  // ── The title menu ────────────────────────────────────────────────────────
+  // ── The page menu ─────────────────────────────────────────────────────────
 
-  const openTitleMenu = (row: ViewRow, e: React.MouseEvent): void => {
+  const openPageMenu = (row: ViewRow, e: React.MouseEvent): void => {
     e.preventDefault()
     e.stopPropagation()
     const el = e.currentTarget as HTMLElement
@@ -177,13 +177,13 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
 
   const cellApi = useStableApi<RowCellApi>({
     menu: (row, col, e) =>
-      void (col.kind === 'title' ? openTitleMenu(row, e) : seat.menu(row, col, e)),
+      void (col.kind === 'title' ? openPageMenu(row, e) : seat.menu(row, col, e)),
     click: onCellClick,
     pane: seat.pane,
     title: titleCell,
     overlay: seat.editor,
     commit: commitValue,
-    grip: (row, e) => void openTitleMenu(row, e),
+    grip: openPageMenu,
     sweep: startSweep,
     hover: interactions.ghost.onHover,
     open: (row) => interactions.openPage(row, false),

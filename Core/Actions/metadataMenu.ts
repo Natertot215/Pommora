@@ -66,22 +66,13 @@ export function metadataBranches(
   )
 }
 
-function parseAction(action: string): { id: string; value: string | null } | null {
-  if (!action.startsWith(PREFIX)) return null
-  const rest = action.slice(PREFIX.length)
-  const cut = rest.indexOf(':')
-  return cut < 0
-    ? { id: rest, value: null }
-    : { id: rest.slice(0, cut), value: rest.slice(cut + 1) }
-}
-
 export function runMetadataAction(
   action: string,
   { row, schema, rowOf, commit, trigger, styleOf }: MetadataTarget,
 ): boolean {
-  const parsed = parseAction(action)
-  if (!parsed) return false
-  const { id, value } = parsed
+  if (!action.startsWith(PREFIX)) return false
+  const [id, ...rest] = action.slice(PREFIX.length).split(':')
+  const value = rest.length > 0 ? rest.join(':') : null
   const s = useSession.getState()
   const column = resolveColumn(id, schema, contextIdsOf(s.tree))
   // The property can leave between the menu opening and the pick; the pick then writes nothing.

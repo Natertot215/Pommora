@@ -11,20 +11,18 @@ import {
 } from './pageMenu'
 import { type TitleMenuAction, titleMenuItems } from './identityMenus'
 import { lockLabel, openLabel } from './toggleLabels'
-import { isContainer, type NodeKind } from '../Nexus/entities'
+import { type FolderNodeKind, isContainer } from '../Nexus/entities'
 import type { RenameHost } from '../Session/editSlice'
 
 export type EntityMenuTarget = (
   | { kind: 'page'; id: string }
-  | { kind: Exclude<NodeKind, 'page'>; id?: string }
+  | { kind: FolderNodeKind; id?: string }
   | { kind: 'context'; id?: never }
 ) & {
   path: string
   title: string
-  alreadyOpen?: boolean
   disclosureLocked?: boolean
   host?: RenameHost
-  metadata?: readonly ActionItem<MetadataAction>[]
 }
 
 export type EntityMenuAction =
@@ -41,7 +39,10 @@ export type EntityMenuAction =
   | 'changeColor'
 
 export function entityMenuItems(
-  target: EntityMenuTarget,
+  target: Exclude<EntityMenuTarget, { kind: 'page' }> & {
+    alreadyOpen?: boolean
+    metadata?: readonly ActionItem<MetadataAction>[]
+  },
   creators: readonly Creator[],
 ): ActionItem<EntityMenuAction>[] {
   // Only the renderer knows the tab set; an already-open entity reads "Open" and focuses its tab.

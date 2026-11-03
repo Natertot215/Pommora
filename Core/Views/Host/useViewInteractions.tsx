@@ -425,6 +425,5 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     ghost,
     ghostStanding,
     ghostCreate,
-    holdGhost: ghost.suppressWrap,
   }
 }

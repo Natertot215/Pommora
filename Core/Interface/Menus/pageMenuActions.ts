@@ -99,7 +99,7 @@ interface PageMenuHost {
   rename: () => void
   newPage?: { rows: NewPageRows; create: (where: 'above' | 'below') => void }
   editImage?: () => void
-  values?: MetadataTarget | null
+  values: MetadataTarget | null
 }
 
 export async function showPageMenu(

@@ -74,7 +74,7 @@ async function readTarget(
   }
 }
 
-/** Resolves on close, before the pick runs: a surface holding a hover affordance down needs the close to release it. */
+/** Resolves once the pick has run, so a surface reading `pickOpen` after it sees the pane the pick opened. */
 export async function showEntityMenu(
   target: EntityMenuTarget,
   trigger: HTMLElement | null = null,
