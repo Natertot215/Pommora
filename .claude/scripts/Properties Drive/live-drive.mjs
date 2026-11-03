@@ -43,6 +43,13 @@ async function pickerRows(cdp, ariaLabel) {
   await until(`the ${ariaLabel} picker`, () => portalOpen(cdp))
   return rowsOf(cdp, PORTAL_ROWS)
 }
+async function chooseInApp(cdp, expr, label) {
+  await mouseClick(cdp, expr)
+  const drawn = await settles(() => cdp.evaluate(`!!${entry(label)}`), 3000)
+  if (drawn) await click(cdp, entry(label))
+  await sleep(800)
+  return drawn
+}
 
 // ── Group 1 — What Counts as a Property ─────────────────────────────────────
 
@@ -333,7 +340,7 @@ async function group6(cdp) {
 
   made.push(await addProperty(cdp, { label: 'Drive Bare', type: 'text' }))
   await openPropertyEditor(cdp, 'Drive Bare')
-  await chooseNative(cdp, sel('[aria-label="Property Menu"]'), 'Delete', { button: 'left' })
+  await chooseInApp(cdp, sel('[aria-label="Property Menu"]'), 'Delete')
   const bare = await dialogText(cdp)
   await pressDialog(cdp, 'Delete')
   await sleep(1000)
@@ -1109,7 +1116,7 @@ async function group15(cdp) {
   }
   item(15, 'O-5', 'creating each type opens its editor with no frame of the list between', Object.values(created).every((c) => c.editor && c.listFrames === 0), show(created))
 
-  const { chosen } = await chooseNative(cdp, liveEl('Property Menu'), 'Delete', { button: 'left' })
+  const chosen = await chooseInApp(cdp, liveEl('Property Menu'), 'Delete')
   if (await settles(() => cdp.evaluate(`!!document.querySelector('[role="alertdialog"]')`), 2500))
     await click(cdp, `[...document.querySelector('[role="alertdialog"]').querySelectorAll('button')].find((b) => b.textContent.trim() !== 'Cancel')`)
   const gone = await settles(async () => !defNamed('New File'))
@@ -2217,11 +2224,7 @@ async function group19(cdp) {
     await sleep(700)
     await openEditor(copy.name)
     if (native) await chooseNative(cdp, VIEW_MENU, 'Delete', { button: 'left' })
-    else {
-      await mouseClick(cdp, VIEW_MENU)
-      await until('the in-app menu', () => cdp.evaluate(`!!${entry('Delete')}`))
-      await click(cdp, entry('Delete'))
-    }
+    else await chooseInApp(cdp, VIEW_MENU, 'Delete')
     await until('the confirmation', () => cdp.evaluate(`!!${DIALOG}`))
     await pressDialog(cdp, 'Delete')
     const deleted = await settles(async () => !(await views(cdp)).some((v) => v.id === copy.id))
