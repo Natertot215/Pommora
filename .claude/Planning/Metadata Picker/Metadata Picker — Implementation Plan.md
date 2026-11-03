@@ -264,8 +264,8 @@ The order is what makes each step land once. Phase 0 readies the drives and pins
   - [x] Task 7-2 · Group 17
   - [x] Review Checkpoint
 - [ ] **Phase 8** — Closeout
-  - [ ] Task 8-1 · The seat's move
-  - [ ] Task 8-2 · All seven drives
+  - [x] Task 8-1 · The seat's move
+  - [x] Task 8-2 · All seven drives
   - [ ] Task 8-3 · Docs and issues
 - [ ] *§Final Verification* over `<BASELINE>..HEAD`
 - [ ] `[Stop: the final report, per §Final Verification]`
@@ -2589,8 +2589,8 @@ Every right-click outcome should run against the real app. Group 17 (Right-Click
 
 **VERIFY**
 
-- [ ] Run the gates; `ls Core/Properties/Cells` lists `Cell`, `CheckboxGlyph`, `LinkCell`, `OptionChip`, and `TextCell` with their tests and styles alone.
-- [ ] `git log --follow --oneline -2 -- Core/Properties/Pickers/ValueSeat.tsx` reaches this plan's earlier commits.
+- [x] Run the gates; `ls Core/Properties/Cells` lists `Cell`, `CheckboxGlyph`, `LinkCell`, `OptionChip`, and `TextCell` with their tests and styles alone.
+- [x] `git log --follow --oneline -2 -- Core/Properties/Pickers/ValueSeat.tsx` reaches this plan's earlier commits.
 
 #### Task 8-2
 
@@ -2598,8 +2598,8 @@ All seven drives should pass, every group, from a worktree of this head, before 
 
 **VERIFY**
 
-- [ ] All seven pass on Task 0-5's groups with Properties `1`–`19`. A CSS-order visual pass, since vanilla-extract emits in import order and this work reorders 94 module pairs: one `shot` each of the Add list, a slid calendar, and Visibility under each Appearance setting (`Core/Settings/frames.ts:514`), captioned against the same three from Task 0-5's run.
-- [ ] The orchestrator reads and captions one shot per decision group.
+- [x] All seven pass on Task 0-5's groups with Properties `1`–`19`. A CSS-order visual pass, since vanilla-extract emits in import order and this work reorders 94 module pairs: one `shot` each of the Add list, a slid calendar, and Visibility under each Appearance setting (`Core/Settings/frames.ts:514`), captioned against the same three from Task 0-5's run.
+- [x] The orchestrator reads and captions one shot per decision group.
 
 #### Task 8-3
 
@@ -2704,3 +2704,4 @@ Each row's exact wording is in *Investigation · §What Becomes False*.
 - **The Property Editor's ⋮ (directed mid-run):** it follows Use Native Menus as the view editor's ⋮ does, opening in-app at the button with the setting off, and both ⋮ labels read in Title Case.
 - **A Menu Separator Holds Its Height (`65b084950`):** a capped scroll frame shrank its flush separator from 11px to its line once it overflowed, moving every row beneath it 10px after a row's own picker had placed on it; the separator takes `flexShrink: 0`, so the frame scrolls instead.
 - **Tests (directed mid-run):** a change rewrites the tests it breaks; a new case lands only where a decided behavior changes and nothing covers it.
+- **Task 8-2's CSS-Order Pass:** Task 0-5's run held no Add list, slid calendar, or Visibility shot, since those groups arrived later, and Appearance holds only three colors. The pass compared group 14's Table, card, and panel against Task 0-5's instead; the panel's offsets came from the separator's `flexShrink` and the "+" leaked properties drew at the baseline, every probed element matched the same rules in the same order at both heads, and the bundle's reordered modules share no element.
