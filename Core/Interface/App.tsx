@@ -27,6 +27,7 @@ import { runCommand } from '../Actions/commandRouter'
 import { useBridgeSubscriptions } from '../Session/useBridgeSubscriptions'
 import { MenuPresenter } from './Menus/MenuPresenter'
 import { MenuSeat } from '../Properties/Cells/ValueSeat'
+import { IdentityChoice } from '../Assets/IdentityChoice'
 import { DragGroup } from '@pommora/uix/Interactions/drag'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { RenderBoundary } from '@pommora/uix/Elements/RenderBoundary'
@@ -195,6 +196,7 @@ export function App(): React.JSX.Element {
         <ConfirmationWindow />
         <MenuPresenter />
         <MenuSeat />
+        <IdentityChoice />
         <ActionLabel />
         {status === 'ready' && <GlancePane />}
         {status === 'ready' && sidePaneOpen && (

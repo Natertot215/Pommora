@@ -23,6 +23,11 @@ interface ValuePickRequest {
   style?: ColumnStyle
 }
 
+type ChoiceRequest = { trigger: Element; value?: string } & (
+  | { of: 'icon'; onPick: (icon: string) => void }
+  | { of: 'color'; onPick: (color: string | undefined) => void; greyscale?: boolean }
+)
+
 export interface ChromeSlice {
   pendingConfirm: { req: ConfirmRequest; settle: (confirmed: boolean) => void } | null
   askConfirm: (req: ConfirmRequest) => Promise<boolean>
@@ -35,6 +40,9 @@ export interface ChromeSlice {
   pendingPick: ValuePickRequest | null
   requestPick: (req: ValuePickRequest) => void
   dismissPick: () => void
+  pendingChoice: ChoiceRequest | null
+  requestChoice: (req: ChoiceRequest) => void
+  dismissChoice: () => void
   /** The Subfield sits beside the detail rather than inside it, so whatever is mounted there publishes how many rows it resolved. */
   detailCount: number | null
   setDetailCount: (count: number | null) => void
@@ -43,6 +51,9 @@ export interface ChromeSlice {
   setEditorSelection: (path: string, stats: PageStats | null) => void
   resetChrome: () => void
 }
+
+export const pickOpen = (s: Pick<ChromeSlice, 'pendingPick' | 'pendingChoice'>): boolean =>
+  s.pendingPick !== null || s.pendingChoice !== null
 
 let menuSeq = 0
 
@@ -74,6 +85,10 @@ export const createChromeSlice: Slice<ChromeSlice> = (set, get) => ({
   requestPick: (req) => set({ pendingPick: req }),
   dismissPick: () => set({ pendingPick: null }),
 
+  pendingChoice: null,
+  requestChoice: (req) => set({ pendingChoice: req }),
+  dismissChoice: () => set({ pendingChoice: null }),
+
   detailCount: null,
   setDetailCount: (count) => set({ detailCount: count }),
 
@@ -93,6 +108,7 @@ export const createChromeSlice: Slice<ChromeSlice> = (set, get) => ({
       pendingConfirm: null,
       pendingMenu: null,
       pendingPick: null,
+      pendingChoice: null,
       detailCount: null,
       editorSelection: null,
     })
