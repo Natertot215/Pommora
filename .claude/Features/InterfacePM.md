@@ -31,14 +31,14 @@ Pommora's leading pane: a **ribbon** of icons pinned to the left edge, and a **c
 
 Creation is right-click-first. A mode's empty area pops its native New menu — **New Collection** or **New Context** by mode — and right-clicking inside a Context group creates a Space labeled from that Context's singular. Right-clicking a row offers what that row can contain: a Collection and a Set both take a Page and a nested container. The menu picks and the store inserts optimistically, the new row landing with its naming field open while main's confirming push follows. Dwelling on a page row extends a ghost "New Page" row beneath it that creates below on click. A create always lands visible: the new row's rename forces its collapsed ancestors open — a disclosure-locked folder peeks the newcomer alone instead — and one naming field exists at a time across every surface.
 
-A page row's menu is the **page menu** (`Core/Actions/pageMenu.ts`), the same rows in the same order wherever a page can be right-clicked — a sidebar row, a table row, a card, a row grip:
+A page row's menu is the **page menu** (`Core/Actions/pageMenu.ts`), the same rows in the same order wherever a page can be right-clicked — a sidebar row, a table row, a card, a row grip, a Matrix node:
 
 | Group    | Rows                                                                                                     |
 | -------- | -------------------------------------------------------------------------------------------------------- |
-| Open     | Preview · New Tab (reads *Open*, and leads, where the page already holds a tab)                          |
+| Open     | Preview · New Tab (reads *Open*, and leads, where the page already holds a tab), after Edit Image on a card with a banner |
 | Identity | Rename · Edit Icon                                                                                       |
 | Values   | Spaces ▸ · Properties ▸ (the page's Contexts and its Collection's properties, set in place)              |
-| Create   | New Page Above · New Page Below (a sibling at that slot in the manual order)                             |
+| Create   | New Page Above · New Page Below (a sibling at that slot in the manual order; one New Page on a card, none on a Matrix node) |
 | Send     | Move To ▸ (every Collection and its Sets, the page's own disabled) · Copy Link (`[[Title]]`, or the page's path where its title is shared) · Copy Path |
 | Locate   | View History · Reveal Location                                                                           |
 | Remove   | Archive · Delete                                                                                         |

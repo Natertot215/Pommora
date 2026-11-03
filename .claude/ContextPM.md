@@ -53,8 +53,6 @@ Known shortcuts, none broken today. Each is cheap on its own and best taken when
 
 ### Known Issues
 
-- [ ] **A second dropdown pressed inside a pop-up pane reopens the closing list there.** → See `IssuesPM.md`, I-027.
-
 ### Recent Work
 
 #### PM-145 || Metadata & Page Locking
