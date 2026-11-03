@@ -9,12 +9,14 @@ interface ViewRowMenuContext {
 }
 
 const itemRows = (ctx: ViewRowMenuContext): ActionItem<ViewRowAction>[] => [
-  { label: 'Duplicate', action: 'duplicate', icon: 'copy', disabled: !ctx.duplicable },
-  { label: 'Delete', action: 'delete', icon: 'trash', disabled: !ctx.deletable },
+  { label: 'Duplicate', action: 'duplicate', disabled: !ctx.duplicable },
+  { label: 'Delete', action: 'delete', disabled: !ctx.deletable },
 ]
 
+const ITEM_GLYPHS: Partial<Record<ViewRowAction, string>> = { duplicate: 'copy', delete: 'trash' }
+
 export const viewItemMenuItems = (ctx: ViewRowMenuContext): ActionItem<ViewRowAction>[] =>
-  joinGroups(itemRows(ctx).map((row) => [row]))
+  joinGroups(itemRows(ctx).map((row) => [{ ...row, icon: ITEM_GLYPHS[row.action] }]))
 
 export function viewRowMenuItems(ctx: ViewRowMenuContext): ActionItem<ViewRowAction>[] {
   return joinGroups<ViewRowAction>([

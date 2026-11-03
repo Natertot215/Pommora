@@ -106,6 +106,7 @@ export function PickerMenu({
   focus?: 'trap' | 'leave' | 'keep'
   /** A glance surface passes false and lets the app's own dismissals through. */
   modal?: boolean
+  /** A dropdown list inside another pane draws its own shield, so a press beside it closes the list alone. */
   ownShield?: boolean
   contentClassName?: string
   style?: CSSProperties
@@ -250,6 +251,7 @@ export function PickerMenu({
   }, [
     mounted,
     triggerRef,
+    // A ref swapped to another trigger re-places the pane; one nulled by its trigger unmounting keeps the last, whose observer then sees it leave.
     triggerRef?.current ?? decidedFor.current,
     open,
     origin,
