@@ -42,10 +42,10 @@ This work should leave one place to start from when assigning or managing an ent
 
 #### B - The Two Pickers
 
-- **B-1 [CONFIRMED]:** Where an item's metadata is added from a list, on a card or in the Properties panel, it should start from one picker, `MetadataPicker`, the list of the item's Spaces and Properties, which slides into option lists and the calendar. The Table has no Add, since its columns belong to the view.
+- **B-1 [CONFIRMED]:** Where an item's metadata is added from a list, on a card or in the Properties panel, it should start from one picker, `MetadataPicker`, the list of the item's Spaces and Properties, which slides into option lists and the calendar on cards. The Table has no Add, since its columns belong to the view.
 - **B-2 [CONFIRMED]:** `PropertyPicker` stays separate as one value's own picker, an option list or a calendar, which a click and a right-click leaf open directly, with the Add code out of it; both pickers draw the same pane bodies.
 - **B-3 [CONFIRMED]:** `MetadataPicker` should live in `Core/Properties/Pickers/`, whose name stays. Where the value seat lives is the plan's to propose, for Nathan's approval, and `Core/Properties/Cells/` should return to drawing values if the seat leaves it.
-- **B-4 [CONFIRMED]:** The picker's group reads "Spaces", in the panel's slide as on cards, and the Properties panel's heading reads "Contexts"; each is intended where it is.
+- **B-4 [CONFIRMED]:** The picker's group reads "Spaces" in a card's slide, and the Properties panel's heading reads "Contexts"; each is intended where it is.
 - **B-5 [INFERRED]:** An Add entry's outcome should be one finite state rather than the two booleans `revealOnly` and `drillable`: it shows a held value, slides, or acts as a click on that value, so a Checkbox checks, a File opens its dialog, and a typed value opens its small window.
 - **B-6 [INFERRED]:** The rule for opening a value away from where it sits should be stated once in the seat, which should also hold the Add list's open state and anchor, removing `AddPickerRequest`, `addableFor`, and the hosts' writes to `seat.anchor`.
 - **B-7 [INFERRED]:** A multi-row pick should be a seat open, drawn by the one `PropertyPicker`, with `MassPropertyPicker.tsx` gone.
@@ -53,8 +53,8 @@ This work should leave one place to start from when assigning or managing an ent
 
 #### C - The Add List
 
-- **C-1 [CONFIRMED]:** Add should work one way on cards and in the Properties panel: starting from the list, an option-based entry or a date slides in under a back bar, and anything else pops its own picker, closing the list. The "›" should appear only on rows that slide.
-- **C-2 [CONFIRMED]:** In the panel, a row that slides should appear once a value is picked, so cancelling leaves no empty row; Text, Number, and Link keep editing in the panel's row, and on cards keep their own small window.
+- **C-1 [CONFIRMED]:** Add should start from the one list on cards and in the Properties panel. On a card, an option-based entry or a date slides in under a back bar, and anything else pops its own picker, closing the list. In the panel, choosing an entry reveals its row, and its value opens there, in the row's own picker or field. The "›" should appear only on rows that slide.
+- **C-2 [CONFIRMED]:** In the panel, a chosen entry's row should appear at once, with its picker or field open on it; Text, Number, and Link edit in the panel's row, and on cards keep their own small window. A File cancelled from the panel's Add leaves no row.
 - **C-3 [CONFIRMED]:** The back bar should take the one layout every other bar takes, 18px tall, by removing `chooserTop`, and on a picker's surface its right-hand label should keep the row's trailing pad, sitting as far in as the chevron opposite; a settings pane's label stays flush with the controls beneath it.
 - **C-4 [CONFIRMED]:** The Add window's spacing, icon size, height ceiling, and width floor should match every other menu; its width ceiling doesn't, since `maxWidth={180}` would clip the 215px calendar through `FrameSlide`'s shared slot box.
 - **C-5 [CONFIRMED]:** A card's Add should leave out only what's already on the card; a property hidden in the view stays listed, and picking one that holds a value shows it.
