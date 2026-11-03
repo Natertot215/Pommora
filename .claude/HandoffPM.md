@@ -5,7 +5,7 @@
 #### Current Focus
 
 **Dates:** 10-31-2026
-**State:** The Trash & Archive Restructure is complete and filed under `.claude/Planning/Completed/`, and its remaining limits are I-065 through I-070. Pommora's open issues are the focus, gravest first; Sync's issues wait on its rework, which leaves I-014 the gravest.
+**State:** The Trash & Archive Restructure is complete and filed under `.claude/Planning/Completed/`, and its remaining limits are I-063 through I-068. Pommora's open issues are the focus, gravest first; Sync's issues wait on its rework, which leaves I-014 the gravest.
 
 #### CONTEXT
 
@@ -23,7 +23,7 @@ Take A2's hot-path slice through `batch-issues`: re-verify each entry at HEAD, p
 #### The Batch
 
 - **Whole-Page Work:** I-014 (the footer's figures re-tokenize the page past about 8,000 lines), I-016 (those figures are a second reading of what the editor draws), I-015 (lands after I-014), and I-019 (each keystroke re-allocates everything carried below the edit).
-- **Block Work:** I-024 (an unclosed raw-HTML opener re-scans to the end; its estimate was typed together with I-025), I-036 (code-block coloring re-parses its block), I-021 (a caret move re-measures every visible language tag), and I-020 (a caret move rebuilds the tile ranges).
+- **Block Work:** I-024 (an unclosed raw-HTML opener re-scans to the end; its estimate was typed together with I-025), I-035 (code-block coloring re-parses its block), I-021 (a caret move re-measures every visible language tag), and I-020 (a caret move rebuilds the tile ranges).
 - **Table Work:** I-013 (a drag redraws the table per mouse move).
 
 Nine entries is the upper bound. When re-verification shows the slice outgrowing one session, the presented batch takes the first two groups and leaves Table Work for the next.
