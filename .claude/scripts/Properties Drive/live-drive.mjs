@@ -88,8 +88,8 @@ async function group1(cdp) {
     order: [...file.order, witness.id, context.id],
     defs: { ...file.defs, [witness.id]: witness, [context.id]: context },
   }, null, 2))
-  const read = await settles(() => held(cdp, witness.id))
-  item(1, 'F-1', 'a Context definition written by hand is set aside when the list is read', read && !(await held(cdp, context.id)), show({ read }))
+  const listed = await settles(() => held(cdp, witness.id))
+  item(1, 'F-1', 'a Context definition written by hand is set aside when the list is read', listed && !(await held(cdp, context.id)), show({ listed }))
 
   await viewFrame(cdp, 'Properties')
   await click(cdp, `[...document.querySelectorAll('[role=button], button')].find((b) => b.textContent.trim().startsWith('All Properties'))`)
