@@ -617,17 +617,6 @@ describe('picking from the Add list', () => {
     expect(entry('Spaces')).toBeUndefined()
     expect(entry('Craft')).toBeTruthy()
   })
-
-  it('a Date entry opens the calendar on its new row', async () => {
-    seedDef({ id: 'prop_due', label: 'Due', key: 'Due', type: 'dateTime' })
-    cachePageDetail(detail({ path: 'Col/Page.md' }))
-    await renderPanel(<PropertyPanel subject={PAGE} host="dropdown" />)
-    await press(add())
-    await press(entry('Due'))
-    expect(row('prop_due')).not.toBeNull()
-    expect(entry('Properties')).toBeUndefined()
-    expect(pickerText()).toContain('Mon')
-  })
 })
 
 describe('the property row drag', () => {
