@@ -22,7 +22,7 @@ export function MetadataPicker({ seat }: { seat: ValueSeatApi }): React.JSX.Elem
   const target = row && column ? seat.target([row], column) : null
 
   const entryRow = (at: ViewRow, entry: ResolvedColumn): React.JSX.Element => {
-    const outcome = entryOutcome(entry.type, resolveFieldValue(at, entry))
+    const outcome = entryOutcome(entry.type, resolveFieldValue(at, entry), host.add?.inPlace)
     const choose = (): void => {
       switch (outcome) {
         case 'show':

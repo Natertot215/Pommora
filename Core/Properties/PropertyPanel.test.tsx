@@ -495,16 +495,6 @@ describe('the Add row', () => {
 })
 
 describe('picking from the Add list', () => {
-  const tagsDef: PropertyDefinition = {
-    id: 'prop_tags',
-    label: 'Tags',
-    key: 'Tags',
-    type: 'multiSelect',
-    select_options: [
-      { id: 'opt_a', key: 'A', label: 'A' },
-      { id: 'opt_b', key: 'B', label: 'B' },
-    ],
-  }
   const doneDef: PropertyDefinition = {
     id: 'prop_done',
     label: 'Done',
@@ -531,7 +521,7 @@ describe('picking from the Add list', () => {
       config: { registry: PropertyDefinition[] }
       collections: { propertyIds: string[] }[]
     }
-    tree.config.registry = [stageDef, noteDef, rankDef, tagsDef]
+    tree.config.registry = [stageDef, noteDef, rankDef]
     tree.collections[0].propertyIds = ids
     cachePageDetail(detail({ path: 'Col/Page.md', frontmatter }))
     await renderPanel(<PropertyPanel subject={PAGE} host="dropdown" />)
@@ -539,10 +529,6 @@ describe('picking from the Add list', () => {
   }
   const add = (): HTMLElement | null => host.querySelector('[aria-label="Add Property"]')
   const row = (id: string): HTMLElement | null => host.querySelector(`[data-property-row="${id}"]`)
-  const fieldRow = (name: string): HTMLElement | undefined =>
-    [...host.querySelectorAll<HTMLElement>('[data-ghost-root] [role="button"]')].find(
-      (e) => e.textContent === name,
-    )
   const portal = (): Element | null => document.querySelector('[data-picker-portal]')
 
   it('a typed entry shows its row with its field open in it', async () => {
@@ -603,53 +589,44 @@ describe('picking from the Add list', () => {
     expect(entry('Done')).toBeUndefined()
   })
 
-  it('a Select entry slides under ‹ Properties · Stage, and cancelling leaves no row', async () => {
+  it('a Select entry shows its row and opens its picker there, with no back bar or ›', async () => {
     await open({ Note: 1 }, [noteDef.id, stageDef.id])
     await press(add())
-    expect(entry('Stage')?.querySelector('.lucide-chevron-right')).not.toBeNull()
+    expect(entry('Stage')?.querySelector('.lucide-chevron-right')).toBeNull()
+    const rect = vi
+      .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+      .mockImplementation(function (this: HTMLElement) {
+        const top = this.matches('[data-property-row="prop_stage"]') ? 300 : 0
+        return { top, bottom: top + 20, left: 0, right: 200, width: 200, height: 20 } as DOMRect
+      })
     await press(entry('Stage'))
-    expect(entry('Properties')?.textContent).toContain('Stage')
-    expect(row('prop_stage')).toBeNull()
-    await act(async () => {
-      document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
-    })
-    await settle()
-    expect(row('prop_stage')).toBeNull()
+    rect.mockRestore()
+    expect(row('prop_stage')).not.toBeNull()
+    expect(entry('Alpha')).toBeTruthy()
+    expect(entry('Properties')).toBeUndefined()
+    const pane = entry('Alpha')?.closest<HTMLElement>('[data-picker-portal]')
+    expect(Number.parseFloat(pane?.style.top ?? '0')).toBeGreaterThanOrEqual(320)
   })
 
-  it('the first pick from a group’s last entry shows its row and keeps its pane open', async () => {
-    await open({ Note: 1 }, [noteDef.id, tagsDef.id])
-    await press(add())
-    await press(entry('Tags'))
-    await press(entry('A'))
-    expect(row('prop_tags')).not.toBeNull()
-    expect(add()).not.toBeNull()
-    expect(entry('B')).toBeTruthy()
-    await press(entry('B'))
-    expect(entry('Properties')?.textContent).toContain('Tags')
-  })
-
-  it('Back from a pane whose entry left the list closes it, since no list stands behind it', async () => {
+  it('a Context entry opens its Spaces on its new row', async () => {
     cachePageDetail(detail({ path: 'Col/Page.md', frontmatter: { '<Areas>': ['Work'] } }))
     await renderPanel(<PropertyPanel subject={PAGE} host="dropdown" />)
     await press(host.querySelector<HTMLElement>('[aria-label="Add Context"]'))
     await press(entry('Topics'))
-    await press(entry('Craft'))
     expect(row('ctx_topics')).not.toBeNull()
-    await press(entry('Spaces'))
-    await settle(400)
-    expect(portal()).toBeNull()
+    expect(entry('Spaces')).toBeUndefined()
+    expect(entry('Craft')).toBeTruthy()
   })
 
-  it('a pick from a standing Add row keeps that row, and its pane, through the first row landing', async () => {
-    await open({}, [tagsDef.id])
-    const standing = fieldRow('Add Property')
-    await press(standing)
-    await press(entry('Tags'))
-    await press(entry('A'))
-    expect(row('prop_tags')).not.toBeNull()
-    expect(fieldRow('Add Property')).toBe(standing)
-    expect(entry('B')).toBeTruthy()
+  it('a Date entry opens the calendar on its new row', async () => {
+    seedDef({ id: 'prop_due', label: 'Due', key: 'Due', type: 'dateTime' })
+    cachePageDetail(detail({ path: 'Col/Page.md' }))
+    await renderPanel(<PropertyPanel subject={PAGE} host="dropdown" />)
+    await press(add())
+    await press(entry('Due'))
+    expect(row('prop_due')).not.toBeNull()
+    expect(entry('Properties')).toBeUndefined()
+    expect(pickerText()).toContain('Mon')
   })
 })
 

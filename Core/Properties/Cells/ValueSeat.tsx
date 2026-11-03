@@ -52,7 +52,7 @@ export type SeatHost = {
   centered?: true
   /** Keeps the surface's hover ghost down while a value's menu is open. */
   hold?: <T>(menu: () => Promise<T>) => Promise<T>
-  /** Present where a surface adds metadata from a list: what the list holds for a row, how a held value shows, and, with `inPlace`, that a typed value edits where the surface shows it. */
+  /** Present where a surface adds metadata from a list: what the list holds for a row, how a held value shows, and, with `inPlace`, that the surface shows an entry's own row, so its value opens there. */
   add?: {
     columns: (row: ViewRow) => ItemColumns
     show: (column: ResolvedColumn) => void
@@ -176,12 +176,10 @@ export function useValueSeat(host: SeatHost) {
 
   const openAway = (row: ViewRow, column: ResolvedColumn, el: HTMLElement | null): void => {
     const intent = intentOf(row, column)
-    if (intent?.kind !== 'edit') run(row, column, intent, el)
-    else if (!host.add?.inPlace) run(row, column, { kind: 'popover' }, el)
-    else {
+    if (host.add?.inPlace && (intent?.kind === 'edit' || intent?.kind === 'picker')) {
       flushSync(() => host.add?.show(column))
       run(row, column, intent, el && host.anchor(el, column))
-    }
+    } else run(row, column, intent?.kind === 'edit' ? { kind: 'popover' } : intent, el)
     // A commit or the file dialog opens no pane, so nothing is left to hold the anchor.
     if (intent?.kind === 'commit' || intent?.kind === 'file') close()
   }

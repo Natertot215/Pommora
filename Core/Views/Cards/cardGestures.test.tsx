@@ -385,6 +385,37 @@ describe('the card’s Add list', () => {
     expect(selected()).toBe(0)
   })
 
+  it('Back from a pane whose entry left the list closes it, since no list stands behind it', async () => {
+    useSession.setState({ tree: makeTree() })
+    const base = source()
+    await renderView(root, {
+      ...base,
+      propertyIds: [],
+      views: base.views?.map((v) => ({
+        ...v,
+        format: 'compact',
+        property_order: ['_title', 'g1'],
+      })),
+    } as CollectionNode)
+    await act(async () => {
+      ;(card('p2').querySelector('.card-text') as HTMLElement).click()
+    })
+    await act(async () => {
+      entry('Realms')?.click()
+    })
+    await settle(30)
+    await act(async () => {
+      entry('Work')?.click()
+    })
+    await settle(30)
+    expect(card('p2').textContent).toContain('Work')
+    await act(async () => {
+      entry('Spaces')?.click()
+    })
+    await settle(400)
+    expect(document.querySelector('[data-picker-portal]')).toBeNull()
+  })
+
   it('a Checkbox entry lands checked on the card with no pane open, and unchecking keeps it drawn', async () => {
     await choose('Done')
     expect(mutateSpy).toHaveBeenCalledWith(

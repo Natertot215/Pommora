@@ -46,9 +46,13 @@ export function valueClickIntent(
 
 type EntryOutcome = 'show' | 'slide' | 'click'
 
-export function entryOutcome(type: ColumnType, value: PropertyValue): EntryOutcome {
+export function entryOutcome(
+  type: ColumnType,
+  value: PropertyValue,
+  inPlace = false,
+): EntryOutcome {
   if (!isBlankValue(value)) return 'show'
-  return valueClickIntent(type, value)?.kind === 'picker' ? 'slide' : 'click'
+  return !inPlace && valueClickIntent(type, value)?.kind === 'picker' ? 'slide' : 'click'
 }
 
 const MENU_INTENTS: Partial<Record<CellMenuAction | LinkAction, ValueIntent>> = {
