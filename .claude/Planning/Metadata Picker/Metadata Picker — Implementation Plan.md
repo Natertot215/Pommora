@@ -23,7 +23,7 @@
 | 2 · The Pane Shell | about +79 (+195 / −116); +72 built | +32 (+326 / −294) |
 | 3 · Small Folds | about −16; −4 built | +11 (+394 / −383) |
 | 4 · The Two Pickers | about −95; −96 (+386 / −482) built, and the back bar's label +1 | −110 (+769 / −879) |
-| 5 · Settings Panes | about −70 (+46 / −116) | |
+| 5 · Settings Panes | about −70 (+46 / −116) | −195 (+1029 / −1224), −85 its own |
 | 6 · One Icon and Color Request | about −170 | |
 | 7 · Right-Click | about −140 (−125 to −155) | |
 | 8 · Closeout | 0 | |
@@ -245,13 +245,13 @@ The order is what makes each step land once. Phase 0 readies the drives and pins
   - [x] Task 4-4 · Call 8's check
   - [x] Review Checkpoint
   - [x] Compaction Checkpoint
-- [ ] **Phase 5** — Settings Panes
+- [x] **Phase 5** — Settings Panes
   - [x] Task 5-1 · One floor and ceiling
   - [x] Task 5-2 · One back shape, the ⋮, and `LayoutFrame`'s flat form
   - [x] Task 5-3 · `RuleField`
   - [x] Task 5-4 · Group 19 gains the panes
-  - [ ] Review Checkpoint
-  - [ ] Compaction Checkpoint
+  - [x] Review Checkpoint
+  - [x] Compaction Checkpoint
 - [ ] **Phase 6** — One Icon and Color Request
   - [ ] Task 6-1 · The request and its one mount
   - [ ] Task 6-2 · The header sites and F-5
@@ -2702,4 +2702,5 @@ Each row's exact wording is in *Investigation · §What Becomes False*.
   - Tabler glyphs scale their drawing rather than their box, so a Tabler icon's label lines up with a Lucide neighbor's; this reaches every file-type icon.
 - **The Panel Opens in Its Row (directed mid-run; `7b5218b52`, `053872931`, `ed1faa541`):** the Properties panel's Add list slides nothing. Choosing an entry reveals its row and opens the row's own picker or field there, as the panel did before this work; `inPlace` carries that one rule for every pane-opening intent, and `entryOutcome` reads it, so the panel's entries draw no "›". Cards keep their slides. An option entry escaped without a pick leaves its row showing blank, as a typed entry does; a cancelled File still leaves no row. The log's B-1, B-4, C-1, and C-2 read this way.
 - **The Property Editor's ⋮ (directed mid-run):** it follows Use Native Menus as the view editor's ⋮ does, opening in-app at the button with the setting off, and both ⋮ labels read in Title Case.
+- **A Menu Separator Holds Its Height (`65b084950`):** a capped scroll frame shrank its flush separator from 11px to its line once it overflowed, moving every row beneath it 10px after a row's own picker had placed on it; the separator takes `flexShrink: 0`, so the frame scrolls instead.
 - **Tests (directed mid-run):** a change rewrites the tests it breaks; a new case lands only where a decided behavior changes and nothing covers it.
