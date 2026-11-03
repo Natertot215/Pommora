@@ -4,7 +4,7 @@
 
 | Total | Critical | High | Moderate | Low | Minimal |
 |-------|----------|------|----------|-----|---------|
-| 73 | 0 | 3 | 12 | 38 | 20 |
+| 71 | 0 | 3 | 12 | 37 | 19 |
 
 #### A1 • Sync & Devices
 
@@ -81,7 +81,6 @@
 | ----- | --------------------------------------------------- | -------- | -------- | ------ | --------- | ------------- |
 | [I-036](#I-036 • Every call site chooses for itself whether an error is shown, logged, or dropped, and about forty host-side failures reach no one.) | Every call site chooses for itself whether an error is shown, logged, or dropped, and about forty host-side failures reach no one. | Moderate | Large (±0) | Drift | `03dde6468` | **Created:** 09-30-2026<br>**Updated:** 10-08-2026 |
 | [I-034](#I-034 • Nothing in a file's location says whether it runs in the host or the window, and several files sit in another domain's folder.) | Nothing in a file's location says whether it runs in the host or the window, and several files sit in another domain's folder. | Moderate | Large (±0) | Drift | `f6511401d` | **Created:** 09-23-2026<br>**Updated:** 10-25-2026 |
-| [I-072](#I-072 • The reveal-parity recording can't run on the rebuilt test Nexus, which lacks most of what its fixtures and drive expect.) | The reveal-parity recording can't run on the rebuilt test Nexus, which lacks most of what its fixtures and drive expect. | Minimal | Small (TBD) | Drift | `c9780055d` | **Created:** 11-03-2026<br>**Updated:** 11-03-2026 |
 
 #### A5 • Theme & UIX
 
@@ -90,7 +89,6 @@
 | [I-026](#I-026 • Buttons never show keyboard focus.) | Buttons never show keyboard focus. | Moderate | Mini (=🟢+4=) | Drift | `f6511401d` | **Created:** 09-23-2026<br>**Updated:** 10-03-2026 |
 | [I-058](#I-058 • Telling a single click from a double-click on one element is done separately on each surface, in five different ways, with the double-click window written as a number in one place only.) | Telling a single click from a double-click on one element is done separately on each surface, in five different ways, with the double-click window written as a number in one place only. | Low | Medium (=🟢≈ +25=) | Parallel Build | `cbacb7ecb` | **Created:** 10-23-2026<br>**Updated:** 10-26-2026 |
 | [I-061](#I-061 • A bundle row's menu opens only by pointer, so the Trash's Restore and Delete have no keyboard path.) | A bundle row's menu opens only by pointer, so the Trash's Restore and Delete have no keyboard path. | Low | Small (TBD) | Shortcut | `1028ed405` | **Created:** 10-26-2026<br>**Updated:** 10-26-2026 |
-| [I-073](#I-073 • Switching tabs from the keyboard leaves an open picker or menu over the new tab, and a choice there acts on the hidden tab's item.) | Switching tabs from the keyboard leaves an open picker or menu over the new tab, and a choice there acts on the hidden tab's item. | Low | Small (TBD) | Shortcut | `c9780055d` | **Created:** 11-03-2026<br>**Updated:** 11-03-2026 |
 | [I-047](#I-047 • A row's caption in a pane that sizes to its content stays on one line and widens the pane, so the format rows carry none.) | A row's caption in a pane that sizes to its content stays on one line and widens the pane, so the format rows carry none. | Minimal | Mini (TBD) | Drift | `54e93e491` | **Created:** 10-18-2026<br>**Updated:** 10-25-2026 |
 | [I-056](#I-056 • No row in a property's settings says whether it sets the property everywhere or only the current view.) | No row in a property's settings says whether it sets the property everywhere or only the current view. | Minimal | Small (TBD) | Drift | `4f63cba01` | **Created:** 10-21-2026<br>**Updated:** 10-31-2026 |
 | [I-060](#I-060 • Every line row points screen readers at the drag instructions, including rows in a list that can't be dragged, where Space acts on the row instead.) | Every line row points screen readers at the drag instructions, including rows in a list that can't be dragged, where Space acts on the row instead. | Minimal | Small (TBD) | Drift | `312d63751` | **Created:** 10-26-2026<br>**Updated:** 10-31-2026 |
@@ -973,22 +971,6 @@ Pommora's code runs in two places, the host process that owns the disk and the w
 
 Two parts. (1) The taxonomy: each domain gets one host-side subfolder holding its `handlers.ts` and the file-backed modules those reach, pure shared modules stay at the root, and `hostGraph.test.ts` asserts every host-closure file sits in one. (2) Moves that stand regardless: `windowTabs`/`windowRecord`/`windowState`/`windowCache`/`windowMorph` into `Core/Navigation/` beside `tabsModel`/`tabsState`/`warmTabs`, which keeps `Core/Session` as the store layer; `filterModel`/`visibilityModel` into `Core/Views/Settings/` and `placeNew` beside the Session creates; `theme:systemAccent`/`host:platform` into `interfaceHandlers` and `devicePrefs:*` into `settingsHandlers`; `chrome.ts` dissolves (`ThumbRect` moves beside its producer in Navigation). **Your call:** whether to ratify part (1)'s taxonomy of one host-side subfolder per domain, enforced by `hostGraph.test.ts`.
 
-#### I-072 • The reveal-parity recording can't run on the rebuilt test Nexus, which lacks most of what its fixtures and drive expect.
-
-| Concern | Scale | Origin | Base | Date |
-|---------|-------|--------|------|------|
-| Minimal | Small (TBD) | Drift | `c9780055d` | **Created:** 11-03-2026<br>**Updated:** 11-03-2026 |
-
-**Description**
-
-The reveal-parity harness records every hover-, focus-, and proximity-revealed control against a fresh copy of `~/Test` with its own fixtures written in. Since `~/Test` became the benchmark generator's `test` preset, that copy holds Collections A and B alone, with no properties and empty pages, so the fixture script stops before the app launches: it writes two pages into `Collection C/` and reads that Collection's sidecar, merges into `.nexus/interface/homepage/_tiles.json`, which the preset never writes beside `homepage.json`, and writes a body into `Beta 2`, which `Sub-Set B` doesn't hold. Its tiles also name a source Collection id and a page id that no rebuilt Nexus mints.
-
-Past the fixtures, the recording expects more that neither the preset nor the fixtures build: banners on Page B, Collection B, and the homepage, which the navigation view's banner shows; an `Editor Test` page that's pinned and holds an `Active` status; `Fixture Status` and `Fixture Select` properties; an item in the Trash; a remembered alias for Page A; and a page matching `Page` that holds headings. One control has also moved under it, since the alias list's remove button is now `Delete alias` where the recording presses `Forget Test`.[^72]
-
-**Solution** [TBD]
-
-`fixtures.mjs` builds everything the recording reads, from `Collection C` and `_tiles.json` through the properties, banners, pinned page, Trash item, and alias, and reads the ids it needs from the copied Nexus rather than naming fixed ones, and `run.mjs` presses `Delete alias`. Adding them to the `test` preset instead would hand every drive fixtures that only this harness reads. **Your call:** whether to restore the harness this way or retire it, since the Hover Reveal plan it was built for has closed.
-
 ### A5 • Theme & UIX
 
 #### I-026 • Buttons never show keyboard focus.
@@ -1048,22 +1030,6 @@ The Trash's and the Archive's table rows take the line list's keyboard, Tab, the
 **Solution** [Proposed]
 
 A line row answers the platform's menu key by raising its own context menu at the row, in the kit, so every line list gains it at once.
-
-#### I-073 • Switching tabs from the keyboard leaves an open picker or menu over the new tab, and a choice there acts on the hidden tab's item.
-
-| Concern | Scale | Origin | Base | Date |
-|---------|-------|--------|------|------|
-| Low | Small (TBD) | Shortcut | `c9780055d` | **Created:** 11-03-2026<br>**Updated:** 11-03-2026 |
-
-**Description**
-
-With a picker or an in-app menu open, Ctrl+Tab and Ctrl+Shift+Tab still switch tabs, since an open pane's focus scope lets a Tab with Ctrl pass, the dismissal stack answers only Escape, and the pane's shield catches only the pointer. The tab it leaves is parked, moved off screen and made inert but kept mounted while it's the homepage or within the Active Tab Cache, so the pane's trigger stays in the page. `PickerMenu` dismisses a pane only once its trigger leaves the page, and parking fires neither the trigger's `ResizeObserver` nor a scroll, so the pane stays where it was; a later resize or scroll places it against the parked trigger again, clamped to the window's edge.
-
-Every pane the App seats stays this way: the icon and color picker (`pendingChoice`), the value picker a menu's metadata row opens (`pendingPick`), and an in-app action menu (`pendingMenu`), such as a homepage tile's. A choice there runs the request's own callback, setting the icon, color, or value of an item on the hidden tab, or running the menu's action on it. A pane a parked view seats itself, such as a card's Add list or value picker, portals to the same layer and stays the same way, committing through that view.[^73]
-
-**Solution** [TBD]
-
-Either a tab switch closes what the outgoing tab holds open, or `PickerMenu`'s trigger rule also treats a trigger inside a parked host as gone. The store can clear `pendingChoice`, `pendingPick`, and `pendingMenu` at the switch, but a view's own seat keeps its open pane in that view, so either way needs a signal at parking time, since the rule runs only when an observer or a scroll fires; an `inert` check has to leave out the content view's own `inert` while a swap is frozen. **Your call:** whether a tab switch should close an open picker or menu, or keep it with its tab, reopening when the tab returns.
 
 #### I-047 • A row's caption in a pane that sizes to its content stays on one line and widens the pane, so the format rows carry none.
 
@@ -1314,5 +1280,3 @@ In `MatrixCanvas`, keep a small map of active pointer ids on the host; while two
 [^69]: **I-069:** `Core/MarkdownPM/Engine/Tables/regions.ts:28-31,51` (`MAY_OPEN`, `opensBlock`, `endsBody`, `tableRegions`), `Core/MarkdownPM/Engine/parser.ts:19-37` (`parse`'s fence mask)
 [^70]: **I-070:** `UIX/Pickers/PickerMenu.tsx:~66` (`PickerMenu`), `Core/Interface/Menus/MenuPresenter.tsx:~103` (the action menus' shell), `UIX/Pickers/ManageRow.tsx:~3,~53-63` (the import and the pane), `UIX/Menus/MenuDropdown.tsx:~91` and `Core/Interface/Toolbar/SettingsMenu.tsx:~40` (the toolbar's `MenuSurface`), `.claude/Resources/PommoraUIX.md:~380` ("The pane action menus, managed lists, and pickers mount"), `.claude/CLAUDE.md:~109` (the folder's description)
 [^71]: **I-071:** `Core/Views/Host/pendingView.ts:~201-235` (`dropIO`, `persistAfter`), `Core/Views/Host/pendingView.ts:~117-133` (`unstageView`), `Core/Views/Host/useViewInteractions.tsx:~182-196` (`placeInView`), `Core/Views/Host/useViewCreation.ts:~116-130` (`orderPatch`), `Core/Views/Bands/bandRouter.ts:~72-107` (`routeSet`)
-[^72]: **I-072:** `.claude/scripts/editor-parity/launch.sh:~3,~9-10` (`set -e`, the copy of `~/Test`, the fixture run), `.claude/scripts/reveal-parity/fixtures.mjs:~23-30` (the `Collection C` pages), `.claude/scripts/reveal-parity/fixtures.mjs:~31,~40,~53,~61` (the `_tiles.json` merge and its fixed `source_id` and `page_id`), `.claude/scripts/reveal-parity/fixtures.mjs:~81` (`Collection C`'s sidecar), `.claude/scripts/reveal-parity/fixtures.mjs:~89-90` (`Beta 2`'s body), `.claude/scripts/reveal-parity/run.mjs:~247-256` (the Page B, Collection B, and navigation banners), `.claude/scripts/reveal-parity/run.mjs:~301-308` (the Page Window's `Window One` and `Window Two`), `.claude/scripts/reveal-parity/run.mjs:~332,~339` (the pinned `Editor Test`), `.claude/scripts/reveal-parity/run.mjs:~344-347` (a Trash row), `.claude/scripts/reveal-parity/run.mjs:~562-575` (`Fixture Status`, `Fixture Select`), `.claude/scripts/reveal-parity/run.mjs:~588-594` (`Editor Test`'s `Active` chip), `.claude/scripts/reveal-parity/run.mjs:~745-756` (`Forget Test`, the headings chevron), `Core/MarkdownPM/Autocomplete/AliasList.tsx:~144` (`Delete alias`), `Core/Navigation/NavView.tsx:~26-33` (no banner, no `.nav-view-banner`), `.claude/scripts/make-benchmark-nexus.mjs:~15-26` (the `test` preset), `.claude/scripts/make-benchmark-nexus.mjs:~154,~227` (no properties, empty pages), `.claude/scripts/make-benchmark-nexus.mjs:~212` (`homepage.json` alone)
-[^73]: **I-073:** `UIX/Pickers/PickerMenu.tsx:~186-189` (the trigger rule), `UIX/Pickers/PickerMenu.tsx:~233-236` (the trigger's `ResizeObserver` and the scroll and resize listeners), `UIX/Pickers/PickerMenu.tsx:~303-313,~340` (the shield and the portal to `document.body`), `UIX/Pickers/panePlacement.ts:~60-61,~77-90` (the horizontal clamp), `UIX/Interactions/focusScope.ts:~53` (a Tab with Ctrl passes), `UIX/Interactions/dismissalStack.ts:~85-95` (Escape alone), `Core/Actions/commands.ts:~19-20,~51-58` (the chords and `KEYED_COMMANDS`), `Core/Interface/App.tsx:~92-100` (the keyed commands), `Core/Actions/commandRouter.ts:~27-45` (`next-tab`, `previous-tab`), `Core/Session/navigationSlice.ts:~409-422` (`activateTab`, which clears no request), `Core/Session/nexusSlice.ts:~93` (`resetChrome`, on a Nexus switch only), `Core/Interface/ContentView.tsx:~125,~132-142,~189-192` (a parked host, the homepage and cached tabs kept mounted, inert; the frozen view's `inert`), `Core/Settings/personalization.ts:~49` (the Active Tab Cache's default), `Core/Interface/interface.css:~40-46` (`translate: -200vw`), `Core/Session/chromeSlice.ts:~68-85` (`pendingMenu`, `pendingPick`, `pendingChoice`), `Core/Interface/App.tsx:~197-199` (`MenuPresenter`, `MenuSeat`, `IdentityChoice`), `Core/Interface/Menus/MenuPresenter.tsx:~90-110` (the action menu's pane), `Core/Actions/menuActions.ts:~12,~23` (a menu with a trigger is in-app), `Core/Settings/devicePrefs.ts:~58` (native menus off by default), `Core/Tiles/TileHost.tsx:~243` (a tile's in-app menu), `Core/Assets/IdentityChoice.tsx:~61-95` (a pick runs the request's `onPick`), `Core/Interface/Menus/pageMenuActions.ts:~123-128` (the page menu's Edit Icon request), `Core/Actions/metadataMenu.ts:~81` (the `pendingPick` request), `Core/Properties/Pickers/ValueSeat.tsx:~322-345,~352-378` (a seat's panes anchored to its trigger; `MenuSeat`), `Core/Properties/Pickers/MetadataPicker.tsx:~55` (the Add list's anchor), `Core/Views/Cards/CardsView.tsx:~445` (a card's own seat)
