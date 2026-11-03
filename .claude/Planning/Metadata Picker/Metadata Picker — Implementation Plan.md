@@ -1,7 +1,7 @@
 ## Metadata Picker — Implementation Plan
 
 **DATE:** 11-02-2026
-**STATUS:** Ratified 11-02-2026
+**STATUS:** Complete 11-03-2026 — `cb9620327..9290011bc`
 **SOURCE:** *Metadata Picker — Decisions & Intention* (ratified 11-01-2026, Decisions A-1 to G-2 and its *§Rejected*), *Metadata Picker — Investigation* and the six reports and `1 — Two Pickers.patch` in `Scouts/Planning/`, all in `.claude/Planning/Metadata Picker/`.
 
 **PLAN REVIEWS:** three waves, folded (*Metadata Picker — Plan Reviews*): Wave One outward, 32 findings; Wave Two inward, 45; Wave Three both ways, 5.
@@ -10,7 +10,7 @@
 
 | Head | Tests | Start | End |
 |------|-------|-------|-----|
-| `cb9620327` | 9,078 passed, 2 skipped (548 files) | 11-02-2026 11:31 AM | |
+| `cb9620327` | 9,078 passed, 2 skipped (548 files) | 11-02-2026 11:31 AM | 11-03-2026 07:06 AM; 9,107 passed, 2 skipped (549 files) |
 
 **`~/Test` Hash:** `e5a32a5d30d6a11310cd559ee2b1b84b261c3265` at Run Start.
 
@@ -27,7 +27,7 @@
 | 6 · One Icon and Color Request | about −170                                                      | −380 (+1418 / −1798), −185 its own |
 | 7 · Right-Click                | about −140 (−125 to −155)                                       | −493 (+1858 / −2351), −113 its own |
 | 8 · Closeout                   | 0                                                               | −493 (+1866 / −2359), ±0 its own   |
-| **Total**                      | **about −470; 9 files leave, 4 arrive**                         |                                    |
+| **Total**                      | **about −470; 9 files leave, 4 arrive**                         | **−499 (+1952 / −2451); 9 leave, 4 arrive** |
 
 ### Context
 
@@ -267,8 +267,8 @@ The order is what makes each step land once. Phase 0 readies the drives and pins
   - [x] Task 8-1 · The seat's move
   - [x] Task 8-2 · All seven drives
   - [x] Task 8-3 · Docs and issues
-- [ ] *§Final Verification* over `<BASELINE>..HEAD`
-- [ ] `[Stop: the final report, per §Final Verification]`
+- [x] *§Final Verification* over `<BASELINE>..HEAD`
+- [x] `[Stop: the final report, per §Final Verification]`
 
 ---
 
@@ -2635,15 +2635,15 @@ Every doc should read true, replacively, under `r/studio-documentation`. *§Reco
 
 The reviews run over `<BASELINE>..HEAD`, each wave closed before the next opens. Every reviewer brief carries the Approach and Principles verbatim and has its agent read *§Constraints* whole, except the neutral gate's. Every agent here runs at `opus-xhigh`.
 
-- [ ] **Wave One:** two read-only reviewers briefed with `code-simplification`, one reading inward at the diff and one reading outward against the rest of Core, Desktop, and UIX; one fix agent folds what holds as numbered fixes beside a Not Taken list with reasons; the fold commits, and all seven drives run from a worktree of that head.
-- [ ] **Wave Two:** two fresh reviewers briefed with `adversarial-review`, one inward and one outward, over the folded range and given the Not Taken list, so a fold left out returns only on new evidence; folded, committed, and driven the same way.
-- [ ] **Wave Three, Only If It Helps:** run it where Wave Two's folds were structural, as a final look rather than churn for its own sake. The orchestrator states in chat why it ran or didn't.
-- [ ] **The Neutral Gate:** one agent given only `<BASELINE>..HEAD`, the Approach and Principles, and the intention under *§Constraints · Neutral Gate*. It answers *§The Measure*: is the result concretely less, and does a before-and-after assessment prefer the after? A yes-or-no verdict, its corrections, and the strengths to keep, re-run after a fold.
-- [ ] **The Own Pass:** the gates from a clean state and `npm run build`; the diff read once; `git diff --stat <BASELINE>..HEAD -- Core/Sync Sync` prints nothing; a comment count at both ends shows no growth; *§Completion Criteria* ticked.
-- [ ] **The Teardown:** `git worktree remove --force "$WT"` and `git worktree prune`; Run Start's `caffeinate` stopped by its task; every scratch Nexus, userData, and script the run made removed, apart from `$SHOTS`, which the report cites.
-- [ ] **The Cold-Machine Check:** each of these prints nothing, or only what it names: `git worktree list` (the main checkout alone); `ls -d "$TMPDIR"/pommora-drive-* 2>/dev/null`; `ls -d ~/Benchmark-* 2>/dev/null`; a process listing for Electron or Node carrying a worktree or scratch path; `pgrep caffeinate`; and the `~/Test` hash matching Task 0-5's. Nathan's own instance isn't the run's and stays.
-- [ ] **Reconciliation:** *§Reconciliation* walked; *§Deviations* ruled on; STATUS and BASELINE's End filled, and the plan commits with `--only`.
-- [ ] **The Report:** in `closeout-review`'s closeout format, with the range presented through `view-delta`, `<net> (+<added> / -<removed>)` per phase and in total, every deviation, the issue renumbering, the Cold-Machine Check's result, the screenshots' session, and the neutral gate's answer verbatim. PushNotification tells Nathan it's ready.
+- [x] **Wave One:** two read-only reviewers briefed with `code-simplification`, one reading inward at the diff and one reading outward against the rest of Core, Desktop, and UIX; one fix agent folds what holds as numbered fixes beside a Not Taken list with reasons; the fold commits, and all seven drives run from a worktree of that head.
+- [x] **Wave Two:** two fresh reviewers briefed with `adversarial-review`, one inward and one outward, over the folded range and given the Not Taken list, so a fold left out returns only on new evidence; folded, committed, and driven the same way.
+- [x] **Wave Three, Only If It Helps:** run it where Wave Two's folds were structural, as a final look rather than churn for its own sake. The orchestrator states in chat why it ran or didn't.
+- [x] **The Neutral Gate:** one agent given only `<BASELINE>..HEAD`, the Approach and Principles, and the intention under *§Constraints · Neutral Gate*. It answers *§The Measure*: is the result concretely less, and does a before-and-after assessment prefer the after? A yes-or-no verdict, its corrections, and the strengths to keep, re-run after a fold.
+- [x] **The Own Pass:** the gates from a clean state and `npm run build`; the diff read once; `git diff --stat <BASELINE>..HEAD -- Core/Sync Sync` prints nothing; a comment count at both ends shows no growth; *§Completion Criteria* ticked.
+- [x] **The Teardown:** `git worktree remove --force "$WT"` and `git worktree prune`; Run Start's `caffeinate` stopped by its task; every scratch Nexus, userData, and script the run made removed, apart from `$SHOTS`, which the report cites.
+- [x] **The Cold-Machine Check:** each of these prints nothing, or only what it names: `git worktree list` (the main checkout alone); `ls -d "$TMPDIR"/pommora-drive-* 2>/dev/null`; `ls -d ~/Benchmark-* 2>/dev/null`; a process listing for Electron or Node carrying a worktree or scratch path; `pgrep caffeinate`; and the `~/Test` hash matching Task 0-5's. Nathan's own instance isn't the run's and stays.
+- [x] **Reconciliation:** *§Reconciliation* walked; *§Deviations* ruled on; STATUS and BASELINE's End filled, and the plan commits with `--only`.
+- [x] **The Report:** in `closeout-review`'s closeout format, with the range presented through `view-delta`, `<net> (+<added> / -<removed>)` per phase and in total, every deviation, the issue renumbering, the Cold-Machine Check's result, the screenshots' session, and the neutral gate's answer verbatim. PushNotification tells Nathan it's ready.
 
 #### Reconciliation
 
@@ -2704,4 +2704,5 @@ Each row's exact wording is in *Investigation · §What Becomes False*.
 - **The Property Editor's ⋮ (directed mid-run):** it follows Use Native Menus as the view editor's ⋮ does, opening in-app at the button with the setting off, and both ⋮ labels read in Title Case.
 - **A Menu Separator Holds Its Height (`65b084950`):** a capped scroll frame shrank its flush separator from 11px to its line once it overflowed, moving every row beneath it 10px after a row's own picker had placed on it; the separator takes `flexShrink: 0`, so the frame scrolls instead.
 - **Tests (directed mid-run):** a change rewrites the tests it breaks; a new case lands only where a decided behavior changes and nothing covers it.
+- **Final Verification's Folds:** a rename or move no longer closes the Properties panel's open value pane, since its one reset keys on the item and its Nexus rather than the path; a resizable pane's caps measure room as its outer box on both axes; and a replaced icon or color request re-places the one picker at its new trigger.
 - **Task 8-2's CSS-Order Pass:** Task 0-5's run held no Add list, slid calendar, or Visibility shot, since those groups arrived later, and Appearance holds only three colors. The pass compared group 14's Table, card, and panel against Task 0-5's instead; the panel's offsets came from the separator's `flexShrink` and the "+" leaked properties drew at the baseline, every probed element matched the same rules in the same order at both heads, and the bundle's reordered modules share no element.
