@@ -7,7 +7,7 @@ import {
   FM, frontmatter, frontRaw, pageFile, pageIds, pagePath,
   activeTab, ask, BACK, boxOf, chooseNative, closePageWindow, closePanel, click, closeSettings, createPage, DIALOG, doubleClick, entry, escapeAll, field, inMain, labels, launch, META, mouseAt, mouseClick, must, NEXUS, notice,
   openCollection, openPage, openPane, openPanel, openSettings, openSidePane, overlaps, pickNative, popNative, portalOpen, pressDialog, pressKey, read, relaunch, restore, ribbon, row, sel, selectField, SET,
-  holds, hover, item, LIVE_ROWS, manageButton, PANE, PANE_LAYER, PORTAL_ROWS, press, SETTINGS_BUTTON, SHIFT, settles, shot, sleep, slideTo, statusDividers, sweep, SWITCH, tally, textEl, trashRowEl, typeText, until, viewFrame, watch, zoom,
+  holds, hover, item, LIVE_ROWS, manageButton, nativeRows, PANE, PANE_LAYER, PORTAL_ROWS, press, SETTINGS_BUTTON, SHIFT, settles, shot, sleep, slideTo, statusDividers, sweep, SWITCH, tally, textEl, trashRowEl, typeText, until, viewFrame, watch, zoom,
 } from '../drive-harness.mjs'
 import { parse } from 'yaml'
 
@@ -239,9 +239,10 @@ async function group4() {
 
 const UNDO_VIEW = { id: 'view_01KZPROPDRIVE0000UNDOTABLE', name: 'Drive Undo Table' }
 const META_DIR = '.nexus/metadata'
-const aliasesOf = (title) =>
+const pageMetaOf = (title) =>
   readdirSync(join(NEXUS, META_DIR)).filter((n) => n.endsWith('.json'))
-    .map((n) => JSON.parse(read(`${META_DIR}/${n}`)).pages?.[pageIds[title]]).find(Boolean)?.aliases ?? []
+    .map((n) => JSON.parse(read(`${META_DIR}/${n}`)).pages?.[pageIds[title]]).find(Boolean) ?? {}
+const aliasesOf = (title) => pageMetaOf(title).aliases ?? []
 const holdsLine = (title, key) => frontRaw(title).split('\n').some((l) => l.startsWith(`${key}:`))
 
 async function group5(cdp) {
@@ -1210,6 +1211,8 @@ async function framesOf(cdp, act, { of = TOP_LAYER, resizes = false, ms = 900 } 
   await sleep(ms + 100)
   return cdp.evaluate('window.__frames')
 }
+/** Whether a pane hangs from its trigger, below or above it across the menu gap. */
+const hangsFrom = (pane, trigger) => Math.abs(pane.top - trigger.bottom) <= 12 || Math.abs(trigger.top - pane.bottom) <= 12
 const largestStep = (frames) =>
   Math.round(Math.max(0, ...frames.slice(1).map((f, i) => Math.max(Math.abs(f.top - frames[i].top), Math.abs(f.bottom - frames[i].bottom)))))
 const insideWindow = (frames) => frames.length > 0 && frames.every((f) => f.top >= 0 && f.bottom <= f.view)
@@ -1283,6 +1286,18 @@ const CONTEXT_TITLES = ['Areas', 'Topics', 'Projects', EMPTY_CONTEXT]
 const SLIDING = [...CONTEXT_TITLES, ...['select', 'multi', 'status', 'due', 'start', 'bare'].map((k) => ADD[k].label)]
 const ENTRIES = [...CONTEXT_TITLES, ...Object.values(ADD).map((d) => d.label)]
 const STAMPS = ['Creation Time', 'Last Modified']
+/** Area One's dropdown, its tab shown from the Contexts sidebar first. */
+async function spacePanel(cdp) {
+  if ((await activeTab(cdp)) !== 'Area One') {
+    await closePanel(cdp)
+    if (!(await cdp.evaluate(`!!(${sidebarRow('Area One')})`))) await click(cdp, ribbon('Contexts'))
+    await until('Area One in the sidebar', () => cdp.evaluate(`!!(${sidebarRow('Area One')})`))
+    await click(cdp, sidebarRow('Area One'))
+    await until("Area One's tab", async () => (await activeTab(cdp)) === 'Area One')
+    await sleep(800)
+  }
+  await openPanel(cdp)
+}
 const liveRows = (cdp) => cdp.evaluate(`${LIVE_ROWS}.map((e) => ({ label: e.textContent.trim(), slides: !!e.querySelector('.lucide-chevron-right') }))`)
 const listUp = (cdp) => cdp.evaluate(`!!${BACK} || ${LIVE_ROWS}.some((e) => ${JSON.stringify(ENTRIES)}.includes(e.textContent.trim()))`)
 async function leaveList(cdp) {
@@ -1351,7 +1366,7 @@ async function addEntries(cdp, s) {
     if (s.card) return
     const pane = await layerBox(cdp)
     const row = await boxOf(cdp, rowOf(label))
-    seen.rows[type] = { pane, row, hangs: Math.abs(pane.top - row.bottom) <= 12 || Math.abs(row.top - pane.bottom) <= 12 }
+    seen.rows[type] = { pane, row, hangs: hangsFrom(pane, row) }
   }
   const outside = async () => {
     const pane = await layerBox(cdp)
@@ -1575,29 +1590,17 @@ async function group16(cdp) {
     await openSidePane(cdp, 'Add Blank')
     await until("the side pane's Add", () => cdp.evaluate(`!!document.querySelector('.window-side-pane [aria-label="Add Property"]')`))
   }
-  const spacePanel = async () => {
-    if ((await activeTab(cdp)) !== 'Area One') {
-      await closePanel(cdp)
-      if (!(await cdp.evaluate(`!!(${sidebarRow('Area One')})`))) await click(cdp, ribbon('Contexts'))
-      await until('Area One in the sidebar', () => cdp.evaluate(`!!(${sidebarRow('Area One')})`))
-      await click(cdp, sidebarRow('Area One'))
-      await until("Area One's tab", async () => (await activeTab(cdp)) === 'Area One')
-      await sleep(800)
-    }
-    await openPanel(cdp)
-  }
-
   const surfaces = [
     cardSurface('Standard card', ADD_STANDARD, { listsCheck: true, shoot: true, ceiling: true, picks: picked }),
     cardSurface('Compact card', ADD_COMPACT),
     panelSurface('page dropdown', pagePath('Add Blank'), '', pagePanel, { spacesShot: true, typedShot: true }),
     panelSurface('SidePane', pagePath('Add Blank'), '.window-side-pane ', sidePane),
-    panelSurface('Space dropdown', SPACE_FILE, '', spacePanel),
+    panelSurface('Space dropdown', SPACE_FILE, '', () => spacePanel(cdp)),
   ]
   const ran = {}
   for (const s of surfaces) {
     if (s.name === 'Space dropdown') {
-      await spacePanel()
+      await spacePanel(cdp)
       await mouseClick(cdp, liveRow('Add Property'))
       await until('the Add list', () => listUp(cdp))
       await sleep(500)
@@ -2012,6 +2015,67 @@ const NEW_VIEW = shownEl('[aria-label="New View"]')
 const VIEW_SLIDE = `(() => { let e = ${NEW_VIEW}; while (e && !e.style.transform.startsWith('translateX')) e = e.parentElement; return e?.parentElement })()`
 const VIEW_MENU = shownEl('[aria-label="View Menu"]')
 
+// A Checkbox for a property's Color row, and a Select whose option's popup holds an icon seat.
+const CHOICE = {
+  check: { id: 'prop_drive_choice_check', label: 'Choice Check', key: 'Choice Check', type: 'checkbox' },
+  pick: { id: 'prop_drive_choice_pick', label: 'Choice Pick', key: 'Choice Pick', type: 'select', select_options: [{ id: 'opt_drive_choice_alpha', key: 'Alpha', label: 'Alpha' }] },
+}
+const NEXUS_SETTINGS = '.nexus/settings.json'
+const nexusSettings = () => JSON.parse(read(NEXUS_SETTINGS))
+const homeView = () => JSON.parse(read(HOMEPAGE)).tiles.find((t) => t.type === 'view')
+/** The open icon picker, known by its grid, or the open color picker, known by its swatches. */
+const CHOICE_PANE = {
+  icon: `${LAYERS}.findLast((e) => e.querySelector('.scroll-fade button[title]'))`,
+  color: `${LAYERS}.findLast((e) => e.querySelector('button[aria-label="red-4"]'))`,
+}
+const ICON_CELLS = `[...(${CHOICE_PANE.icon}).querySelector('.scroll-fade').lastElementChild.querySelectorAll('button[title]')]`
+const COLORS = ['red-4', 'orange-4', 'yellow-4', 'green-4', 'cyan-4', 'blue-4']
+const glyphOf = (expr) => `(${expr}).querySelector('svg')?.innerHTML ?? null`
+const TILE = `(${VIEW_SETTINGS}).closest('.tile')`
+const TILE_GLYPH = `${TILE}.querySelector('.title-icon-reveal')`
+const TILE_PILL = `[...${TILE}.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Cards')`
+const nodeEl = (id) => `document.querySelector('[data-node-id="${id}"]')`
+
+/** Steps the pointer across the Matrix's canvas until `id`'s node is under it, leaving it there. */
+async function matrixNode(cdp, id) {
+  await mouseClick(cdp, ribbon('Matrix'))
+  await until('the Matrix', () => cdp.evaluate(`!!${shownEl('canvas')}`))
+  await sleep(2500)
+  const box = await boxOf(cdp, shownEl('canvas'))
+  for (let y = box.top + 12; y < box.bottom; y += 24)
+    for (let x = box.left + 12; x < box.right; x += 24) {
+      await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y, button: 'none' })
+      if (await cdp.evaluate(`!!${nodeEl(id)}`)) return true
+    }
+  return false
+}
+
+/** Opens `site`'s icon or color choice as its user does, reads where the picker hangs and what `held` reads with the pointer away, and picks `pick`: the icon grid's `pick`th cell, or a color. */
+async function choose(cdp, site, of, pick) {
+  await site.reach()
+  if (site.menu) await chooseNative(cdp, site.trigger, site.menu)
+  else await mouseClick(cdp, site.trigger)
+  const pane = CHOICE_PANE[of]
+  const open = await settles(() => cdp.evaluate(`!!${pane}`), 4000)
+  if (!open) return { open, rows: await nativeRows() }
+  await sleep(500)
+  const hung = hangsFrom(await layerBox(cdp, pane), await boxOf(cdp, site.trigger).catch(() => ({})))
+  let held
+  if (site.held) {
+    await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 4, y: 4, button: 'none' })
+    await sleep(2500)
+    held = await cdp.evaluate(site.held.expr)
+  }
+  if (site.shot) await shot(cdp, site.shot, pane)
+  const cell = of === 'icon' ? `${ICON_CELLS}[${pick}]` : `(${pane}).querySelector('button[aria-label="${pick}"]')`
+  const value = of === 'icon' ? await cdp.evaluate(`${cell}.title`) : pick
+  const glyph = of === 'icon' ? await cdp.evaluate(glyphOf(cell)) : null
+  await click(cdp, cell)
+  const landed = await settles(async () => site.holds() === value)
+  const closed = await settles(async () => !(await cdp.evaluate(`!!${pane}`)), 3000)
+  return { open, hung, held, value, glyph, landed, closed, holds: site.holds() }
+}
+
 async function group19(cdp) {
   const putBack = await seedCollection(cdp, Object.values(PANES), [PANES_TABLE])
   await createPage(cdp, 'Panes One', { [PANES.due.id]: { kind: 'dateTime', value: '2026-10-22T09:30' } })
@@ -2258,6 +2322,181 @@ async function group19(cdp) {
   item(19, 'MP-F-6', "the ⋮'s Duplicate adds a view, and its Delete removes the copy and closes the dropdown, with Use Native Menus off and on",
     [inAppMenu, systemMenu].every((r) => r.copy && r.deleted && r.closed) && switchedOff, show({ inAppMenu, systemMenu, switchedOn, switchedOff }))
 
+  const unchoose = await seedCollection(cdp, Object.values(CHOICE), [])
+  const kept = [SPACE_FILE, CONTEXTS_REL, NEXUS_SETTINGS].map((rel) => [rel, read(rel)])
+  const shards = new Map(readdirSync(join(NEXUS, META_DIR)).map((name) => [name, read(`${META_DIR}/${name}`)]))
+  const areaOne = JSON.parse(read(SPACE_FILE)).id
+  const space = () => JSON.parse(read(SPACE_FILE))
+  const atTable = async () => {
+    await escapeAll(cdp)
+    if (!(await cdp.evaluate(`!!(${sidebarRow(COLLECTION)})`))) await click(cdp, ribbon('Collections'))
+    await until('Collection A in the sidebar', () => cdp.evaluate(`!!(${sidebarRow(COLLECTION)})`))
+    await showView(cdp, PANES_TABLE)
+  }
+  const atPage = async () => {
+    await atTable()
+    await openPage(cdp, 'Panes One')
+  }
+  const atToolbar = async () => {
+    await atTable()
+    if (await cdp.evaluate(`(${SETTINGS_BUTTON}).getAttribute('aria-pressed') !== 'true'`)) await mouseClick(cdp, SETTINGS_BUTTON)
+    await until('the view settings', () => cdp.evaluate(`!!${liveEl('Edit Icon')}`))
+    await sleep(600)
+  }
+  const atEditor = (label) => async () => {
+    await atTable()
+    await openPropertyEditor(cdp, label)
+  }
+  const atViews = async () => {
+    await atTable()
+    await mouseClick(cdp, VIEWS_BUTTON)
+    await until('the view list', () => cdp.evaluate(`!!${NEW_VIEW}`))
+    await sleep(500)
+  }
+  const leaveViews = async () => {
+    await escapeAll(cdp)
+    if (await cdp.evaluate(`!!${NEW_VIEW}`)) await mouseClick(cdp, VIEWS_BUTTON)
+  }
+  const atHome = async () => {
+    await escapeAll(cdp)
+    await mouseClick(cdp, ribbon('Homepage'))
+    await until('the View Tile', () => cdp.evaluate(`!!${VIEW_SETTINGS}`))
+    await scrollTo(cdp, VIEW_SETTINGS, 100)
+  }
+  const atMatrix = async () => {
+    await escapeAll(cdp)
+    await until("Area One's node", () => matrixNode(cdp, areaOne), 60000)
+  }
+  const viewRow = (name) => `(${shownEl(`[aria-label="Edit ${name}"]`)}).closest('[role=button]')`
+  const tableTitle = `${shownEl(`.data-row[data-rid="${pageIds['Panes One']}"]`)}.querySelector('.cell-title')`
+  const toolbarDone = async () => {
+    await escapeAll(cdp)
+    await closeToolbarSettings(cdp)
+  }
+  const panelDone = async () => {
+    await escapeAll(cdp)
+    await closePanel(cdp)
+  }
+
+  const ICON_SITES = [
+    { name: "the view settings' header", reach: atToolbar, trigger: liveEl('Edit Icon'), file: SIDECAR_A, holds: () => collectionSidecar(COLLECTION).icon, leave: toolbarDone },
+    { name: "a property editor's header", reach: atEditor(CHOICE.check.label), trigger: liveEl('Edit Icon'), file: REGISTRY_REL, holds: () => registryFile().defs[CHOICE.check.id]?.icon, leave: toolbarDone },
+    {
+      name: "an option's popup",
+      reach: async () => {
+        await atEditor(CHOICE.pick.label)()
+        await mouseClick(cdp, `${optionRow('Alpha')}.querySelector('[aria-label="Edit Option"]')`)
+        await until("Alpha's popup", () => cdp.evaluate(`${LAYERS}.some((e) => e.querySelector('[aria-label="Edit Icon"]'))`))
+        await sleep(500)
+      },
+      trigger: `${LAYERS}.findLast((e) => e.querySelector('[aria-label="Edit Icon"]')).querySelector('[aria-label="Edit Icon"]')`,
+      file: REGISTRY_REL, holds: () => registryFile().defs[CHOICE.pick.id]?.select_options[0].icon, leave: toolbarDone, shot: 'g19-option-icon-popup',
+    },
+    { name: "a Table title's menu", reach: atTable, trigger: `${tableTitle}.firstElementChild`, menu: 'Edit Icon', file: 'the page metadata', holds: () => pageMetaOf('Panes One').icon },
+    { name: "a view row's menu", reach: atViews, trigger: viewRow(PANES_TABLE.name), menu: 'Edit Icon', file: SIDECAR_A, holds: () => viewOnDisk(PANES_TABLE.id)?.icon, leave: leaveViews, shot: 'g19-icon-view-row' },
+    { name: "a Collection's banner glyph", reach: atTable, trigger: shownEl('.detail-title-icon'), menu: 'Edit Icon', file: SIDECAR_A, holds: () => collectionSidecar(COLLECTION).icon },
+    { name: "a page's title glyph", reach: atPage, trigger: shownEl('.detail-title-icon'), menu: 'Edit Icon', file: 'the page metadata', holds: () => pageMetaOf('Panes One').icon },
+    {
+      name: "a page dropdown's header",
+      reach: async () => {
+        await atPage()
+        await openPanel(cdp)
+      },
+      trigger: liveEl('Edit Icon'), file: 'the page metadata', holds: () => pageMetaOf('Panes One').icon, leave: panelDone,
+    },
+    {
+      name: "a sidebar Context's menu",
+      reach: async () => {
+        await escapeAll(cdp)
+        if (!(await cdp.evaluate(`!!(${sidebarRow('Topics')})`))) await click(cdp, ribbon('Contexts'))
+        await until('Topics in the sidebar', () => cdp.evaluate(`!!(${sidebarRow('Topics')})`))
+      },
+      trigger: `(${sidebarRow('Topics')}).closest('[data-line-row]')`, menu: 'Edit Icon', file: CONTEXTS_REL,
+      holds: () => JSON.parse(read(CONTEXTS_REL)).contexts.find((c) => c.title === 'Topics')?.icon,
+    },
+    { name: "a Space dropdown's header", reach: () => spacePanel(cdp), trigger: liveEl('Edit Icon'), file: SPACE_FILE, holds: () => space().$icon, leave: panelDone },
+    {
+      name: "a Matrix node's menu", reach: atMatrix, trigger: nodeEl(areaOne), menu: 'Edit Icon', file: SPACE_FILE, holds: () => space().$icon, shot: 'g19-matrix-icon',
+      held: { name: "a Matrix node's label stays through an icon pick, the pointer moved away", expr: `!!${nodeEl(areaOne)}` },
+    },
+    { name: "the Nexus photo's menu", reach: () => escapeAll(cdp), trigger: sel('.sidebar-ribbon [title="Right-click to set an icon or photo"]'), menu: 'Add Icon', file: NEXUS_SETTINGS, holds: () => nexusSettings().profile_icon },
+    { name: "a View Tile's title glyph", reach: atHome, trigger: TILE_GLYPH, menu: 'Edit Icon', file: HOMEPAGE, holds: () => homeView()?.display_icon },
+  ]
+  const COLOR_SITES = [
+    { name: "a property's Color row", reach: atEditor(CHOICE.check.label), trigger: liveEl('Color'), file: REGISTRY_REL, holds: () => registryFile().defs[CHOICE.check.id]?.checkbox_color, leave: toolbarDone },
+    { name: "a view row's menu", reach: atViews, trigger: viewRow(PANES_TABLE.name), menu: 'Edit Color', file: SIDECAR_A, holds: () => viewOnDisk(PANES_TABLE.id)?.color, leave: leaveViews },
+    { name: "a Space dropdown's footer", reach: () => spacePanel(cdp), trigger: liveEl('Change Color'), file: SPACE_FILE, holds: () => space().$color, leave: panelDone, shot: 'g19-space-color' },
+    { name: "a Matrix node's menu", reach: atMatrix, trigger: nodeEl(areaOne), menu: 'Change Color', file: SPACE_FILE, holds: () => space().$color },
+    {
+      name: 'a Settings color row',
+      reach: async () => {
+        await escapeAll(cdp)
+        await openSettings(cdp, 'Appearance')
+      },
+      trigger: sel('[aria-label="External Link Color"]'), file: NEXUS_SETTINGS, holds: () => nexusSettings().personalization?.externalLinkColor,
+      leave: async () => {
+        await escapeAll(cdp)
+        await closeSettings(cdp)
+      },
+    },
+    { name: "a View Tile's strip row", reach: atHome, trigger: TILE_PILL, menu: 'Edit Color', file: HOMEPAGE, holds: () => homeView()?.views[0].config?.color },
+  ]
+  const run = async (sites, of) => {
+    for (const [i, site] of sites.entries()) {
+      const r = await choose(cdp, site, of, of === 'icon' ? i + 1 : COLORS[i])
+      await (site.leave ?? (() => escapeAll(cdp)))()
+      item(19, 'MP-F-2', `${of === 'icon' ? 'an icon' : 'a color'} picked from ${site.name} opens hanging from its trigger and lands in ${site.file}`,
+        r.open && r.hung && r.landed && r.closed, show(r))
+      if (site.held) item(19, 'MP-F-2', site.held.name, r.held === true, show(r))
+    }
+  }
+  await run(ICON_SITES, 'icon')
+  await run(COLOR_SITES, 'color')
+
+  const strip = await choose(cdp, {
+    reach: async () => {
+      await atHome()
+      await chooseNative(cdp, TILE_GLYPH, 'Hide Views')
+      await hover(cdp, TILE_GLYPH, 1800)
+      await until('the revealed strip', () => cdp.evaluate(`(${TILE_PILL}).closest('[data-reveal-host]').parentElement.getBoundingClientRect().height > 0`))
+    },
+    trigger: TILE_PILL, menu: 'Edit Icon', holds: () => homeView()?.views[0].config?.icon, shot: 'g19-tile-strip-pick',
+    held: { expr: `(${TILE_PILL}).closest('[data-reveal-host]').parentElement.getBoundingClientRect().height > 0` },
+  }, 'icon', 1)
+  await escapeAll(cdp)
+  item(19, 'MP-F-2', "a View Tile's hidden strip stays revealed through an icon pick from its row, the pointer moved away, and the pick lands in homepage.json",
+    strip.open && strip.hung && strip.held === true && strip.landed, show(strip))
+
+  await must('Panes Gone', ask(cdp, 'views:save', COLLECTION, 'collection', { ...PANES_TABLE, id: 'view_01KZPROPERTIESDRIVE19GONE', name: 'Panes Gone' }, {}))
+  await atViews()
+  await chooseNative(cdp, viewRow('Panes Gone'), 'Edit Icon')
+  const openedOnRow = await settles(() => cdp.evaluate(`!!${CHOICE_PANE.icon}`), 4000)
+  await must('Panes Gone deleted', ask(cdp, 'views:delete', COLLECTION, 'collection', 'view_01KZPROPERTIESDRIVE19GONE'))
+  const rowLeft = await settles(async () => !(await cdp.evaluate(`!!${shownEl('[aria-label="Edit Panes Gone"]')}`)), 3000)
+  const pickerLeft = await settles(async () => !(await cdp.evaluate(`!!${CHOICE_PANE.icon}`)), 3000)
+  await leaveViews()
+  item(19, 'MP-F-2', "a view row's icon picker closes when its row leaves the list", openedOnRow && rowLeft && pickerLeft, show({ openedOnRow, rowLeft, pickerLeft }))
+
+  const header = liveEl('Edit Icon')
+  let glyphs
+  const f5 = await choose(cdp, {
+    reach: async () => {
+      await atViews()
+      await openEditor(PANES_TABLE.name)
+      glyphs = await cdp.evaluate(`[${glyphOf(header)}, ${glyphOf(`document.querySelector('[aria-label="Edit ${PANES_TABLE.name}"]').closest('[role=button]')`)}]`)
+    },
+    trigger: header, holds: () => viewOnDisk(PANES_TABLE.id)?.icon, shot: 'g19-f5-header-icon',
+  }, 'icon', 20)
+  const drawn = await cdp.evaluate(glyphOf(header))
+  await leaveViews()
+  item(19, 'MP-F-5', "the view editor's header draws the view's glyph, as its row does, and opens the icon picker hanging from it",
+    f5.open && f5.hung && glyphs[0] !== null && glyphs[0] === glyphs[1], show({ open: f5.open, hung: f5.hung, same: glyphs[0] === glyphs[1] }))
+  item(19, 'MP-F-5', "a pick from the view editor's header lands on the view and draws in the header", f5.landed && drawn === f5.glyph, show({ value: f5.value, landed: f5.landed, same: drawn === f5.glyph }))
+
+  await unchoose([])
+  for (const [rel, text] of kept) writeFileSync(join(NEXUS, rel), text)
+  for (const name of readdirSync(join(NEXUS, META_DIR))) if (!shards.has(name)) rmSync(join(NEXUS, META_DIR, name))
+  for (const [name, text] of shards) writeFileSync(join(NEXUS, META_DIR, name), text)
   await unfill([])
   await putBack(['Panes One'])
 }
