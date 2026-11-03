@@ -25,6 +25,7 @@ import { Button } from '@pommora/uix/Buttons/Button'
 import { KEYED_COMMANDS, matchesCommand } from '../Actions/commands'
 import { runCommand } from '../Actions/commandRouter'
 import { useBridgeSubscriptions } from '../Session/useBridgeSubscriptions'
+import { useOnNavigate } from '../Session/useOnNavigate'
 import { MenuPresenter } from './Menus/MenuPresenter'
 import { MenuSeat } from '../Properties/Pickers/ValueSeat'
 import { IdentityChoice } from '../Assets/IdentityChoice'
@@ -79,6 +80,12 @@ export function App(): React.JSX.Element {
   }, [load])
 
   useBridgeSubscriptions()
+
+  useOnNavigate(() => {
+    const s = useSession.getState()
+    s.pendingMenu?.settle(null)
+    s.dismissChoice()
+  })
 
   // On the root rather than the shell: portaled menus are dimmed too, and the root alone filters without becoming its fixed descendants' containing block.
   useEffect(() => {

@@ -233,6 +233,14 @@ describe('a value seat’s panes', () => {
     expect(seat.open).toBeNull()
   })
 
+  it('closes on a tab switch', () => {
+    mount(columnOf(SELECT))
+    act(() => el().click())
+    expect(seat.open?.mode).toBe('picker')
+    act(() => useSession.setState({ activeTabId: 'tab-2' }))
+    expect(seat.open).toBeNull()
+  })
+
   it('closes once its column no longer resolves', () => {
     mount(columnOf(SELECT))
     act(() => el().click())

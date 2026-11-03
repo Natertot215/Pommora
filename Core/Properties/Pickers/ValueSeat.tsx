@@ -23,6 +23,7 @@ import { contextIdsOf, identityOf } from '../../Contexts/contextIdentity'
 import { NO_SCHEMA } from '../../Nexus/treePatch'
 import { previewConnections } from '../../Session/pageConnections'
 import { useSession } from '../../Session/store'
+import { useOnNavigate } from '../../Session/useOnNavigate'
 import { groupUndo } from '../../Session/undo'
 import type { ColumnStyle } from '../columnStyles'
 import { numberBarCapable } from '../formatValue'
@@ -105,6 +106,9 @@ export function useValueSeat(host: SeatHost) {
     if (!open) return
     if (!anchor.current?.isConnected || (open.mode !== 'add' && !host.columnOf(open.columnId)))
       close()
+  })
+  useOnNavigate(() => {
+    if (open) close()
   })
 
   const intentOf = (row: ViewRow, column: ResolvedColumn): ValueIntent | null =>

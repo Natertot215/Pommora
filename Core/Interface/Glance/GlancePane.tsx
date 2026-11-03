@@ -23,6 +23,7 @@ import { PREVIEW_LINGER_MS } from '../../Settings/personalization'
 import { fetchPageDetail, knownBody, readPageDetail } from '../../Session/pageDetailCache'
 import { warmSeamOf } from '../../Session/warmCache'
 import { useSession, useSetting, windowTargetOf } from '../../Session/store'
+import { useOnNavigate } from '../../Session/useOnNavigate'
 import { useWindowGeometry } from '../Windows/useWindowGeometry'
 import { PageTile } from '../../Tiles/Surfaces/PageTile'
 import {
@@ -141,9 +142,7 @@ export function GlancePane(): React.JSX.Element {
     }
   }, [])
 
-  const selection = useSession((s) => s.selection)
   const activeTabId = useSession((s) => s.activeTabId)
-  const windowTab = useSession((s) => s.windowSlot?.activeTabId)
   const unpinGlance = useSession((s) => s.unpinGlance)
 
   // A closing pin stays in the store, its `open` false, so its pane blooms out; it leaves the store only once that exit has played through.
@@ -170,16 +169,17 @@ export function GlancePane(): React.JSX.Element {
   }, [])
 
   // Navigation dismisses the live pane and closes unlocked pins; locked pins survive. Active-tab pins bloom out; any an earlier tab switch left behind aren't rendered, so they leave at once.
-  useEffect(() => {
+  useOnNavigate(() => {
     dismiss()
+    const s = useSession.getState()
     const onTab: string[] = []
-    for (const p of useSession.getState().pinnedGlances) {
+    for (const p of s.pinnedGlances) {
       if (p.locked) continue
-      if (p.tabId === activeTabId) onTab.push(p.pinId)
+      if (p.tabId === s.activeTabId) onTab.push(p.pinId)
       else removePin(p.pinId)
     }
     beginExit(onTab)
-  }, [dismiss, removePin, beginExit, selection, activeTabId, windowTab])
+  })
 
   // A press outside every glance portal blooms out unlocked active-tab pins. Containment is the portal layer, not the glance body, so the live pane's resize edges and rim don't read as click-away.
   useEffect(() => {

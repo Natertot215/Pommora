@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { App } from './App'
 import { pushUndo, resetUndo } from '../Session/undo'
 import { ok } from '../Contract/result'
+import { useSession } from '../Session/store'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -57,5 +58,19 @@ describe('the value-undo chord', () => {
     expect(cmdZ(editor)).toBe(false)
     expect(revert).not.toHaveBeenCalled()
     editor.remove()
+  })
+})
+
+describe('a tab switch', () => {
+  it('closes the open menu and the icon picker, the menu answering nothing', async () => {
+    const trigger = document.createElement('button')
+    document.body.append(trigger)
+    const answered = useSession.getState().presentMenu([{ label: 'Open', action: 'open' }], trigger)
+    act(() => useSession.getState().requestChoice({ of: 'icon', trigger, onPick: () => {} }))
+    act(() => useSession.setState({ activeTabId: 'tab-2' }))
+    expect(useSession.getState().pendingMenu).toBeNull()
+    expect(useSession.getState().pendingChoice).toBeNull()
+    expect(await answered).toBeNull()
+    trigger.remove()
   })
 })
