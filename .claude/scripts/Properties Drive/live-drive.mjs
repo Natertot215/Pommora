@@ -50,6 +50,18 @@ async function chooseInApp(cdp, expr, label) {
   await sleep(800)
   return drawn
 }
+/** Keeps each file's text, or that it was absent, and every file in each of `dirs`, and answers what puts them back. */
+function keep(rels, dirs = []) {
+  const kept = rels.map((rel) => [rel, existsSync(join(NEXUS, rel)) ? read(rel) : null])
+  const folders = dirs.map((dir) => [dir, new Map(readdirSync(join(NEXUS, dir)).map((name) => [name, read(`${dir}/${name}`)]))])
+  return () => {
+    for (const [rel, text] of kept) text === null ? rmSync(join(NEXUS, rel), { force: true }) : writeFileSync(join(NEXUS, rel), text)
+    for (const [dir, was] of folders) {
+      for (const name of readdirSync(join(NEXUS, dir))) if (!was.has(name)) rmSync(join(NEXUS, dir, name))
+      for (const [name, text] of was) writeFileSync(join(NEXUS, dir, name), text)
+    }
+  }
+}
 
 // ── Group 1 — What Counts as a Property ─────────────────────────────────────
 
@@ -62,7 +74,7 @@ const FILEDATA = [
 const showsFiledata = (rows) => FILEDATA.every((f) => rows.some((r) => r.label === f.label && r.glyph === f.glyph))
 
 async function group1(cdp) {
-  const storedSidecar = read(SIDECAR_A)
+  const rewind = keep([REGISTRY_REL, SIDECAR_A])
   const view = { id: 'view_01KZPROPERTIESDRIVE00TBL', name: 'Drive Filedata', type: 'table', property_order: FILEDATA.map((f) => f.id), hidden_properties: [], hide_column_icons: false }
   await must('save the Drive Filedata view', ask(cdp, 'views:save', COLLECTION, 'collection', view, {}))
   await showView(cdp, view)
@@ -79,8 +91,7 @@ async function group1(cdp) {
   item(1, 'F-2 F-3', 'the filter offers Title, Creation Time, and Last Modified with their glyphs', showsFiledata(filterBy), show(filterBy))
   await shot(cdp, 'g1-filter-targets')
 
-  const stored = readFileSync(REGISTRY, 'utf8')
-  const file = JSON.parse(stored)
+  const file = registryFile()
   const witness = { id: 'prop_drive_witness', label: 'Drive Witness', key: 'Drive Witness', type: 'text' }
   const context = { id: 'prop_drive_context', label: 'Drive Context', key: 'Drive Context', type: 'context' }
   writeFileSync(REGISTRY, JSON.stringify({
@@ -100,8 +111,7 @@ async function group1(cdp) {
 
   await escapeAll(cdp)
   await closeToolbarSettings(cdp)
-  writeFileSync(join(NEXUS, SIDECAR_A), storedSidecar)
-  writeFileSync(REGISTRY, stored)
+  rewind()
   await until('the registry as it was', async () => !(await held(cdp, witness.id)))
 }
 
@@ -145,8 +155,8 @@ async function group2(cdp) {
 
 async function group3(cdp) {
   const space = '.nexus/contexts/Areas/Area One'
-  const files = [REGISTRY, join(NEXUS, 'Collection A/_pagecollection.json'), join(NEXUS, space, '_space.json')]
-  const stored = files.map((f) => readFileSync(f, 'utf8'))
+  const sidecar = join(NEXUS, space, '_space.json')
+  const rewind = keep([REGISTRY_REL, SIDECAR_A, `${space}/_space.json`])
   const status = await must('Status', ask(cdp, 'mutate', { op: 'addProperty', containerPath: COLLECTION, draft: {
     label: 'Status', type: 'select',
     select_options: [{ key: 'Option 1', label: 'Option 1' }, { key: 'Option 2', label: 'Option 2' }],
@@ -173,7 +183,6 @@ async function group3(cdp) {
   const empties = await settles(async () => (await cdp.evaluate(`!!${row('Spaces')} && !${row('Filled')}`)))
   item(3, 'J-1', 'a Text value of only spaces matches "is empty"', empties)
 
-  const sidecar = files[2]
   const pick = () => must('a Space value', ask(cdp, 'mutate', { op: 'setProperty', path: space, propertyId: notes.created.propertyId, value: { kind: 'text', value: 'held' } }))
   await pick()
   const before = { text: readFileSync(sidecar, 'utf8'), mtime: statSync(sidecar).mtimeMs }
@@ -187,7 +196,7 @@ async function group3(cdp) {
     rmSync(join(NEXUS, pagePath(title)))
     delete pageIds[title]
   }
-  files.forEach((f, i) => writeFileSync(f, stored[i]))
+  rewind()
   await until('the definitions leave', async () => !(await config(cdp)).registry.some((d) => d.id === notes.created.propertyId))
 }
 
@@ -201,8 +210,8 @@ const stateTree = async () => (await must('nexus:state', ask(cdp, 'nexus:state')
 // Group 4 relaunches, so it drives the run's own `cdp`, and a failure inside it leaves the run holding the live session.
 async function group4() {
   // An empty registry may never have been written; the group writes `{}` and leaves no file behind it.
-  const absent = !existsSync(join(NEXUS, REGISTRY_REL))
-  if (absent) writeFileSync(join(NEXUS, REGISTRY_REL), '{}')
+  const rewind = keep([REGISTRY_REL, SIDECAR_A])
+  if (!existsSync(join(NEXUS, REGISTRY_REL))) writeFileSync(join(NEXUS, REGISTRY_REL), '{}')
   const kept = { registry: read(REGISTRY_REL), sidecar: read(SIDECAR_A) }
   const def = { id: 'prop_drive_damage', label: 'Drive Damage', key: 'Drive Damage', type: 'checkbox' }
   const held = JSON.parse(kept.registry)
@@ -230,9 +239,7 @@ async function group4() {
   })
   item(4, 'O-6', 'fixing the file brings the definitions back and clears the entry without a reopen', back, show((await stateTree()).unreadable))
 
-  writeFileSync(join(NEXUS, SIDECAR_A), kept.sidecar)
-  writeFileSync(join(NEXUS, REGISTRY_REL), kept.registry)
-  if (absent) rmSync(join(NEXUS, REGISTRY_REL))
+  rewind()
   const ids = (t) => t.config.registry.map((d) => d.id)
   const left = await settles(async () => same(ids(await stateTree()), ids(before)))
   item(4, '—', 'the group leaves the property list and Collection A as it found them', left && read(SIDECAR_A) === kept.sidecar, show(ids(await stateTree())))
@@ -414,7 +421,7 @@ const optionRoles = (v) => ({ sort: v.sort, group: v.group, filter: v.filter, co
 
 async function group7(cdp) {
   const G = 7
-  const stored = [REGISTRY_REL, SIDECAR_A].map((rel) => [rel, read(rel)])
+  const rewind = keep([REGISTRY_REL, SIDECAR_A])
   const added = await must('P8 Stage', ask(cdp, 'mutate', { op: 'addProperty', containerPath: COLLECTION, draft: { label: 'P8 Stage', type: 'select' } }))
   const propertyId = added.created.propertyId
   const seedId = optionsOf(propertyId)[0]?.id
@@ -456,7 +463,7 @@ async function group7(cdp) {
     rmSync(join(NEXUS, pagePath(title)))
     delete pageIds[title]
   }
-  for (const [rel, text] of stored) writeFileSync(join(NEXUS, rel), text)
+  rewind()
   await until('the definitions leave', async () => !(await held(cdp, propertyId)))
 }
 
@@ -697,12 +704,10 @@ const activate = (cdp, viewId) =>
 
 const HOME = { kind: 'homepage' }
 const HOMEPAGE_DIR = '.nexus/interface/homepage'
-const HOMEPAGE = `${HOMEPAGE_DIR}/homepage.json`
 /** Writes `defs` into the registry and assigns them to Collection A, saves `seededViews`, and answers what puts the registry, the sidecar, and the homepage back. */
 async function seedCollection(cdp, defs, seededViews) {
-  const kept = [REGISTRY_REL, SIDECAR_A, HOMEPAGE].map((rel) => [rel, read(rel)])
-  const tiles = new Set(readdirSync(join(NEXUS, HOMEPAGE_DIR)))
-  const file = JSON.parse(kept[0][1])
+  const rewind = keep([REGISTRY_REL, SIDECAR_A], [HOMEPAGE_DIR])
+  const file = registryFile()
   writeFileSync(REGISTRY, JSON.stringify({
     ...file,
     order: [...(file.order ?? []), ...defs.map((d) => d.id)],
@@ -721,18 +726,16 @@ async function seedCollection(cdp, defs, seededViews) {
       rmSync(join(NEXUS, pagePath(title)))
       delete pageIds[title]
     }
-    for (const [rel, text] of kept) writeFileSync(join(NEXUS, rel), text)
-    for (const name of readdirSync(join(NEXUS, HOMEPAGE_DIR))) if (!tiles.has(name)) rmSync(join(NEXUS, HOMEPAGE_DIR, name))
+    rewind()
     await until('the definitions leave', async () => !(await config(cdp)).registry.some((h) => h.id === defs[0].id))
   }
 }
 
 async function group11(cdp) {
-  const storedRegistry = readFileSync(REGISTRY, 'utf8')
-  const storedSidecar = read(SIDECAR_A)
+  const rewind = keep([REGISTRY_REL, SIDECAR_A])
   await openCollection(cdp)
 
-  const file = JSON.parse(storedRegistry)
+  const file = registryFile()
   writeFileSync(REGISTRY, JSON.stringify({
     ...file,
     order: [...file.order, ...COLUMNS_DEFS.map((d) => d.id)],
@@ -801,8 +804,7 @@ async function group11(cdp) {
   await escapeAll(cdp)
   rmSync(join(NEXUS, path))
   delete pageIds['Drive Columns']
-  writeFileSync(join(NEXUS, SIDECAR_A), storedSidecar)
-  writeFileSync(REGISTRY, storedRegistry)
+  rewind()
   await until('the registry as it was', async () => !(await config(cdp)).registry.some((d) => d.id === 'prop_drive_select'))
 }
 
@@ -1035,7 +1037,6 @@ async function group14(cdp) {
 
 // ── Group 15 — The Properties Pane (P17) ────────────────────────────────────
 
-const G15_FILES = ['.nexus/properties.json', 'Collection A/_pagecollection.json']
 const RHYTHM = 8
 const liveEl = (label) => `[...document.querySelectorAll('[aria-label="${label}"]')].find((e) => !e.closest('[inert]'))`
 const liveRow = (text) => `[...document.querySelectorAll('[role=button]')].find((e) => !e.closest('[inert]') && e.textContent.trim() === ${JSON.stringify(text)})`
@@ -1091,7 +1092,7 @@ async function typeInto(cdp, ariaLabel, text) {
 }
 
 async function group15(cdp) {
-  const kept = G15_FILES.map((rel) => readFileSync(join(NEXUS, rel), 'utf8'))
+  const rewind = keep([REGISTRY_REL, SIDECAR_A])
   const bundles = new Set((await trashRows(cdp)).map((r) => r.bundlePath))
   await openCollection(cdp)
   await viewFrame(cdp, 'Properties')
@@ -1158,8 +1159,8 @@ async function group15(cdp) {
   await shot(cdp, 'g15-list-after-removal')
 
   await escapeAll(cdp)
-  G15_FILES.forEach((rel, i) => writeFileSync(join(NEXUS, rel), kept[i]))
-  await until('the registry as it was', async () => (await config(cdp)).registry.length === JSON.parse(kept[0]).order.length)
+  rewind()
+  await until('the registry as it was', async () => (await config(cdp)).registry.length === registryFile().order.length)
   for (const { bundlePath } of await trashRows(cdp))
     if (!bundles.has(bundlePath)) await must('empty a bundle', ask(cdp, 'mutate', { op: 'emptyBundle', bundlePath }))
 }
@@ -1766,8 +1767,7 @@ const FOCUSED_TEXT = `(() => { const a = document.activeElement; return a && a !
 
 async function group17(cdp) {
   const putBack = await seedCollection(cdp, Object.values(CLICK), [CLICK_TABLE, CLICK_CARDS])
-  const kept = [STATE_FILE, SPACE_FILE, `${SET}/_pageset.json`, `${COLLECTION}/Set Beta/_pageset.json`].map((rel) => [rel, read(rel)])
-  const shards = new Map(readdirSync(join(NEXUS, META_DIR)).map((name) => [name, read(`${META_DIR}/${name}`)]))
+  const rewind = keep([STATE_FILE, SPACE_FILE, `${SET}/_pageset.json`, `${COLLECTION}/Set Beta/_pageset.json`], [META_DIR])
   const stores = ['.trash', '.nexus/archive'].filter((rel) => existsSync(join(NEXUS, rel)))
   const clipboard = (await ask(cdp, 'clipboard:read')).value
   await createPage(cdp, CLICK_PAGE)
@@ -2061,9 +2061,7 @@ async function group17(cdp) {
 
   await escapeAll(cdp)
   await ask(cdp, 'clipboard:write', clipboard)
-  for (const [rel, text] of kept) writeFileSync(join(NEXUS, rel), text)
-  for (const name of readdirSync(join(NEXUS, META_DIR))) if (!shards.has(name)) rmSync(join(NEXUS, META_DIR, name))
-  for (const [name, text] of shards) writeFileSync(join(NEXUS, META_DIR, name), text)
+  rewind()
   for (const rel of ['.trash', '.nexus/archive']) if (!stores.includes(rel)) rmSync(join(NEXUS, rel), { recursive: true, force: true })
   await putBack(CLICK_PAGE in pageIds ? [CLICK_PAGE] : [])
 }
@@ -2689,8 +2687,7 @@ async function group19(cdp) {
     [inAppMenu, systemMenu].every((r) => r.copy && r.deleted && r.closed) && switchedOff, show({ inAppMenu, systemMenu, switchedOn, switchedOff }))
 
   const unchoose = await seedCollection(cdp, Object.values(CHOICE), [])
-  const kept = [SPACE_FILE, CONTEXTS_REL, NEXUS_SETTINGS, MATRIX_FILE].map((rel) => [rel, existsSync(join(NEXUS, rel)) ? read(rel) : null])
-  const shards = new Map(readdirSync(join(NEXUS, META_DIR)).map((name) => [name, read(`${META_DIR}/${name}`)]))
+  const rewind = keep([SPACE_FILE, CONTEXTS_REL, NEXUS_SETTINGS, MATRIX_FILE], [META_DIR])
   const areaOne = 'Area One'
   // The Matrix draws Spaces, which alone take Change Color, only when it groups by Space.
   await must('the Matrix by Space', ask(cdp, 'matrix:write', { group: { mode: 'space' } }))
@@ -2861,9 +2858,7 @@ async function group19(cdp) {
   item(19, 'MP-F-5', "a pick from the view editor's header lands on the view and draws in the header", f5.landed && drawn === f5.glyph, show({ value: f5.value, landed: f5.landed, same: drawn === f5.glyph }))
 
   await unchoose([])
-  for (const [rel, text] of kept) text === null ? rmSync(join(NEXUS, rel), { force: true }) : writeFileSync(join(NEXUS, rel), text)
-  for (const name of readdirSync(join(NEXUS, META_DIR))) if (!shards.has(name)) rmSync(join(NEXUS, META_DIR, name))
-  for (const [name, text] of shards) writeFileSync(join(NEXUS, META_DIR, name), text)
+  rewind()
   await unfill([])
   await putBack(['Panes One'])
 }
