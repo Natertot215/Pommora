@@ -155,6 +155,7 @@ export function PickerMenu({
   }
   const decidedSide = useRef<PickerDirection | null>(null)
   const decidedCenter = useRef<boolean | null>(null)
+  const decidedFor = useRef<Element | null | undefined>(null)
   if (!open && decidedSide.current !== null) {
     decidedSide.current = null
     decidedCenter.current = null
@@ -180,6 +181,11 @@ export function PickerMenu({
     if (!mounted || !open) return
     const point = at ? { left: at.x, top: at.y, bottom: at.y + (at.height ?? 0), width: 0 } : null
     const trigger = triggerRef?.current ?? markerRef.current?.parentElement
+    if (trigger !== decidedFor.current) {
+      decidedFor.current = trigger
+      decidedSide.current = null
+      decidedCenter.current = null
+    }
     const rectOf = point ? () => point : trigger ? () => trigger.getBoundingClientRect() : null
     if (!rectOf) return
     const measure = (growth = 0): void => {
@@ -195,7 +201,7 @@ export function PickerMenu({
       if (held === null || growth > 0) {
         const room = roomAround(t, view.h)
         side = sideFor(side, pane.h + growth, room)
-        if (held === null) placeResize?.({ dir: side, room: room[side] })
+        if (held === null) placeResize?.({ dir: side, room: room[side] }, glassRef.current!)
       }
       const was =
         held !== null && side !== held ? paneRef.current?.getBoundingClientRect().top : undefined
@@ -244,6 +250,7 @@ export function PickerMenu({
   }, [
     mounted,
     triggerRef,
+    triggerRef?.current,
     open,
     origin,
     direction,

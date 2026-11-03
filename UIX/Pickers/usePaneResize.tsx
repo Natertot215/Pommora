@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import {
   useResizable,
   type RememberedSize,
@@ -18,13 +18,13 @@ export interface PaneBounds {
 export interface PaneResize {
   size: Partial<Size>
   resizing: boolean
-  place: (placed: { dir: PickerDirection; room: number }) => void
+  place: (placed: { dir: PickerDirection; room: number }, pane: HTMLElement) => void
   edges: React.JSX.Element[]
 }
 
 type Axis = keyof Size
 
-const UNPLACED = { dir: 'down' as PickerDirection, room: Number.POSITIVE_INFINITY }
+const UNPLACED = { dir: 'down' as PickerDirection, ceiling: Number.POSITIVE_INFINITY }
 
 const PULLS: Record<Axis, RegExp> = { w: /[ew]/, h: /[ns]/ }
 
@@ -64,7 +64,7 @@ export function usePaneResize(
   const { min } = bounds
   const max: Size = {
     w: Math.min(bounds.max?.w ?? Number.POSITIVE_INFINITY, window.innerWidth - 2 * VIEWPORT_MARGIN),
-    h: Math.min(bounds.max?.h ?? Number.POSITIVE_INFINITY, placed.room),
+    h: Math.min(bounds.max?.h ?? Number.POSITIVE_INFINITY, placed.ceiling),
   }
   const stored = geometry?.initialSize
   const held = resized ?? { ...bounds.default, ...stored }
@@ -111,10 +111,16 @@ export function usePaneResize(
     },
   })
 
+  const place = useCallback<PaneResize['place']>(
+    ({ dir, room }, pane) =>
+      setPlaced({ dir, ceiling: room - (pane.offsetHeight - contentBox(pane).h) }),
+    [],
+  )
+
   return {
     size: { w: fit('w'), h: fit('h') },
     resizing: resize.active !== null,
-    place: setPlaced,
+    place,
     edges: resize.edges(
       FREE_EDGES[placed.dir].filter((e) =>
         (['w', 'h'] as const).every((axis) => min[axis] !== undefined || !PULLS[axis].test(e)),

@@ -117,7 +117,10 @@ export function PropertyPanel({
     }
   }, [path, isSpace])
 
-  useEffect(() => setOverride(null), [subjectId])
+  useEffect(() => {
+    setOverride(null)
+    setRevealed(new Set())
+  }, [subjectId])
   useValuesEpoch(
     isSpace ? null : relDirname(path),
     (v) => {
