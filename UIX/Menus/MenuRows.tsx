@@ -297,13 +297,13 @@ export function AccessoryButton({
   icon: IconName
   size: IconSize
   ariaLabel: string
-  onClick: () => void
+  onClick: (e: MouseEvent<HTMLButtonElement>) => void
   className?: string
   create?: boolean
   disabled?: boolean
   pressed?: boolean
   reveal?: boolean
-  onMouseDown?: (e: React.MouseEvent<HTMLButtonElement>) => void
+  onMouseDown?: (e: MouseEvent<HTMLButtonElement>) => void
   ref?: Ref<HTMLButtonElement>
 }): React.JSX.Element {
   return (
@@ -322,7 +322,7 @@ export function AccessoryButton({
       onMouseDown={onMouseDown}
       onClick={(e) => {
         e.stopPropagation()
-        onClick()
+        onClick(e)
       }}
     />
   )
@@ -340,7 +340,7 @@ export function FooterIconButton({
 }: {
   icon: string | React.JSX.Element
   ariaLabel: string
-  onClick?: () => void
+  onClick?: (e: MouseEvent<HTMLButtonElement>) => void
   disabled?: boolean
   pressed?: boolean
   quiet?: boolean

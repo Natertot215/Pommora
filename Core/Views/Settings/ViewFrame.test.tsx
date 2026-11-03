@@ -195,7 +195,10 @@ describe('ViewFrame — the Archive row', () => {
 })
 
 describe('ViewFrame — the view editor’s menu', () => {
-  it('deleting the view from its editor closes the dropdown', async () => {
+  it.each([
+    true,
+    false,
+  ])('deleting the view from its editor closes the dropdown only once confirmed (%s)', async (confirmed) => {
     const onClose = vi.fn()
     const deleted = vi.fn(async () => ({ ok: true, value: {} }))
     ;(window as unknown as { nexus: unknown }).nexus = stubDialer({ 'views:delete': deleted })
@@ -203,16 +206,16 @@ describe('ViewFrame — the view editor’s menu', () => {
     useSession.setState({
       devicePrefs: {},
       presentMenu,
-      askConfirm: vi.fn(async () => true) as never,
+      askConfirm: vi.fn(async () => confirmed) as never,
     })
     await mount(source([view('view_a', 'Table'), view('view_b', 'Board')]), onClose)
     await act(async () => {
       ;(document.querySelector('[aria-label="Edit Board"]') as HTMLElement).click()
     })
-    const trigger = document.querySelector('[aria-label="View menu"]') as HTMLElement
+    const trigger = document.querySelector('[aria-label="View Menu"]') as HTMLElement
     await act(async () => trigger.click())
     expect(presentMenu.mock.calls[0]?.[1]).toBe(trigger)
-    expect(deleted).toHaveBeenCalledWith('Col', 'collection', 'view_b')
-    expect(onClose).toHaveBeenCalledOnce()
+    expect(deleted.mock.calls).toEqual(confirmed ? [['Col', 'collection', 'view_b']] : [])
+    expect(onClose).toHaveBeenCalledTimes(confirmed ? 1 : 0)
   })
 })

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import type { PropertyDefinition } from '../../Properties/properties'
 import {
@@ -123,12 +123,8 @@ export function LayoutFrame(
 ): React.JSX.Element {
   const { source, view, back } = props
   const [frame, setFrame] = useState<ViewRowId | null>(null)
-  const menuRef = useRef<HTMLButtonElement>(null)
   const saveView = useSaveView(source)
   const write = (patch: Partial<SavedView>): void => void saveView(view, patch)
-  const rename = (name: string): void => {
-    if (name && name !== view.name) write({ name })
-  }
   const options = LAYOUT_OPTIONS[view.type] ?? TABLE_LAYOUT
   const setType = (type: ViewType): void => {
     if (type === view.type) return
@@ -176,7 +172,6 @@ export function LayoutFrame(
     </>
   ) : null
 
-  const title = <InlineEditHeader value={view.name} onCommit={rename} />
   const grid = (
     <div className={vs.grid}>
       {VIEW_TYPES.map((t) => (
@@ -205,6 +200,10 @@ export function LayoutFrame(
       </MenuScrollFrame>
     )
 
+  const rename = (name: string): void => {
+    if (name && name !== view.name) write({ name })
+  }
+  const title = <InlineEditHeader value={view.name} onCommit={rename} />
   const toView: MenuBack = { label: 'Views', onBack: () => setFrame(null) }
   const leafFor = (id: ViewRowId): React.JSX.Element => {
     if (id !== 'layout')
@@ -237,11 +236,10 @@ export function LayoutFrame(
           {...back}
           trailing={
             <AccessoryButton
-              ref={menuRef}
               icon="ellipsis-vertical"
-              size="body"
-              ariaLabel="View menu"
-              onClick={() => menuRef.current && props.onMenu(menuRef.current)}
+              size={ICON.editorMenu}
+              ariaLabel="View Menu"
+              onClick={(e) => props.onMenu(e.currentTarget)}
             />
           }
         />

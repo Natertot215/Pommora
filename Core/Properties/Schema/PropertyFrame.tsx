@@ -186,6 +186,7 @@ export function PropertyFrame({
   // An editor whose property leaves this Collection, by any route, gives way to the list.
   const editing = view.kind === 'edit' ? schema.find((d) => d.id === view.id) : undefined
   const backToList = (): void => setView({ kind: 'list' })
+  const toList: MenuBack = { label: 'Properties', onBack: backToList }
 
   const create = async (type: PropertyType): Promise<void> => {
     const draft = { label: `New ${propertyTypeLabel(type)}`, type }
@@ -238,8 +239,11 @@ export function PropertyFrame({
     return d && <Icon name={propertyIcon(d)} />
   }
 
-  const editorMenu = async (def: PropertyDefinition): Promise<void> => {
-    const action = await popMenu(propertyMenuModel({ kind: 'editor' }))
+  const editorMenu = async (def: PropertyDefinition, trigger: HTMLElement): Promise<void> => {
+    const action = await popMenu(propertyMenuModel({ kind: 'editor' }), trigger, {
+      solid: true,
+      compact: true,
+    })
     if (action === 'property:remove') await remove(def.id)
     else if (
       action === 'property:destroy' &&
@@ -255,7 +259,7 @@ export function PropertyFrame({
 
   const typePicker = (
     <>
-      <MenuTopRow label="Properties" onBack={backToList} />
+      <MenuTopRow {...toList} />
       {CREATABLE_TYPES.map((type) => (
         <MenuItem
           key={type}
@@ -315,14 +319,13 @@ export function PropertyFrame({
       <MenuScrollFrame
         header={
           <MenuTopRow
-            label="Properties"
-            onBack={backToList}
+            {...toList}
             trailing={
               <AccessoryButton
                 icon="ellipsis-vertical"
                 size={s.ICON.editorMenu}
                 ariaLabel="Property Menu"
-                onClick={() => void editorMenu(def)}
+                onClick={(e) => void editorMenu(def, e.currentTarget)}
               />
             }
           />

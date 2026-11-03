@@ -81,6 +81,7 @@ beforeEach(() => {
   useSession.setState({
     mutate: mutate as never,
     tree: { nexus: { id: 'n' }, config: { registry: [] } } as never,
+    devicePrefs: { nativeMenus: true },
   })
 })
 afterEach(() => {
@@ -438,7 +439,7 @@ describe('native menus + the inline-rename channel', () => {
     })
     expect(propertyMenuSpy).toHaveBeenCalledWith({
       items: propertyMenuModel({ kind: 'editor' }),
-      anchor: undefined,
+      anchor: { left: 0, top: 0, height: 0 },
     })
     expect(mutate).toHaveBeenCalledWith({
       op: 'unassignProperty',
