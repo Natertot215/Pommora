@@ -156,7 +156,7 @@ The order is what makes each step land once. Phase 0 lands the drive and records
 - [x] `[Stop: Nathan ratifies; no code changes before this]`
 - [ ] **Phase 0** — Drives and Baseline
   - [x] Task 0-1 · Run Start
-  - [ ] Task 0-2 · The List Types Drive
+  - [x] Task 0-2 · The List Types Drive
   - [ ] Task 0-3 · The baseline drives
 - [ ] **Phase 1** — The List Model
   - [ ] Task 1-1 · The rename
@@ -211,8 +211,8 @@ The List Types Drive should land and meet the app.
 
 **VERIFY**
 
-- [ ] Run the gates; the drive's run reads every Phase 0 item `pass` and no `FAIL`, and every other item's `AWAIT` detail shows its target was hit (rows printed, or a body changed by base behavior); the orchestrator reads and captions four shots (the grip's Type ▸, a cell's grip, `/bul`, Bold).
-- [ ] The README's paragraph matches the drive's groups and port.
+- [x] Run the gates; the drive's run reads every Phase 0 item `pass` and no `FAIL`, and every other item's `AWAIT` detail shows its target was hit (rows printed, or a body changed by base behavior); the orchestrator reads and captions the drive's four shots (the page's list, the cell, the resting cell, and Pages & Writing), since a native menu records as rows rather than in a shot.
+- [x] The README's paragraph matches the drive's groups and port.
 
 #### Task 0-3
 

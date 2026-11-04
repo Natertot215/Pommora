@@ -89,6 +89,14 @@ export function item(group, decision, name, pass, detail) {
   results.push({ name, pass: !!pass })
   ledger.push({ group: String(group), decision, name, mark })
 }
+/** The same, owned by a plan phase too: with `landed` the last phase in the build under test, an item a later phase owns is expected to fail and doesn't fail the run. */
+export const phasedItem = (landed) => (group, phase, decision, name, pass, detail) => {
+  const awaited = phase > landed
+  const mark = pass ? (awaited ? 'AHEAD' : 'PASS') : awaited ? 'AWAIT' : 'FAIL'
+  console.log(`${mark.padEnd(5)}  g${group} [P${phase} ${decision}] ${name}${!pass && detail ? `\n       ${detail}` : ''}`)
+  results.push({ name, pass: !!pass || awaited })
+  ledger.push({ group: String(group), phase, decision, name, mark })
+}
 /** Each group's count of every mark, then how many results held, exiting failed when any didn't. */
 export function tally(groups, { marks = ['PASS', 'FAIL'], note = '' } = {}) {
   console.log(`\ngroup${marks.map((m) => ` ${m.toLowerCase().padStart(m.length + 1)}`).join('')}`)
@@ -114,7 +122,7 @@ const PATCHES = `(() => {
   BrowserWindow.prototype.moveTop = function () {}
   app.focus = () => {}
   const rowsOf = (menu) => menu.items.filter((i) => i.visible).map((i) =>
-    i.type === 'separator' ? { separator: true } : { label: i.label, enabled: i.enabled, ...(i.submenu && { submenu: rowsOf(i.submenu) }) })
+    i.type === 'separator' ? { separator: true } : { label: i.label, enabled: i.enabled, ...(i.checked && { checked: true }), ...(i.submenu && { submenu: rowsOf(i.submenu) }) })
   const itemAt = (menu, path) => path.reduce((item, label) => item?.submenu?.items.find((i) => i.visible && i.type !== 'separator' && i.label === label), { submenu: menu })
   const drive = { popup: null, seq: 0, dialogs: 0, picks: [], revealed: [] }
   dialog.showOpenDialog = async () => {

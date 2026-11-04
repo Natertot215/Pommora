@@ -5,7 +5,7 @@ import { join } from 'node:path'
 import { parse } from 'yaml'
 import {
   ask, boxOf, chooseNative, click, closePanel, escapeAll, field, fieldValue, FM, launch, META,
-  measure, mintPageId, mouseAt, mouseClick, must, NEXUS, openPane, openPanel, PAGE_VIEW, PANE_VIEW, pickNative, popNative,
+  measure, mintPageId, mouseAt, mouseClick, must, NEXUS, openPane, openPanel, PAGE_VIEW, PANE_VIEW, phasedItem, pickNative, popNative,
   ledger, pressKey, refusal, relaunch, restore, results, selectField, settles, SHIFT, shot, sleep, tally, typeText, until,
 } from '../drive-harness.mjs'
 
@@ -17,23 +17,15 @@ if ((GROUPS.size === 0 && !SCALE) || [...GROUPS].some((g) => !ALL.includes(g))) 
   console.error('usage: node live-drive.mjs <group…> [scale]   (groups 1–8, each the plan phase of its number, and 9, the marks over a link; scale times ~/Benchmark-Medium)')
   process.exit(2)
 }
-// The last plan phase landed in the build under test: an item owned by a later phase is expected to fail and doesn't fail the run.
 const LANDED = Number(process.env.POMMORA_PL_LANDED ?? 1)
 
 // ── Items ───────────────────────────────────────────────────────────────────
 
-/** One assertion, owned by the plan phase that lands it and the decision it proves. */
-function item(group, phase, decision, name, pass, detail) {
-  const awaited = phase > LANDED
-  const mark = pass ? (awaited ? 'AHEAD' : 'PASS') : awaited ? 'AWAIT' : 'FAIL'
-  console.log(`${mark.padEnd(5)}  g${group} [P${phase} ${decision}] ${name}${!pass && detail ? `\n       ${detail}` : ''}`)
-  results.push({ name, pass: !!pass || awaited })
-  ledger.push({ group, phase, decision, name, mark })
-}
+const item = phasedItem(LANDED)
 /** An item the drive can't run against this build or this harness, with why. */
 function pending(group, phase, decision, name, why) {
   console.log(`SKIP   g${group} [P${phase} ${decision}] ${name}\n       ${why}`)
-  ledger.push({ group, phase, decision, name, mark: 'SKIP' })
+  ledger.push({ group: String(group), phase, decision, name, mark: 'SKIP' })
 }
 const show = (v) => JSON.stringify(v)
 
@@ -1349,7 +1341,7 @@ try {
 } finally {
   await restore()
 }
-tally([0, ...ALL].filter((g) => g === 0 || GROUPS.has(g)), {
+tally([0, ...ALL].filter((g) => g === 0 || GROUPS.has(g)).map(String), {
   marks: ['PASS', 'FAIL', 'AHEAD', 'AWAIT', 'SKIP'],
   note: ` (an item awaiting a later phase than ${LANDED} holds by definition)`,
 })
