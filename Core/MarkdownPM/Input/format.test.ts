@@ -142,6 +142,7 @@ describe('setHeading', () => {
   it('heads every selected line', () => {
     const three = 'one\ntwo\nthree'
     expect(apply(three, setHeading(three, 0, three.length, 2))).toBe('## one\n## two\n## three')
+    expect(apply(three, setHeading(three, 0, 4, 2))).toBe('## one\ntwo\nthree')
   })
   it('leaves a blank line unheaded', () => {
     const gapped = 'one\n\ntwo'
@@ -191,6 +192,7 @@ describe('setList', () => {
     expect(listed(all, 'bullet')).toBe(all)
     const mixed = '- one\ntwo'
     expect(listed(mixed, 'bullet')).toBe('- one\n- two')
+    expect(setList(scanDoc(mixed), 0, mixed.length, 'bullet', {}, 'page').selection).toBeUndefined()
   })
   it('leaves a blank line unmarked', () => {
     const gapped = 'one\n\ntwo'
@@ -228,8 +230,9 @@ describe('listKindOf', () => {
   const kindOf = (doc: string): ReturnType<typeof listKindOf> =>
     listKindOf(scanDoc(doc), 0, doc.length, {}, 'page')
 
-  it('reads the kind a whole block agrees on, through every level', () => {
+  it('reads the kind a whole block’s items agree on, through every level', () => {
     expect(kindOf('- a\n\t- b')).toBe('bullet')
+    expect(kindOf('  para\n- a')).toBe('bullet')
     expect(kindOf('1. a\n2. b')).toBe('ordered')
     expect(kindOf('- [x] a\n- [ ] b')).toBe('checkbox')
     expect(kindOf('→ a\n→ b')).toBe('arrow')
@@ -259,6 +262,21 @@ describe('setList over a whole block', () => {
 
   it('leaves wrapped continuation lines alone', () => {
     expect(listed('- a\n  wrapped body\n- b', 'ordered')).toBe('1. a\n  wrapped body\n2. b')
+    for (const fence of ['```', '$$']) {
+      const doc = `1. Run this:\n   ${fence}\n   cmd\n\n   cmd2\n   ${fence}\n   Then check.\n2. Next`
+      const bulleted = doc.replace('1. Run', '- Run').replace('2. Next', '- Next')
+      const at = doc.indexOf('Then')
+      expect(listed(doc, 'bullet', at, at)).toBe(bulleted)
+      expect(listed(doc, 'bullet')).toBe(bulleted)
+    }
+    const quoted = '- a\n  > - b\n  cont of a\n- c'
+    const at = quoted.indexOf('cont')
+    expect(listed(quoted, 'ordered', at, at)).toBe('1. a\n  > - b\n  cont of a\n2. c')
+    expect(listed(quoted, 'ordered')).toBe('1. a\n  > 1. b\n  cont of a\n2. c')
+    const deeper = '- a\n  > - b\n  >   cont b\n  cont a\n- c'
+    expect(listed(deeper, 'ordered', deeper.indexOf('cont b'), deeper.indexOf('\n- c'))).toBe(
+      '1. a\n  > 1. b\n  >   cont b\n  cont a\n- c',
+    )
   })
 
   it('finds a quoted marker behind its prefix rather than missing it', () => {
@@ -298,6 +316,7 @@ describe('setBlock', () => {
   const three = 'one\ntwo\nthree'
   it('quotes every selected line', () => {
     expect(apply(three, setBlock(three, 0, three.length, 'quote'))).toBe('> one\n> two\n> three')
+    expect(apply(three, setBlock(three, 0, 4, 'quote'))).toBe('> one\ntwo\nthree')
   })
   it('clears the quote only where every selected line already is one', () => {
     const all = '> one\n> two'
@@ -333,6 +352,7 @@ describe('setBlock', () => {
   })
   it('fences the whole selection as one block', () => {
     expect(apply(three, setBlock(three, 0, three.length, 'code'))).toBe('```\none\ntwo\nthree\n```')
+    expect(apply(three, setBlock(three, 0, 4, 'code'))).toBe('```\none\n```\ntwo\nthree')
   })
 
   it('fences a line as code', () => {

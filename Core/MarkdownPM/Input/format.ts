@@ -17,6 +17,7 @@ import {
   lineStartAt,
   lineEndAt,
   lineIndexAt,
+  quoteDepthOf,
   trimmedRange,
   overlaps,
 } from '../Engine/markdownCode'
@@ -288,10 +289,14 @@ function readLine(doc: string, ls: number, scope: MarkdownScope): SelectedLine {
   }
 }
 
+const reachEnd = (doc: string, from: number, to: number): number =>
+  to > from && lineStartAt(doc, to) === to ? to - 1 : to
+
 /** A selection passes over its blank lines; a caret alone on one keeps it, so the block starts there. */
 function selectedLines(doc: string, from: number, to: number): SelectedLine[] {
   const out: SelectedLine[] = []
-  for (let p = lineStartAt(doc, from); p <= to; p = lineEndAt(doc, p) + 1) {
+  const end = reachEnd(doc, from, to)
+  for (let p = lineStartAt(doc, from); p <= end; p = lineEndAt(doc, p) + 1) {
     const l = readLine(doc, p, 'page')
     if (!isBlank(doc.slice(l.ls + l.prefix.length, l.le)) || from === to) out.push(l)
     if (l.le >= doc.length) break
@@ -308,14 +313,23 @@ function listReach(
   scope: MarkdownScope,
 ): { k: number; lm: ListMarker | null }[] {
   const anchor = lineIndexAt(scan, from)
-  let upTo = lineIndexAt(scan, to)
-  if (to > from && scan.lineStarts[upTo] === to) upTo--
+  const upTo = lineIndexAt(scan, reachEnd(scan.text, from, to))
   const reader = scan.fences[anchor]?.from === scan.fences[upTo]?.from ? anchor : 'outside'
   const markerAt = (k: number): ListMarker | null => itemAt(scan, k, reader, scope)
   const endOf = (k: number): number => subBlockAt(scan, scan.lineStarts[k], scope)!.to
-  let j = markerAt(anchor) === null ? anchor - 1 : anchor
-  while (j >= 0 && markerAt(j) === null && !isBlank(scan.lines[j])) j--
-  let item = j >= 0 && markerAt(j) !== null && endOf(j) >= scan.lineStarts[anchor] ? j : null
+  const owners: { k: number; end: number }[] = []
+  for (let j = anchor; j >= 0; j--) {
+    const lm = markerAt(j)
+    if (lm === null) {
+      if (isBlank(scan.lines[j]) && readsFrom(scan, j, reader, scope)) break
+      continue
+    }
+    const end = endOf(j)
+    if (end < scan.lineStarts[anchor]) continue
+    owners.push({ k: j, end })
+    if (lm.level === 0 && quoteDepthOf(scan.lines[j]) === 0) break
+  }
+  const item = owners[0]?.k ?? null
   const reached = new Set<number>()
   if (from === to) {
     if (item === null) reached.add(anchor)
@@ -332,21 +346,21 @@ function listReach(
       }
     }
   } else {
-    let end = item === null ? -1 : endOf(item)
+    const open = owners.reverse()
     for (let k = anchor; k <= upTo; k++) {
-      if (k !== item && markerAt(k) !== null) [item, end] = [k, endOf(k)]
-      else if (isBlank(scan.lines[k])) item = null
+      while (open.length > 0 && open[open.length - 1].end < scan.lineStarts[k]) open.pop()
+      if (markerAt(k) !== null && k !== item) open.push({ k, end: endOf(k) })
       if (!isBlank(splitPrefix(scan.lines[k], scope).body))
-        reached.add(item !== null && scan.lineStarts[k] <= end ? item : k)
+        reached.add(open[open.length - 1]?.k ?? k)
     }
   }
-  const sealed = (k: number): boolean =>
+  const outOfReach = (k: number): boolean =>
     !readsFrom(scan, k, reader, scope) ||
     (scope === 'page' &&
       (isCalloutHead(scan.lines[k]) || (scan.fences[k]?.role ?? 'content') !== 'content'))
   return [...reached]
     .sort((a, b) => a - b)
-    .filter((k) => !sealed(k))
+    .filter((k) => !outOfReach(k))
     .map((k) => ({ k, lm: markerAt(k) }))
 }
 
@@ -358,7 +372,7 @@ export function listKindOf(
   scope: MarkdownScope,
 ): ListKind | null {
   const kinds = new Set(
-    listReach(scan, from, to, settings, scope).map(({ lm }) => lm && drawnKind(lm)),
+    listReach(scan, from, to, settings, scope).flatMap(({ lm }) => (lm ? [drawnKind(lm)] : [])),
   )
   return kinds.size === 1 ? [...kinds][0] : null
 }
@@ -376,7 +390,8 @@ export function setList(
   const marker = listMarkerText(kind)
   const changes: FormatEdit['changes'] = []
   let selection: number | undefined
-  for (const { k, lm } of listReach(scan, from, to, settings, scope)) {
+  const reach = listReach(scan, from, to, settings, scope)
+  for (const { k, lm } of reach) {
     const ls = scan.lineStarts[k]
     if (lm === null) {
       const l = readLine(doc, ls, scope)
@@ -386,8 +401,8 @@ export function setList(
     } else if (isSequenced(lm) || drawnKind(lm) !== kind)
       changes.push({ from: ls + lm.markerStart, to: ls + lm.contentStart, insert: marker })
   }
-  // A line made an item keeps the caret at its end; a switched marker leaves the selection where the edit maps it.
-  return changes.length === 1 && selection !== undefined
+  // A pick reaching one plain line keeps the caret at its end; any other pick leaves the selection where the edit maps it.
+  return reach.length === 1 && selection !== undefined
     ? { changes, selection, relist: true }
     : { changes, relist: true }
 }
@@ -395,7 +410,8 @@ export function setList(
 /** Quoting is the one line transform a blank line belongs in: a bare `>` is the quote's own empty line, and skipping it splits the block. */
 function spannedLines(doc: string, from: number, to: number): { ls: number; le: number }[] {
   const out: { ls: number; le: number }[] = []
-  for (let p = lineStartAt(doc, from); p <= to; p = lineEndAt(doc, p) + 1) {
+  const end = reachEnd(doc, from, to)
+  for (let p = lineStartAt(doc, from); p <= end; p = lineEndAt(doc, p) + 1) {
     const le = lineEndAt(doc, p)
     out.push({ ls: p, le })
     if (le >= doc.length) break
@@ -433,7 +449,7 @@ export function setBlock(doc: string, from: number, to: number, fmt: BlockFormat
     }
     case 'code': {
       // One fence around the whole selection: a block of code pasted in and then fenced is the gesture this exists for.
-      const end = lineEndAt(doc, to)
+      const end = lineEndAt(doc, reachEnd(doc, from, to))
       const body = doc.slice(ls, end)
       const next = `\`\`\`\n${body}\n\`\`\``
       return { changes: [{ from: ls, to: end, insert: next }], selection: ls + 4 + body.length }

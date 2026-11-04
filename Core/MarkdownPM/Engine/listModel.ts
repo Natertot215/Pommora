@@ -81,24 +81,25 @@ function rolesAgainst(scan: DocScan, i: number, scope: MarkdownScope): (k: numbe
   }
 }
 
-/** The items a list draws at line `i`'s depth under its parent, in order, and the last line the group's nesting reaches. Depth is quote depth and level, whatever whitespace indents a line, and a blank line outside a quote is a loose list's gap, while inside one it ends the quote. */
+/** The items a list draws at line `i`'s depth under its parent, in order, each side stopping at the first sibling `joins` rejects, and the last line the group's nesting reaches. Depth is quote depth and level, whatever whitespace indents a line, and a blank line outside a quote is a loose list's gap, while inside one it ends the quote. */
 export function siblingsAt(
   scan: DocScan,
   i: number,
   scope: MarkdownScope,
+  joins: (k: number) => boolean = () => true,
 ): { items: number[]; last: number } {
   const role = rolesAgainst(scan, i, scope)
   const above: number[] = []
   for (let k = i - 1; k >= 0; k--) {
     const r = role(k)
-    if (r === 'outside') break
+    if (r === 'outside' || (r === 'sibling' && !joins(k))) break
     if (r === 'sibling') above.push(k)
   }
   const items = [...above.reverse(), i]
   let last = i
   for (let k = i + 1; k < scan.lines.length; k++) {
     const r = role(k)
-    if (r === 'outside') break
+    if (r === 'outside' || (r === 'sibling' && !joins(k))) break
     if (r === 'sibling') items.push(k)
     if (r !== 'blank') last = k
   }
@@ -232,14 +233,15 @@ type Row = { k: number; lm: SequencedMarker }
 function runAt(scan: DocScan, i: number, scope: MarkdownScope): Row[] {
   const head = itemAt(scan, i, i, scope)
   if (head === null || !isSequenced(head)) return []
-  const rows: Row[] = []
-  for (const k of siblingsAt(scan, i, scope).items) {
-    const lm = itemAt(scan, k, i, scope)!
-    if (isSequenced(lm) && lm.kind === head.kind) rows.push({ k, lm })
-    else if (k < i) rows.length = 0
-    else break
+  const markerOf = (k: number): ListMarker => itemAt(scan, k, i, scope)!
+  const joins = (k: number): boolean => {
+    const lm = markerOf(k)
+    return isSequenced(lm) && lm.kind === head.kind
   }
-  return rows
+  return siblingsAt(scan, i, scope, joins).items.map((k) => ({
+    k,
+    lm: markerOf(k) as SequencedMarker,
+  }))
 }
 
 function renumberRun(

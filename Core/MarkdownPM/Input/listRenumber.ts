@@ -1,4 +1,4 @@
-import { EditorState, type Extension } from '@codemirror/state'
+import { type ChangeDesc, EditorState, type Extension } from '@codemirror/state'
 import { docScan } from '../docCache'
 import { itemAt, readsFrom, renumberRuns, subBlockAt } from '../Engine/listModel'
 import { applyEdits, lineIndexAt, type TextEdit } from '../Engine/markdownCode'
@@ -19,7 +19,8 @@ export const listRenumber = (scope: MarkdownScope): Extension =>
     const scan = docScan.after(tr)
     const at: number[] = []
     const arrived = new Set<number>()
-    const repicked = new Set<number>()
+    const rewritten: number[] = []
+    const runsBelow: number[] = []
     tr.changes.iterChanges((fromA, toA, fromB, toB) => {
       let below = -1
       for (let i = lineIndexAt(was, fromA); i <= lineIndexAt(was, toA); i++) {
@@ -29,7 +30,7 @@ export const listRenumber = (scope: MarkdownScope): Extension =>
         const whole = fromA <= ls + lm.markerStart && toA >= ls + lm.contentStart
         if (!relist && !whole) continue
         below = Math.max(below, subBlockAt(was, ls, scope)!.to + 1)
-        if (relist && whole) repicked.add(tr.changes.mapPos(ls))
+        if (relist && whole) rewritten.push(ls)
       }
       if (relist)
         for (let i = lineIndexAt(scan, fromB); i <= lineIndexAt(scan, toB); i++) {
@@ -44,12 +45,32 @@ export const listRenumber = (scope: MarkdownScope): Extension =>
         readsFrom(scan, lineIndexAt(scan, fromB), 'outside', scope)
       )
         at.push(fromB)
-      if (below > 0 && below < was.text.length) at.push(tr.changes.mapPos(below))
+      if (below > 0 && below < was.text.length) runsBelow.push(below)
     })
-    const changes = renumberRuns(scan, scope, at, arrived, repicked)
+    const repicked = new Set(mapAscending(tr.changes, rewritten))
+    runsBelow.sort((a, b) => a - b)
+    const changes = renumberRuns(
+      scan,
+      scope,
+      at.concat(mapAscending(tr.changes, runsBelow)),
+      arrived,
+      repicked,
+    )
     if (repicked.size > 0 && applyEdits(scan.text, changes) === was.text) return {}
     return changes.length === 0 ? tr : [tr, { changes, sequential: true }]
   })
+
+function mapAscending(changes: ChangeDesc, positions: readonly number[]): number[] {
+  const out: number[] = []
+  let n = 0
+  changes.iterChangedRanges((fromA, toA, fromB) => {
+    for (; n < positions.length && positions[n] <= fromA; n++)
+      out.push(positions[n] - fromA + fromB)
+    for (; n < positions.length && positions[n] < toA; n++) out.push(fromB)
+  }, true)
+  for (; n < positions.length; n++) out.push(positions[n] + changes.newLength - changes.length)
+  return out
+}
 
 /** An edit as the editor lands it: its changes, then the list renumber that rides the same transaction. */
 export function landEdit(
