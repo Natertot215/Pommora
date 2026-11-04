@@ -19,7 +19,7 @@ import {
 } from '../Engine/intents'
 import { perText } from '../Engine/perText'
 import { parseListMarker, type ListMarker } from '../Engine/detect'
-import { checkboxToggleChange } from '../Engine/listDragModel'
+import { checkboxToggleChange } from '../Engine/listModel'
 import { scanDoc } from '../Engine/docScan'
 import { isPaint } from '../Engine/paints'
 import { readFormatState } from '../Input/formatState'

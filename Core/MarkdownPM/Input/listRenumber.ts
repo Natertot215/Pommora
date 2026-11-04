@@ -1,6 +1,6 @@
 import { EditorState, type Extension } from '@codemirror/state'
 import { docScan, docString } from '../docCache'
-import { renumberRuns } from '../Engine/listDragModel'
+import { renumberRuns } from '../Engine/listModel'
 import { inSealedLine } from '../Engine/docScan'
 import { lineIndexAt, type TextEdit } from '../Engine/markdownCode'
 import { isSequenced, type MarkdownScope } from '../Engine/detect'

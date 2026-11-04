@@ -40,7 +40,7 @@ import {
   renumberRuns,
   checkboxToggleChange,
   type Slot,
-} from './listDragModel'
+} from './listModel'
 
 /** Drop the item whose line contains `grab` so it starts at the line containing `dropLine`. */
 function drop(doc: string, grab: number, at: number): string {

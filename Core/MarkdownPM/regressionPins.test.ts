@@ -13,7 +13,7 @@ import {
 } from './Input/edits'
 import { setHeading, setList } from './Input/format'
 import { editEvent, landEdit } from './Input/listRenumber'
-import { renumberRuns } from './Engine/listDragModel'
+import { renumberRuns } from './Engine/listModel'
 import { calloutDeleteVerdict } from './Guards/calloutGuard'
 import type { GuardVerdict } from './Guards/verdictFilter'
 import { headingSections } from './Engine/headingScan'

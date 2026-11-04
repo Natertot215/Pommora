@@ -6,7 +6,7 @@ import { inSealedLine } from '../Engine/docScan'
 import { forEachLine, shadeField, type Boundary } from './dragChrome'
 import { beginRelocateDrag, editorGestureCleanup } from './editorGesture'
 import { lineElementAt, textColumn } from '../lineDom'
-import { subBlockAt, dropChanges, checkboxToggleChange } from '../Engine/listDragModel'
+import { subBlockAt, dropChanges, checkboxToggleChange } from '../Engine/listModel'
 import { GLYPH_CLASS } from '../Engine/intents'
 
 // Measured at drag start and re-measured only on scroll: the doc is static during a drag, so re-measuring per pointermove would be layout thrash.
