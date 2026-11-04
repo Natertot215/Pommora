@@ -1,0 +1,148 @@
+diff --git a/.claude/scripts/List Types Drive/live-drive.mjs b/.claude/scripts/List Types Drive/live-drive.mjs
+new file mode 100644
+index 000000000..b09c3baab
+--- /dev/null
++++ b/.claude/scripts/List Types Drive/live-drive.mjs	
+@@ -0,0 +1,129 @@
++import {
++  ask, boxOf, createPage, hover, launch, ledger, META, mouseAt, must, openCollection, openPage, PAGE_VIEW, pickNative,
++  popNative, pressKey, restore, results, row, shot, sleep, tally, until,
++} from '../drive-harness.mjs'
++
++const PORT = 9413
++const GROUPS = new Set(process.argv.slice(2).map(Number))
++if (GROUPS.size === 0 || [...GROUPS].some((g) => ![1, 2].includes(g))) {
++  console.error('usage: node live-drive.mjs <group…>   (groups 1–2)')
++  process.exit(2)
++}
++// Whether the build under test carries the list-type switch: an item it owns is expected to fail before it lands and doesn't fail the run.
++const LANDED = process.env.POMMORA_LGM_LANDED === '1'
++
++function item(group, decision, name, pass, { owned = true, detail } = {}) {
++  const awaited = owned && !LANDED
++  const mark = pass ? (awaited ? 'AHEAD' : 'PASS') : awaited ? 'AWAIT' : 'FAIL'
++  console.log(`${mark.padEnd(5)}  g${group} [${decision}] ${name}${!pass && detail ? `\n       ${detail}` : ''}`)
++  results.push({ name, pass: !!pass || awaited })
++  ledger.push({ group: String(group), decision, name, mark })
++}
++const show = (v) => JSON.stringify(v)
++
++// ── The page ────────────────────────────────────────────────────────────────
++
++const TITLE = 'LT Lists'
++const VIEW_ID = 'view_01KZLISTTYPESDRIVE000TABLE'
++const EXAMPLE = '- A\n\t- B\n\t\t- C\n\t\t- D\n\t- E\n- F'
++const V = PAGE_VIEW
++const docOf = (cdp) => cdp.evaluate(`${V}.state.doc.toString()`)
++async function setBody(cdp, body) {
++  await cdp.evaluate(`(() => { const v = ${V}; v.dispatch({ changes: { from: 0, to: v.state.doc.length, insert: ${JSON.stringify(`${body}\n\nTail.`)} } }) })()`)
++  await sleep(400)
++  // The caret rests on the tail, so no glyph is revealed as source.
++  await cdp.evaluate(`(() => { const v = ${V}; v.focus(); v.dispatch({ selection: { anchor: v.state.doc.length } }) })()`)
++  await sleep(300)
++}
++const body = async (cdp) => (await docOf(cdp)).replace(/\n\nTail\.$/, '')
++const lineOf = (text) =>
++  `[...document.querySelectorAll('.cm-line.md-list-item')].find((e) => !e.closest('.mdpm-tbl-cell-editor') && e.querySelector('.md-list-text')?.textContent.trim() === ${JSON.stringify(text)})`
++const glyphOf = (text) => `(${lineOf(text)}).querySelector('.md-list-glyph')`
++const flat = (rows) => (rows ?? []).map((r) => (r.separator ? '—' : `${r.label}${r.checked ? ' ✓' : ''}${r.submenu ? ' ▸' : ''}`))
++
++async function glyphMenu(cdp, text) {
++  return popNative(cdp, await boxOf(cdp, glyphOf(text)), 'right')
++}
++async function pickGlyph(cdp, text, label) {
++  const rows = await glyphMenu(cdp, text)
++  const chosen = rows !== null && (await pickNative([label]))
++  await sleep(500)
++  return { rows, chosen }
++}
++async function gripPick(cdp, text, path) {
++  await hover(cdp, lineOf(text), 300)
++  const at = await cdp.evaluate(`(() => { const l = ${lineOf(text)}; const r = l.getBoundingClientRect(); const y = r.top + r.height / 2; for (let d = 4; d < 24; d++) if (document.elementFromPoint(r.left - d, y) === l) return { x: r.left - d - 2, y }; return null })()`)
++  const rows = at && (await popNative(cdp, at, 'right'))
++  const chosen = rows !== null && (await pickNative(path))
++  await sleep(500)
++  return { rows, chosen }
++}
++
++// ── Group 1 — the glyph menu on a page ──────────────────────────────────────
++
++async function group1(cdp) {
++  await setBody(cdp, EXAMPLE)
++  const rows = await glyphMenu(cdp, 'B')
++  await pickNative([])
++  item(1, 'A-1 A-2 A-3', "B's glyph opens the five types, Bulleted checked, no Delete",
++    show(flat(rows)) === show(['Bulleted ✓', 'Numbered', 'Alphabetical', 'Checklist', 'Arrowed']), { detail: show(flat(rows)) })
++  await shot(cdp, 'g1-glyph-menu')
++
++  await ask(cdp, 'personalization:set', 'preserveListLevels', true)
++  await pickGlyph(cdp, 'B', 'Numbered')
++  item(1, 'B-1', 'on: Numbered from B changes B and E', (await body(cdp)) === '- A\n\t1. B\n\t\t- C\n\t\t- D\n\t2. E\n- F', { detail: show(await body(cdp)) })
++  // A pick that wrote nothing leaves ⌘Z to undo the seed itself, so it's pressed only over a change.
++  const changed = (await body(cdp)) !== EXAMPLE
++  if (changed) await pressKey(cdp, 'z', META)
++  item(1, 'A-7', '⌘Z puts the example back', changed && (await body(cdp)) === EXAMPLE, { detail: show(await body(cdp)) })
++
++  await ask(cdp, 'personalization:set', 'preserveListLevels', false)
++  await pickGlyph(cdp, 'E', 'Numbered')
++  item(1, 'B-1 B-3', 'off: Numbered from E sets B, C, D, and E', (await body(cdp)) === '- A\n\t1. B\n\t\t1. C\n\t\t2. D\n\t2. E\n- F', { detail: show(await body(cdp)) })
++  await ask(cdp, 'personalization:set', 'preserveListLevels', true)
++
++  await setBody(cdp, EXAMPLE)
++  await gripPick(cdp, 'A', ['Type', 'Numbered'])
++  item(1, 'D-1', "the grip's Type ▸ Numbered still switches the whole block", (await body(cdp)) === '1. A\n\t1. B\n\t\t1. C\n\t\t2. D\n\t2. E\n2. F',
++    { owned: false, detail: show(await body(cdp)) })
++}
++
++// ── Group 2 — a focused table cell ──────────────────────────────────────────
++
++async function group2(cdp) {
++  await setBody(cdp, '| Lists | Other |\n| --- | --- |\n| - a<br>- b | x |')
++  const text = await cdp.evaluate(`(() => { const c = [...document.querySelectorAll('.mdpm-tbl-cell-static')].find((e) => e.textContent.includes('b')); const w = document.createTreeWalker(c, NodeFilter.SHOW_TEXT); let n; while ((n = w.nextNode())) if (n.data === 'b') { const r = document.createRange(); r.selectNodeContents(n); const b = r.getBoundingClientRect(); return { x: b.right - 1, y: b.y + b.height / 2 } } return null })()`)
++  await mouseAt(cdp, text)
++  await until('the live cell', () => cdp.evaluate(`!!document.querySelector('.mdpm-tbl-cell-editor .md-list-glyph')`))
++  const first = `document.querySelector('.mdpm-tbl-cell-editor .cm-line.md-block-handle .md-list-glyph')`
++  const rows = await popNative(cdp, await boxOf(cdp, first), 'right')
++  await pickNative([])
++  item(2, 'A-4 A-5', "the cell's first glyph opens the glyph menu", show(flat(rows)) === show(['Bulleted ✓', 'Numbered', 'Alphabetical', 'Checklist', 'Arrowed']), { detail: show(flat(rows)) })
++  const line = await boxOf(cdp, `document.querySelector('.mdpm-tbl-cell-editor .cm-line.md-block-handle')`)
++  const grip = await popNative(cdp, { x: line.left + 10, y: line.y }, 'right')
++  await pickNative([])
++  item(2, 'A-5', "the inset left of the glyph still opens the grip's menu", flat(grip)[0] === 'Type ▸', { owned: false, detail: show(flat(grip)) })
++  await shot(cdp, 'g2-cell')
++}
++
++// ── The run ─────────────────────────────────────────────────────────────────
++
++let cdp
++try {
++  cdp = (await launch(PORT, 'list-types-shots')).cdp
++  await must('a table view', ask(cdp, 'views:save', 'Collection A', 'collection', { id: VIEW_ID, name: 'LT Table', type: 'table', property_order: ['_title'], hidden_properties: [] }, {}))
++  await must('show it', ask(cdp, 'mutate', { op: 'setActiveView', path: 'Collection A', kind: 'collection', viewId: VIEW_ID }))
++  await createPage(cdp, TITLE)
++  await openCollection(cdp)
++  await until('the page row', () => cdp.evaluate(`!!${row(TITLE)}`))
++  await openPage(cdp, TITLE)
++  if (GROUPS.has(1)) await group1(cdp)
++  if (GROUPS.has(2)) await group2(cdp)
++  cdp.close()
++} catch (e) {
++  item(0, '—', 'the run reached its end', false, { owned: false, detail: String(e?.stack ?? e) })
++  if (cdp) await shot(cdp, 'failure').catch(() => {})
++} finally {
++  await restore()
++}
++tally(['0', ...[...GROUPS].map(String)], { marks: ['PASS', 'FAIL', 'AHEAD', 'AWAIT'] })
+diff --git a/.claude/scripts/drive-harness.mjs b/.claude/scripts/drive-harness.mjs
+index 54bd8f5cd..3a16bf3c2 100644
+--- a/.claude/scripts/drive-harness.mjs
++++ b/.claude/scripts/drive-harness.mjs
+@@ -114,7 +114,7 @@ const PATCHES = `(() => {
+   BrowserWindow.prototype.moveTop = function () {}
+   app.focus = () => {}
+   const rowsOf = (menu) => menu.items.filter((i) => i.visible).map((i) =>
+-    i.type === 'separator' ? { separator: true } : { label: i.label, enabled: i.enabled, ...(i.submenu && { submenu: rowsOf(i.submenu) }) })
++    i.type === 'separator' ? { separator: true } : { label: i.label, enabled: i.enabled, ...(i.checked && { checked: true }), ...(i.submenu && { submenu: rowsOf(i.submenu) }) })
+   const itemAt = (menu, path) => path.reduce((item, label) => item?.submenu?.items.find((i) => i.visible && i.type !== 'separator' && i.label === label), { submenu: menu })
+   const drive = { popup: null, seq: 0, dialogs: 0, picks: [], revealed: [] }
+   dialog.showOpenDialog = async () => {

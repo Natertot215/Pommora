@@ -1,0 +1,693 @@
+diff --git a/Core/MarkdownPM/Engine/blockModel.ts b/Core/MarkdownPM/Engine/blockModel.ts
+index 1704d4187..0a4b44e18 100644
+--- a/Core/MarkdownPM/Engine/blockModel.ts
++++ b/Core/MarkdownPM/Engine/blockModel.ts
+@@ -1,5 +1,5 @@
+ // `to` is EXCLUSIVE of the trailing newline, matching subBlockAt, headingSections, and TableRegion, which the drag's self-drop guard relies on.
+-import { isBlank, type BlockSpan, type CalloutLine } from './detect'
++import { continuesList, isBlank, type BlockSpan, type CalloutLine } from './detect'
+ import { type DocScan, inJoinedMath, perScan, spanAt } from './docScan'
+ import { lineEndOf, lineIndexAt } from './markdownCode'
+ import { headingSections } from './headingScan'
+@@ -42,7 +42,7 @@ function blockContext(scan: DocScan): BlockContext {
+ 
+   // Only where a run actually holds a marker, so a bare indented paragraph isn't swept in. A math range whose opener joined the run rides it whole; one whose opener sits outside never gets pulled in.
+   const isMarker = (i: number): boolean => markers[i] !== null
+-  const isListCont = (i: number): boolean => !isBlank(lines[i]) && /^[ \t]/.test(lines[i])
++  const isListCont = (i: number): boolean => !isBlank(lines[i]) && continuesList(lines[i])
+   const listMember = new Array<boolean>(n).fill(false)
+   for (let i = 0; i < n; ) {
+     if (!isMarker(i) && !isListCont(i)) {
+diff --git a/Core/MarkdownPM/Engine/detect.ts b/Core/MarkdownPM/Engine/detect.ts
+index 6845e6645..df0b2e584 100644
+--- a/Core/MarkdownPM/Engine/detect.ts
++++ b/Core/MarkdownPM/Engine/detect.ts
+@@ -561,8 +561,7 @@ export const ordinalOf = (lm: SequencedMarker): number =>
+ export const ordinalText = (kind: SequencedKind, n: number): string =>
+   kind === 'alphabetical' ? String.fromCharCode(65 + ((n - 1) % 26)) : String(n)
+ 
+-export const nestedUnder = (line: string, indent: string): boolean =>
+-  !isBlank(line) && line.startsWith(indent) && /^[ \t]/.test(line.slice(indent.length))
++export const continuesList = (line: string): boolean => !/^[^ \t]/.test(line)
+ 
+ export function parseListMarker(line: string, offset = 0): ListMarker | null {
+   if (isThematicBreakLine(line)) return null
+diff --git a/Core/MarkdownPM/Engine/intents.test.ts b/Core/MarkdownPM/Engine/intents.test.ts
+index d1e0be75b..5ef83970c 100644
+--- a/Core/MarkdownPM/Engine/intents.test.ts
++++ b/Core/MarkdownPM/Engine/intents.test.ts
+@@ -765,11 +765,13 @@ describe('outliner rails', () => {
+     ])
+   })
+ 
+-  it('a non-list line between siblings breaks the run (caps on both sides of the gap)', () => {
+-    const t = '- A\n\t- B\nprose\n\t- C'
+-    const rs = rails(t)
+-    expect(rs.filter((r) => r.level === 0 && r.end).length).toBe(2)
+-    expect(rs.filter((r) => r.level === 0 && r.first).length).toBe(2)
++  it('a wrapped line carries the rail and a line outside the list ends it, so a later indented item draws no ancestor rail', () => {
++    const t = '- A\n  wrapped\n\t- B\nprose\n\t- C'
++    expect(rails(t).map((r) => [r.from, r.level, r.end])).toEqual([
++      [0, 0, null],
++      [4, 0, null],
++      [14, 0, 'elbow'],
++    ])
+   })
+ })
+ 
+diff --git a/Core/MarkdownPM/Engine/intents.ts b/Core/MarkdownPM/Engine/intents.ts
+index 7c588dabd..591af7f3d 100644
+--- a/Core/MarkdownPM/Engine/intents.ts
++++ b/Core/MarkdownPM/Engine/intents.ts
+@@ -1,5 +1,6 @@
+ import type { LinkKind, Token, TokenKind, TokenOf } from './tokens'
+ import {
++  continuesList,
+   isBlank,
+   isThematicBreakLine,
+   isHeadingLine,
+@@ -379,11 +380,11 @@ export function railIntents(
+ ): RailIntent[][] {
+   const n = listLevels.length
+   const rails: RailIntent[][] = new Array(n)
+-  const blank = (i: number): boolean => listLevels[i] < 0 && isBlank(lines[i])
++  const carries = (i: number): boolean => listLevels[i] < 0 && continuesList(lines[i])
+   const ahead: number[] = new Array(n)
+   for (let i = n - 1, next = -1; i >= 0; i--) {
+     ahead[i] = next
+-    if (!blank(i)) next = listLevels[i]
++    if (!carries(i)) next = listLevels[i]
+   }
+   const railKind: string[] = []
+   let behind = -1
+@@ -391,8 +392,9 @@ export function railIntents(
+   for (let i = 0; i < n; i++) {
+     const level = listLevels[i]
+     const prevSpan = span
+-    if (blank(i)) span = Math.min(ahead[i], behind + 1)
++    if (carries(i)) span = Math.min(ahead[i], behind + 1)
+     else if (level < 0) {
++      railKind.length &&= 0
+       behind = -1
+       span = 0
+       continue
+@@ -403,7 +405,7 @@ export function railIntents(
+       span = ahead[i] > level ? level + 1 : level
+     }
+     const nextSpan =
+-      i + 1 === n ? 0 : blank(i + 1) ? Math.min(ahead[i + 1], behind + 1) : listLevels[i + 1]
++      i + 1 === n ? 0 : carries(i + 1) ? Math.min(ahead[i + 1], behind + 1) : listLevels[i + 1]
+     let reaching: RailIntent | null = null
+     for (let k = 0; k < span; k++) {
+       const typeClass = railKind[k]
+diff --git a/Core/MarkdownPM/Engine/listModel.test.ts b/Core/MarkdownPM/Engine/listModel.test.ts
+index 09af40a61..f3afe489b 100644
+--- a/Core/MarkdownPM/Engine/listModel.test.ts
++++ b/Core/MarkdownPM/Engine/listModel.test.ts
+@@ -3,13 +3,13 @@ import { describe, it, expect } from 'vitest'
+ describe('subBlockAt × block math', () => {
+   it('indented math with an internal blank rides the item — the reorder gesture cannot tear it', () => {
+     const doc = '- one\n  $$\n  x\n\n  y\n  $$\n- two'
+-    const b = subBlockAt(scanDoc(doc), 0)
++    const b = subBlockAt(scanDoc(doc), 0, 'page')
+     expect(doc.slice(b!.from, b!.to)).toBe('- one\n  $$\n  x\n\n  y\n  $$')
+   })
+ 
+   it('a marker-looking line inside absorbed math stays formula content', () => {
+     const doc = '- one\n  $$\n- x\n  $$\n- two'
+-    const b = subBlockAt(scanDoc(doc), 0)
++    const b = subBlockAt(scanDoc(doc), 0, 'page')
+     expect(doc.slice(b!.from, b!.to)).toBe('- one\n  $$\n- x\n  $$')
+   })
+ 
+@@ -17,14 +17,14 @@ describe('subBlockAt × block math', () => {
+     for (const lead of ['', '> ', '> [!note] head\n> ']) {
+       const pfx = lead.split('\n').pop()!
+       const doc = `${lead}- a\n${pfx}  more\n${pfx}- b`
+-      const b = subBlockAt(scanDoc(doc), doc.indexOf('- a'))
++      const b = subBlockAt(scanDoc(doc), doc.indexOf('- a'), 'page')
+       expect(doc.slice(b!.from, b!.to)).toBe(`${pfx}- a\n${pfx}  more`)
+     }
+   })
+ 
+   it('top-level math glued below an item is never absorbed by the gesture', () => {
+     const doc = '- one\n$$\nx\n\ny\n$$'
+-    const b = subBlockAt(scanDoc(doc), 0)
++    const b = subBlockAt(scanDoc(doc), 0, 'page')
+     expect(doc.slice(b!.from, b!.to)).toBe('- one')
+   })
+ })
+@@ -44,10 +44,10 @@ import {
+ 
+ /** Drop the item whose line contains `grab` so it starts at the line containing `dropLine`. */
+ function drop(doc: string, grab: number, at: number): string {
+-  const block = subBlockAt(scanDoc(doc), grab)
++  const block = subBlockAt(scanDoc(doc), grab, 'page')
+   if (!block) throw new Error('grab not on a list line')
+   const slot: Slot = { at }
+-  const changes = dropChanges(doc, block, slot)
++  const changes = dropChanges(doc, block, slot, 'page')
+   return changes ? applyEdits(doc, changes) : doc
+ }
+ 
+@@ -56,25 +56,25 @@ const lineStart = (doc: string, needle: string): number => doc.indexOf(needle)
+ describe('subBlockAt', () => {
+   it('returns just the line for a flat item', () => {
+     const doc = '- a\n- b\n- c'
+-    const b = subBlockAt(scanDoc(doc), doc.indexOf('b'))!
++    const b = subBlockAt(scanDoc(doc), doc.indexOf('b'), 'page')!
+     expect(doc.slice(b.from, b.to)).toBe('- b')
+   })
+   it('includes deeper-indented descendants', () => {
+     const doc = '- a\n\t- a1\n\t- a2\n- b'
+-    const b = subBlockAt(scanDoc(doc), 1)!
++    const b = subBlockAt(scanDoc(doc), 1, 'page')!
+     expect(doc.slice(b.from, b.to)).toBe('- a\n\t- a1\n\t- a2')
+   })
+   it('returns null off a list line', () => {
+-    expect(subBlockAt(scanDoc('plain text'), 2)).toBe(null)
++    expect(subBlockAt(scanDoc('plain text'), 2, 'page')).toBe(null)
+   })
+ })
+ 
+ describe('drag reorders source lines', () => {
+   it("refuses a drop on the dragged item's own edges, so a release there cancels in place", () => {
+     const doc = '- a\n- b\n  - child\n- c'
+-    const block = subBlockAt(scanDoc(doc), lineStart(doc, '- b'))!
+-    expect(dropChanges(doc, block, { at: block.from })).toBeNull()
+-    expect(dropChanges(doc, block, { at: block.to + 1 })).toBeNull()
++    const block = subBlockAt(scanDoc(doc), lineStart(doc, '- b'), 'page')!
++    expect(dropChanges(doc, block, { at: block.from }, 'page')).toBeNull()
++    expect(dropChanges(doc, block, { at: block.to + 1 }, 'page')).toBeNull()
+   })
+   it('moves a bullet item down past a sibling', () => {
+     const doc = '- a\n- b\n- c'
+@@ -137,14 +137,14 @@ describe('nested sub-block moves as a unit', () => {
+ describe('re-nesting on drop (slot.indent adopts the target depth)', () => {
+   it('flattens a nested item to root when dropped at a root-indent target', () => {
+     const doc = '- a\n\t- nested\n- b'
+-    const block = subBlockAt(scanDoc(doc), lineStart(doc, 'nested'))!
+-    const changes = dropChanges(doc, block, { at: doc.length, indent: '' })!
++    const block = subBlockAt(scanDoc(doc), lineStart(doc, 'nested'), 'page')!
++    const changes = dropChanges(doc, block, { at: doc.length, indent: '' }, 'page')!
+     expect(applyEdits(doc, changes)).toBe('- a\n- b\n- nested')
+   })
+   it('re-indents the whole sub-block, preserving relative nesting', () => {
+     const doc = '- a\n\t- p\n\t\t- c\n- b'
+-    const block = subBlockAt(scanDoc(doc), lineStart(doc, '- p'))!
+-    const changes = dropChanges(doc, block, { at: doc.length, indent: '' })!
++    const block = subBlockAt(scanDoc(doc), lineStart(doc, '- p'), 'page')!
++    const changes = dropChanges(doc, block, { at: doc.length, indent: '' }, 'page')!
+     expect(applyEdits(doc, changes)).toBe('- a\n- b\n- p\n\t- c')
+   })
+ })
+@@ -167,29 +167,29 @@ describe('click (no drag past threshold) toggles a checkbox, never reorders', ()
+ 
+ describe('renumberRuns', () => {
+   it('produces minimal digit rewrites', () => {
+-    expect(renumberRuns('3. a\n4. b\n5. c', [0])).toEqual([])
++    expect(renumberRuns(scanDoc('3. a\n4. b\n5. c'), 'page', [0])).toEqual([])
+   })
+   it('fixes a broken run', () => {
+     const doc = '1. a\n1. b\n1. c'
+-    expect(applyEdits(doc, renumberRuns(doc, [0]))).toBe('1. a\n2. b\n3. c')
++    expect(applyEdits(doc, renumberRuns(scanDoc(doc), 'page', [0]))).toBe('1. a\n2. b\n3. c')
+   })
+ })
+ 
+ describe('drag inside a callout (prefix-aware)', () => {
+   it('reorders a callout bullet without doubling the `>` prefix', () => {
+     const doc = '> [!callout] head\n> - one\n> - two'
+-    const block = subBlockAt(scanDoc(doc), doc.indexOf('one'))!
+-    const changes = dropChanges(doc, block, { at: doc.length, indent: '> ' })!
++    const block = subBlockAt(scanDoc(doc), doc.indexOf('one'), 'page')!
++    const changes = dropChanges(doc, block, { at: doc.length, indent: '> ' }, 'page')!
+     expect(applyEdits(doc, changes)).toBe('> [!callout] head\n> - two\n> - one')
+   })
+   it('subBlockAt does NOT swallow a top-level indented sibling across the box boundary', () => {
+     const doc = '> - a\n\t- x'
+-    const block = subBlockAt(scanDoc(doc), doc.indexOf('a'))!
++    const block = subBlockAt(scanDoc(doc), doc.indexOf('a'), 'page')!
+     expect(block.to).toBe(doc.indexOf('\n')) // block is just `> - a`, not the `\t- x` line
+   })
+   it('subBlockAt DOES keep a same-box deeper child', () => {
+     const doc = '> - a\n> \t- child'
+-    const block = subBlockAt(scanDoc(doc), doc.indexOf('a'))!
++    const block = subBlockAt(scanDoc(doc), doc.indexOf('a'), 'page')!
+     expect(block.to).toBe(doc.length) // the `> \t- child` shares the `>` box → captured
+   })
+ })
+diff --git a/Core/MarkdownPM/Engine/listModel.ts b/Core/MarkdownPM/Engine/listModel.ts
+index b23f90510..438e38200 100644
+--- a/Core/MarkdownPM/Engine/listModel.ts
++++ b/Core/MarkdownPM/Engine/listModel.ts
+@@ -1,12 +1,15 @@
+ import {
++  continuesList,
+   indentWidth,
+   isBlank,
+   isSequenced,
+-  nestedUnder,
+   ordinalOf,
+   ordinalText,
+-  parseListMarkerPrefixed as parseListMarker,
++  parseListMarker,
++  parseListMarkerPrefixed,
+   type BlockSpan,
++  type ListMarker,
++  type MarkdownScope,
+   type SequencedMarker,
+ } from './detect'
+ import {
+@@ -21,33 +24,95 @@ import {
+   lineStartAt,
+   lineEndAt,
+ } from './markdownCode'
+-import { type DocScan, inJoinedMath } from './docScan'
++import { type DocScan, inJoinedMath, inSealedLine, scanDoc } from './docScan'
+ 
+ /** Shared by the extension's click handler so press-to-drag never flips the box. */
+ export function checkboxToggleChange(doc: string, pos: number): TextEdit | null {
+   const ls = lineStartAt(doc, pos)
+-  const lm = parseListMarker(doc.slice(ls, lineEndAt(doc, pos)))
++  const lm = parseListMarkerPrefixed(doc.slice(ls, lineEndAt(doc, pos)))
+   if (lm?.kind !== 'checkbox') return null
+   return { from: ls + lm.box.start, to: ls + lm.box.end, insert: lm.checked ? '[ ]' : '[x]' }
+ }
+ 
++/** Whether line `k` is open text to a reader on line `from`, or to one outside every block: on a page a code block is read only from inside it, so a list written there switches and counts on its own and nothing outside reaches in, while math and tables are never read; a cell reads every line. */
++export function readsFrom(
++  scan: DocScan,
++  k: number,
++  from: number | 'outside',
++  scope: MarkdownScope,
++): boolean {
++  if (scope !== 'page') return true
++  const code = scan.fences[k]
++  const own = from === 'outside' ? undefined : scan.fences[from]
++  return code?.from === own?.from && (code !== undefined || !inSealedLine(scan, k))
++}
++
++export function itemAt(
++  scan: DocScan,
++  k: number,
++  from: number,
++  scope: MarkdownScope,
++): ListMarker | null {
++  if (scope !== 'page') return parseListMarker(scan.lines[k])
++  return readsFrom(scan, k, from, scope) ? scan.markers[k] : null
++}
++
++type ListRole = 'sibling' | 'nested' | 'blank' | 'outside'
++
++function rolesAgainst(scan: DocScan, i: number, scope: MarkdownScope): (k: number) => ListRole {
++  const depth = quoteDepthOf(scan.lines[i])
++  const level = itemAt(scan, i, i, scope)!.level
++  return (line) => {
++    let k = line
++    if (!readsFrom(scan, k, i, scope)) {
++      if (scan.fences[i] !== undefined) return 'outside'
++      const code = scan.fences[k]
++      if (code !== undefined) k = lineIndexAt(scan, code.from)
++    }
++    const own = quoteDepthOf(scan.lines[k])
++    const lm = itemAt(scan, k, i, scope)
++    if (own < depth) return 'outside'
++    if (own === depth && lm !== null)
++      return lm.level === level ? 'sibling' : lm.level > level ? 'nested' : 'outside'
++    const body = scan.lines[k].slice(quotePrefixWidth(scan.lines[k], depth))
++    // A wrapped item's continuation body rides with its item — moving the marker line alone would strand it.
++    if (!isBlank(body)) return continuesList(body) ? 'nested' : 'outside'
++    return depth === 0 ? 'blank' : 'outside'
++  }
++}
++
++/** The items a list draws at line `i`'s depth under its parent, in order, and the last line the group's nesting reaches. Depth is quote depth and level, whatever whitespace indents a line, and a blank line outside a quote is a loose list's gap, while inside one it ends the quote. */
++export function siblingsAt(
++  scan: DocScan,
++  i: number,
++  scope: MarkdownScope,
++): { items: number[]; last: number } {
++  const role = rolesAgainst(scan, i, scope)
++  const above: number[] = []
++  for (let k = i - 1; k >= 0; k--) {
++    const r = role(k)
++    if (r === 'outside') break
++    if (r === 'sibling') above.push(k)
++  }
++  const items = [...above.reverse(), i]
++  let last = i
++  for (let k = i + 1; k < scan.lines.length; k++) {
++    const r = role(k)
++    if (r === 'outside') break
++    if (r === 'sibling') items.push(k)
++    if (r !== 'blank') last = k
++  }
++  return { items, last }
++}
++
+ /** `to` is the last line's end, EXCLUSIVE of the trailing newline. The move logic reads only these two offsets, so it is block-type-blind. */
+-export function subBlockAt(scan: DocScan, pos: number): BlockSpan | null {
+-  const { lines } = scan
++export function subBlockAt(scan: DocScan, pos: number, scope: MarkdownScope): BlockSpan | null {
+   const first = lineIndexAt(scan, pos)
+-  const head = scan.markers[first]
+-  if (head === null) return null
+-  const depth = quoteDepthOf(lines[first])
+-
++  if (itemAt(scan, first, first, scope) === null) return null
++  const role = rolesAgainst(scan, first, scope)
+   let last = first
+-  for (let k = first + 1; k < lines.length; k++) {
+-    if (!inJoinedMath(scan, k, first, last)) {
+-      if (quoteDepthOf(lines[k]) !== depth) break
+-      const lm = scan.markers[k]
+-      const body = lines[k].slice(quotePrefixWidth(lines[k], depth))
+-      // A wrapped item's continuation body rides with its item — moving the marker line alone would strand it.
+-      if (lm === null ? isBlank(body) || !/^[ \t]/.test(body) : lm.level <= head.level) break
+-    }
++  for (let k = first + 1; k < scan.lines.length; k++) {
++    if (!inJoinedMath(scan, k, first, last) && role(k) !== 'nested') break
+     last = k
+   }
+   return { from: scan.lineStarts[first], to: lineEndOf(scan, last) }
+@@ -144,76 +209,76 @@ function rebuildMove(
+   }
+ }
+ 
+-/** Recounts every sequenced run holding a position in `at`, each once however many positions it holds. A line in `arrived` had its marker written by the edit, so its ordinal came from the writer rather than the run, and never sets a top-level run's start. */
++/** Recounts every sequenced run holding a position in `at`, each once however many positions it holds. A line in `arrived` had its marker written by the edit, so its ordinal came from the writer rather than the run, and never sets a top-level run's start, while a run holding a line in `repicked` counts from 1 or A. */
+ export function renumberRuns(
+-  doc: string,
++  scan: DocScan,
++  scope: MarkdownScope,
+   at: readonly number[],
+   arrived: ReadonlySet<number> = new Set(),
++  repicked: ReadonlySet<number> = new Set(),
+ ): TextEdit[] {
+-  const seen = new Set<number>()
+-  return at
+-    .flatMap((p) => renumberRun(doc, p, arrived))
+-    .filter((c) => !seen.has(c.from) && seen.add(c.from))
++  const counted = new Set<number>()
++  return at.flatMap((p) => {
++    const i = lineIndexAt(scan, p)
++    if (counted.has(i)) return []
++    const rows = runAt(scan, i, scope)
++    for (const { k } of rows) counted.add(k)
++    return renumberRun(scan, rows, arrived, repicked)
++  })
+ }
+ 
+-function renumberRun(doc: string, pos: number, arrived: ReadonlySet<number>): TextEdit[] {
+-  if (pos < 0 || pos > doc.length) return []
+-  const ls = lineStartAt(doc, pos)
+-  const lm = parseListMarker(doc.slice(ls, lineEndAt(doc, pos)))
+-  if (lm === null || !isSequenced(lm)) return []
+-  const kind = lm.kind
+-  const indent = doc.slice(ls, ls + lm.markerStart)
+-
+-  // A nested run counts from 1. A top-level run counts from its SMALLEST present ordinal: a move only permutes the ordinals, so a list that began at 5 stays 5,6,7 while a 1-based one snaps back. Deeper markers, continuations and blank lines are skipped, not terminators, since items apart by a blank line are one loose list; inside a quote a blank line ends the quote, and the run with it.
+-  const quoted = quotePrefix(indent) !== ''
+-  const carries = (t: string): boolean => (isBlank(t) && !quoted) || nestedUnder(t, indent)
+-  let runStart = ls
+-  for (let p = ls; p > 0; ) {
+-    const prevStart = lineStartAt(doc, p - 1)
+-    const t = doc.slice(prevStart, p - 1)
+-    const plm = parseListMarker(t)
+-    if (
+-      plm !== null &&
+-      plm.kind === kind &&
+-      doc.slice(prevStart, prevStart + plm.markerStart) === indent
+-    )
+-      runStart = prevStart
+-    else if (!carries(t)) break
+-    p = prevStart
+-  }
++type Row = { k: number; lm: SequencedMarker }
+ 
+-  type Row = { line: number; from: number; marker: SequencedMarker }
++function runAt(scan: DocScan, i: number, scope: MarkdownScope): Row[] {
++  const head = itemAt(scan, i, i, scope)
++  if (head === null || !isSequenced(head)) return []
+   const rows: Row[] = []
+-  for (let p = runStart; p < doc.length; ) {
+-    const le = lineEndAt(doc, p)
+-    const t = doc.slice(p, le)
+-    const rlm = parseListMarker(t)
+-    const sameLevel =
+-      rlm !== null && rlm.kind === kind && doc.slice(p, p + rlm.markerStart) === indent
+-    if (sameLevel) rows.push({ line: p, from: p + rlm.markerStart, marker: rlm })
+-    else if (!carries(t)) break
+-    p = le + 1
++  for (const k of siblingsAt(scan, i, scope).items) {
++    const lm = itemAt(scan, k, i, scope)!
++    if (isSequenced(lm) && lm.kind === head.kind) rows.push({ k, lm })
++    else if (k < i) rows.length = 0
++    else break
+   }
+-  const settled = rows.filter((r) => !arrived.has(r.line))
++  return rows
++}
++
++function renumberRun(
++  scan: DocScan,
++  rows: readonly Row[],
++  arrived: ReadonlySet<number>,
++  repicked: ReadonlySet<number>,
++): TextEdit[] {
++  if (rows.length === 0) return []
++  const head = rows[0].lm
++  // A nested run counts from 1. A top-level run counts from its SMALLEST present ordinal: a move only permutes the ordinals, so a list that began at 5 stays 5,6,7 while a 1-based one snaps back.
++  const settled = rows.filter(({ k }) => !arrived.has(scan.lineStarts[k]))
+   const start =
+-    lm.level > 0
++    head.level > 0 || rows.some(({ k }) => repicked.has(scan.lineStarts[k]))
+       ? 1
+-      : Math.min(...(settled.length > 0 ? settled : rows).map((r) => ordinalOf(r.marker)))
++      : Math.min(...(settled.length > 0 ? settled : rows).map(({ lm }) => ordinalOf(lm)))
+   const changes: TextEdit[] = []
+-  rows.forEach(({ from, marker }, i) => {
+-    const have = marker.ordinal
+-    const want = ordinalText(kind, start + i)
+-    if (have !== want) changes.push({ from, to: from + have.length, insert: want })
++  rows.forEach(({ k, lm: { markerStart, ordinal } }, n) => {
++    const from = scan.lineStarts[k] + markerStart
++    const want = ordinalText(head.kind, start + n)
++    if (ordinal !== want) changes.push({ from, to: from + ordinal.length, insert: want })
+   })
+   return changes
+ }
+ 
+ /** Both renumber passes run against the POST-MOVE doc so the ordinal offsets are correct, then map back onto the original. */
+-export function dropChanges(doc: string, block: BlockSpan, slot: Slot): TextEdit[] | null {
++export function dropChanges(
++  doc: string,
++  block: BlockSpan,
++  slot: Slot,
++  scope: MarkdownScope,
++): TextEdit[] | null {
+   const moved = rebuildMove(doc, block, slot, 'exact')
+   if (moved === null) return null
+ 
+-  const finalDoc = applyEdits(moved.doc, renumberRuns(moved.doc, [moved.sourceAt, moved.destAt]))
++  const finalDoc = applyEdits(
++    moved.doc,
++    renumberRuns(scanDoc(moved.doc), scope, [moved.sourceAt, moved.destAt]),
++  )
+   return diffAsSingleReplace(doc, finalDoc)
+ }
+ 
+diff --git a/Core/MarkdownPM/Gestures/listDrag.ts b/Core/MarkdownPM/Gestures/listDrag.ts
+index e7d2338cc..34a008bf9 100644
+--- a/Core/MarkdownPM/Gestures/listDrag.ts
++++ b/Core/MarkdownPM/Gestures/listDrag.ts
+@@ -2,11 +2,10 @@ import type { Extension } from '@codemirror/state'
+ import { EditorView } from '@codemirror/view'
+ import type { BlockSpan, MarkdownScope } from '../Engine/detect'
+ import { docScan, docString } from '../docCache'
+-import { inSealedLine } from '../Engine/docScan'
+ import { forEachLine, shadeField, type Boundary } from './dragChrome'
+ import { beginRelocateDrag, editorGestureCleanup } from './editorGesture'
+ import { lineElementAt, textColumn } from '../lineDom'
+-import { subBlockAt, dropChanges, checkboxToggleChange } from '../Engine/listModel'
++import { subBlockAt, dropChanges, checkboxToggleChange, itemAt } from '../Engine/listModel'
+ import { GLYPH_CLASS } from '../Engine/intents'
+ 
+ // Measured at drag start and re-measured only on scroll: the doc is static during a drag, so re-measuring per pointermove would be layout thrash.
+@@ -39,13 +38,11 @@ function collectBoundaries(
+   const gutterRight = textColumn(view).right
+   const scan = docScan(doc)
+   const out: Boundary<Drop>[] = []
++  const first = doc.lineAt(block.from).number - 1
+   for (const { from, to } of view.visibleRanges) {
+     forEachLine(doc, from, to, (line) => {
+-      const lm = scan.markers[line.number - 1]
+-      const inBlock = line.from >= block.from && line.from <= block.to
+-      // A marker-lookalike inside a page's code, math or table is that block's text, never a drop target; a cell draws none of the three.
+-      const sealed = scope === 'page' && inSealedLine(scan, line.number - 1)
+-      if (lm === null || inBlock || sealed) return
++      const lm = itemAt(scan, line.number - 1, first, scope)
++      if (lm === null || (line.from >= block.from && line.from <= block.to)) return
+       const cTop = view.coordsAtPos(line.from)
+       const cEnd = view.coordsAtPos(line.to)
+       const cMarker = view.coordsAtPos(line.from + lm.markerStart)
+@@ -91,7 +88,7 @@ export const listDragExtension = (scope: MarkdownScope): Extension => [
+       if (!glyph) return false
+       const pos = view.posAtDOM(glyph)
+       const scan = docScan(view.state.doc)
+-      const block = subBlockAt(scan, pos)
++      const block = subBlockAt(scan, pos, scope)
+       if (!block) return false
+ 
+       e.preventDefault()
+@@ -103,7 +100,7 @@ export const listDragExtension = (scope: MarkdownScope): Extension => [
+             ? null
+             : { left: slot.left, top: y, width: slot.right - slot.left },
+         commit: ({ at, slot }) =>
+-          dropChanges(docString(view.state.doc), block, { at, indent: slot.indent }),
++          dropChanges(docString(view.state.doc), block, { at, indent: slot.indent }, scope),
+         onTap: () => clickAction(view, pos),
+       })
+       return true
+diff --git a/Core/MarkdownPM/Input/listRenumber.test.ts b/Core/MarkdownPM/Input/listRenumber.test.ts
+index 95c720028..3bcec2084 100644
+--- a/Core/MarkdownPM/Input/listRenumber.test.ts
++++ b/Core/MarkdownPM/Input/listRenumber.test.ts
+@@ -73,6 +73,12 @@ describe('a level change recounts the run it joined and the run it left', () =>
+   it('an outdented item takes its place in a run that starts past 1', () => {
+     expect(at('5. a\n\t1. b\n6. c', 6, outdentListOnShiftTab)).toBe('5. a\n6. b\n7. c')
+   })
++  it('switching a numbered item out of its run recounts the run below', () => {
++    const doc = '- p\n\t1. a\n\t2. b\n\t3. c'
++    const b = doc.indexOf('b')
++    const e = setList(doc, b, b + 1, 'bullet')
++    expect(landEdit(doc, e.changes, editEvent(e), 'page')).toBe('- p\n\t1. a\n\t- b\n\t1. c')
++  })
+ })
+ 
+ describe('Enter recounts the run it splits', () => {
+@@ -85,6 +91,10 @@ describe('Enter recounts the run it splits', () => {
+   it('counts on through a loose list', () => {
+     expect(at('1. a\n\n2. b', 4, continueListOnEnter)).toBe('1. a\n2. \n\n3. b')
+   })
++  it('counts past a code block nested in the list, and never counts the code', () => {
++    const doc = '- p\n\t1. x\n\t```\n\t1. y\n\t```\n\t1. z'
++    expect(at(doc, 9, continueListOnEnter)).toBe('- p\n\t1. x\n\t2. \n\t```\n\t1. y\n\t```\n\t3. z')
++  })
+   it('repairs a gapped run the way delete and nest do', () => {
+     expect(at('1. a\n3. b\n7. c', 9, continueListOnEnter)).toBe('1. a\n2. b\n3. \n4. c')
+   })
+@@ -105,6 +115,9 @@ describe('Lists ▸ continues the run a line joins', () => {
+   it('a run that began past 1 keeps its base', () => {
+     expect(listed('5. a\nb', 5)).toBe('5. a\n6. b')
+   })
++  it('a pick over a numbered item restarts its run from 1, past the items it missed', () => {
++    expect(listed('5. a\n- b\n\n7. c', 0, 6)).toBe('1. a\n2. b\n\n3. c')
++  })
+   it('a quoted line continues the quoted run', () => {
+     expect(listed('> 1. a\n> b', 9)).toBe('> 1. a\n> 2. b')
+   })
+@@ -130,10 +143,10 @@ describe('Lists ▸ continues the run a line joins', () => {
+       landEdit(doc, [{ from: 8, to: 8, insert: '5. b\n' }], editEvent({ relist: true }), 'page'),
+     ).toBe('$$\n1. a\n5. b\n$$')
+   })
+-  it('a list-writing edit inside a code block counts nothing', () => {
++  it('a list-writing edit inside a code block counts within the block', () => {
+     const doc = '```\n1. a\n```'
+     expect(
+       landEdit(doc, [{ from: 9, to: 9, insert: '5. b\n' }], editEvent({ relist: true }), 'page'),
+-    ).toBe('```\n1. a\n5. b\n```')
++    ).toBe('```\n1. a\n2. b\n```')
+   })
+ })
+diff --git a/Core/MarkdownPM/Input/listRenumber.ts b/Core/MarkdownPM/Input/listRenumber.ts
+index 689841a68..a94274b15 100644
+--- a/Core/MarkdownPM/Input/listRenumber.ts
++++ b/Core/MarkdownPM/Input/listRenumber.ts
+@@ -1,8 +1,7 @@
+ import { EditorState, type Extension } from '@codemirror/state'
+ import { docScan, docString } from '../docCache'
+-import { renumberRuns } from '../Engine/listModel'
+-import { inSealedLine } from '../Engine/docScan'
+-import { lineIndexAt, type TextEdit } from '../Engine/markdownCode'
++import { itemAt, readsFrom, renumberRuns } from '../Engine/listModel'
++import { applyEdits, lineIndexAt, type TextEdit } from '../Engine/markdownCode'
+ import { isSequenced, type MarkdownScope } from '../Engine/detect'
+ 
+ /** The user event of an edit that writes list markers: Enter continuing a list, Tab and Shift+Tab, and the Lists menu. */
+@@ -10,26 +9,40 @@ const RELIST = 'input.list'
+ 
+ export const editEvent = (edit: { relist?: boolean }): string => (edit.relist ? RELIST : 'input')
+ 
+-// Every edit that reshapes a sequenced run counts it here, riding the same transaction so one undo takes both: a marker-writing edit recounts the runs it touched and, where it touched a numbered or lettered item, the run just below, which is the one a nested item left; a deletion that removes a whole line closes the gap it leaves. Nothing inside a page's code, math or tables is counted.
++// Every edit that reshapes a sequenced run counts it here, riding the same transaction so one undo takes both: a marker-writing edit recounts the runs it touched and, where a line it touched is or was numbered or lettered, the run just below, which is the one a nested or switched item left, and a numbered or lettered marker it wrote over whole restarts its run from 1 or A, while a re-pick that leaves the text as it was lands nothing; a deletion that removes a whole line closes the gap it leaves. Nothing inside a page's math or tables is counted, and a code block's own list counts only for a marker-writing edit inside it.
+ export const listRenumber = (scope: MarkdownScope): Extension =>
+   EditorState.transactionFilter.of((tr) => {
+     if (!tr.docChanged) return tr
+     const relist = tr.isUserEvent(RELIST)
+     if (!relist && !tr.isUserEvent('delete')) return tr
+     const startDoc = docString(tr.startState.doc)
++    const was = docScan(tr.startState.doc)
+     const scan = docScan.after(tr)
+     const at: number[] = []
+     const arrived = new Set<number>()
++    const repicked = new Set<number>()
+     tr.changes.iterChanges((fromA, toA, fromB, toB) => {
+       if (!relist) {
+-        if (startDoc.slice(fromA, toA).includes('\n')) at.push(fromB)
++        if (
++          startDoc.slice(fromA, toA).includes('\n') &&
++          readsFrom(scan, lineIndexAt(scan, fromB), 'outside', scope)
++        )
++          at.push(fromB)
+         return
+       }
+       const last = lineIndexAt(scan, toB)
+       let sequenced = false
++      for (let i = lineIndexAt(was, fromA); i <= lineIndexAt(was, toA); i++) {
++        const lm = itemAt(was, i, i, scope)
++        if (lm === null || !isSequenced(lm)) continue
++        sequenced = true
++        const ls = was.lineStarts[i]
++        if (fromA <= ls + lm.markerStart && toA >= ls + lm.contentStart)
++          repicked.add(tr.changes.mapPos(ls))
++      }
+       for (let i = lineIndexAt(scan, fromB); i <= last; i++) {
+         const ls = scan.lineStarts[i]
+-        const lm = scan.markers[i]
++        const lm = itemAt(scan, i, i, scope)
+         if (lm === null) continue
+         at.push(ls)
+         sequenced ||= isSequenced(lm)
+@@ -37,9 +50,8 @@ export const listRenumber = (scope: MarkdownScope): Extension =>
+       }
+       if (sequenced && last + 1 < scan.lines.length) at.push(scan.lineStarts[last + 1])
+     })
+-    const counted =
+-      scope === 'page' ? at.filter((p) => !inSealedLine(scan, lineIndexAt(scan, p))) : at
+-    const changes = renumberRuns(scan.text, counted, arrived)
++    const changes = renumberRuns(scan, scope, at, arrived, repicked)
++    if (repicked.size > 0 && applyEdits(scan.text, changes) === startDoc) return {}
+     return changes.length === 0 ? tr : [tr, { changes, sequential: true }]
+   })
+ 
+diff --git a/Core/MarkdownPM/regressionPins.test.ts b/Core/MarkdownPM/regressionPins.test.ts
+index 38b21d5ae..95b3e3129 100644
+--- a/Core/MarkdownPM/regressionPins.test.ts
++++ b/Core/MarkdownPM/regressionPins.test.ts
+@@ -180,9 +180,13 @@ describe('format transforms — prefix-aware', () => {
+ describe('renumberRuns — nested lines are skipped, not terminators', () => {
+   it('renumbers a run past its sublists', () => {
+     const doc = '1. a\n\t1. x\n2. b\n2. c'
+-    const changes = renumberRuns(doc, [0])
++    const changes = renumberRuns(scanDoc(doc), 'page', [0])
+     expect(changes).toEqual([{ from: 16, to: 17, insert: '3' }])
+   })
++  it('counts past a quote indented under an item, which rides that item', () => {
++    const doc = '1. a\n  > q\n1. b'
++    expect(renumberRuns(scanDoc(doc), 'page', [0])).toEqual([{ from: 11, to: 12, insert: '2' }])
++  })
+ })
+ 
+ describe('calloutDeleteVerdict — repair, not cancel', () => {

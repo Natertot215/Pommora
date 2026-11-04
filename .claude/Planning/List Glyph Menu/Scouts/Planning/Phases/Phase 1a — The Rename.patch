@@ -1,0 +1,110 @@
+diff --git a/Core/MarkdownPM/Citations/citationEdits.ts b/Core/MarkdownPM/Citations/citationEdits.ts
+index cc1079d47..a4715b3b9 100644
+--- a/Core/MarkdownPM/Citations/citationEdits.ts
++++ b/Core/MarkdownPM/Citations/citationEdits.ts
+@@ -13,7 +13,7 @@ import {
+   markersFor,
+ } from '../Engine/detect'
+ import { lineEndOf, lineIndexAt } from '../Engine/markdownCode'
+-import { diffAsSingleReplace } from '../Engine/listDragModel'
++import { diffAsSingleReplace } from '../Engine/listModel'
+ 
+ export type CitationSlice = DocLines & { citations: CitationScan }
+ 
+diff --git a/Core/MarkdownPM/Engine/listDragModel.test.ts b/Core/MarkdownPM/Engine/listModel.test.ts
+similarity index 99%
+rename from Core/MarkdownPM/Engine/listDragModel.test.ts
+rename to Core/MarkdownPM/Engine/listModel.test.ts
+index 54a4e4c93..09af40a61 100644
+--- a/Core/MarkdownPM/Engine/listDragModel.test.ts
++++ b/Core/MarkdownPM/Engine/listModel.test.ts
+@@ -40,7 +40,7 @@ import {
+   renumberRuns,
+   checkboxToggleChange,
+   type Slot,
+-} from './listDragModel'
++} from './listModel'
+ 
+ /** Drop the item whose line contains `grab` so it starts at the line containing `dropLine`. */
+ function drop(doc: string, grab: number, at: number): string {
+diff --git a/Core/MarkdownPM/Engine/listDragModel.ts b/Core/MarkdownPM/Engine/listModel.ts
+similarity index 100%
+rename from Core/MarkdownPM/Engine/listDragModel.ts
+rename to Core/MarkdownPM/Engine/listModel.ts
+diff --git a/Core/MarkdownPM/Gestures/blockDrag.ts b/Core/MarkdownPM/Gestures/blockDrag.ts
+index 260e86925..26e855ec2 100644
+--- a/Core/MarkdownPM/Gestures/blockDrag.ts
++++ b/Core/MarkdownPM/Gestures/blockDrag.ts
+@@ -5,7 +5,7 @@ import { docScan, docString } from '../docCache'
+ import { shadeField, type Boundary } from './dragChrome'
+ import { beginRelocateDrag, editorGestureCleanup } from './editorGesture'
+ import { gutterLineAt, lineElementAt, textColumn } from '../lineDom'
+-import { moveRange } from '../Engine/listDragModel'
++import { moveRange } from '../Engine/listModel'
+ import { GRIP_LINE } from '../Engine/intents'
+ import type { BlockSpan } from '../Engine/detect'
+ 
+diff --git a/Core/MarkdownPM/Gestures/listDrag.ts b/Core/MarkdownPM/Gestures/listDrag.ts
+index 62792e258..e7d2338cc 100644
+--- a/Core/MarkdownPM/Gestures/listDrag.ts
++++ b/Core/MarkdownPM/Gestures/listDrag.ts
+@@ -6,7 +6,7 @@ import { inSealedLine } from '../Engine/docScan'
+ import { forEachLine, shadeField, type Boundary } from './dragChrome'
+ import { beginRelocateDrag, editorGestureCleanup } from './editorGesture'
+ import { lineElementAt, textColumn } from '../lineDom'
+-import { subBlockAt, dropChanges, checkboxToggleChange } from '../Engine/listDragModel'
++import { subBlockAt, dropChanges, checkboxToggleChange } from '../Engine/listModel'
+ import { GLYPH_CLASS } from '../Engine/intents'
+ 
+ // Measured at drag start and re-measured only on scroll: the doc is static during a drag, so re-measuring per pointermove would be layout thrash.
+diff --git a/Core/MarkdownPM/Input/listRenumber.ts b/Core/MarkdownPM/Input/listRenumber.ts
+index 26ee533f9..689841a68 100644
+--- a/Core/MarkdownPM/Input/listRenumber.ts
++++ b/Core/MarkdownPM/Input/listRenumber.ts
+@@ -1,6 +1,6 @@
+ import { EditorState, type Extension } from '@codemirror/state'
+ import { docScan, docString } from '../docCache'
+-import { renumberRuns } from '../Engine/listDragModel'
++import { renumberRuns } from '../Engine/listModel'
+ import { inSealedLine } from '../Engine/docScan'
+ import { lineIndexAt, type TextEdit } from '../Engine/markdownCode'
+ import { isSequenced, type MarkdownScope } from '../Engine/detect'
+diff --git a/Core/MarkdownPM/Tables/cellStatic.tsx b/Core/MarkdownPM/Tables/cellStatic.tsx
+index a40d9ffc3..6155d3e7f 100644
+--- a/Core/MarkdownPM/Tables/cellStatic.tsx
++++ b/Core/MarkdownPM/Tables/cellStatic.tsx
+@@ -19,7 +19,7 @@ import {
+ } from '../Engine/intents'
+ import { perText } from '../Engine/perText'
+ import { parseListMarker, type ListMarker } from '../Engine/detect'
+-import { checkboxToggleChange } from '../Engine/listDragModel'
++import { checkboxToggleChange } from '../Engine/listModel'
+ import { scanDoc } from '../Engine/docScan'
+ import { isPaint } from '../Engine/paints'
+ import { readFormatState } from '../Input/formatState'
+diff --git a/Core/MarkdownPM/regressionPins.test.ts b/Core/MarkdownPM/regressionPins.test.ts
+index 99fe55cf0..38b21d5ae 100644
+--- a/Core/MarkdownPM/regressionPins.test.ts
++++ b/Core/MarkdownPM/regressionPins.test.ts
+@@ -13,7 +13,7 @@ import {
+ } from './Input/edits'
+ import { setHeading, setList } from './Input/format'
+ import { editEvent, landEdit } from './Input/listRenumber'
+-import { renumberRuns } from './Engine/listDragModel'
++import { renumberRuns } from './Engine/listModel'
+ import { calloutDeleteVerdict } from './Guards/calloutGuard'
+ import type { GuardVerdict } from './Guards/verdictFilter'
+ import { headingSections } from './Engine/headingScan'
+diff --git a/Core/Pages/pageEditor.ts b/Core/Pages/pageEditor.ts
+index 5d6a5ee16..889ef7562 100644
+--- a/Core/Pages/pageEditor.ts
++++ b/Core/Pages/pageEditor.ts
+@@ -4,7 +4,7 @@ import type { OutlineHeading } from '../MarkdownPM/Engine/headingScan'
+ import { travelTo } from '../MarkdownPM/travel'
+ import { docOutline, docScan } from '../MarkdownPM/docCache'
+ import { blockAt } from '../MarkdownPM/Engine/blockModel'
+-import { moveRange } from '../MarkdownPM/Engine/listDragModel'
++import { moveRange } from '../MarkdownPM/Engine/listModel'
+ import { headingParts } from '../MarkdownPM/Engine/detect'
+ import { pageBody, shownPage, useSession } from '../Session/store'
+ import { clamp } from '@pommora/uix/Utilities/clamp'
