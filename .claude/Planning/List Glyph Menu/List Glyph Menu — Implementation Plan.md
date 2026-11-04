@@ -20,7 +20,7 @@
 |-------|----------|----------|
 | 0 · Drives and Baseline | 0 (scripts +273: the drive +261, the harness +8, Path Links −8, the README +12) | 0 (+0 / −0) |
 | 1 · The List Model | +74 (the rename 0) | +70 (+177 / −107) |
-| 2 · One Switch | +143 (+69 its own) | |
+| 2 · One Switch | +143 (+69 its own) | +139 (+402 / −263) |
 | 3 · The Glyph Menu | +159 (+16 its own) | |
 | 4 · Docs and Issues | +159 (±0 its own; docs +33) | |
 | **Total** | **+159 (+458 / −299) excluding comments; one file renamed, one drive added** | |
@@ -163,7 +163,7 @@ The order is what makes each step land once. Phase 0 lands the drive and records
   - [x] Task 1-2 · One walk, one read rule, one count
   - [x] Review Checkpoint
 - [ ] **Phase 2** — One Switch
-  - [ ] Task 2-1 · `setList` and every caller
+  - [x] Task 2-1 · `setList` and every caller
   - [ ] Review Checkpoint
   - [ ] Compaction Checkpoint
 - [ ] **Phase 3** — The Glyph Menu
@@ -309,10 +309,10 @@ One walk by quote depth and drawn level should answer siblings, nesting, and run
 
 **VERIFY**
 
-- [ ] Before committing, the executor makes each pin's single revert as *6 — Phases · §New Tests* and *9 — Folds · §Pins* name it, watches that pin fail as recorded, then restores it.
-- [ ] Run the gates: 9,116 passed, 2 skipped.
-- [ ] `git grep -n -E "setListKind|listMarkerLines|listKind:" -- Core` prints nothing; the comment count reads BASELINE.
-- [ ] The Number recorded for Phase 2; its own delta about +69.
+- [x] Before committing, the executor makes each pin's single revert as *6 — Phases · §New Tests* and *9 — Folds · §Pins* name it, watches that pin fail as recorded, then restores it.
+- [x] Run the gates: 9,116 passed, 2 skipped.
+- [x] `git grep -n -E "setListKind|listMarkerLines|listKind:" -- Core` prints nothing; the comment count reads BASELINE.
+- [x] The Number recorded for Phase 2; its own delta about +69.
 
 #### Review Checkpoint
 
