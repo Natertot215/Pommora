@@ -20,7 +20,7 @@
 |-------|----------|----------|
 | 0 · Drives and Baseline | 0 (scripts +273: the drive +261, the harness +8, Path Links −8, the README +12) | 0 (+0 / −0) |
 | 1 · The List Model | +74 (the rename 0) | +70 (+177 / −107) |
-| 2 · One Switch | +143 (+69 its own) | +139 (+402 / −263) |
+| 2 · One Switch | +143 (+69 its own) | +178 (+605 / −427) |
 | 3 · The Glyph Menu | +159 (+16 its own) | |
 | 4 · Docs and Issues | +159 (±0 its own; docs +33) | |
 | **Total** | **+159 (+458 / −299) excluding comments; one file renamed, one drive added** | |
@@ -164,7 +164,8 @@ The order is what makes each step land once. Phase 0 lands the drive and records
   - [x] Review Checkpoint
 - [ ] **Phase 2** — One Switch
   - [x] Task 2-1 · `setList` and every caller
-  - [ ] Review Checkpoint
+  - [x] Review Checkpoint
+  - [ ] Broader Review Checkpoint
   - [ ] Compaction Checkpoint
 - [ ] **Phase 3** — The Glyph Menu
   - [ ] `[Stop: Nathan's caption for Preserve List-Level Formatting]`
@@ -316,8 +317,15 @@ One walk by quote depth and drawn level should answer siblings, nesting, and run
 
 #### Review Checkpoint
 
-- [ ] One writer, one action name, and one check rule hold on every list menu, and the grip's block output matches today's on the *§Decisions* example; both reviewers' findings folded or recorded.
-- [ ] *§When Drives Run*'s row for Phase 2 green, with Phases 0 to 2 items passing and the rest `AWAIT`. Four shots read and captioned.
+- [x] One writer, one action name, and one check rule hold on every list menu, and the grip's block output matches today's on the *§Decisions* example; both reviewers' findings folded or recorded.
+- [x] *§When Drives Run*'s row for Phase 2 green, with Phases 0 to 2 items passing and the rest `AWAIT`. Four shots read and captioned.
+
+#### Broader Review Checkpoint
+
+Phase 2 takes a second review once its folds land, by Nathan's direction: three read-only `opus-high` reviewers, one on Phase 2's own work, one on the entire plan as Phases 0 to 2 left it, and one reading outward against the rest of the codebase, each weighing what it reads against the Approach and Principles.
+
+- [ ] The three reviewers' findings folded or recorded, each fold with its pin run red.
+- [ ] After any fold, *§When Drives Run*'s row for Phase 2 green from a worktree of the folded head.
 
 #### Compaction Checkpoint
 
@@ -442,3 +450,4 @@ The reviews run over `<BASELINE>..HEAD`, each wave closed before the next opens.
 - **P6-T2's Red Run (Task 1-2):** A-10's revert, `readsFrom` with only its fence compare dropped, left T2 green and reddened P6-C3 instead, since that compare is what opens a code block to its own lines. T2 went red under the two reverts its VERIFY now names.
 - **Display Math in the One Walk (Phase 1's Checkpoint):** the walk reads display math it's outside of as the block's opening line, as it reads a code block, so numbering counts past indented math the drag already carried whole, and `subBlockAt`'s own `inJoinedMath` rule left. B-15 named quote and code blocks only.
 - **The Run an Item Leaves (Phase 1's Checkpoint):** B-10 held only for Lists ▸ and Tab, and only where the line just after the edit was the next sibling; an item with nested lines, Backspace on a marker, and a whole-line deletion left the run below uncounted, the last two as at base. The run below is now found past the item's nesting in the pre-edit document for every one of them, and a new marker no longer triggers it, since an item's own line already anchors the run it joins.
+- **One End Rule for Line Transforms (Phase 2's Checkpoint, Nathan's Direction):** a triple-click reaches only its own line for Heading, Quote, and every other line transform that reads a selection's lines, as it does for a list pick, through one rule. Nathan directed the fix over an issue entry, so Heading and Quote change on a triple-click, past C-6.
