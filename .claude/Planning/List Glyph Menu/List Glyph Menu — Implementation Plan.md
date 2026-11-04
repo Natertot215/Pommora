@@ -19,7 +19,7 @@
 | Phase | Estimate | Measured |
 |-------|----------|----------|
 | 0 · Drives and Baseline | 0 (scripts +273: the drive +261, the harness +8, Path Links −8, the README +12) | 0 (+0 / −0) |
-| 1 · The List Model | +74 (the rename 0) | +74 (+167 / −93) |
+| 1 · The List Model | +74 (the rename 0) | +70 (+177 / −107) |
 | 2 · One Switch | +143 (+69 its own) | |
 | 3 · The Glyph Menu | +159 (+16 its own) | |
 | 4 · Docs and Issues | +159 (±0 its own; docs +33) | |
@@ -158,10 +158,10 @@ The order is what makes each step land once. Phase 0 lands the drive and records
   - [x] Task 0-1 · Run Start
   - [x] Task 0-2 · The List Types Drive
   - [x] Task 0-3 · The baseline drives
-- [ ] **Phase 1** — The List Model
+- [x] **Phase 1** — The List Model
   - [x] Task 1-1 · The rename
   - [x] Task 1-2 · One walk, one read rule, one count
-  - [ ] Review Checkpoint
+  - [x] Review Checkpoint
 - [ ] **Phase 2** — One Switch
   - [ ] Task 2-1 · `setList` and every caller
   - [ ] Review Checkpoint
@@ -274,8 +274,8 @@ One walk by quote depth and drawn level should answer siblings, nesting, and run
 
 #### Review Checkpoint
 
-- [ ] The list model reads one structure from every caller, and nothing outside a code block reaches its lines; both reviewers' findings folded or recorded.
-- [ ] *§When Drives Run*'s row for Phase 1 green, with Phase 0 and 1 items passing and the rest `AWAIT`. Four shots read and captioned.
+- [x] The list model reads one structure from every caller, and nothing outside a code block reaches its lines; both reviewers' findings folded or recorded.
+- [x] *§When Drives Run*'s row for Phase 1 green, with Phase 0 and 1 items passing and the rest `AWAIT`. Four shots read and captioned.
 
 ---
 
@@ -295,7 +295,6 @@ One walk by quote depth and drawn level should answer siblings, nesting, and run
 
 - **`Input/format.ts`:** `setList(scan, from, to, kind, settings, scope)` over `listReach(scan, from, to, settings, scope)`: a caret takes its item's group (on: siblings drawn as its type; off: the siblings and their nesting), a range takes every item it touches, in one forward pass that carries the current item, and turns plain lines into items; a range ending at a line's start stops at the line before; a continuation answers for its item; a code block's lines are reached only by a pick wholly inside it, and math, tables, a callout's head, and a fence's delimiters never are. An item already drawn as the type is left alone, a numbered or lettered one is written over so the renumber restarts its run. `listKindOf` reads the reach; `readLine` reads a line by scope; `splitPrefix` takes the scope through `blockPrefix`. `setListKind`, `listMarkerLines`, the toggle-off, `listMarkerText`'s `n`, and `SelectedLine.kind` leave.
 - **`Engine/intents.ts`:** `drawnKind`.
-- **`Engine/listModel.ts`:** `itemAt`'s reader widens to `number | 'outside'`.
 - **`Input/formatState.ts`:** `readFormatState(scan, from, to, settings, scope)` checks through `listKindOf`.
 - **`Input/edits.ts`:** `blockPrefix` exported.
 - **`Input/listRenumber.ts`:** `RELIST`'s doc rewritten in place.
@@ -305,6 +304,8 @@ One walk by quote depth and drawn level should answer siblings, nesting, and run
 - **`Core/Actions/gripMenu.ts`:** `listKind:` folds into `list:`.
 - **`Core/MarkdownPM/api.ts`**, **`Core/Settings/personalization.ts`:** `preserveListLevels` as an editor-setting key and `flag(true)`.
 - **Tests:** P6-T5 to P6-T7 added, P6-T7 and the selection pin extended (*9 — Folds · F-T1, F-T2*); P6-C5 to P6-C10 changed.
+
+**Difference From the Patch:** `itemAt`'s reader widened to `number | 'outside'` with Phase 1's folds, and the B-10 and deletion pins in `listRenumber.test.ts` moved, so the patch lands with `--3way`, its conflict resolved toward the patch's intent.
 
 **VERIFY**
 
@@ -382,7 +383,7 @@ Every interaction the feature can meet should be driven or probed, and every res
 
 `Scouts/Planning/Phases/Phase 4 — Docs and Issues.patch`: `.claude/Features/MarkdownPM.md` (the Lists bullet's last sentence rewritten as one sentence; "a list glyph" joins the right-press list), `.claude/Features/ConfigurationPM.md` (the setting's row), `.claude/Guidelines/Editor-Internals.md` (the list-numbering bullet rewritten in place to state the one rule, and the cell-model bullet naming `listModel.ts` and `itemAt`), and `.claude/IssuesPM.md` (I-037 recounted to 23 and 15, I-017 narrowed to its quoted-list case, I-072 added for the right-click rule across surfaces, I-073 added for unifying MarkdownPM's drives, the lines the work moves re-cited in I-013, I-037, I-058, and I-072, `index-issues.py` run).
 
-**Difference From the Patch:** I-018's and I-040's `Menus/gripMenu.ts` cites, already off at base, are re-cited to the final tree, since this work rewrites the file they point into.
+**Difference From the Patch:** I-018's and I-040's `Menus/gripMenu.ts` cites, already off at base, are re-cited to the final tree, since this work rewrites the file they point into. I-017's narrowed entry names both quoted-list residuals P4-K1 recorded: a nested item inside a quote directly after an outer list keeps the outer rail, and a wrapped line inside a quoted list ends the rails below it.
 
 **VERIFY**
 
@@ -439,3 +440,5 @@ The reviews run over `<BASELINE>..HEAD`, each wave closed before the next opens.
 #### Deviations
 
 - **P6-T2's Red Run (Task 1-2):** A-10's revert, `readsFrom` with only its fence compare dropped, left T2 green and reddened P6-C3 instead, since that compare is what opens a code block to its own lines. T2 went red under the two reverts its VERIFY now names.
+- **Display Math in the One Walk (Phase 1's Checkpoint):** the walk reads display math it's outside of as the block's opening line, as it reads a code block, so numbering counts past indented math the drag already carried whole, and `subBlockAt`'s own `inJoinedMath` rule left. B-15 named quote and code blocks only.
+- **The Run an Item Leaves (Phase 1's Checkpoint):** B-10 held only for Lists ▸ and Tab, and only where the line just after the edit was the next sibling; an item with nested lines, Backspace on a marker, and a whole-line deletion left the run below uncounted, the last two as at base. The run below is now found past the item's nesting in the pre-edit document for every one of them, and a new marker no longer triggers it, since an item's own line already anchors the run it joins.
