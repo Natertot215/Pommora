@@ -12,6 +12,8 @@
 |------|-------|-------|-----|
 | `9ce2d2b2b` (production as `cd813afdd`, where the phase patches were built) | 9,109 passed, 2 skipped (549 files); comments 3,511 | 11-04-2026 02:11 PM | |
 
+**Run Start:** comments 3,511; `~/Test` hashes `e5a32a5d30d6a11310cd559ee2b1b84b261c3265`; the base worktree is `~/The Studio/Projects/Pommora-LGM-Base` at `9ce2d2b2b`.
+
 **Net Ledger** (production lines from the Actionable column of `view-delta --exclude .claude`, cumulative from the BASELINE head; a phase's own delta is its Measured less the row above):
 
 | Phase | Estimate | Measured |
@@ -151,9 +153,9 @@ The order is what makes each step land once. Phase 0 lands the drive and records
 
 #### Process Overview
 
-- [ ] `[Stop: Nathan ratifies; no code changes before this]`
+- [x] `[Stop: Nathan ratifies; no code changes before this]`
 - [ ] **Phase 0** — Drives and Baseline
-  - [ ] Task 0-1 · Run Start
+  - [x] Task 0-1 · Run Start
   - [ ] Task 0-2 · The List Types Drive
   - [ ] Task 0-3 · The baseline drives
 - [ ] **Phase 1** — The List Model
@@ -191,8 +193,8 @@ The run should start from a known head and a known `~/Test`.
 
 **VERIFY**
 
-- [ ] BASELINE reads 549 files, 9,109 passed, 2 skipped, or the head's own counts with the difference explained; the comment count reads 3,511 or the head's own.
-- [ ] The plan commits with the comment count and the hash recorded.
+- [x] BASELINE reads 549 files, 9,109 passed, 2 skipped, or the head's own counts with the difference explained; the comment count reads 3,511 or the head's own.
+- [x] The plan commits with the comment count and the hash recorded.
 
 #### Task 0-2
 
