@@ -51,11 +51,11 @@ describe('the block grip menu', () => {
   it('a list offers its Type set with the current kind in force', () => {
     const items = gripMenuItems({ kind: 'list', current: 'bullet' })
     expect(items[0].submenu?.map((r) => [r.label, r.action, r.checked])).toEqual([
-      ['Bulleted', 'listKind:bullet', true],
-      ['Numbered', 'listKind:ordered', false],
-      ['Alphabetical', 'listKind:alphabetical', false],
-      ['Checklist', 'listKind:checkbox', false],
-      ['Arrowed', 'listKind:arrow', false],
+      ['Bulleted', 'list:bullet', true],
+      ['Numbered', 'list:ordered', false],
+      ['Alphabetical', 'list:alphabetical', false],
+      ['Checklist', 'list:checkbox', false],
+      ['Arrowed', 'list:arrow', false],
     ])
   })
 

@@ -5,17 +5,18 @@ import {
   calloutHeadPrefixLen,
   isCalloutHead,
   ordinalText,
+  isSequenced,
   parseListMarker,
-  parseListMarkerPrefixed,
   stripQuotePrefix,
   type ListMarker,
+  type MarkdownScope,
 } from '../Engine/detect'
 import {
   isBlockquoteLine,
-  quotePrefix,
   type TextEdit,
   lineStartAt,
   lineEndAt,
+  lineIndexAt,
   trimmedRange,
   overlaps,
 } from '../Engine/markdownCode'
@@ -25,6 +26,10 @@ import { emptyTable } from '../Engine/Tables/model'
 import { isPaint, type Paint, type PaintColor, writtenMark } from '../Engine/paints'
 import { serialize } from '../Engine/Tables/codec'
 import { type DocScan, inFenceAt } from '../Engine/docScan'
+import { itemAt, readsFrom, siblingsAt, subBlockAt } from '../Engine/listModel'
+import { drawnKind } from '../Engine/intents'
+import { type Personalization, settingOf } from '../../Settings/personalization'
+import { blockPrefix } from './edits'
 import { isValidLink, normalizeLinkUrl } from '../../Paths/urlPath'
 import { serializeLink } from '../../Connections/linkValue'
 
@@ -157,6 +162,8 @@ export function editFor(
   scan: DocScan,
   from: number,
   to: number,
+  settings: Personalization,
+  scope: MarkdownScope,
 ): FormatEdit | null {
   const [group, value] = action.split(':')
   switch (group) {
@@ -172,7 +179,7 @@ export function editFor(
     case 'heading':
       return setHeading(scan.text, from, to, Number(value) as HeadingLevel)
     case 'list':
-      return setList(scan.text, from, to, value as ListKind)
+      return setList(scan, from, to, value as ListKind, settings, scope)
     case 'block':
       return setBlock(scan.text, from, to, value as BlockFormat)
     default:
@@ -219,11 +226,11 @@ function toggleWrap(
   }
 }
 
-function listMarkerText(kind: ListKind, n = 1): string {
+function listMarkerText(kind: ListKind): string {
   switch (kind) {
     case 'ordered':
     case 'alphabetical':
-      return `${ordinalText(kind, n)}. `
+      return `${ordinalText(kind, 1)}. `
     case 'checkbox':
       return '- [ ] '
     case 'arrow':
@@ -234,11 +241,10 @@ function listMarkerText(kind: ListKind, n = 1): string {
 }
 
 /** For a callout HEAD the chrome includes the hidden `[!type] ` tag. Block transforms edit from AFTER the chrome, which preserves the box and keeps the change out of the callout guard's window. */
-export function splitPrefix(line: string): { prefix: string; body: string } {
-  const headLen = calloutHeadPrefixLen(line)
-  if (headLen !== null) return { prefix: line.slice(0, headLen), body: line.slice(headLen) }
-  const prefix = quotePrefix(line)
-  return { prefix, body: line.slice(prefix.length) }
+export function splitPrefix(line: string, scope: MarkdownScope): { prefix: string; body: string } {
+  const quote = blockPrefix(line, scope)
+  const len = quote === '' ? 0 : (calloutHeadPrefixLen(line) ?? quote.length)
+  return { prefix: line.slice(0, len), body: line.slice(len) }
 }
 
 /** Prefix-aware: `> - item` becomes `> ## item`, never `## - item` popped out of its quote. */
@@ -263,92 +269,127 @@ interface SelectedLine {
   pad: string
   indent: string
   inner: string
-  kind: ListKind | null
+}
+
+function readLine(doc: string, ls: number, scope: MarkdownScope): SelectedLine {
+  const le = lineEndAt(doc, ls)
+  const { prefix, body } = splitPrefix(doc.slice(ls, le), scope)
+  const lm = parseListMarker(body)
+  const stripped = stripInnerMarkers(body)
+  // An item's indent sits before its marker, a paragraph's leads its words — held apart either way, so converting a nested item keeps its level.
+  const indent = lm ? body.slice(0, lm.markerStart) : (/^[ \t]*(?=\S)/.exec(stripped)?.[0] ?? '')
+  return {
+    ls,
+    le,
+    prefix,
+    pad: prefix !== '' && !/[ \t]$/.test(prefix) ? ' ' : '',
+    indent,
+    inner: lm ? stripped : stripped.trimStart(),
+  }
 }
 
 /** A selection passes over its blank lines; a caret alone on one keeps it, so the block starts there. */
 function selectedLines(doc: string, from: number, to: number): SelectedLine[] {
   const out: SelectedLine[] = []
   for (let p = lineStartAt(doc, from); p <= to; p = lineEndAt(doc, p) + 1) {
-    const ls = p
-    const le = lineEndAt(doc, p)
-    const { prefix, body } = splitPrefix(doc.slice(ls, le))
-    if (!isBlank(body) || from === to) {
-      const lm = parseListMarker(body)
-      const stripped = stripInnerMarkers(body)
-      // An item's indent sits before its marker, a paragraph's leads its words — held apart either way, so converting a nested item keeps its level.
-      const indent = lm
-        ? body.slice(0, lm.markerStart)
-        : (/^[ \t]*(?=\S)/.exec(stripped)?.[0] ?? '')
-      out.push({
-        ls,
-        le,
-        prefix,
-        pad: prefix !== '' && !/[ \t]$/.test(prefix) ? ' ' : '',
-        indent,
-        inner: lm ? stripped : stripped.trimStart(),
-        kind: lm?.kind ?? null,
-      })
-    }
-    if (le >= doc.length) break
+    const l = readLine(doc, p, 'page')
+    if (!isBlank(doc.slice(l.ls + l.prefix.length, l.le)) || from === to) out.push(l)
+    if (l.le >= doc.length) break
   }
   return out
 }
 
-/** A mixed block becomes one list rather than half a list. Each line takes its kind's marker, and the list renumber counts the runs it joined. */
-export function setList(doc: string, from: number, to: number, kind: ListKind): FormatEdit {
-  const lines = selectedLines(doc, from, to)
-  if (lines.length === 0) return { changes: [] }
-  const marker = lines.every((l) => l.kind === kind) ? '' : listMarkerText(kind)
-  const changes: FormatEdit['changes'] = []
-  let lastEnd = 0
-  for (const l of lines) {
-    const next = `${l.pad}${l.indent}${marker}${l.inner}`
-    changes.push({ from: l.ls + l.prefix.length, to: l.le, insert: next })
-    lastEnd = l.ls + l.prefix.length + next.length
-  }
-  // One line keeps the caret at its end; across several the selection maps through the edits so it still covers what it covered.
-  return lines.length === 1
-    ? { changes, selection: lastEnd, relist: true }
-    : { changes, relist: true }
-}
-
-/** Read prefixed, matching the resolver that decided these lines were one list, so a quoted item's marker is found behind its `>`. */
-function listMarkerLines(
-  doc: string,
+/** What a list-type pick reaches. A caret takes its item's group: with Preserve List-Level Formatting on, the siblings drawn as its type; off, the siblings and everything nested under them. A range takes every item it touches and turns its plain lines into items. A continuation answers for its item, a code block's lines only by a pick wholly inside it, and math, tables, a callout's head and a fence's delimiters never are. */
+function listReach(
+  scan: DocScan,
   from: number,
   to: number,
-): { start: number; marker: ListMarker }[] {
-  const out: { start: number; marker: ListMarker }[] = []
-  for (let p = from; p <= to; p = lineEndAt(doc, p) + 1) {
-    const marker = parseListMarkerPrefixed(doc.slice(p, lineEndAt(doc, p)))
-    if (marker) out.push({ start: p, marker })
+  settings: Personalization,
+  scope: MarkdownScope,
+): { k: number; lm: ListMarker | null }[] {
+  const anchor = lineIndexAt(scan, from)
+  let upTo = lineIndexAt(scan, to)
+  if (to > from && scan.lineStarts[upTo] === to) upTo--
+  const reader = scan.fences[anchor]?.from === scan.fences[upTo]?.from ? anchor : 'outside'
+  const markerAt = (k: number): ListMarker | null => itemAt(scan, k, reader, scope)
+  const endOf = (k: number): number => subBlockAt(scan, scan.lineStarts[k], scope)!.to
+  let j = markerAt(anchor) === null ? anchor - 1 : anchor
+  while (j >= 0 && markerAt(j) === null && !isBlank(scan.lines[j])) j--
+  let item = j >= 0 && markerAt(j) !== null && endOf(j) >= scan.lineStarts[anchor] ? j : null
+  const reached = new Set<number>()
+  if (from === to) {
+    if (item === null) reached.add(anchor)
+    else {
+      const { items, last } = siblingsAt(scan, item, scope)
+      const kind = drawnKind(markerAt(item)!)
+      const preserve = settingOf(settings, 'preserveListLevels')
+      const span = preserve
+        ? items
+        : Array.from({ length: last - items[0] + 1 }, (_, n) => items[0] + n)
+      for (const k of span) {
+        const lm = markerAt(k)
+        if (lm !== null && (!preserve || drawnKind(lm) === kind)) reached.add(k)
+      }
+    }
+  } else {
+    let end = item === null ? -1 : endOf(item)
+    for (let k = anchor; k <= upTo; k++) {
+      if (k !== item && markerAt(k) !== null) [item, end] = [k, endOf(k)]
+      else if (isBlank(scan.lines[k])) item = null
+      if (!isBlank(splitPrefix(scan.lines[k], scope).body))
+        reached.add(item !== null && scan.lineStarts[k] <= end ? item : k)
+    }
   }
-  return out
+  const sealed = (k: number): boolean =>
+    !readsFrom(scan, k, reader, scope) ||
+    (scope === 'page' &&
+      (isCalloutHead(scan.lines[k]) || (scan.fences[k]?.role ?? 'content') !== 'content'))
+  return [...reached]
+    .sort((a, b) => a - b)
+    .filter((k) => !sealed(k))
+    .map((k) => ({ k, lm: markerAt(k) }))
 }
 
-export function listKindOf(doc: string, from: number, to: number): ListKind | null {
-  let kind: ListKind | null = null
-  for (const { marker } of listMarkerLines(doc, from, to)) {
-    if (kind !== null && kind !== marker.kind) return null
-    kind = marker.kind
-  }
-  return kind
+export function listKindOf(
+  scan: DocScan,
+  from: number,
+  to: number,
+  settings: Personalization,
+  scope: MarkdownScope,
+): ListKind | null {
+  const kinds = new Set(
+    listReach(scan, from, to, settings, scope).map(({ lm }) => lm && drawnKind(lm)),
+  )
+  return kinds.size === 1 ? [...kinds][0] : null
 }
 
-/** A marker that already reads as it should yields no edit, so picking Numbered over a broken sequence repairs it. */
-export function setListKind(doc: string, from: number, to: number, kind: ListKind): FormatEdit {
-  const counters: number[] = []
+/** The one list-type switch. An item already drawn as the type is left alone, a numbered or lettered one is written over, and a plain line becomes an item. */
+export function setList(
+  scan: DocScan,
+  from: number,
+  to: number,
+  kind: ListKind,
+  settings: Personalization,
+  scope: MarkdownScope,
+): FormatEdit {
+  const doc = scan.text
+  const marker = listMarkerText(kind)
   const changes: FormatEdit['changes'] = []
-  for (const { start, marker } of listMarkerLines(doc, from, to)) {
-    counters.length = marker.level + 1
-    counters[marker.level] = (counters[marker.level] ?? 0) + 1
-    const end = start + marker.contentStart
-    const next =
-      doc.slice(start, start + marker.markerStart) + listMarkerText(kind, counters[marker.level])
-    if (doc.slice(start, end) !== next) changes.push({ from: start, to: end, insert: next })
+  let selection: number | undefined
+  for (const { k, lm } of listReach(scan, from, to, settings, scope)) {
+    const ls = scan.lineStarts[k]
+    if (lm === null) {
+      const l = readLine(doc, ls, scope)
+      const next = `${l.pad}${l.indent}${marker}${l.inner}`
+      changes.push({ from: ls + l.prefix.length, to: l.le, insert: next })
+      selection = ls + l.prefix.length + next.length
+    } else if (isSequenced(lm) || drawnKind(lm) !== kind)
+      changes.push({ from: ls + lm.markerStart, to: ls + lm.contentStart, insert: marker })
   }
-  return { changes }
+  // A line made an item keeps the caret at its end; a switched marker leaves the selection where the edit maps it.
+  return changes.length === 1 && selection !== undefined
+    ? { changes, selection, relist: true }
+    : { changes, relist: true }
 }
 
 /** Quoting is the one line transform a blank line belongs in: a bare `>` is the quote's own empty line, and skipping it splits the block. */

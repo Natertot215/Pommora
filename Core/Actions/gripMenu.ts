@@ -17,7 +17,7 @@ export type GripMenuAction =
   | `source:${string}`
   | 'editLink'
   | `zoom:${number}`
-  | `listKind:${ListKind}`
+  | `list:${ListKind}`
   | 'rename'
   | typeof COPY_LINK_ROW.action
   | `size:${number}`
@@ -71,7 +71,7 @@ function ownRows(ctx: GripMenuContext): ActionItem<GripMenuAction>[] {
           label: 'Type',
           submenu: LIST_KINDS.map(({ kind, short }) => ({
             label: short,
-            action: `listKind:${kind}`,
+            action: `list:${kind}`,
             checked: ctx.current === kind,
           })),
         },

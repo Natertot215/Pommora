@@ -4,6 +4,8 @@ import { Compartment, EditorState } from '@codemirror/state'
 import { EditorView, keymap } from '@codemirror/view'
 import { DEFAULT_COMMANDS, toKeyBinding } from '../../Actions/commands'
 import { FORMAT_ACTIONS, formatKeymap } from './formatKeymap'
+import { editorHost } from '../api'
+import { testHost } from '../../Testing/editorHarness'
 
 const boundKeys = (state: EditorState): (string | undefined)[] =>
   state
@@ -39,7 +41,7 @@ describe('the format keymap', () => {
       state: EditorState.create({
         doc,
         selection: { anchor: 5 },
-        extensions: formatKeymap(DEFAULT_COMMANDS),
+        extensions: [editorHost.of(testHost()), formatKeymap(DEFAULT_COMMANDS)],
       }),
     })
     const key = toKeyBinding(DEFAULT_COMMANDS['format:connection'])

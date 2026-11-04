@@ -509,7 +509,7 @@ function StaticCellImpl({
     }
     const how = pasteModeOf(action)
     if (how) return pasteAtRest(from, to, how)
-    const edit = editFor(action, scanDoc(text), from, to)
+    const edit = editFor(action, scanDoc(text), from, to, host.settings(), 'cell')
     if (!edit || !commitAtRest(edit.changes, editEvent(edit))) return
     const [group] = action.split(':')
     const slot = (group === 'format' || isPaint(group)) && (from === to || action === 'format:link')
@@ -522,7 +522,7 @@ function StaticCellImpl({
     if (!ask) return
     const [from, to] = restingRange(e.currentTarget, e.clientX, e.clientY, text.length)
     void ask({
-      ...readFormatState(scanDoc(text), from, to),
+      ...readFormatState(scanDoc(text), from, to, host.settings(), 'cell'),
       scope: 'cell',
       x: e.clientX,
       y: e.clientY,

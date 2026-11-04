@@ -4,7 +4,6 @@ import {
   toggleInline,
   setHeading,
   setList,
-  setListKind,
   listKindOf,
   setBlock,
   type FormatEdit,
@@ -17,6 +16,13 @@ const apply = (doc: string, edit: FormatEdit | null): string => {
   if (!edit) throw new Error('no edit')
   return landEdit(doc, edit.changes, editEvent(edit), 'page')
 }
+const listed = (
+  doc: string,
+  kind: Parameters<typeof setList>[3],
+  from = 0,
+  to = doc.length,
+  settings = {},
+): string => apply(doc, setList(scanDoc(doc), from, to, kind, settings, 'page'))
 
 describe('toggleInline', () => {
   it('wraps a selection', () => {
@@ -70,10 +76,10 @@ describe('toggleInline', () => {
     expect(apply('site', toggleInline(scanDoc('site'), 0, 4, 'link'))).toBe('[site]()')
   })
   it('Insert Link stands down on a fenced line, as the wraps do', () => {
-    expect(editFor('link:insert', scanDoc('```\nexample.com\n```'), 4, 15)).toBeNull()
-    expect(apply('example.com', editFor('link:insert', scanDoc('example.com'), 0, 11))).toBe(
-      '[example.com](https://example.com)',
-    )
+    expect(editFor('link:insert', scanDoc('```\nexample.com\n```'), 4, 15, {}, 'page')).toBeNull()
+    expect(
+      apply('example.com', editFor('link:insert', scanDoc('example.com'), 0, 11, {}, 'page')),
+    ).toBe('[example.com](https://example.com)')
   })
   it('seats an empty link at its url, and an alias-first one at its text', () => {
     const url = toggleInline(scanDoc(''), 0, 0, 'link')
@@ -157,62 +163,70 @@ describe('setHeading', () => {
 
 describe('setList', () => {
   it('adds a bullet', () => {
-    expect(apply('item', setList('item', 0, 0, 'bullet'))).toBe('- item')
+    expect(listed('item', 'bullet', 0, 0)).toBe('- item')
   })
   it('seats a caret-only line’s marker at the margin, whatever whitespace it held', () => {
-    expect(apply('   ', setList('   ', 1, 1, 'bullet'))).toBe('- ')
+    expect(listed('   ', 'bullet', 1, 1)).toBe('- ')
   })
-  it('re-applying the same kind clears it', () => {
-    expect(apply('- item', setList('- item', 2, 2, 'bullet'))).toBe('item')
+  it('re-applying the kind an item already has changes nothing', () => {
+    expect(listed('- item', 'bullet', 2, 2)).toBe('- item')
   })
   it('switches ordered → task', () => {
-    expect(apply('1. item', setList('1. item', 3, 3, 'checkbox'))).toBe('- [ ] item')
+    expect(listed('1. item', 'checkbox', 3, 3)).toBe('- [ ] item')
   })
 
   const three = 'one\ntwo\nthree'
-  it('makes every selected line its own item', () => {
-    expect(apply(three, setList(three, 0, three.length, 'bullet'))).toBe('- one\n- two\n- three')
+  it('makes every selected line its own item, and none the selection ends at the start of', () => {
+    expect(listed(three, 'bullet')).toBe('- one\n- two\n- three')
+    expect(listed(three, 'bullet', 0, 4)).toBe('- one\ntwo\nthree')
   })
   it('numbers an ordered run down the selection', () => {
-    expect(apply(three, setList(three, 0, three.length, 'ordered'))).toBe(
-      '1. one\n2. two\n3. three',
-    )
+    expect(listed(three, 'ordered')).toBe('1. one\n2. two\n3. three')
   })
   it('letters an alphabetical run down the selection', () => {
-    expect(apply(three, setList(three, 0, three.length, 'alphabetical'))).toBe(
-      'A. one\nB. two\nC. three',
-    )
+    expect(listed(three, 'alphabetical')).toBe('A. one\nB. two\nC. three')
   })
-  it('clears only where every line already reads that way', () => {
+  it('leaves the items already of the kind and makes the plain lines items', () => {
     const all = '- one\n- two'
-    expect(apply(all, setList(all, 0, all.length, 'bullet'))).toBe('one\ntwo')
+    expect(listed(all, 'bullet')).toBe(all)
     const mixed = '- one\ntwo'
-    expect(apply(mixed, setList(mixed, 0, mixed.length, 'bullet'))).toBe('- one\n- two')
+    expect(listed(mixed, 'bullet')).toBe('- one\n- two')
   })
   it('leaves a blank line unmarked', () => {
     const gapped = 'one\n\ntwo'
-    expect(apply(gapped, setList(gapped, 0, gapped.length, 'bullet'))).toBe('- one\n\n- two')
+    expect(listed(gapped, 'bullet')).toBe('- one\n\n- two')
   })
   it('marks a blank line the caret sits on', () => {
-    const edit = setList('', 0, 0, 'bullet')
+    const edit = setList(scanDoc(''), 0, 0, 'bullet', {}, 'page')
     expect(apply('', edit)).toBe('- ')
     expect(edit.selection).toBe(2)
-    expect(apply('> ', setList('> ', 2, 2, 'ordered'))).toBe('> 1. ')
-    expect(apply('> one\n>\n> two', setList('> one\n>\n> two', 7, 7, 'bullet'))).toBe(
-      '> one\n> - \n> two',
-    )
-    expect(apply('one\n  \ntwo', setList('one\n  \ntwo', 5, 5, 'bullet'))).toBe('one\n- \ntwo')
+    expect(listed('> ', 'ordered', 2, 2)).toBe('> 1. ')
+    expect(listed('> one\n>\n> two', 'bullet', 7, 7)).toBe('> one\n> - \n> two')
+    expect(listed('one\n  \ntwo', 'bullet', 5, 5)).toBe('one\n- \ntwo')
   })
   it('keeps a nested item at its level, and restarts its numbering', () => {
     const nested = '- one\n  - two\n- three'
-    expect(apply(nested, setList(nested, 0, nested.length, 'ordered'))).toBe(
-      '1. one\n  1. two\n2. three',
-    )
+    expect(listed(nested, 'ordered')).toBe('1. one\n  1. two\n2. three')
+  })
+})
+
+describe('a list-type pick from an item', () => {
+  const example = '- A\n\t- B\n\t\t- C\n\t\t- D\n\t- E\n- F'
+  const pick = (item: string, preserveListLevels: boolean): string => {
+    const at = example.indexOf(item)
+    return listed(example, 'ordered', at, at, { preserveListLevels })
+  }
+  it('with Preserve List-Level Formatting on, reaches the group’s items of its type', () => {
+    expect(pick('B', true)).toBe('- A\n\t1. B\n\t\t- C\n\t\t- D\n\t2. E\n- F')
+  })
+  it('off, reaches the group and everything nested under it', () => {
+    expect(pick('E', false)).toBe('- A\n\t1. B\n\t\t1. C\n\t\t2. D\n\t2. E\n- F')
   })
 })
 
 describe('listKindOf', () => {
-  const kindOf = (doc: string): ReturnType<typeof listKindOf> => listKindOf(doc, 0, doc.length)
+  const kindOf = (doc: string): ReturnType<typeof listKindOf> =>
+    listKindOf(scanDoc(doc), 0, doc.length, {}, 'page')
 
   it('reads the kind a whole block agrees on, through every level', () => {
     expect(kindOf('- a\n\t- b')).toBe('bullet')
@@ -231,35 +245,32 @@ describe('listKindOf', () => {
   })
 })
 
-describe('setListKind', () => {
-  const set = (doc: string, kind: Parameters<typeof setListKind>[3]): string =>
-    apply(doc, setListKind(doc, 0, doc.length, kind))
-
+describe('setList over a whole block', () => {
   it('rewrites every marker in the block', () => {
-    expect(set('- a\n- b', 'ordered')).toBe('1. a\n2. b')
-    expect(set('1. a\n2. b', 'checkbox')).toBe('- [ ] a\n- [ ] b')
-    expect(set('- [ ] a\n- [x] b', 'arrow')).toBe('→ a\n→ b')
-    expect(set('→ a\n→ b', 'bullet')).toBe('- a\n- b')
+    expect(listed('- a\n- b', 'ordered')).toBe('1. a\n2. b')
+    expect(listed('1. a\n2. b', 'checkbox')).toBe('- [ ] a\n- [ ] b')
+    expect(listed('- [ ] a\n- [x] b', 'arrow')).toBe('→ a\n→ b')
+    expect(listed('→ a\n→ b', 'bullet')).toBe('- a\n- b')
   })
 
   it('numbers per indent level, so a nested run restarts and its parent keeps counting', () => {
-    expect(set('- a\n\t- x\n\t- y\n- b', 'ordered')).toBe('1. a\n\t1. x\n\t2. y\n2. b')
+    expect(listed('- a\n\t- x\n\t- y\n- b', 'ordered')).toBe('1. a\n\t1. x\n\t2. y\n2. b')
   })
 
   it('leaves wrapped continuation lines alone', () => {
-    expect(set('- a\n  wrapped body\n- b', 'ordered')).toBe('1. a\n  wrapped body\n2. b')
+    expect(listed('- a\n  wrapped body\n- b', 'ordered')).toBe('1. a\n  wrapped body\n2. b')
   })
 
   it('finds a quoted marker behind its prefix rather than missing it', () => {
-    expect(set('> - a\n> - b', 'checkbox')).toBe('> - [ ] a\n> - [ ] b')
+    expect(listed('> - a\n> - b', 'checkbox')).toBe('> - [ ] a\n> - [ ] b')
   })
 
   it('emits nothing when the markers already read as they should', () => {
-    expect(setListKind('- a\n- b', 0, 7, 'bullet').changes).toEqual([])
+    expect(setList(scanDoc('- a\n- b'), 0, 7, 'bullet', {}, 'page').changes).toEqual([])
   })
 
   it('repairs a broken ordered sequence', () => {
-    expect(set('1. a\n1. b\n1. c', 'ordered')).toBe('1. a\n2. b\n3. c')
+    expect(listed('1. a\n1. b\n1. c', 'ordered')).toBe('1. a\n2. b\n3. c')
   })
 })
 
@@ -476,12 +487,12 @@ describe('text colors', () => {
     )
   })
   it('routes each paint’s menu action', () => {
-    expect(apply('hi', editFor('textColor:red', scanDoc('hi'), 0, 2))).toBe('=🔴hi=')
-    expect(apply('hi', editFor('highlight:red', scanDoc('hi'), 0, 2))).toBe('==🔴hi==')
+    expect(apply('hi', editFor('textColor:red', scanDoc('hi'), 0, 2, {}, 'page'))).toBe('=🔴hi=')
+    expect(apply('hi', editFor('highlight:red', scanDoc('hi'), 0, 2, {}, 'page'))).toBe('==🔴hi==')
   })
   it('removes any paint under the highlight chord, where the Accent row recolors', () => {
     const act = (doc: string, at: number, action: string) =>
-      apply(doc, editFor(action, scanDoc(doc), at, at))
+      apply(doc, editFor(action, scanDoc(doc), at, at, {}, 'page'))
     expect(act('==🔴hi==', 5, 'format:highlight')).toBe('hi')
     expect(act('=🔴hi=', 4, 'format:highlight')).toBe('hi')
     expect(act('=🔴hi=', 4, 'highlight:accent')).toBe('==hi==')

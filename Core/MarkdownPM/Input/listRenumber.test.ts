@@ -83,7 +83,7 @@ describe('a level change recounts the run it joined and the run it left', () => 
   it('switching a numbered item out of its run recounts the run below', () => {
     const doc = '- p\n\t1. a\n\t2. b\n\t\t- kid\n\t3. c'
     const b = doc.indexOf('b')
-    const e = setList(doc, b, b + 1, 'bullet')
+    const e = setList(scanDoc(doc), b, b + 1, 'bullet', {}, 'page')
     expect(landEdit(doc, e.changes, editEvent(e), 'page')).toBe(
       '- p\n\t1. a\n\t- b\n\t\t- kid\n\t1. c',
     )
@@ -114,7 +114,7 @@ describe('Enter recounts the run it splits', () => {
 
 describe('Lists ▸ continues the run a line joins', () => {
   const listed = (doc: string, from: number, to = from): string => {
-    const e = setList(doc, from, to, 'ordered')
+    const e = setList(scanDoc(doc), from, to, 'ordered', {}, 'page')
     return landEdit(doc, e.changes, editEvent(e), 'page')
   }
   it('a paragraph between two items takes its place, and the run below counts on', () => {
@@ -134,7 +134,7 @@ describe('Lists ▸ continues the run a line joins', () => {
     expect(listed('> 1. a\n> b', 9)).toBe('> 1. a\n> 2. b')
   })
   it('a nested line continues its own level', () => {
-    expect(listed('1. a\n  1. b\n  c', 15)).toBe('1. a\n  1. b\n  2. c')
+    expect(listed('1. a\n  1. b\n\n  c', 16)).toBe('1. a\n  1. b\n\n  2. c')
   })
   it('a line a blank apart joins the run as a loose item', () => {
     expect(listed('1. a\n\nb', 6)).toBe('1. a\n\n2. b')
@@ -160,5 +160,17 @@ describe('Lists ▸ continues the run a line joins', () => {
     expect(
       landEdit(doc, [{ from: 9, to: 9, insert: '5. b\n' }], editEvent({ relist: true }), 'page'),
     ).toBe('```\n1. a\n2. b\n```')
+  })
+  it('a pick wholly inside a code block switches its own list, and nothing else reaches the code or its fences', () => {
+    const doc = '- p\n\t1. x\n\t```\n\t- y\n\t- y2\n\t```\n\t1. z'
+    const fence = doc.indexOf('```')
+    expect(listed(doc, doc.indexOf('y'))).toBe('- p\n\t1. x\n\t```\n\t1. y\n\t2. y2\n\t```\n\t1. z')
+    expect(listed(doc, fence, doc.indexOf('y2') + 2)).toBe(
+      '- p\n\t1. x\n\t```\n\t1. y\n\t2. y2\n\t```\n\t1. z',
+    )
+    expect(listed(doc, fence)).toBe(doc)
+    expect(listed(doc, doc.indexOf('y'), doc.length)).toBe(
+      '- p\n\t1. x\n\t```\n\t- y\n\t- y2\n\t```\n\t2. z',
+    )
   })
 })

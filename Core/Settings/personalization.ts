@@ -145,6 +145,7 @@ const SETTINGS = {
   hideChevrons: flag(false),
   repairOnOpen: flag(true),
   outlinerLines: flag(false),
+  preserveListLevels: flag(true),
   titleIcon: flag(false),
   codeblockLineCount: flag(false),
   codeblockScroll: flag(false),

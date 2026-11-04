@@ -21,6 +21,7 @@ import {
 import { carriedFrom, type DocScan, spanAt } from './docScan'
 import { isBlockquoteLine, lineIndexAt, quotePrefix, quotePrefixWidth } from './markdownCode'
 import { cx } from '@pommora/uix/Utilities/cx'
+import type { ListKind } from '../../Actions/gripMenu'
 
 function calloutNestedQuote(
   lines: string[],
@@ -119,7 +120,7 @@ export const railStyle = (r: Pick<RailIntent, 'level' | 'reach'>): Record<string
   }),
 })
 
-// The form a marker is DRAWN as, and the line class that carries it — one answer for the editor's decorations and the resting cell's DOM alike.
+// The form a marker is DRAWN as, the list type that form reads as — a `+` item is Arrowed — and the line class that carries it: one answer for the editor's decorations and the resting cell's DOM alike.
 // Null where the source parses as a marker but nothing draws one: a bullet holding an empty box is prose, and both renderers have to agree on that.
 export type ListGlyph = 'checkbox' | 'bullet' | 'arrow' | 'number'
 
@@ -128,6 +129,11 @@ export function listGlyphOf(lm: ListMarker): ListGlyph | null {
   if (lm.kind === 'bullet' && lm.bullet === '-' && !lm.box) return 'bullet'
   if (lm.kind === 'arrow' || (lm.kind === 'bullet' && lm.bullet === '+' && !lm.box)) return 'arrow'
   return isSequenced(lm) ? 'number' : null
+}
+
+export function drawnKind(lm: ListMarker): ListKind | null {
+  const glyph = listGlyphOf(lm)
+  return glyph === 'number' ? lm.kind : glyph
 }
 
 export function listLineClass(lm: ListMarker): string {

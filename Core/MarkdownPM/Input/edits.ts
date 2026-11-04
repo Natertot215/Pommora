@@ -60,7 +60,7 @@ export interface Edit extends TextEdit {
 const shorthandCheckboxRe = /^([ \t]*)([-+])\[([ xX]?)\]$/
 
 // A cell draws no quote, so a `>` there is prose and carries no prefix — otherwise the keys would nest inside a box the surface never shows.
-const blockPrefix = (line: string, scope: MarkdownScope = 'page'): string =>
+export const blockPrefix = (line: string, scope: MarkdownScope = 'page'): string =>
   scope === 'page' ? quotePrefix(line) : ''
 
 // A fenced line is code, whatever its text looks like; a cell holds no fence, and the page-shaped scan would pair one there.

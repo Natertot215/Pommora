@@ -4,7 +4,7 @@ import { itemAt, readsFrom, renumberRuns, subBlockAt } from '../Engine/listModel
 import { applyEdits, lineIndexAt, type TextEdit } from '../Engine/markdownCode'
 import { isSequenced, type MarkdownScope } from '../Engine/detect'
 
-/** The user event of an edit that writes list markers: Enter continuing a list, Tab and Shift+Tab, and the Lists menu. */
+/** The user event of an edit that writes list markers: Enter continuing a list, Tab and Shift+Tab, and every list-type pick. */
 const RELIST = 'input.list'
 
 export const editEvent = (edit: { relist?: boolean }): string => (edit.relist ? RELIST : 'input')

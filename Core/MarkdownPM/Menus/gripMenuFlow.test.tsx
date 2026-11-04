@@ -80,7 +80,7 @@ async function gripMenu(view: EditorView, lineText: string): Promise<void> {
 describe("a list grip's Type switch", () => {
   it("offers the block's current kind, and switching rewrites every marker", async () => {
     const view = await mount('- alpha\n- beta')
-    nextPick = 'listKind:ordered'
+    nextPick = 'list:ordered'
     await gripMenu(view, 'alpha')
     expect(calls[0]).toEqual(gripMenuItems({ kind: 'list', current: 'bullet' }))
     expect(view.state.doc.toString()).toBe('1. alpha\n2. beta')
@@ -88,10 +88,10 @@ describe("a list grip's Type switch", () => {
 
   it('Checklist and Arrowed reach every level of the block', async () => {
     const view = await mount('1. alpha\n\t2. sub\n\nafter')
-    nextPick = 'listKind:checkbox'
+    nextPick = 'list:checkbox'
     await gripMenu(view, 'alpha')
     expect(view.state.doc.toString()).toBe('- [ ] alpha\n\t- [ ] sub\n\nafter')
-    nextPick = 'listKind:arrow'
+    nextPick = 'list:arrow'
     await gripMenu(view, 'alpha')
     expect(view.state.doc.toString()).toBe('→ alpha\n\t→ sub\n\nafter')
   })
@@ -186,7 +186,7 @@ describe('every other grip', () => {
 
   it('acting on a grip takes no focus for the editor', async () => {
     const view = await mount('intro\n\n- alpha\n\nafter')
-    nextPick = 'listKind:ordered'
+    nextPick = 'list:ordered'
     await gripMenu(view, 'alpha')
     expect(view.state.doc.toString()).toBe('intro\n\n1. alpha\n\nafter')
     expect(view.hasFocus).toBe(false)

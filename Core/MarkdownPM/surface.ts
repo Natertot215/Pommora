@@ -32,7 +32,7 @@ function blockGestures(scope: MarkdownScope): Extension {
         blockHandles(scope),
         pointerReveal(scope),
         blockDragExtension,
-        gripMenu,
+        gripMenu(scope),
       ]
     case 'text':
       return []

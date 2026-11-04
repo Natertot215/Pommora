@@ -1,10 +1,16 @@
 import { EditorView } from '@codemirror/view'
 import { expressibleInLink, pageEmbedText, pageLinkText } from '../../Connections/connections'
-import type { GripMenuContext, HeadingLevel, ListKind } from '../../Actions/gripMenu'
+import type { GripMenuContext, HeadingLevel } from '../../Actions/gripMenu'
 import type { PickItem } from '../../Actions/menuModel'
 import { COPY_LINK_ROW } from '../../Actions/pageMenu'
-import { listKindOf, setHeading, setListKind } from '../Input/format'
-import { type BlockSpan, headingParts, isBlank, webpageEmbedUrlSpan } from '../Engine/detect'
+import { editFor, listKindOf, setHeading } from '../Input/format'
+import {
+  type BlockSpan,
+  headingParts,
+  isBlank,
+  type MarkdownScope,
+  webpageEmbedUrlSpan,
+} from '../Engine/detect'
 import { type Block, blockAt } from '../Engine/blockModel'
 import { docScan, docString } from '../docCache'
 import { HEADING_LINE } from '../folding'
@@ -49,10 +55,10 @@ export function blockDeleteSpan(doc: string, r: BlockSpan): BlockSpan {
   return { from: r.from, to: r.to + 1 }
 }
 
-function contextFor(view: EditorView, doc: string, block: Block): GripMenuContext {
+function contextFor(view: EditorView, block: Block, scope: MarkdownScope): GripMenuContext {
+  const host = view.state.facet(editorHost)
   switch (block.kind) {
-    case 'embed': {
-      const host = view.state.facet(editorHost)
+    case 'embed':
       return {
         kind: 'embed',
         tree: embedPickTree(host.pickTree(), embedExclusions(view.state), (path) =>
@@ -60,14 +66,16 @@ function contextFor(view: EditorView, doc: string, block: Block): GripMenuContex
         ),
         zoom: embedZoomAt(view.state, block.from),
       }
-    }
     case 'webpage':
       return {
         kind: 'webpage',
         zoom: embedZoomAt(view.state, block.from),
       }
     case 'list':
-      return { kind: 'list', current: listKindOf(doc, block.from, block.to) }
+      return {
+        kind: 'list',
+        current: listKindOf(docScan(view.state.doc), block.from, block.to, host.settings(), scope),
+      }
     default:
       return { kind: 'plain' }
   }
@@ -117,69 +125,70 @@ function popHeadingMenu(view: EditorView, headingEl: HTMLElement): void {
     })
 }
 
-export const gripMenu = EditorView.domEventHandlers({
-  // A grip acts on its block, never on the caret, and a right-press needs the same suppression the drag gestures give a left-press: preventing the contextmenu comes far too late to stop the seat.
-  mousedown(e) {
-    if (e.button !== 2 || (!gripLineAt(e) && !headingLineAt(e))) return false
-    e.preventDefault()
-    return true
-  },
-  contextmenu(e, view) {
-    const headingEl = headingLineAt(e)
-    if (headingEl) {
+export const gripMenu = (scope: MarkdownScope) =>
+  EditorView.domEventHandlers({
+    // A grip acts on its block, never on the caret, and a right-press needs the same suppression the drag gestures give a left-press: preventing the contextmenu comes far too late to stop the seat.
+    mousedown(e) {
+      if (e.button !== 2 || (!gripLineAt(e) && !headingLineAt(e))) return false
       e.preventDefault()
-      popHeadingMenu(view, headingEl)
       return true
-    }
-    if (view.state.readOnly) return false
-    const line = gripLineAt(e)
-    if (!line) return false
-    const block = blockAt(docScan(view.state.doc), view.posAtDOM(line))
-    if (!block) return false
-    const doc = docString(view.state.doc)
-    const opened = doc.slice(block.from, block.to)
-    e.preventDefault()
-    const host: EditorHost = view.state.facet(editorHost)
-    void host.menus.grip(contextFor(view, doc, block)).then((action) => {
-      if (!action) return
-      const doc = docString(view.state.doc)
-      const block = blockAt(docScan(view.state.doc), view.posAtDOM(line))
-      if (!block || doc.slice(block.from, block.to) !== opened) return
-      const arg = (prefix: string): string | undefined =>
-        action.startsWith(prefix) ? action.slice(prefix.length) : undefined
-      const path = arg('source:')
-      const zoom = arg('zoom:')
-      const kind = arg('listKind:')
-      if (path !== undefined) {
-        // The block span IS the embed line, claimed or not — acting through the claimed set would dead-end the menu precisely when a stale embed needs re-aiming.
-        view.dispatch({
-          changes: {
-            from: block.from,
-            to: block.to,
-            insert: pageEmbedText(nameOf(host, path)),
-          },
-          userEvent: 'input',
-        })
-      } else if (zoom !== undefined) applyEmbedZoom(view, block.from, Number(zoom))
-      else if (kind !== undefined) {
-        const { changes } = setListKind(doc, block.from, block.to, kind as ListKind)
-        if (changes.length > 0) view.dispatch({ changes, userEvent: 'input' })
-      } else if (action === 'editLink') {
-        // The seat un-forms the tile back to its raw address with that address selected; leaving the line re-forms it.
-        const line = view.state.doc.lineAt(block.from)
-        const span = webpageEmbedUrlSpan(line.text)
-        if (span) {
-          view.dispatch({ effects: setWebLinkSeat.of(line.from) })
-          focusRange(view, line.from + span[0], line.from + span[1])
-        }
-      } else if (action === 'delete') {
-        const span = blockDeleteSpan(doc, block)
-        view.dispatch({
-          changes: { from: span.from, to: span.to, insert: '' },
-          userEvent: 'delete',
-        })
+    },
+    contextmenu(e, view) {
+      const headingEl = headingLineAt(e)
+      if (headingEl) {
+        e.preventDefault()
+        popHeadingMenu(view, headingEl)
+        return true
       }
-    })
-    return true
-  },
-})
+      if (view.state.readOnly) return false
+      const line = gripLineAt(e)
+      if (!line) return false
+      const block = blockAt(docScan(view.state.doc), view.posAtDOM(line))
+      if (!block) return false
+      const opened = docString(view.state.doc).slice(block.from, block.to)
+      e.preventDefault()
+      const host: EditorHost = view.state.facet(editorHost)
+      void host.menus.grip(contextFor(view, block, scope)).then((action) => {
+        if (!action) return
+        const doc = docString(view.state.doc)
+        const block = blockAt(docScan(view.state.doc), view.posAtDOM(line))
+        if (!block || doc.slice(block.from, block.to) !== opened) return
+        const arg = (prefix: string): string | undefined =>
+          action.startsWith(prefix) ? action.slice(prefix.length) : undefined
+        const path = arg('source:')
+        const zoom = arg('zoom:')
+        if (path !== undefined) {
+          // The block span IS the embed line, claimed or not — acting through the claimed set would dead-end the menu precisely when a stale embed needs re-aiming.
+          view.dispatch({
+            changes: {
+              from: block.from,
+              to: block.to,
+              insert: pageEmbedText(nameOf(host, path)),
+            },
+            userEvent: 'input',
+          })
+        } else if (zoom !== undefined) applyEmbedZoom(view, block.from, Number(zoom))
+        else if (action.startsWith('list:'))
+          applyEdit(
+            view,
+            editFor(action, docScan(view.state.doc), block.from, block.to, host.settings(), scope),
+          )
+        else if (action === 'editLink') {
+          // The seat un-forms the tile back to its raw address with that address selected; leaving the line re-forms it.
+          const line = view.state.doc.lineAt(block.from)
+          const span = webpageEmbedUrlSpan(line.text)
+          if (span) {
+            view.dispatch({ effects: setWebLinkSeat.of(line.from) })
+            focusRange(view, line.from + span[0], line.from + span[1])
+          }
+        } else if (action === 'delete') {
+          const span = blockDeleteSpan(doc, block)
+          view.dispatch({
+            changes: { from: span.from, to: span.to, insert: '' },
+            userEvent: 'delete',
+          })
+        }
+      })
+      return true
+    },
+  })

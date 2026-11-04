@@ -108,6 +108,7 @@ const EDITOR_SETTING_KEYS = [
   'wrapSelections',
   'deletePairsTogether',
   'exitPairsOnEnter',
+  'preserveListLevels',
 ] as const
 const EDITOR_DEVICE_KEYS = ['defaultLinkFormat'] as const
 const EDITOR_KEYS = [...EDITOR_SETTING_KEYS, ...EDITOR_DEVICE_KEYS] as const
