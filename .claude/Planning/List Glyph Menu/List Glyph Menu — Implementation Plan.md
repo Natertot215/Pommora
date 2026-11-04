@@ -19,7 +19,7 @@
 | Phase | Estimate | Measured |
 |-------|----------|----------|
 | 0 · Drives and Baseline | 0 (scripts +273: the drive +261, the harness +8, Path Links −8, the README +12) | 0 (+0 / −0) |
-| 1 · The List Model | +74 (the rename 0) | |
+| 1 · The List Model | +74 (the rename 0) | +74 (+167 / −93) |
 | 2 · One Switch | +143 (+69 its own) | |
 | 3 · The Glyph Menu | +159 (+16 its own) | |
 | 4 · Docs and Issues | +159 (±0 its own; docs +33) | |
@@ -159,8 +159,8 @@ The order is what makes each step land once. Phase 0 lands the drive and records
   - [x] Task 0-2 · The List Types Drive
   - [x] Task 0-3 · The baseline drives
 - [ ] **Phase 1** — The List Model
-  - [ ] Task 1-1 · The rename
-  - [ ] Task 1-2 · One walk, one read rule, one count
+  - [x] Task 1-1 · The rename
+  - [x] Task 1-2 · One walk, one read rule, one count
   - [ ] Review Checkpoint
 - [ ] **Phase 2** — One Switch
   - [ ] Task 2-1 · `setList` and every caller
@@ -244,8 +244,8 @@ The four existing MarkdownPM drives should be green at the BASELINE head.
 
 **VERIFY**
 
-- [ ] Run the gates: 9,109 passed, unchanged.
-- [ ] `git grep -n "listDragModel" -- Core` prints nothing; `git log --follow --oneline -2 -- Core/MarkdownPM/Engine/listModel.ts` reaches the file's earlier history.
+- [x] Run the gates: 9,109 passed, unchanged.
+- [x] `git grep -n "listDragModel" -- Core` prints nothing; `git log --follow --oneline -2 -- Core/MarkdownPM/Engine/listModel.ts` reaches the file's earlier history.
 
 #### Task 1-2
 
@@ -266,11 +266,11 @@ One walk by quote depth and drawn level should answer siblings, nesting, and run
 
 **VERIFY**
 
-- [ ] Before committing, the executor makes each pin's single revert as *6 — Phases · §New Tests* and *9 — Folds · §Pins* name it (P6-T2's is `readsFrom` with only its fence compare dropped, leaving `!inSealedLine(scan, k)`), watches that pin fail as recorded, then restores it.
-- [ ] Run the gates: 9,113 passed, 2 skipped.
-- [ ] `git grep -n "nestedUnder" -- Core` prints nothing; the comment count reads BASELINE + 1.
-- [ ] `railIntents` in the landed tree matches the patch's hunk exactly, the code V-54 measured at base cost on every document shape; any difference re-opens that measurement before the task commits.
-- [ ] The Number recorded for Phase 1; its own delta about +74.
+- [x] Before committing, the executor makes each pin's single revert as *6 — Phases · §New Tests* and *9 — Folds · §Pins* name it, watches that pin fail as recorded, then restores it. P6-T2 pins two halves, each with its own revert: `readsFrom` forced open counts into the code, with the math pin failing beside it, and a non-item line read as `'outside'` in `rolesAgainst` stops the count at the fence, failing T2 alone.
+- [x] Run the gates: 9,113 passed, 2 skipped.
+- [x] `git grep -n "nestedUnder" -- Core` prints nothing; the comment count reads BASELINE + 1.
+- [x] `railIntents` in the landed tree matches the patch's hunk exactly, the code V-54 measured at base cost on every document shape; any difference re-opens that measurement before the task commits.
+- [x] The Number recorded for Phase 1; its own delta about +74.
 
 #### Review Checkpoint
 
@@ -438,3 +438,4 @@ The reviews run over `<BASELINE>..HEAD`, each wave closed before the next opens.
 
 #### Deviations
 
+- **P6-T2's Red Run (Task 1-2):** A-10's revert, `readsFrom` with only its fence compare dropped, left T2 green and reddened P6-C3 instead, since that compare is what opens a code block to its own lines. T2 went red under the two reverts its VERIFY now names.
