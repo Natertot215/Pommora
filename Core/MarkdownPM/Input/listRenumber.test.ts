@@ -73,6 +73,12 @@ describe('a level change recounts the run it joined and the run it left', () => 
   it('an outdented item takes its place in a run that starts past 1', () => {
     expect(at('5. a\n\t1. b\n6. c', 6, outdentListOnShiftTab)).toBe('5. a\n6. b\n7. c')
   })
+  it('switching a numbered item out of its run recounts the run below', () => {
+    const doc = '- p\n\t1. a\n\t2. b\n\t3. c'
+    const b = doc.indexOf('b')
+    const e = setList(doc, b, b + 1, 'bullet')
+    expect(landEdit(doc, e.changes, editEvent(e), 'page')).toBe('- p\n\t1. a\n\t- b\n\t1. c')
+  })
 })
 
 describe('Enter recounts the run it splits', () => {
@@ -84,6 +90,10 @@ describe('Enter recounts the run it splits', () => {
   })
   it('counts on through a loose list', () => {
     expect(at('1. a\n\n2. b', 4, continueListOnEnter)).toBe('1. a\n2. \n\n3. b')
+  })
+  it('counts past a code block nested in the list, and never counts the code', () => {
+    const doc = '- p\n\t1. x\n\t```\n\t1. y\n\t```\n\t1. z'
+    expect(at(doc, 9, continueListOnEnter)).toBe('- p\n\t1. x\n\t2. \n\t```\n\t1. y\n\t```\n\t3. z')
   })
   it('repairs a gapped run the way delete and nest do', () => {
     expect(at('1. a\n3. b\n7. c', 9, continueListOnEnter)).toBe('1. a\n2. b\n3. \n4. c')
@@ -104,6 +114,9 @@ describe('Lists ▸ continues the run a line joins', () => {
   })
   it('a run that began past 1 keeps its base', () => {
     expect(listed('5. a\nb', 5)).toBe('5. a\n6. b')
+  })
+  it('a pick over a numbered item restarts its run from 1, past the items it missed', () => {
+    expect(listed('5. a\n- b\n\n7. c', 0, 6)).toBe('1. a\n2. b\n\n3. c')
   })
   it('a quoted line continues the quoted run', () => {
     expect(listed('> 1. a\n> b', 9)).toBe('> 1. a\n> 2. b')
@@ -130,10 +143,10 @@ describe('Lists ▸ continues the run a line joins', () => {
       landEdit(doc, [{ from: 8, to: 8, insert: '5. b\n' }], editEvent({ relist: true }), 'page'),
     ).toBe('$$\n1. a\n5. b\n$$')
   })
-  it('a list-writing edit inside a code block counts nothing', () => {
+  it('a list-writing edit inside a code block counts within the block', () => {
     const doc = '```\n1. a\n```'
     expect(
       landEdit(doc, [{ from: 9, to: 9, insert: '5. b\n' }], editEvent({ relist: true }), 'page'),
-    ).toBe('```\n1. a\n5. b\n```')
+    ).toBe('```\n1. a\n2. b\n```')
   })
 })

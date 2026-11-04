@@ -1,12 +1,15 @@
 import {
+  continuesList,
   indentWidth,
   isBlank,
   isSequenced,
-  nestedUnder,
   ordinalOf,
   ordinalText,
-  parseListMarkerPrefixed as parseListMarker,
+  parseListMarker,
+  parseListMarkerPrefixed,
   type BlockSpan,
+  type ListMarker,
+  type MarkdownScope,
   type SequencedMarker,
 } from './detect'
 import {
@@ -21,33 +24,95 @@ import {
   lineStartAt,
   lineEndAt,
 } from './markdownCode'
-import { type DocScan, inJoinedMath } from './docScan'
+import { type DocScan, inJoinedMath, inSealedLine, scanDoc } from './docScan'
 
 /** Shared by the extension's click handler so press-to-drag never flips the box. */
 export function checkboxToggleChange(doc: string, pos: number): TextEdit | null {
   const ls = lineStartAt(doc, pos)
-  const lm = parseListMarker(doc.slice(ls, lineEndAt(doc, pos)))
+  const lm = parseListMarkerPrefixed(doc.slice(ls, lineEndAt(doc, pos)))
   if (lm?.kind !== 'checkbox') return null
   return { from: ls + lm.box.start, to: ls + lm.box.end, insert: lm.checked ? '[ ]' : '[x]' }
 }
 
-/** `to` is the last line's end, EXCLUSIVE of the trailing newline. The move logic reads only these two offsets, so it is block-type-blind. */
-export function subBlockAt(scan: DocScan, pos: number): BlockSpan | null {
-  const { lines } = scan
-  const first = lineIndexAt(scan, pos)
-  const head = scan.markers[first]
-  if (head === null) return null
-  const depth = quoteDepthOf(lines[first])
+/** Whether line `k` is open text to a reader on line `from`, or to one outside every block: on a page a code block is read only from inside it, so a list written there switches and counts on its own and nothing outside reaches in, while math and tables are never read; a cell reads every line. */
+export function readsFrom(
+  scan: DocScan,
+  k: number,
+  from: number | 'outside',
+  scope: MarkdownScope,
+): boolean {
+  if (scope !== 'page') return true
+  const code = scan.fences[k]
+  const own = from === 'outside' ? undefined : scan.fences[from]
+  return code?.from === own?.from && (code !== undefined || !inSealedLine(scan, k))
+}
 
-  let last = first
-  for (let k = first + 1; k < lines.length; k++) {
-    if (!inJoinedMath(scan, k, first, last)) {
-      if (quoteDepthOf(lines[k]) !== depth) break
-      const lm = scan.markers[k]
-      const body = lines[k].slice(quotePrefixWidth(lines[k], depth))
-      // A wrapped item's continuation body rides with its item — moving the marker line alone would strand it.
-      if (lm === null ? isBlank(body) || !/^[ \t]/.test(body) : lm.level <= head.level) break
+export function itemAt(
+  scan: DocScan,
+  k: number,
+  from: number,
+  scope: MarkdownScope,
+): ListMarker | null {
+  if (scope !== 'page') return parseListMarker(scan.lines[k])
+  return readsFrom(scan, k, from, scope) ? scan.markers[k] : null
+}
+
+type ListRole = 'sibling' | 'nested' | 'blank' | 'outside'
+
+function rolesAgainst(scan: DocScan, i: number, scope: MarkdownScope): (k: number) => ListRole {
+  const depth = quoteDepthOf(scan.lines[i])
+  const level = itemAt(scan, i, i, scope)!.level
+  return (line) => {
+    let k = line
+    if (!readsFrom(scan, k, i, scope)) {
+      if (scan.fences[i] !== undefined) return 'outside'
+      const code = scan.fences[k]
+      if (code !== undefined) k = lineIndexAt(scan, code.from)
     }
+    const own = quoteDepthOf(scan.lines[k])
+    const lm = itemAt(scan, k, i, scope)
+    if (own < depth) return 'outside'
+    if (own === depth && lm !== null)
+      return lm.level === level ? 'sibling' : lm.level > level ? 'nested' : 'outside'
+    const body = scan.lines[k].slice(quotePrefixWidth(scan.lines[k], depth))
+    // A wrapped item's continuation body rides with its item — moving the marker line alone would strand it.
+    if (!isBlank(body)) return continuesList(body) ? 'nested' : 'outside'
+    return depth === 0 ? 'blank' : 'outside'
+  }
+}
+
+/** The items a list draws at line `i`'s depth under its parent, in order, and the last line the group's nesting reaches. Depth is quote depth and level, whatever whitespace indents a line, and a blank line outside a quote is a loose list's gap, while inside one it ends the quote. */
+export function siblingsAt(
+  scan: DocScan,
+  i: number,
+  scope: MarkdownScope,
+): { items: number[]; last: number } {
+  const role = rolesAgainst(scan, i, scope)
+  const above: number[] = []
+  for (let k = i - 1; k >= 0; k--) {
+    const r = role(k)
+    if (r === 'outside') break
+    if (r === 'sibling') above.push(k)
+  }
+  const items = [...above.reverse(), i]
+  let last = i
+  for (let k = i + 1; k < scan.lines.length; k++) {
+    const r = role(k)
+    if (r === 'outside') break
+    if (r === 'sibling') items.push(k)
+    if (r !== 'blank') last = k
+  }
+  return { items, last }
+}
+
+/** `to` is the last line's end, EXCLUSIVE of the trailing newline. The move logic reads only these two offsets, so it is block-type-blind. */
+export function subBlockAt(scan: DocScan, pos: number, scope: MarkdownScope): BlockSpan | null {
+  const first = lineIndexAt(scan, pos)
+  if (itemAt(scan, first, first, scope) === null) return null
+  const role = rolesAgainst(scan, first, scope)
+  let last = first
+  for (let k = first + 1; k < scan.lines.length; k++) {
+    if (!inJoinedMath(scan, k, first, last) && role(k) !== 'nested') break
     last = k
   }
   return { from: scan.lineStarts[first], to: lineEndOf(scan, last) }
@@ -144,76 +209,76 @@ function rebuildMove(
   }
 }
 
-/** Recounts every sequenced run holding a position in `at`, each once however many positions it holds. A line in `arrived` had its marker written by the edit, so its ordinal came from the writer rather than the run, and never sets a top-level run's start. */
+/** Recounts every sequenced run holding a position in `at`, each once however many positions it holds. A line in `arrived` had its marker written by the edit, so its ordinal came from the writer rather than the run, and never sets a top-level run's start, while a run holding a line in `repicked` counts from 1 or A. */
 export function renumberRuns(
-  doc: string,
+  scan: DocScan,
+  scope: MarkdownScope,
   at: readonly number[],
   arrived: ReadonlySet<number> = new Set(),
+  repicked: ReadonlySet<number> = new Set(),
 ): TextEdit[] {
-  const seen = new Set<number>()
-  return at
-    .flatMap((p) => renumberRun(doc, p, arrived))
-    .filter((c) => !seen.has(c.from) && seen.add(c.from))
+  const counted = new Set<number>()
+  return at.flatMap((p) => {
+    const i = lineIndexAt(scan, p)
+    if (counted.has(i)) return []
+    const rows = runAt(scan, i, scope)
+    for (const { k } of rows) counted.add(k)
+    return renumberRun(scan, rows, arrived, repicked)
+  })
 }
 
-function renumberRun(doc: string, pos: number, arrived: ReadonlySet<number>): TextEdit[] {
-  if (pos < 0 || pos > doc.length) return []
-  const ls = lineStartAt(doc, pos)
-  const lm = parseListMarker(doc.slice(ls, lineEndAt(doc, pos)))
-  if (lm === null || !isSequenced(lm)) return []
-  const kind = lm.kind
-  const indent = doc.slice(ls, ls + lm.markerStart)
+type Row = { k: number; lm: SequencedMarker }
 
-  // A nested run counts from 1. A top-level run counts from its SMALLEST present ordinal: a move only permutes the ordinals, so a list that began at 5 stays 5,6,7 while a 1-based one snaps back. Deeper markers, continuations and blank lines are skipped, not terminators, since items apart by a blank line are one loose list; inside a quote a blank line ends the quote, and the run with it.
-  const quoted = quotePrefix(indent) !== ''
-  const carries = (t: string): boolean => (isBlank(t) && !quoted) || nestedUnder(t, indent)
-  let runStart = ls
-  for (let p = ls; p > 0; ) {
-    const prevStart = lineStartAt(doc, p - 1)
-    const t = doc.slice(prevStart, p - 1)
-    const plm = parseListMarker(t)
-    if (
-      plm !== null &&
-      plm.kind === kind &&
-      doc.slice(prevStart, prevStart + plm.markerStart) === indent
-    )
-      runStart = prevStart
-    else if (!carries(t)) break
-    p = prevStart
-  }
-
-  type Row = { line: number; from: number; marker: SequencedMarker }
+function runAt(scan: DocScan, i: number, scope: MarkdownScope): Row[] {
+  const head = itemAt(scan, i, i, scope)
+  if (head === null || !isSequenced(head)) return []
   const rows: Row[] = []
-  for (let p = runStart; p < doc.length; ) {
-    const le = lineEndAt(doc, p)
-    const t = doc.slice(p, le)
-    const rlm = parseListMarker(t)
-    const sameLevel =
-      rlm !== null && rlm.kind === kind && doc.slice(p, p + rlm.markerStart) === indent
-    if (sameLevel) rows.push({ line: p, from: p + rlm.markerStart, marker: rlm })
-    else if (!carries(t)) break
-    p = le + 1
+  for (const k of siblingsAt(scan, i, scope).items) {
+    const lm = itemAt(scan, k, i, scope)!
+    if (isSequenced(lm) && lm.kind === head.kind) rows.push({ k, lm })
+    else if (k < i) rows.length = 0
+    else break
   }
-  const settled = rows.filter((r) => !arrived.has(r.line))
+  return rows
+}
+
+function renumberRun(
+  scan: DocScan,
+  rows: readonly Row[],
+  arrived: ReadonlySet<number>,
+  repicked: ReadonlySet<number>,
+): TextEdit[] {
+  if (rows.length === 0) return []
+  const head = rows[0].lm
+  // A nested run counts from 1. A top-level run counts from its SMALLEST present ordinal: a move only permutes the ordinals, so a list that began at 5 stays 5,6,7 while a 1-based one snaps back.
+  const settled = rows.filter(({ k }) => !arrived.has(scan.lineStarts[k]))
   const start =
-    lm.level > 0
+    head.level > 0 || rows.some(({ k }) => repicked.has(scan.lineStarts[k]))
       ? 1
-      : Math.min(...(settled.length > 0 ? settled : rows).map((r) => ordinalOf(r.marker)))
+      : Math.min(...(settled.length > 0 ? settled : rows).map(({ lm }) => ordinalOf(lm)))
   const changes: TextEdit[] = []
-  rows.forEach(({ from, marker }, i) => {
-    const have = marker.ordinal
-    const want = ordinalText(kind, start + i)
-    if (have !== want) changes.push({ from, to: from + have.length, insert: want })
+  rows.forEach(({ k, lm: { markerStart, ordinal } }, n) => {
+    const from = scan.lineStarts[k] + markerStart
+    const want = ordinalText(head.kind, start + n)
+    if (ordinal !== want) changes.push({ from, to: from + ordinal.length, insert: want })
   })
   return changes
 }
 
 /** Both renumber passes run against the POST-MOVE doc so the ordinal offsets are correct, then map back onto the original. */
-export function dropChanges(doc: string, block: BlockSpan, slot: Slot): TextEdit[] | null {
+export function dropChanges(
+  doc: string,
+  block: BlockSpan,
+  slot: Slot,
+  scope: MarkdownScope,
+): TextEdit[] | null {
   const moved = rebuildMove(doc, block, slot, 'exact')
   if (moved === null) return null
 
-  const finalDoc = applyEdits(moved.doc, renumberRuns(moved.doc, [moved.sourceAt, moved.destAt]))
+  const finalDoc = applyEdits(
+    moved.doc,
+    renumberRuns(scanDoc(moved.doc), scope, [moved.sourceAt, moved.destAt]),
+  )
   return diffAsSingleReplace(doc, finalDoc)
 }
 

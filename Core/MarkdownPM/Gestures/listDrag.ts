@@ -2,11 +2,10 @@ import type { Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import type { BlockSpan, MarkdownScope } from '../Engine/detect'
 import { docScan, docString } from '../docCache'
-import { inSealedLine } from '../Engine/docScan'
 import { forEachLine, shadeField, type Boundary } from './dragChrome'
 import { beginRelocateDrag, editorGestureCleanup } from './editorGesture'
 import { lineElementAt, textColumn } from '../lineDom'
-import { subBlockAt, dropChanges, checkboxToggleChange } from '../Engine/listModel'
+import { subBlockAt, dropChanges, checkboxToggleChange, itemAt } from '../Engine/listModel'
 import { GLYPH_CLASS } from '../Engine/intents'
 
 // Measured at drag start and re-measured only on scroll: the doc is static during a drag, so re-measuring per pointermove would be layout thrash.
@@ -39,13 +38,11 @@ function collectBoundaries(
   const gutterRight = textColumn(view).right
   const scan = docScan(doc)
   const out: Boundary<Drop>[] = []
+  const first = doc.lineAt(block.from).number - 1
   for (const { from, to } of view.visibleRanges) {
     forEachLine(doc, from, to, (line) => {
-      const lm = scan.markers[line.number - 1]
-      const inBlock = line.from >= block.from && line.from <= block.to
-      // A marker-lookalike inside a page's code, math or table is that block's text, never a drop target; a cell draws none of the three.
-      const sealed = scope === 'page' && inSealedLine(scan, line.number - 1)
-      if (lm === null || inBlock || sealed) return
+      const lm = itemAt(scan, line.number - 1, first, scope)
+      if (lm === null || (line.from >= block.from && line.from <= block.to)) return
       const cTop = view.coordsAtPos(line.from)
       const cEnd = view.coordsAtPos(line.to)
       const cMarker = view.coordsAtPos(line.from + lm.markerStart)
@@ -91,7 +88,7 @@ export const listDragExtension = (scope: MarkdownScope): Extension => [
       if (!glyph) return false
       const pos = view.posAtDOM(glyph)
       const scan = docScan(view.state.doc)
-      const block = subBlockAt(scan, pos)
+      const block = subBlockAt(scan, pos, scope)
       if (!block) return false
 
       e.preventDefault()
@@ -103,7 +100,7 @@ export const listDragExtension = (scope: MarkdownScope): Extension => [
             ? null
             : { left: slot.left, top: y, width: slot.right - slot.left },
         commit: ({ at, slot }) =>
-          dropChanges(docString(view.state.doc), block, { at, indent: slot.indent }),
+          dropChanges(docString(view.state.doc), block, { at, indent: slot.indent }, scope),
         onTap: () => clickAction(view, pos),
       })
       return true

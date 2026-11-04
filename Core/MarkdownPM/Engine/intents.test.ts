@@ -765,11 +765,13 @@ describe('outliner rails', () => {
     ])
   })
 
-  it('a non-list line between siblings breaks the run (caps on both sides of the gap)', () => {
-    const t = '- A\n\t- B\nprose\n\t- C'
-    const rs = rails(t)
-    expect(rs.filter((r) => r.level === 0 && r.end).length).toBe(2)
-    expect(rs.filter((r) => r.level === 0 && r.first).length).toBe(2)
+  it('a wrapped line carries the rail and a line outside the list ends it, so a later indented item draws no ancestor rail', () => {
+    const t = '- A\n  wrapped\n\t- B\nprose\n\t- C'
+    expect(rails(t).map((r) => [r.from, r.level, r.end])).toEqual([
+      [0, 0, null],
+      [4, 0, null],
+      [14, 0, 'elbow'],
+    ])
   })
 })
 

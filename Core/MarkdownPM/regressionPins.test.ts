@@ -180,8 +180,12 @@ describe('format transforms — prefix-aware', () => {
 describe('renumberRuns — nested lines are skipped, not terminators', () => {
   it('renumbers a run past its sublists', () => {
     const doc = '1. a\n\t1. x\n2. b\n2. c'
-    const changes = renumberRuns(doc, [0])
+    const changes = renumberRuns(scanDoc(doc), 'page', [0])
     expect(changes).toEqual([{ from: 16, to: 17, insert: '3' }])
+  })
+  it('counts past a quote indented under an item, which rides that item', () => {
+    const doc = '1. a\n  > q\n1. b'
+    expect(renumberRuns(scanDoc(doc), 'page', [0])).toEqual([{ from: 11, to: 12, insert: '2' }])
   })
 })
 

@@ -1,5 +1,6 @@
 import type { LinkKind, Token, TokenKind, TokenOf } from './tokens'
 import {
+  continuesList,
   isBlank,
   isThematicBreakLine,
   isHeadingLine,
@@ -379,11 +380,11 @@ export function railIntents(
 ): RailIntent[][] {
   const n = listLevels.length
   const rails: RailIntent[][] = new Array(n)
-  const blank = (i: number): boolean => listLevels[i] < 0 && isBlank(lines[i])
+  const carries = (i: number): boolean => listLevels[i] < 0 && continuesList(lines[i])
   const ahead: number[] = new Array(n)
   for (let i = n - 1, next = -1; i >= 0; i--) {
     ahead[i] = next
-    if (!blank(i)) next = listLevels[i]
+    if (!carries(i)) next = listLevels[i]
   }
   const railKind: string[] = []
   let behind = -1
@@ -391,8 +392,9 @@ export function railIntents(
   for (let i = 0; i < n; i++) {
     const level = listLevels[i]
     const prevSpan = span
-    if (blank(i)) span = Math.min(ahead[i], behind + 1)
+    if (carries(i)) span = Math.min(ahead[i], behind + 1)
     else if (level < 0) {
+      railKind.length &&= 0
       behind = -1
       span = 0
       continue
@@ -403,7 +405,7 @@ export function railIntents(
       span = ahead[i] > level ? level + 1 : level
     }
     const nextSpan =
-      i + 1 === n ? 0 : blank(i + 1) ? Math.min(ahead[i + 1], behind + 1) : listLevels[i + 1]
+      i + 1 === n ? 0 : carries(i + 1) ? Math.min(ahead[i + 1], behind + 1) : listLevels[i + 1]
     let reaching: RailIntent | null = null
     for (let k = 0; k < span; k++) {
       const typeClass = railKind[k]

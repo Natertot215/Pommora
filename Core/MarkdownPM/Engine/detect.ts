@@ -561,8 +561,7 @@ export const ordinalOf = (lm: SequencedMarker): number =>
 export const ordinalText = (kind: SequencedKind, n: number): string =>
   kind === 'alphabetical' ? String.fromCharCode(65 + ((n - 1) % 26)) : String(n)
 
-export const nestedUnder = (line: string, indent: string): boolean =>
-  !isBlank(line) && line.startsWith(indent) && /^[ \t]/.test(line.slice(indent.length))
+export const continuesList = (line: string): boolean => !/^[^ \t]/.test(line)
 
 export function parseListMarker(line: string, offset = 0): ListMarker | null {
   if (isThematicBreakLine(line)) return null
