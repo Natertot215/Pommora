@@ -10,7 +10,7 @@
 
 | Head | Tests | Start | End |
 |------|-------|-------|-----|
-| `cd813afdd` | 9,109 passed, 2 skipped (549 files); comments 3,511 | 11-04-2026 02:11 PM | |
+| `9ce2d2b2b` (production as `cd813afdd`, where the phase patches were built) | 9,109 passed, 2 skipped (549 files); comments 3,511 | 11-04-2026 02:11 PM | |
 
 **Net Ledger** (production lines from the Actionable column of `view-delta --exclude .claude`, cumulative from the BASELINE head; a phase's own delta is its Measured less the row above):
 
