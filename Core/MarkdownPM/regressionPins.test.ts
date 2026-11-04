@@ -162,32 +162,32 @@ describe('format transforms — prefix-aware', () => {
   it('setHeading on a quoted list line stays inside the quote', () => {
     const doc = '> - item'
     const { changes } = setHeading(doc, 5, 5, 2)
-    expect(changes).toEqual([{ from: 2, to: 8, insert: '## item' }])
+    expect(changes).toEqual([{ from: 2, to: 4, insert: '## ' }])
   })
   it('setHeading on a callout head edits after the tag — never exposes it', () => {
     const doc = '> [!callout] Title'
     const { changes } = setHeading(doc, 15, 15, 1)
     expect(changes[0].from).toBe(13)
-    expect(changes[0].insert).toBe('# Title')
+    expect(changes[0].insert).toBe('# ')
   })
   it('setList on a quoted line lands the marker inside the quote', () => {
     const doc = '> item'
     const { changes } = setList(scanDoc(doc), 4, 4, 'bullet', {}, 'page')
-    expect(changes).toEqual([{ from: 2, to: 6, insert: '- item' }])
+    expect(changes).toEqual([{ from: 2, to: 2, insert: '- ' }])
   })
 })
 
 describe('renumberRuns — nested lines are skipped, not terminators', () => {
   it('renumbers a run past its sublists', () => {
     const doc = '1. a\n\t1. x\n2. b\n2. c'
-    const changes = renumberRuns(scanDoc(doc), 'page', [0])
+    const changes = renumberRuns(scanDoc(doc), [0], 'page')
     expect(changes).toEqual([{ from: 16, to: 17, insert: '3' }])
   })
   it('counts past a quote indented under an item, which rides that item', () => {
     const doc = '1. a\n  > q\n1. b'
-    expect(renumberRuns(scanDoc(doc), 'page', [0])).toEqual([{ from: 11, to: 12, insert: '2' }])
+    expect(renumberRuns(scanDoc(doc), [0], 'page')).toEqual([{ from: 11, to: 12, insert: '2' }])
     const math = '1. a\n  $$\nx\n  $$\n1. b'
-    expect(renumberRuns(scanDoc(math), 'page', [0])).toEqual([{ from: 17, to: 18, insert: '2' }])
+    expect(renumberRuns(scanDoc(math), [0], 'page')).toEqual([{ from: 17, to: 18, insert: '2' }])
   })
 })
 

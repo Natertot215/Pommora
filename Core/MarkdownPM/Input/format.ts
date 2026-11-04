@@ -18,6 +18,8 @@ import {
   lineEndAt,
   lineIndexAt,
   quoteDepthOf,
+  quotePrefixWidth,
+  reachEnd,
   trimmedRange,
   overlaps,
 } from '../Engine/markdownCode'
@@ -255,9 +257,9 @@ export function setHeading(doc: string, from: number, to: number, level: Heading
   const changes: FormatEdit['changes'] = []
   let lastEnd = 0
   for (const l of lines) {
-    const next = `${l.pad}${level === 0 ? l.inner : `${'#'.repeat(level)} ${l.inner}`}`
-    changes.push({ from: l.ls + l.prefix.length, to: l.le, insert: next })
-    lastEnd = l.ls + l.prefix.length + next.length
+    const lead = level === 0 ? l.pad : `${l.pad}${'#'.repeat(level)} `
+    changes.push({ from: l.ls + l.prefix.length, to: l.le - l.inner.length, insert: lead })
+    lastEnd = l.ls + l.prefix.length + lead.length + l.inner.length
   }
   return lines.length === 1 ? { changes, selection: lastEnd } : { changes }
 }
@@ -289,19 +291,11 @@ function readLine(doc: string, ls: number, scope: MarkdownScope): SelectedLine {
   }
 }
 
-const reachEnd = (doc: string, from: number, to: number): number =>
-  to > from && lineStartAt(doc, to) === to ? to - 1 : to
-
 /** A selection passes over its blank lines; a caret alone on one keeps it, so the block starts there. */
 function selectedLines(doc: string, from: number, to: number): SelectedLine[] {
-  const out: SelectedLine[] = []
-  const end = reachEnd(doc, from, to)
-  for (let p = lineStartAt(doc, from); p <= end; p = lineEndAt(doc, p) + 1) {
-    const l = readLine(doc, p, 'page')
-    if (!isBlank(doc.slice(l.ls + l.prefix.length, l.le)) || from === to) out.push(l)
-    if (l.le >= doc.length) break
-  }
-  return out
+  return spannedLines(doc, from, to)
+    .map(({ ls }) => readLine(doc, ls, 'page'))
+    .filter((l) => from === to || !isBlank(doc.slice(l.ls + l.prefix.length, l.le)))
 }
 
 /** What a list-type pick reaches. A caret takes its item's group: with Preserve List-Level Formatting on, the siblings drawn as its type; off, the siblings and everything nested under them. A range takes every item it touches and turns its plain lines into items. A continuation answers for its item, a code block's lines only by a pick wholly inside it, and math, tables, a callout's head and a fence's delimiters never are. */
@@ -314,19 +308,15 @@ function listReach(
 ): { k: number; lm: ListMarker | null }[] {
   const anchor = lineIndexAt(scan, from)
   const upTo = lineIndexAt(scan, reachEnd(scan.text, from, to))
-  const reader = scan.fences[anchor]?.from === scan.fences[upTo]?.from ? anchor : 'outside'
+  const reader = readsFrom(scan, upTo, anchor, scope) ? anchor : 'outside'
   const markerAt = (k: number): ListMarker | null => itemAt(scan, k, reader, scope)
   const endOf = (k: number): number => subBlockAt(scan, scan.lineStarts[k], scope)!.to
   const owners: { k: number; end: number }[] = []
   for (let j = anchor; j >= 0; j--) {
     const lm = markerAt(j)
-    if (lm === null) {
-      if (isBlank(scan.lines[j]) && readsFrom(scan, j, reader, scope)) break
-      continue
-    }
+    if (lm === null) continue
     const end = endOf(j)
-    if (end < scan.lineStarts[anchor]) continue
-    owners.push({ k: j, end })
+    if (end >= scan.lineStarts[anchor]) owners.push({ k: j, end })
     if (lm.level === 0 && quoteDepthOf(scan.lines[j]) === 0) break
   }
   const item = owners[0]?.k ?? null
@@ -357,7 +347,7 @@ function listReach(
   const outOfReach = (k: number): boolean =>
     !readsFrom(scan, k, reader, scope) ||
     (scope === 'page' &&
-      (isCalloutHead(scan.lines[k]) || (scan.fences[k]?.role ?? 'content') !== 'content'))
+      (scan.callouts[k]?.first || (scan.fences[k]?.role ?? 'content') !== 'content'))
   return [...reached]
     .sort((a, b) => a - b)
     .filter((k) => !outOfReach(k))
@@ -395,9 +385,9 @@ export function setList(
     const ls = scan.lineStarts[k]
     if (lm === null) {
       const l = readLine(doc, ls, scope)
-      const next = `${l.pad}${l.indent}${marker}${l.inner}`
-      changes.push({ from: ls + l.prefix.length, to: l.le, insert: next })
-      selection = ls + l.prefix.length + next.length
+      const lead = `${l.pad}${l.indent}${marker}`
+      changes.push({ from: ls + l.prefix.length, to: l.le - l.inner.length, insert: lead })
+      selection = ls + l.prefix.length + lead.length + l.inner.length
     } else if (isSequenced(lm) || drawnKind(lm) !== kind)
       changes.push({ from: ls + lm.markerStart, to: ls + lm.contentStart, insert: marker })
   }
@@ -423,7 +413,7 @@ export function setBlock(doc: string, from: number, to: number, fmt: BlockFormat
   const ls = lineStartAt(doc, from)
   const le = lineEndAt(doc, from)
   const line = doc.slice(ls, le)
-  const lead = line.length > 0 ? `${line}\n\n` : ls === 0 || doc.endsWith('\n\n', ls) ? '' : '\n'
+  const lead = line.length > 0 ? '\n\n' : ls === 0 || doc.endsWith('\n\n', ls) ? '' : '\n'
   const trail = doc.startsWith('\n\n', le) ? '' : '\n'
   switch (fmt) {
     case 'quote': {
@@ -435,9 +425,12 @@ export function setBlock(doc: string, from: number, to: number, fmt: BlockFormat
       const blank = lines.length === 1 ? '> ' : '>'
       for (const { ls: s, le: e } of lines) {
         const text = doc.slice(s, e)
-        const next = strip ? stripQuotePrefix(text) : text === '' ? blank : `> ${text}`
-        changes.push({ from: s, to: e, insert: next })
-        lastEnd = s + next.length
+        const cut = s + quotePrefixWidth(text, 1)
+        const change = strip
+          ? { from: cut + stripQuotePrefix(text).length - text.length, to: cut, insert: '' }
+          : { from: s, to: s, insert: text === '' ? blank : '> ' }
+        changes.push(change)
+        lastEnd = e - (change.to - change.from) + change.insert.length
       }
       return lines.length === 1 ? { changes, selection: lastEnd } : { changes }
     }
@@ -456,15 +449,15 @@ export function setBlock(doc: string, from: number, to: number, fmt: BlockFormat
     }
     case 'hr': {
       const insert = `${lead}---${trail}`
-      return { changes: [{ from: ls, to: le, insert }], selection: ls + lead.length + 4 }
+      return { changes: [{ from: le, to: le, insert }], selection: le + lead.length + 4 }
     }
     case 'table': {
       // A GFM table parses as its own block ONLY when blank lines fence it; without one it merges with an adjacent table below, whose header and delimiter then become body rows.
       const table = serialize(emptyTable(3, 3))
       const insert = `${lead}${table}${trail}`
       return {
-        changes: [{ from: ls, to: le, insert }],
-        selection: ls + lead.length + table.length + 1,
+        changes: [{ from: le, to: le, insert }],
+        selection: le + lead.length + table.length + 1,
       }
     }
   }

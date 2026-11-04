@@ -63,6 +63,9 @@ describe('subBlockAt', () => {
     const doc = '- a\n\t- a1\n\t- a2\n- b'
     const b = subBlockAt(scanDoc(doc), 1, 'page')!
     expect(doc.slice(b.from, b.to)).toBe('- a\n\t- a1\n\t- a2')
+    const loose = '- a\n\n- b\n\n  cont b\n\n- c'
+    const l = subBlockAt(scanDoc(loose), loose.indexOf('- b'), 'page')!
+    expect(loose.slice(l.from, l.to)).toBe('- b\n\n  cont b')
   })
   it('returns null off a list line', () => {
     expect(subBlockAt(scanDoc('plain text'), 2, 'page')).toBe(null)
@@ -167,11 +170,11 @@ describe('click (no drag past threshold) toggles a checkbox, never reorders', ()
 
 describe('renumberRuns', () => {
   it('produces minimal digit rewrites', () => {
-    expect(renumberRuns(scanDoc('3. a\n4. b\n5. c'), 'page', [0])).toEqual([])
+    expect(renumberRuns(scanDoc('3. a\n4. b\n5. c'), [0], 'page')).toEqual([])
   })
   it('fixes a broken run', () => {
     const doc = '1. a\n1. b\n1. c'
-    expect(applyEdits(doc, renumberRuns(scanDoc(doc), 'page', [0]))).toBe('1. a\n2. b\n3. c')
+    expect(applyEdits(doc, renumberRuns(scanDoc(doc), [0], 'page'))).toBe('1. a\n2. b\n3. c')
   })
 })
 

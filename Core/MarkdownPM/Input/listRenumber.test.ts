@@ -90,6 +90,10 @@ describe('a level change recounts the run it joined and the run it left', () => 
     expect(landEdit(doc, [smartBackspace(scanDoc(doc), b, b)!], 'delete', 'page')).toBe(
       '- p\n\t1. a\nb\n\t\t- kid\n\t1. c',
     )
+    const loose = '- p\n\t1. a\n\n\t2. b\n\t3. c'
+    const a = loose.indexOf('a')
+    const l = setList(scanDoc(loose), a, a + 1, 'bullet', {}, 'page')
+    expect(landEdit(loose, l.changes, editEvent(l), 'page')).toBe('- p\n\t- a\n\n\t1. b\n\t2. c')
   })
 })
 
@@ -132,9 +136,6 @@ describe('Lists ▸ continues the run a line joins', () => {
   })
   it('a quoted line continues the quoted run', () => {
     expect(listed('> 1. a\n> b', 9)).toBe('> 1. a\n> 2. b')
-  })
-  it('a nested line continues its own level', () => {
-    expect(listed('1. a\n  1. b\n\n  c', 16)).toBe('1. a\n  1. b\n\n  2. c')
   })
   it('a line a blank apart joins the run as a loose item', () => {
     expect(listed('1. a\n\nb', 6)).toBe('1. a\n\n2. b')

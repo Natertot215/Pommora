@@ -8,8 +8,9 @@ import {
   setBlock,
   type FormatEdit,
 } from './format'
-import { editEvent, landEdit } from './listRenumber'
-import { scanDoc } from '../Engine/docScan'
+import { EditorState } from '@codemirror/state'
+import { editEvent, landEdit, listRenumber } from './listRenumber'
+import { type DocScan, scanDoc } from '../Engine/docScan'
 import type { Paint, PaintColor } from '../Engine/paints'
 
 const apply = (doc: string, edit: FormatEdit | null): string => {
@@ -23,6 +24,25 @@ const listed = (
   to = doc.length,
   settings = {},
 ): string => apply(doc, setList(scanDoc(doc), from, to, kind, settings, 'page'))
+const picked = (
+  doc: string,
+  from: number,
+  to: number,
+  ...picks: ((scan: DocScan, from: number, to: number) => FormatEdit)[]
+): string => {
+  let state = EditorState.create({
+    doc,
+    selection: { anchor: from, head: to },
+    extensions: listRenumber('page'),
+  })
+  for (const pick of picks) {
+    const { from: f, to: t } = state.selection.main
+    const e = pick(scanDoc(state.doc.toString()), f, t)
+    const selection = e.selection === undefined ? undefined : { anchor: e.selection }
+    state = state.update({ changes: e.changes, selection, userEvent: editEvent(e) }).state
+  }
+  return state.doc.toString()
+}
 
 describe('toggleInline', () => {
   it('wraps a selection', () => {
@@ -143,6 +163,9 @@ describe('setHeading', () => {
     const three = 'one\ntwo\nthree'
     expect(apply(three, setHeading(three, 0, three.length, 2))).toBe('## one\n## two\n## three')
     expect(apply(three, setHeading(three, 0, 4, 2))).toBe('## one\ntwo\nthree')
+    const heads = (level: 1 | 2) => (scan: DocScan, f: number, t: number) =>
+      setHeading(scan.text, f, t, level)
+    expect(picked('one\ntwo', 1, 5, heads(1), heads(2))).toBe('## one\n## two')
   })
   it('leaves a blank line unheaded', () => {
     const gapped = 'one\n\ntwo'
@@ -180,6 +203,9 @@ describe('setList', () => {
   it('makes every selected line its own item, and none the selection ends at the start of', () => {
     expect(listed(three, 'bullet')).toBe('- one\n- two\n- three')
     expect(listed(three, 'bullet', 0, 4)).toBe('- one\ntwo\nthree')
+    const lists = (kind: 'bullet' | 'ordered') => (scan: DocScan, f: number, t: number) =>
+      setList(scan, f, t, kind, {}, 'page')
+    expect(picked('one\ntwo', 1, 5, lists('bullet'), lists('ordered'))).toBe('1. one\n2. two')
   })
   it('numbers an ordered run down the selection', () => {
     expect(listed(three, 'ordered')).toBe('1. one\n2. two\n3. three')
@@ -277,6 +303,11 @@ describe('setList over a whole block', () => {
     expect(listed(deeper, 'ordered', deeper.indexOf('cont b'), deeper.indexOf('\n- c'))).toBe(
       '1. a\n  > 1. b\n  >   cont b\n  cont a\n- c',
     )
+    const loose = '- a\n\n- b\n\n  cont b\n\n- c'
+    const paragraph = loose.indexOf('cont')
+    const numbered = '1. a\n\n2. b\n\n  cont b\n\n3. c'
+    expect(listed(loose, 'ordered', paragraph, paragraph)).toBe(numbered)
+    expect(listed(loose, 'ordered')).toBe(numbered)
   })
 
   it('finds a quoted marker behind its prefix rather than missing it', () => {
@@ -323,6 +354,8 @@ describe('setBlock', () => {
     expect(apply(all, setBlock(all, 0, all.length, 'quote'))).toBe('one\ntwo')
     const mixed = '> one\ntwo'
     expect(apply(mixed, setBlock(mixed, 0, mixed.length, 'quote'))).toBe('> > one\n> two')
+    const quote = (scan: DocScan, f: number, t: number) => setBlock(scan.text, f, t, 'quote')
+    expect(picked('one\ntwo', 1, 5, quote, quote)).toBe('one\ntwo')
   })
   // A bare `>` is the quote's own blank line — skipping it would split one quote into two.
   it("carries a blank line through as the quote's own", () => {

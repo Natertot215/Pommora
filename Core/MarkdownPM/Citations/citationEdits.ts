@@ -12,8 +12,7 @@ import {
   isLastReference,
   markersFor,
 } from '../Engine/detect'
-import { lineEndOf, lineIndexAt } from '../Engine/markdownCode'
-import { diffAsSingleReplace } from '../Engine/listModel'
+import { diffAsSingleReplace, lineEndOf, lineIndexAt } from '../Engine/markdownCode'
 
 export type CitationSlice = DocLines & { citations: CitationScan }
 

@@ -28,6 +28,16 @@ export function applyEdits(
   return out + text.slice(at, to)
 }
 
+export function diffAsSingleReplace(a: string, b: string): TextEdit[] {
+  if (a === b) return []
+  let pre = 0
+  const max = Math.min(a.length, b.length)
+  while (pre < max && a[pre] === b[pre]) pre++
+  let suf = 0
+  while (suf < max - pre && a[a.length - 1 - suf] === b[b.length - 1 - suf]) suf++
+  return [{ from: pre, to: a.length - suf, insert: b.slice(pre, b.length - suf) }]
+}
+
 interface Fence {
   depth: number
   marker: string
@@ -179,6 +189,9 @@ export const lineEndOf = (d: LineTable, line: number): number =>
 
 export const lineStartAt = (doc: string, pos: number): number =>
   pos <= 0 ? 0 : doc.lastIndexOf('\n', pos - 1) + 1
+/** A range ending at a line's start ends on the line above, so a single trailing newline is the terminator, not a phantom empty line. */
+export const reachEnd = (doc: string, from: number, to: number): number =>
+  to > from && lineStartAt(doc, to) === to ? to - 1 : to
 export const lineEndAt = (doc: string, pos: number): number => {
   const i = doc.indexOf('\n', pos)
   return i === -1 ? doc.length : i

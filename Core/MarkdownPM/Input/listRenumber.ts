@@ -51,8 +51,8 @@ export const listRenumber = (scope: MarkdownScope): Extension =>
     runsBelow.sort((a, b) => a - b)
     const changes = renumberRuns(
       scan,
-      scope,
       at.concat(mapAscending(tr.changes, runsBelow)),
+      scope,
       arrived,
       repicked,
     )

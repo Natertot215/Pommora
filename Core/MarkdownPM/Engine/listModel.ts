@@ -14,6 +14,7 @@ import {
 } from './detect'
 import {
   applyEdits,
+  diffAsSingleReplace,
   lineEndOf,
   lineIndexAt,
   lineOffsetsOf,
@@ -57,7 +58,7 @@ export function itemAt(
   return readsFrom(scan, k, from, scope) ? scan.markers[k] : null
 }
 
-type ListRole = 'sibling' | 'nested' | 'blank' | 'outside'
+type ListRole = 'sibling' | 'nested' | 'blank' | 'ends'
 
 function rolesAgainst(scan: DocScan, i: number, scope: MarkdownScope): (k: number) => ListRole {
   const depth = quoteDepthOf(scan.lines[i])
@@ -65,19 +66,19 @@ function rolesAgainst(scan: DocScan, i: number, scope: MarkdownScope): (k: numbe
   return (line) => {
     let k = line
     if (!readsFrom(scan, k, i, scope)) {
-      if (scan.fences[i] !== undefined) return 'outside'
+      if (scan.fences[i] !== undefined) return 'ends'
       const code = scan.fences[k] ?? spanAt(scan.maths, scan.lineStarts[k])
       if (code !== undefined) k = lineIndexAt(scan, code.from)
     }
     const own = quoteDepthOf(scan.lines[k])
     const lm = itemAt(scan, k, i, scope)
-    if (own < depth) return 'outside'
+    if (own < depth) return 'ends'
     if (own === depth && lm !== null)
-      return lm.level === level ? 'sibling' : lm.level > level ? 'nested' : 'outside'
+      return lm.level === level ? 'sibling' : lm.level > level ? 'nested' : 'ends'
     const body = scan.lines[k].slice(quotePrefixWidth(scan.lines[k], depth))
     // A wrapped item's continuation body belongs to its item.
-    if (!isBlank(body)) return continuesList(body) ? 'nested' : 'outside'
-    return depth === 0 ? 'blank' : 'outside'
+    if (!isBlank(body)) return continuesList(body) ? 'nested' : 'ends'
+    return depth === 0 ? 'blank' : 'ends'
   }
 }
 
@@ -92,14 +93,14 @@ export function siblingsAt(
   const above: number[] = []
   for (let k = i - 1; k >= 0; k--) {
     const r = role(k)
-    if (r === 'outside' || (r === 'sibling' && !joins(k))) break
+    if (r === 'ends' || (r === 'sibling' && !joins(k))) break
     if (r === 'sibling') above.push(k)
   }
   const items = [...above.reverse(), i]
   let last = i
   for (let k = i + 1; k < scan.lines.length; k++) {
     const r = role(k)
-    if (r === 'outside' || (r === 'sibling' && !joins(k))) break
+    if (r === 'ends' || (r === 'sibling' && !joins(k))) break
     if (r === 'sibling') items.push(k)
     if (r !== 'blank') last = k
   }
@@ -113,8 +114,9 @@ export function subBlockAt(scan: DocScan, pos: number, scope: MarkdownScope): Bl
   const role = rolesAgainst(scan, first, scope)
   let last = first
   for (let k = first + 1; k < scan.lines.length; k++) {
-    if (role(k) !== 'nested') break
-    last = k
+    const r = role(k)
+    if (r === 'nested') last = k
+    else if (r !== 'blank') break
   }
   return { from: scan.lineStarts[first], to: lineEndOf(scan, last) }
 }
@@ -210,17 +212,18 @@ function rebuildMove(
   }
 }
 
-/** Recounts every sequenced run holding a position in `at`, each once however many positions it holds. A line in `arrived` had its marker written by the edit, so its ordinal came from the writer rather than the run, and never sets a top-level run's start, while a run holding a line in `repicked` counts from 1 or A. */
+/** Recounts every sequenced run holding a position in `at`, each once however many positions it holds, where a position on a blank line, as in a loose list's gap, counts the run below it. A line in `arrived` had its marker written by the edit, so its ordinal came from the writer rather than the run, and never sets a top-level run's start, while a run holding a line in `repicked` counts from 1 or A. */
 export function renumberRuns(
   scan: DocScan,
-  scope: MarkdownScope,
   at: readonly number[],
+  scope: MarkdownScope,
   arrived: ReadonlySet<number> = new Set(),
   repicked: ReadonlySet<number> = new Set(),
 ): TextEdit[] {
   const counted = new Set<number>()
   return at.flatMap((p) => {
-    const i = lineIndexAt(scan, p)
+    let i = lineIndexAt(scan, p)
+    while (i + 1 < scan.lines.length && isBlank(scan.lines[i])) i++
     if (counted.has(i)) return []
     const rows = runAt(scan, i, scope)
     for (const { k } of rows) counted.add(k)
@@ -279,7 +282,7 @@ export function dropChanges(
 
   const finalDoc = applyEdits(
     moved.doc,
-    renumberRuns(scanDoc(moved.doc), scope, [moved.sourceAt, moved.destAt]),
+    renumberRuns(scanDoc(moved.doc), [moved.sourceAt, moved.destAt], scope),
   )
   return diffAsSingleReplace(doc, finalDoc)
 }
@@ -287,14 +290,4 @@ export function dropChanges(
 export function moveRange(doc: string, range: BlockSpan, slot: Slot): TextEdit[] | null {
   const moved = rebuildMove(doc, range, slot, 'fenced')
   return moved === null ? null : diffAsSingleReplace(doc, moved.doc)
-}
-
-export function diffAsSingleReplace(a: string, b: string): TextEdit[] {
-  if (a === b) return []
-  let pre = 0
-  const max = Math.min(a.length, b.length)
-  while (pre < max && a[pre] === b[pre]) pre++
-  let suf = 0
-  while (suf < max - pre && a[a.length - 1 - suf] === b[b.length - 1 - suf]) suf++
-  return [{ from: pre, to: a.length - suf, insert: b.slice(pre, b.length - suf) }]
 }

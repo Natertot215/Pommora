@@ -79,14 +79,16 @@ describe('list continuation (Enter)', () => {
   it('does not fire on a non-list line', () => {
     expect(continueListOnEnter(scanDoc('plain'), 5, 5)).toBeNull()
   })
-  it('leaves list-shaped lines inside a code block alone, on a page but not in a cell', () => {
-    const doc = '```\n1. one\n2. two\n- name: a\n```'
-    const scan = scanDoc(doc)
-    for (const line of ['1. one', '- name: a']) {
-      const end = doc.indexOf(line) + line.length
-      expect(continueListOnEnter(scan, end, end)).toBeNull()
-      expect(indentListOnTab(scan, end, end)).toBeNull()
-      expect(continueListOnEnter(scan, end, end, 'cell')).not.toBeNull()
+  it('leaves list-shaped lines inside a code block or display math alone, on a page but not in a cell', () => {
+    for (const fence of ['```', '$$']) {
+      const doc = `${fence}\n1. one\n2. two\n- name: a\n${fence}`
+      const scan = scanDoc(doc)
+      for (const line of ['1. one', '- name: a']) {
+        const end = doc.indexOf(line) + line.length
+        expect(continueListOnEnter(scan, end, end)).toBeNull()
+        expect(indentListOnTab(scan, end, end)).toBeNull()
+        expect(continueListOnEnter(scan, end, end, 'cell')).not.toBeNull()
+      }
     }
   })
 })

@@ -1,4 +1,4 @@
-import { lineIndexAt, quotePrefix } from './markdownCode'
+import { lineIndexAt, quotePrefix, reachEnd } from './markdownCode'
 import { chunksOver, scanDoc, type DocScan } from './docScan'
 import { holdsTokens, type Token, tokenize } from './tokens'
 import { perText } from './perText'
@@ -134,9 +134,7 @@ export const pageStats = perText(computeStats, 4)
 export function rangeStats(scan: DocScan, from: number, to: number): PageStats {
   const { lines, lineStarts, fences, citations: cited } = scan
   const first = lineIndexAt(scan, from)
-  let last = lineIndexAt(scan, to)
-  // A range ending at a line's start ends on the line above, so a single trailing newline is the terminator, not a phantom empty line.
-  if (last > first && to === lineStarts[last]) last--
+  const last = lineIndexAt(scan, reachEnd(scan.text, from, to))
   const drawn = tableProse(scan)
   const hidden: Hidden[] = []
   const take = (at: number, text: string): void => {

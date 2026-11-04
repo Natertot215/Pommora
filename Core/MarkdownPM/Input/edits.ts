@@ -8,14 +8,7 @@ import {
   mapSpans,
   mayHoldLink,
 } from '../../Connections/connections'
-import {
-  inCalloutAt,
-  inCodeAt,
-  inCodeNear,
-  inFenceAt,
-  spanAt,
-  type DocScan,
-} from '../Engine/docScan'
+import { inCalloutAt, inCodeAt, inCodeNear, spanAt, type DocScan } from '../Engine/docScan'
 import {
   fenceAt,
   isBlockquoteLine,
@@ -45,6 +38,7 @@ import {
   type MarkdownScope,
   readsLists,
 } from '../Engine/detect'
+import { readsFrom } from '../Engine/listModel'
 import { tokenize } from '../Engine/tokens'
 import { isPaint } from '../Engine/paints'
 
@@ -63,7 +57,7 @@ const shorthandCheckboxRe = /^([ \t]*)([-+])\[([ xX]?)\]$/
 export const blockPrefix = (line: string, scope: MarkdownScope = 'page'): string =>
   scope === 'page' ? quotePrefix(line) : ''
 
-// A fenced line is code, whatever its text looks like; a cell holds no fence, and the page-shaped scan would pair one there.
+// A line inside a page's code, math, or table is that block's text, whatever it looks like; a cell holds none of them, and the page-shaped scan would pair a fence there.
 function listLineAt(
   scan: DocScan,
   selStart: number,
@@ -71,7 +65,7 @@ function listLineAt(
   scope: MarkdownScope,
 ): { ls: number; line: string; pfx: string; lm: ListMarker } | null {
   if (selStart !== selEnd) return null
-  if (scope === 'page' && inFenceAt(scan, selStart)) return null
+  if (!readsFrom(scan, lineIndexAt(scan, selStart), 'outside', scope)) return null
   const doc = scan.text
   const ls = lineStartAt(doc, selStart)
   const line = doc.slice(ls, lineEndAt(doc, selStart))
