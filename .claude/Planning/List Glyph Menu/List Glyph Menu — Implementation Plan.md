@@ -18,7 +18,7 @@
 
 | Phase | Estimate | Measured |
 |-------|----------|----------|
-| 0 · Drives and Baseline | 0 (scripts +273: the drive +261, the harness +8, Path Links −8, the README +12) | |
+| 0 · Drives and Baseline | 0 (scripts +273: the drive +261, the harness +8, Path Links −8, the README +12) | 0 (+0 / −0) |
 | 1 · The List Model | +74 (the rename 0) | |
 | 2 · One Switch | +143 (+69 its own) | |
 | 3 · The Glyph Menu | +159 (+16 its own) | |
@@ -154,10 +154,10 @@ The order is what makes each step land once. Phase 0 lands the drive and records
 #### Process Overview
 
 - [x] `[Stop: Nathan ratifies; no code changes before this]`
-- [ ] **Phase 0** — Drives and Baseline
+- [x] **Phase 0** — Drives and Baseline
   - [x] Task 0-1 · Run Start
   - [x] Task 0-2 · The List Types Drive
-  - [ ] Task 0-3 · The baseline drives
+  - [x] Task 0-3 · The baseline drives
 - [ ] **Phase 1** — The List Model
   - [ ] Task 1-1 · The rename
   - [ ] Task 1-2 · One walk, one read rule, one count
@@ -220,8 +220,8 @@ The four existing MarkdownPM drives should be green at the BASELINE head.
 
 **VERIFY**
 
-- [ ] From the base worktree, one at a time: Text Property 4 (37/37), Alias 3 (121/121), Path Links 9 (498/498, the first live run of its `phasedItem`), and Editor Parity as `base` and `base2`, whose compare reports 0 differing lines and nine behaviors `same`. `results/base` stays for the later compares.
-- [ ] Any red drive is reported in chat with its failure before Phase 1 opens; one red at the head the run starts from isn't this plan's to fix, and is recorded under *§Deviations*.
+- [x] From the base worktree, one at a time: Text Property 4 (37/37), Alias 3 (121/121), Path Links 9 (498/498, the first live run of its `phasedItem`), and Editor Parity as `base` and `base2`, whose compare reports 0 differing lines and nine behaviors `same`. `results/base` stays for the later compares.
+- [x] Any red drive is reported in chat with its failure before Phase 1 opens; one red at the head the run starts from isn't this plan's to fix, and is recorded under *§Deviations*.
 
 ---
 
