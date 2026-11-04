@@ -2,7 +2,13 @@ import { describe, it, expect } from 'vitest'
 import { EditorState } from '@codemirror/state'
 import { editEvent, landEdit, listRenumber } from './listRenumber'
 import { scanDoc } from '../Engine/docScan'
-import { continueListOnEnter, indentListOnTab, outdentListOnShiftTab, type Edit } from './edits'
+import {
+  continueListOnEnter,
+  indentListOnTab,
+  outdentListOnShiftTab,
+  smartBackspace,
+  type Edit,
+} from './edits'
 import { setList } from './format'
 
 const del = (doc: string, from: number, to: number, userEvent = 'delete'): string =>
@@ -18,6 +24,7 @@ const list = '1. a\n2. b\n3. c'
 describe('a line deletion closes the gap', () => {
   it('deleting a middle item closes the gap', () => {
     expect(del(list, 5, 10)).toBe('1. a\n2. c')
+    expect(del('1. a\n2. b\n   1. k\n   2. m\n3. c', 5, 10)).toBe('1. a\n   1. k\n   2. m\n2. c')
   })
 
   it('deleting the last item leaves the run untouched', () => {
@@ -37,7 +44,7 @@ describe('a line deletion closes the gap', () => {
   })
 
   it('a line deletion inside a code block renumbers nothing', () => {
-    expect(del('```\n1. a\n2. b\n3. c\n```', 4, 9)).toBe('```\n2. b\n3. c\n```')
+    expect(del('```\n1. a\n2. b\n3. c\n4. d\n```', 9, 14)).toBe('```\n1. a\n3. c\n4. d\n```')
   })
 
   it('a line deletion outside any run passes through', () => {
@@ -74,10 +81,15 @@ describe('a level change recounts the run it joined and the run it left', () => 
     expect(at('5. a\n\t1. b\n6. c', 6, outdentListOnShiftTab)).toBe('5. a\n6. b\n7. c')
   })
   it('switching a numbered item out of its run recounts the run below', () => {
-    const doc = '- p\n\t1. a\n\t2. b\n\t3. c'
+    const doc = '- p\n\t1. a\n\t2. b\n\t\t- kid\n\t3. c'
     const b = doc.indexOf('b')
     const e = setList(doc, b, b + 1, 'bullet')
-    expect(landEdit(doc, e.changes, editEvent(e), 'page')).toBe('- p\n\t1. a\n\t- b\n\t1. c')
+    expect(landEdit(doc, e.changes, editEvent(e), 'page')).toBe(
+      '- p\n\t1. a\n\t- b\n\t\t- kid\n\t1. c',
+    )
+    expect(landEdit(doc, [smartBackspace(scanDoc(doc), b, b)!], 'delete', 'page')).toBe(
+      '- p\n\t1. a\nb\n\t\t- kid\n\t1. c',
+    )
   })
 })
 

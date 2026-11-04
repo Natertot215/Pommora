@@ -24,7 +24,7 @@ import {
   lineStartAt,
   lineEndAt,
 } from './markdownCode'
-import { type DocScan, inJoinedMath, inSealedLine, scanDoc } from './docScan'
+import { type DocScan, inSealedLine, scanDoc, spanAt } from './docScan'
 
 /** Shared by the extension's click handler so press-to-drag never flips the box. */
 export function checkboxToggleChange(doc: string, pos: number): TextEdit | null {
@@ -50,7 +50,7 @@ export function readsFrom(
 export function itemAt(
   scan: DocScan,
   k: number,
-  from: number,
+  from: number | 'outside',
   scope: MarkdownScope,
 ): ListMarker | null {
   if (scope !== 'page') return parseListMarker(scan.lines[k])
@@ -66,7 +66,7 @@ function rolesAgainst(scan: DocScan, i: number, scope: MarkdownScope): (k: numbe
     let k = line
     if (!readsFrom(scan, k, i, scope)) {
       if (scan.fences[i] !== undefined) return 'outside'
-      const code = scan.fences[k]
+      const code = scan.fences[k] ?? spanAt(scan.maths, scan.lineStarts[k])
       if (code !== undefined) k = lineIndexAt(scan, code.from)
     }
     const own = quoteDepthOf(scan.lines[k])
@@ -75,7 +75,7 @@ function rolesAgainst(scan: DocScan, i: number, scope: MarkdownScope): (k: numbe
     if (own === depth && lm !== null)
       return lm.level === level ? 'sibling' : lm.level > level ? 'nested' : 'outside'
     const body = scan.lines[k].slice(quotePrefixWidth(scan.lines[k], depth))
-    // A wrapped item's continuation body rides with its item — moving the marker line alone would strand it.
+    // A wrapped item's continuation body belongs to its item.
     if (!isBlank(body)) return continuesList(body) ? 'nested' : 'outside'
     return depth === 0 ? 'blank' : 'outside'
   }
@@ -112,7 +112,7 @@ export function subBlockAt(scan: DocScan, pos: number, scope: MarkdownScope): Bl
   const role = rolesAgainst(scan, first, scope)
   let last = first
   for (let k = first + 1; k < scan.lines.length; k++) {
-    if (!inJoinedMath(scan, k, first, last) && role(k) !== 'nested') break
+    if (role(k) !== 'nested') break
     last = k
   }
   return { from: scan.lineStarts[first], to: lineEndOf(scan, last) }

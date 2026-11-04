@@ -186,6 +186,8 @@ describe('renumberRuns — nested lines are skipped, not terminators', () => {
   it('counts past a quote indented under an item, which rides that item', () => {
     const doc = '1. a\n  > q\n1. b'
     expect(renumberRuns(scanDoc(doc), 'page', [0])).toEqual([{ from: 11, to: 12, insert: '2' }])
+    const math = '1. a\n  $$\nx\n  $$\n1. b'
+    expect(renumberRuns(scanDoc(math), 'page', [0])).toEqual([{ from: 17, to: 18, insert: '2' }])
   })
 })
 
