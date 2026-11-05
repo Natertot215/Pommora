@@ -89,7 +89,12 @@ describe('list continuation (Enter)', () => {
         expect(indentListOnTab(scan, end, end)).toBeNull()
         expect(continueListOnEnter(scan, end, end, 'cell')).not.toBeNull()
       }
+      const text = doc.indexOf('one')
+      expect(smartBackspace(scan, text, text)).toBeNull()
     }
+    const nested = '- a\n  $$\n  - x\n  $$'
+    const x = nested.indexOf('x')
+    expect(smartBackspace(scanDoc(nested), x, x)).toBeNull()
   })
 })
 

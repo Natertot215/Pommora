@@ -99,6 +99,10 @@ describe('a level change recounts the run it joined and the run it left', () => 
     const a = loose.indexOf('a')
     const l = setList(scanDoc(loose), a, a + 1, 'bullet', {}, 'page')
     expect(landEdit(loose, l.changes, editEvent(l), 'page')).toBe('- p\n\t- a\n\n\t1. b\n\t2. c')
+    const parent = '3. p\n\t1. a\n5. q'
+    const n = parent.indexOf('a')
+    const p = setList(scanDoc(parent), n, n + 1, 'bullet', {}, 'page')
+    expect(landEdit(parent, p.changes, editEvent(p), 'page')).toBe('3. p\n\t- a\n5. q')
   })
 })
 

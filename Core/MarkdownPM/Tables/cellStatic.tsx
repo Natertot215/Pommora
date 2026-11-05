@@ -54,7 +54,7 @@ import {
 } from '../../Connections/linkValue'
 import { CITE_GLYPH, followCitation } from '../Citations/citationPointer'
 import type { EditorHost } from '../api'
-import { wordAt } from '../surface'
+import { wordAt } from '../Input/markdownInput'
 import { keepSeatedSelection } from '../lineDom'
 import type { Seat } from './CellEditor'
 import type { HeadingLinkStyle } from '../../Settings/personalization'
@@ -433,19 +433,22 @@ function sideOf({ offsetNode: node, offset }: CaretPosition, x: number, y: numbe
   return null
 }
 
-function pointAt(cell: HTMLElement, offset: number): [Node, number] | null {
+function pointAt(cell: HTMLElement, offset: number, side: 'start' | 'end'): [Node, number] | null {
   const walker = document.createTreeWalker(cell, NodeFilter.SHOW_TEXT)
+  let before: [Node, number] | null = null
   for (let n = walker.nextNode() as Text | null; n; n = walker.nextNode() as Text | null) {
     const start = cellOffsetAt(cell, n, 0)
     if (cellOffsetAt(cell, n, n.length) - start !== n.length) continue
     if (offset >= start && offset <= start + n.length) return [n, offset - start]
+    if (start > offset) return side === 'start' ? [n, 0] : before
+    before = [n, n.length]
   }
-  return null
+  return side === 'end' ? before : null
 }
 
 function showSource(cell: HTMLElement, from: number, to: number): void {
-  const a = pointAt(cell, from)
-  const b = pointAt(cell, to)
+  const a = pointAt(cell, from, 'start')
+  const b = pointAt(cell, to, 'end')
   if (a && b) window.getSelection()?.setBaseAndExtent(a[0], a[1], b[0], b[1])
 }
 

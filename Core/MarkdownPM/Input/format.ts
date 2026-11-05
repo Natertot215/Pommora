@@ -111,7 +111,7 @@ export function toggleInline(
     selFrom,
     selTo,
   )
-  if (fenced || (fmt !== 'inlineCode' && inCodeAt(scan, from))) return null
+  if (fenced || (fmt !== 'inlineCode' && (inCodeAt(scan, from) || inCodeAt(scan, to)))) return null
   const doc = scan.text
   if (fmt in LINKS) return toggleWrap(doc, from, to, LINKS[fmt as LinkWrapKind])
   const kind = fmt as keyof typeof WRAP & TokenKind

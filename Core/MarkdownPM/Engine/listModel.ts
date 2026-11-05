@@ -56,7 +56,11 @@ export function itemAt(
 
 type ListRole = 'sibling' | 'nested' | 'blank' | 'ends'
 
-function rolesAgainst(scan: DocScan, i: number, scope: MarkdownScope): (k: number) => ListRole {
+export function rolesAgainst(
+  scan: DocScan,
+  i: number,
+  scope: MarkdownScope,
+): (k: number) => ListRole {
   const depth = quoteDepthOf(scan.lines[i])
   const level = itemAt(scan, i, i, scope)!.level
   return (line) => {

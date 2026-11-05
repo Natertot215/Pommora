@@ -1,6 +1,6 @@
 import { type ChangeDesc, EditorState, type Extension } from '@codemirror/state'
 import { docScan } from '../docCache'
-import { itemAt, readsFrom, renumberRuns, subBlockAt } from '../Engine/listModel'
+import { itemAt, readsFrom, renumberRuns, rolesAgainst, subBlockAt } from '../Engine/listModel'
 import { applyEdits, lineIndexAt, type TextEdit } from '../Engine/markdownCode'
 import { isSequenced, type MarkdownScope } from '../Engine/detect'
 
@@ -29,7 +29,11 @@ export const listRenumber = (scope: MarkdownScope): Extension =>
         const ls = was.lineStarts[i]
         const whole = fromA <= ls + lm.markerStart && toA >= ls + lm.contentStart
         if (!relist && !whole) continue
-        below = Math.max(below, subBlockAt(was, ls, scope)!.to + 1)
+        const role = rolesAgainst(was, i, scope)
+        let k = lineIndexAt(was, subBlockAt(was, ls, scope)!.to) + 1
+        while (k < was.lines.length && role(k) === 'blank') k++
+        if (k < was.lines.length && role(k) === 'sibling')
+          below = Math.max(below, was.lineStarts[k])
         if (relist && whole) rewritten.push(ls)
       }
       if (relist)

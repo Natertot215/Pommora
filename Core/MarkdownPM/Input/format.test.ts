@@ -152,6 +152,11 @@ describe('toggleInline', () => {
     expect(apply('a `code` b', editFor('format:inlineCode', code, 3, 7, {}, 'page'))).toBe(
       'a code b',
     )
+    const into = scanDoc('plain `code` end')
+    expect(editFor('format:bold', into, 0, 9, {}, 'page')).toBeNull()
+    expect(apply('plain `code` end', editFor('format:bold', into, 0, 5, {}, 'page'))).toBe(
+      '**plain** `code` end',
+    )
   })
 })
 

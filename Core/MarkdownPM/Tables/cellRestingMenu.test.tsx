@@ -278,6 +278,11 @@ describe('a row chosen at rest', () => {
       expect(committed).toHaveBeenLastCalledWith(1, 0, want)
       expect(entered()).toBe(false)
     }
+    cellText = '_ital_ x'
+    await draw()
+    await rightClick('ital', 1)
+    expect(window.getSelection()?.toString()).toBe('ital')
+    await choose(null)
   })
 
   it('a list row from an unselected item’s text acts at the click, as its glyph does', async () => {

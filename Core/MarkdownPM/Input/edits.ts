@@ -240,7 +240,10 @@ export function smartBackspace(
   }
 
   const pfx = blockPrefix(line, scope)
-  const lm = readsLists(scope) ? parseListMarker(line.slice(pfx.length)) : null
+  const lm =
+    readsLists(scope) && readsFrom(scan, lineIndexAt(scan, selStart), 'outside', scope)
+      ? parseListMarker(line.slice(pfx.length))
+      : null
   const taken = lm && takeMarker(scan, ls + pfx.length, lm, selStart, scope)
   if (taken) return taken
   if (scope !== 'page') return null

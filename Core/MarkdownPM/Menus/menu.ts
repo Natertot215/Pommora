@@ -11,7 +11,7 @@ import { applyEdit } from '../Input/applyEdit'
 import { docScan } from '../docCache'
 import { clickInside } from '../Engine/markdownCode'
 import { glyphAt, keepSeatedSelection } from '../lineDom'
-import { wordAt } from '../surface'
+import { wordAt } from '../Input/markdownInput'
 import { editFor } from '../Input/format'
 
 /** Runs the menu's, the block pane's, or a chord's action on the view handed in, over the selection unless a range is handed in. */

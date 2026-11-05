@@ -8,7 +8,8 @@ import { tokenize } from './Engine/tokens'
 import { scanDoc } from './Engine/docScan'
 import { canonicalizeCheckbox, smartBackspace } from './Input/edits'
 import { editorHost, heldOf, heldPage } from './api'
-import { editorBase, wordAt } from './surface'
+import { editorBase } from './surface'
+import { wordAt } from './Input/markdownInput'
 import { buildPageIndex } from '../Connections/pageIndex'
 import type { ConnectionsApi } from './Links/connectionsApi'
 import { followTarget } from './Links/linkClicks'
@@ -181,5 +182,18 @@ describe('a word', () => {
     view.dispatch({ selection: { anchor: 10 } })
     key('Backspace')
     expect(view.state.doc.toString()).toBe(`don't ${doc.slice(10)}`)
+    for (const [from, to, left] of [
+      [2, 5, 'do stop'],
+      [0, 3, "'t stop"],
+    ] as const) {
+      const cut = mount("don't stop")
+      cut.dispatch({ selection: { anchor: from, head: to } })
+      runScopeHandlers(
+        cut,
+        new KeyboardEvent('keydown', { key: 'Backspace', ctrlKey: true }),
+        'editor',
+      )
+      expect(cut.state.doc.toString()).toBe(left)
+    }
   })
 })

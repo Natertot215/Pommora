@@ -97,7 +97,8 @@ export const listDragExtension = (scope: MarkdownScope): Extension => [
           at >= block.from && at <= block.to + 1
             ? null
             : { left: slot.left, top: y, width: slot.right - slot.left },
-        commit: ({ at, slot }) => dropChanges(scan, block, { at, indent: slot.indent }, scope),
+        commit: ({ at, slot }) =>
+          dropChanges(docScan(view.state.doc), block, { at, indent: slot.indent }, scope),
         onTap: () => clickAction(view, pos),
       })
       return true
