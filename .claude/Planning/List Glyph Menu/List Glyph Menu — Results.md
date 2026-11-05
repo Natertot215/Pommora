@@ -96,11 +96,11 @@ The Interaction Sweep drove the List Types Drive and headless probes through eve
 
 #### D — The Grip and the Switch
 
-- **The Whole Block:** D-1 · g4, probe · Type ▸ Numbered on the example → `1. A\n\t1. B\n\t\t1. C\n\t\t2. D\n\t2. E\n2. F`, the setting on or off · **Holds**
-- **A Blank Line Stops It:** D-1 · g4, probe · `- a\n- b\n\n- c` → `1. a\n2. b\n\n- c` · **Holds**
+- **The Grip Follows the Setting:** D-1 (reversed by direction) D-2 · g4, probe (`gripMenuFlow.test.tsx`) · Type ▸ acts as a right-click on the block's first glyph: Numbered on the example with the setting on numbers A and F alone, and off numbers every level (`1. A\n\t1. B\n\t\t1. C\n\t\t2. D\n\t2. E\n2. F`); its check reads what its pick reaches, as the glyph's does · **Holds**
+- **A Loose List From the Grip:** D-1 B-6 · probe · the grip reaches a blank-separated list's items as the first glyph's pick does, so they switch and number as one group · **Holds**
 - **Never Into Code:** C-7 D-1 · probe · a nested code block's `- x` stays · **Holds**
-- **Gapped Numbers:** B-9 D-1 · probe · `3. a\n5. b\n\t7. c` → `1. a\n2. b\n\t1. c` · **Holds**
-- **An Indented Paragraph Head:** D-3 · probe · `  para\n- a` → Bulleted → `  - para\n- a` · **Holds**
+- **Gapped Numbers:** B-9 · probe · `3. a\n5. b\n\t7. c` → Type ▸ Numbered with the setting off → `1. a\n2. b\n\t1. c` · **Holds**
+- **An Indented Paragraph Head:** D-3 · probe (`gripMenuFlow.test.tsx`) · a block opening on `  para` above `- a` acts from `- a`, its first item, and the paragraph stays as written · **Holds**
 - **Quoted and Callout Lists:** D-1 · probe · they read as blockquote and callout blocks, whose grip holds no Type ▸, so their glyphs carry the type menu · **Holds**
 - **One Switch:** D-2 · read · the glyph and **Lists ▸** (`menu.ts:29`), the grip (`gripMenu.ts:171`), the `/` menu (`useBlockMenu.ts:50`), and the resting cell (`cellStatic.tsx:504`) all reach `setList` through `editFor` · **Holds**
 - **One Undo Step:** A-7 D-2 · probe · a pick and its renumber land in one transaction, and ⌘Z after Backspace, Tab, and Shift-Tab restores each in one step · **Holds**
