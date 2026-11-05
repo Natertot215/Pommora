@@ -42,7 +42,7 @@ function blockContext(scan: DocScan): BlockContext {
 
   // Only where a run actually holds a marker, so a bare indented paragraph isn't swept in. A math range whose opener joined the run rides it whole; one whose opener sits outside never gets pulled in.
   const isMarker = (i: number): boolean => markers[i] !== null
-  const isListCont = (i: number): boolean => !isBlank(lines[i]) && continuesList(lines[i])
+  const isListCont = (i: number): boolean => continuesList(lines[i], 0) === 'nested'
   const listMember = new Array<boolean>(n).fill(false)
   for (let i = 0; i < n; ) {
     if (!isMarker(i) && !isListCont(i)) {

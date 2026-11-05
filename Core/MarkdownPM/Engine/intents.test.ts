@@ -765,12 +765,21 @@ describe('outliner rails', () => {
     ])
   })
 
-  it('a wrapped line carries the rail and a line outside the list ends it, so a later indented item draws no ancestor rail', () => {
+  it('a wrapped line carries the rail, quoted or not, and a line outside the list ends it, a quote boundary included, so a later indented item draws no ancestor rail', () => {
     const t = '- A\n  wrapped\n\t- B\nprose\n\t- C'
     expect(rails(t).map((r) => [r.from, r.level, r.end])).toEqual([
       [0, 0, null],
       [4, 0, null],
       [14, 0, 'elbow'],
+    ])
+    expect(rails('> - A\n>   wrapped\n> \t- B').map((r) => [r.from, r.level, r.end])).toEqual([
+      [0, 0, null],
+      [6, 0, null],
+      [18, 0, 'elbow'],
+    ])
+    expect(rails('- A\n\t- B\n> \t- C').map((r) => [r.from, r.level, r.end])).toEqual([
+      [0, 0, null],
+      [4, 0, 'elbow'],
     ])
   })
 })

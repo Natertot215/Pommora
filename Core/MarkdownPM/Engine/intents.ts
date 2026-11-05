@@ -19,7 +19,13 @@ import {
   readsLists,
 } from './detect'
 import { carriedFrom, type DocScan, spanAt } from './docScan'
-import { isBlockquoteLine, lineIndexAt, quotePrefix, quotePrefixWidth } from './markdownCode'
+import {
+  isBlockquoteLine,
+  lineIndexAt,
+  quoteDepthOf,
+  quotePrefix,
+  quotePrefixWidth,
+} from './markdownCode'
 import { cx } from '@pommora/uix/Utilities/cx'
 import type { ListKind } from '../../Actions/gripMenu'
 
@@ -383,41 +389,54 @@ export function railIntents(
   lineStarts: number[],
   listLevels: number[],
   listKinds: string[],
+  quoteDepths: number[],
 ): RailIntent[][] {
   const n = listLevels.length
   const rails: RailIntent[][] = new Array(n)
-  const carries = (i: number): boolean => listLevels[i] < 0 && continuesList(lines[i])
+  const CARRIES = -2
+  const shown: number[] = new Array(n)
+  for (let i = 0, depth = 0; i < n; i++) {
+    const own = quoteDepths[i]
+    if (listLevels[i] >= 0 && own === depth) shown[i] = listLevels[i]
+    else if (own >= depth && continuesList(lines[i], depth) !== 'ends') shown[i] = CARRIES
+    else {
+      shown[i] = -1
+      if (listLevels[i] >= 0) depth = own
+    }
+  }
   const ahead: number[] = new Array(n)
   for (let i = n - 1, next = -1; i >= 0; i--) {
     ahead[i] = next
-    if (!carries(i)) next = listLevels[i]
+    if (shown[i] !== CARRIES) next = shown[i]
   }
   const railKind: string[] = []
   let behind = -1
   let span = 0
   for (let i = 0; i < n; i++) {
-    const level = listLevels[i]
+    const carries = shown[i] === CARRIES
+    const level = carries ? -1 : listLevels[i]
     const prevSpan = span
-    if (carries(i)) span = Math.min(ahead[i], behind + 1)
+    if (carries) span = Math.min(ahead[i], behind + 1)
     else if (level < 0) {
       railKind.length &&= 0
       behind = -1
       span = 0
       continue
     } else {
+      if (shown[i] < 0) railKind.length = 0
       railKind[level] = listKinds[i]
       railKind.length = level + 1
       behind = level
       span = ahead[i] > level ? level + 1 : level
     }
     const nextSpan =
-      i + 1 === n ? 0 : carries(i + 1) ? Math.min(ahead[i + 1], behind + 1) : listLevels[i + 1]
+      i + 1 === n ? 0 : shown[i + 1] === CARRIES ? Math.min(ahead[i + 1], behind + 1) : shown[i + 1]
     let reaching: RailIntent | null = null
     for (let k = 0; k < span; k++) {
       const typeClass = railKind[k]
       if (!typeClass) continue
       const head = k === level
-      const hangs = listLevels[i + 1] !== k
+      const hangs = shown[i + 1] !== k
       const end: RailIntent['end'] =
         k < nextSpan ? null : !hangs ? 'cap' : reaching ? 'join' : 'elbow'
       const rail: RailIntent = {
@@ -445,12 +464,13 @@ interface CachedLineIntents {
   rails: RailIntent[][]
   listLevels: number[]
   listKinds: string[]
+  quoteDepths: number[]
   fresh: [number, number][]
 }
 
 export const NO_CARET = -1
 
-type LineFacts = Pick<CachedLineIntents, 'perLine' | 'listLevels' | 'listKinds'>
+type LineFacts = Pick<CachedLineIntents, 'perLine' | 'listLevels' | 'listKinds' | 'quoteDepths'>
 
 function deriveLines(
   facts: LineFacts,
@@ -465,20 +485,27 @@ function deriveLines(
     facts.perLine[i] = out
     facts.listLevels[i] = li ? li.level : -1
     facts.listKinds[i] = li ? (railTypeClass(li) ?? '') : ''
+    facts.quoteDepths[i] = quoteDepthOf(scan.lines[i])
   }
 }
 
 function withRails(scan: DocScan, facts: LineFacts, fresh: [number, number][]): CachedLineIntents {
   return {
     ...facts,
-    rails: railIntents(scan.lines, scan.lineStarts, facts.listLevels, facts.listKinds),
+    rails: railIntents(
+      scan.lines,
+      scan.lineStarts,
+      facts.listLevels,
+      facts.listKinds,
+      facts.quoteDepths,
+    ),
     fresh,
   }
 }
 
 export function docLineIntents(scan: DocScan, scope: MarkdownScope = 'page'): CachedLineIntents {
   const n = scan.lines.length
-  const facts: LineFacts = { perLine: [], listLevels: [], listKinds: [] }
+  const facts: LineFacts = { perLine: [], listLevels: [], listKinds: [], quoteDepths: [] }
   deriveLines(facts, scan, 0, n, scope)
   return withRails(scan, facts, [[0, n]])
 }
@@ -501,6 +528,7 @@ export function stepLineIntents(
     perLine: carry(prev.perLine, (line) => line.map((it) => moveIntent(it, shift))),
     listLevels: carry(prev.listLevels),
     listKinds: carry(prev.listKinds),
+    quoteDepths: carry(prev.quoteDepths),
   }
   deriveLines(facts, scan, a, e, scope)
   const fresh: [number, number][] = [[a, e]]

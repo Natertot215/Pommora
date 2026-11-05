@@ -29,7 +29,13 @@ import { decodePayload, type TablePayload } from '../Engine/Tables/clipboard'
 import { pastedCellText } from '../Links/pasteLink'
 import { RESTING_EDITS } from '../../Actions/editorMenu'
 import { pasteModeOf, type PasteMode } from '../../Actions/pasteAsMenu'
-import { clickInside, codeMask, lineOffsetsOf, type TextEdit } from '../Engine/markdownCode'
+import {
+  clickInside,
+  codeMask,
+  lineOffsetsOf,
+  quoteDepthOf,
+  type TextEdit,
+} from '../Engine/markdownCode'
 import { sectionRunsIn } from '../../Connections/scan'
 import { mayNameOwnHeading } from '../../Connections/connections'
 import { labelEscapes } from '../../Connections/links'
@@ -292,6 +298,7 @@ function renderCellBody(
     starts,
     items.map((it) => it?.lm.level ?? -1),
     items.map((it) => (it ? (railTypeClass(it.lm) ?? '') : '')),
+    lines.map(quoteDepthOf),
   )
   return lines.map((line, i) => {
     const it = items[i]

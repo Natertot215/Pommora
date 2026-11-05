@@ -20,7 +20,6 @@ import {
   lineOffsetsOf,
   quoteDepthOf,
   quotePrefix,
-  quotePrefixWidth,
   type TextEdit,
   lineStartAt,
   lineEndAt,
@@ -75,10 +74,7 @@ function rolesAgainst(scan: DocScan, i: number, scope: MarkdownScope): (k: numbe
     if (own < depth) return 'ends'
     if (own === depth && lm !== null)
       return lm.level === level ? 'sibling' : lm.level > level ? 'nested' : 'ends'
-    const body = scan.lines[k].slice(quotePrefixWidth(scan.lines[k], depth))
-    // A wrapped item's continuation body belongs to its item.
-    if (!isBlank(body)) return continuesList(body) ? 'nested' : 'ends'
-    return depth === 0 ? 'blank' : 'ends'
+    return continuesList(scan.lines[k], depth)
   }
 }
 
