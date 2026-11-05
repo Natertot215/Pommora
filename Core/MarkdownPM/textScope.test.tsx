@@ -163,6 +163,10 @@ describe('a word', () => {
       return read(view.state.selection.main)
     })
     expect(pressed).toEqual(words)
+    const other = mount("don't")
+    other.dispatch({ selection: { anchor: 3 } })
+    runScopeHandlers(other, new KeyboardEvent('keydown', { key: 'ArrowRight' }), 'editor')
+    expect(other.state.selection.main.head).toBe(4)
     const key = (key: string, shiftKey = false) =>
       runScopeHandlers(
         view,

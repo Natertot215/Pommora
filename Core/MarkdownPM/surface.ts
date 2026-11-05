@@ -61,7 +61,6 @@ const joins = (state: EditorState, at: number): boolean =>
   isWordChar(state.sliceDoc(at - 1, at)) &&
   isWordChar(state.sliceDoc(at + 1, at + 2))
 
-/** The word holding the character on `side` of `pos`: CodeMirror's word, carried across an apostrophe with a letter or digit on both sides, so `don't` reads whole and `'quoted'` reads `quoted`; a code fence's language adds its own word characters. A right-click's word on every surface is it, and while a double-click or a group motion, selection, or deletion runs, each joined word in view is one atom to it, so every other motion still steps through one. */
 export function wordAt(state: EditorState, pos: number, side: -1 | 1): SelectionRange | null {
   const word = state.wordAt(pos)
   if (!word) return null
@@ -71,19 +70,17 @@ export function wordAt(state: EditorState, pos: number, side: -1 | 1): Selection
   return (side < 0 ? from < pos : to > pos) ? EditorSelection.range(from, to) : null
 }
 
-let grouping = false
+const grouping = new WeakSet<EditorView>()
 const JOINED = Decoration.mark({})
-const wordPress = EditorView.mouseSelectionStyle.of((_, press) => {
+const wordPress = EditorView.mouseSelectionStyle.of((view, press) => {
   if (press.button === 0 && press.detail === 2) {
-    grouping = true
-    queueMicrotask(() => {
-      grouping = false
-    })
+    grouping.add(view)
+    queueMicrotask(() => grouping.delete(view))
   }
   return null
 })
 const joinedWords = EditorView.atomicRanges.of((view) => {
-  if (!grouping) return Decoration.none
+  if (!grouping.has(view)) return Decoration.none
   const { state } = view
   const { from, to } = view.viewport
   const words = [...state.sliceDoc(from, to).matchAll(/['’]/g)].flatMap(({ index }) => {
@@ -103,11 +100,11 @@ const GROUPS: readonly Command[] = [
 const byWords = (command: Command | undefined): Command | undefined =>
   command && GROUPS.includes(command)
     ? (view) => {
-        grouping = true
+        grouping.add(view)
         try {
           return command(view)
         } finally {
-          grouping = false
+          grouping.delete(view)
         }
       }
     : command
@@ -117,7 +114,7 @@ const editorKeymap = defaultKeymap.flatMap((b) =>
     : [{ ...b, run: byWords(b.run), shift: byWords(b.shift) }],
 )
 
-/** Everything a page body, a table cell, and a property value share: inline rendering, the block gestures their scope holds, link and footnote pointers, the paste and alias rules, typing, the word gestures, and the right-click menu. The surfaces differ only in what wraps this. `oneLine` is a value field's surface: it scrolls where a body wraps, and it spellchecks nothing, since a field often holds an address or a name; `remembers` is when its alias memory writes. */
+/** Everything a page body, a table cell, and a property value share: inline rendering, the block gestures their scope holds, link and footnote pointers, the paste and alias rules, typing, the word gestures, and the right-click menu. The surfaces differ only in what wraps this. Every word gesture reads `wordAt`'s word, the one holding the character on `side` of `pos`: CodeMirror's word, carried across an apostrophe with a letter or digit on both sides, so `don't` reads whole and `'quoted'` reads `quoted`; a code fence's language adds its own word characters. A right-click's word on every surface is it, and while a double-click or a group motion, selection, or deletion runs in a view, each joined word in view is one atom to it, so every other motion still steps through one. `oneLine` is a value field's surface: it scrolls where a body wraps, and it spellchecks nothing, since a field often holds an address or a name; every surface states its spellcheck, since a cell's contentEditable=false widget host suppresses the inherited one, and the other content attributes are iOS keyboard hints. `remembers` is when its alias memory writes. */
 const inlineSurface = (
   scope: MarkdownScope,
   { oneLine = false, remembers = 'leave' }: { oneLine?: boolean; remembers?: Remembers } = {},
@@ -134,7 +131,6 @@ const inlineSurface = (
   linkRest,
   linkWriting,
   oneLine ? [] : EditorView.lineWrapping,
-  // A cell's contentEditable=false widget host suppresses the inherited spellcheck; the rest are iOS keyboard hints.
   EditorView.contentAttributes.of({
     autocapitalize: 'sentences',
     autocorrect: 'off',

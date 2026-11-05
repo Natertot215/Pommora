@@ -4,7 +4,7 @@
 
 | Total | Critical | High | Moderate | Low | Minimal |
 |-------|----------|------|----------|-----|---------|
-| 71 | 0 | 3 | 12 | 36 | 20 |
+| 72 | 0 | 3 | 12 | 37 | 20 |
 
 #### A1 • Sync & Devices
 
@@ -42,6 +42,7 @@
 | [I-020](#I-020 • While the pointer is over the editor, every caret move re-measures every visible code block's language tag.)                                                                                     | While the pointer is over the editor, every caret move re-measures every visible code block's language tag.                                                                          | Low      | Mini (=🟢+2=)           | Shortcut       | `70fc6063c` | **Created:** 10-08-2026<br>**Updated:** 10-16-2026 |
 | [I-021](#I-021 • Text that arrives from another copy of a page at the end of a folded section shows up below the fold.)                                                                                           | Text that arrives from another copy of a page at the end of a folded section shows up below the fold.                                                                                | Low      | Mini (=🟢+2=)           | Shortcut       | `70fc6063c` | **Created:** 10-08-2026<br>**Updated:** 10-16-2026 |
 | [I-013](#I-013 • Dragging a table row, column, or column edge redraws the whole table on every mouse movement.)                                                                                                   | Dragging a table row, column, or column edge redraws the whole table on every mouse movement.                                                                                        | Low      | Mini (=🟢+4=)           | Parallel Build | `f6511401d` | **Created:** 09-23-2026<br>**Updated:** 10-09-2026 |
+| [I-072](#I-072 • A word split by inline marks reads only its unmarked part, and Bold over it writes a second pair of marks beside the first.) | A word split by inline marks reads only its unmarked part, and Bold over it writes a second pair of marks beside the first. | Low | Medium (TBD) | Shortcut | `2080f3045` | **Created:** 11-05-2026<br>**Updated:** 11-05-2026 |
 | [I-071](#I-071 • MarkdownPM's live coverage is split across five drives, so one editor change is driven five times over five launches.) | MarkdownPM's live coverage is split across five drives, so one editor change is driven five times over five launches. | Minimal | Medium (TBD) | Parallel Build | `e989eb865` | **Created:** 11-04-2026<br>**Updated:** 11-04-2026 |
 | [I-038](#I-038 • The host carries one typed menu member per construct, so a new construct menu needs a new host member in three places.)                                                                          | The host carries one typed menu member per construct, so a new construct menu needs a new host member in three places.                                                               | Minimal  | Small (=🔴≈ −4=)        | Shortcut       | `70fc6063c` | **Created:** 10-08-2026<br>**Updated:** 10-16-2026 |
 | [I-050](#I-050 • A heading rename to a heading holding a pipe turns a lone page embed into a link.) | A heading rename to a heading holding a pipe turns a lone page embed into a link. | Minimal | Small (TBD) | Drift | `a0441edc9` | **Created:** 10-19-2026<br>**Updated:** 10-19-2026 |
@@ -532,6 +533,20 @@ While a row or column is dragged, the whole table component redraws on every poi
 **Solution** [Literal]
 
 React state keeps the slot and the activation: `Drag` becomes `{ axis, from, to }` and `resize` becomes the boundary index. The pointer's offset and the two resize widths move to CSS variables on the table wrap: `startDrag`'s `resolve` writes `--tbl-drag` and `shift` reads it in the dragged row's or column's transform, and `startResize` writes `--tbl-left` and `--tbl-right` at activation and on each move, which `colWidth` reads for the boundary pair. `setDrag` fires only at activation and when the slot changes, and `setResize` only at activation and at the end. Each variable is written at activation before anything reads it and stays after the drop, so the subject holds its drop offset until the reorder's new model clears the drag, the same frame HEAD's state held it, with no snap-back. Hover stays React state: the grips are absolutely positioned siblings of the `<table>`, laid out from the geometry, so no selector relates the hovered cell's index to its grip without one generated rule per index; the update already fires once per cell crossing, and every `StaticCell` is memoized, so a crossing re-renders only `MarkdownTable`'s shell, while the imperative alternative (about +4) would split `data-reveal-host` between React and a handler. Behavior is unchanged; `dragOrigin.test.tsx` and the `Tables` suite pass unchanged, and a per-move render count would need a commit-counting profiler rather than a test.
+
+#### I-072 • A word split by inline marks reads only its unmarked part, and Bold over it writes a second pair of marks beside the first.
+
+| Concern | Scale | Origin | Base | Date |
+|---------|-------|--------|------|------|
+| Low | Medium (TBD) | Shortcut | `2080f3045` | **Created:** 11-05-2026<br>**Updated:** 11-05-2026 |
+
+**Description**
+
+A right-click's word is read from the source text, where CodeMirror's word stops at a mark character, so in `**do**n't` a right-click on `n't` seats and acts on `n't` alone, though the editor draws one word, `don't`. Bold from that menu then writes `**do****n't**`, two bold runs beside each other rather than one. Reading the drawn word wouldn't fix it alone: `toggleInline` over `do**n't`, a range that is partly bold, finds no bold token covering it and wraps the whole range, writing `****do**n't**`. A double-click and the group motions read the same word rule, so they stop at the mark too.[^72]
+
+**Solution** [TBD]
+
+A word reader that steps over inline marks, so the word is the one the editor draws, and a Bold that merges over a partly formatted range, taking the marks inside it off and writing one pair around the whole, as other Markdown editors do; both belong to the inline-format engine rather than to the menus.
 
 #### I-071 • MarkdownPM's live coverage is split across five drives, so one editor change is driven five times over five launches.
 
@@ -1280,3 +1295,4 @@ In `MatrixCanvas`, keep a small map of active pointer ids on the host; while two
 [^69]: **I-069:** `UIX/Pickers/PickerMenu.tsx:~66` (`PickerMenu`), `Core/Interface/Menus/MenuPresenter.tsx:~103` (the action menus' shell), `UIX/Pickers/ManageRow.tsx:~3,~53-63` (the import and the pane), `UIX/Menus/MenuDropdown.tsx:~91` and `Core/Interface/Toolbar/SettingsMenu.tsx:~40` (the toolbar's `MenuSurface`), `.claude/Resources/PommoraUIX.md:~380` ("The pane action menus, managed lists, and pickers mount"), `.claude/CLAUDE.md:~109` (the folder's description)
 [^70]: **I-070:** `Core/Views/Host/pendingView.ts:~201-235` (`dropIO`, `persistAfter`), `Core/Views/Host/pendingView.ts:~117-133` (`unstageView`), `Core/Views/Host/useViewInteractions.tsx:~182-196` (`placeInView`), `Core/Views/Host/useViewCreation.ts:~116-130` (`orderPatch`), `Core/Views/Bands/bandRouter.ts:~72-107` (`routeSet`)
 [^71]: **I-071:** `.claude/scripts/List Types Drive/live-drive.mjs`, `.claude/scripts/Text Property Drive/live-drive.mjs` (group 4), `.claude/scripts/Path Links Drive/live-drive.mjs` (group 9), `.claude/scripts/Alias Drive/live-drive.mjs` (group 3), `.claude/scripts/editor-parity/` (`launch.sh`, `cdp.mjs`, `fixtures.mjs`, `run.mjs`, `compare.mjs`), `.claude/scripts/drive-harness.mjs` (`launch`, `restore`), `.claude/scripts/README.md`.
+[^72]: **I-072:** `Core/MarkdownPM/surface.ts:~59-71` (`joins`, `wordAt`), `Core/MarkdownPM/Input/format.ts:~102-161` (`toggleInline`), `Core/MarkdownPM/Input/format.ts:~79-100` (`underSelection`)
