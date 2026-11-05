@@ -360,7 +360,7 @@ export function listKindOf(
   return kinds.size === 1 ? [...kinds][0] : null
 }
 
-/** The one list-type switch. An item already drawn as the type is left alone, a numbered or lettered one is written over, and a plain line becomes an item. */
+/** The one list-type switch. An item already drawn as the type is left alone, a numbered or lettered one is written over, and a plain line becomes an item. A pick writes `1. ` or `A. ` over every sequenced marker it reaches, and the renumber filter (`listRenumber.ts`) restarts a run whose whole marker was rewritten, so any writer that rewrites a whole marker restarts its run (I-073). */
 export function setList(
   scan: DocScan,
   from: number,

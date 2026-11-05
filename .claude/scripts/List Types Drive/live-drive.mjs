@@ -318,13 +318,15 @@ async function group4(cdp) {
   const blank = await pop(cdp, await pastEnd(cdp, PAGE_TEXT, 'ab', 40), ['Format', 'Bold'])
   item(4, 3, 'C-6', 'a right-click on blank space past a short line acts at the point', (await body(cdp)) === 'ab****\nlonger line', `${seen(blank)} · ${show(await body(cdp))}`)
 
-  await setBody(cdp, '- a\n- b\n\n- c')
-  await gripPick(cdp, 'a', ['Type', 'Numbered'])
-  item(4, 0, 'D-1', "the grip's Type ▸ stops at a blank line", (await body(cdp)) === '1. a\n2. b\n\n- c', show(await body(cdp)))
-
   await setBody(cdp, EXAMPLE)
   await gripPick(cdp, 'A', ['Type', 'Numbered'])
-  item(4, 0, 'D-1', "the grip's Type ▸ switches its whole block whatever the setting", (await body(cdp)) === '1. A\n\t1. B\n\t\t1. C\n\t\t2. D\n\t2. E\n2. F', show(await body(cdp)))
+  item(4, 3, 'D-1', "the grip's Type ▸ acts as its first glyph, with the setting on reaching that item's siblings of its type", (await body(cdp)) === '1. A\n\t- B\n\t\t- C\n\t\t- D\n\t- E\n2. F', show(await body(cdp)))
+
+  await setting(cdp, false)
+  await setBody(cdp, EXAMPLE)
+  await gripPick(cdp, 'A', ['Type', 'Numbered'])
+  item(4, 0, 'D-1', "the grip's Type ▸ with the setting off reaches everything nested under its first item's group", (await body(cdp)) === '1. A\n\t1. B\n\t\t1. C\n\t\t2. D\n\t2. E\n2. F', show(await body(cdp)))
+  await setting(cdp, true)
 
   await setBody(cdp, '')
   await caretAt(cdp, 0)

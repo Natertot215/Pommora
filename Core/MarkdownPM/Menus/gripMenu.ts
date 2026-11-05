@@ -17,7 +17,9 @@ import { HEADING_LINE } from '../folding'
 import { applyEmbedZoom, embedExclusions, embedZoomAt, setWebLinkSeat } from '../Embeds/embedWidget'
 import { focusRange } from '../caretPlacement'
 import { titleFromPath } from '../../Paths/posix'
-import { lineEndAt, lineStartAt } from '../Engine/markdownCode'
+import { lineEndAt, lineIndexAt, lineStartAt } from '../Engine/markdownCode'
+import { itemAt } from '../Engine/listModel'
+import type { DocScan } from '../Engine/docScan'
 import { applyEdit } from '../Input/applyEdit'
 import { type EditorHost, editorHost } from '../api'
 import { gutterLineAt } from '../lineDom'
@@ -55,6 +57,13 @@ export function blockDeleteSpan(doc: string, r: BlockSpan): BlockSpan {
   return { from: r.from, to: r.to + 1 }
 }
 
+/** A list block's Type ▸ reads and picks as a right-click on its first item's glyph does, so Preserve List-Level Formatting decides its reach as it decides the glyph menu's; a paragraph the block opens on is that item's continuation. */
+function firstItemOf(scan: DocScan, block: BlockSpan, scope: MarkdownScope): number {
+  let k = lineIndexAt(scan, block.from)
+  while (itemAt(scan, k, 'outside', scope) === null) k++
+  return scan.lineStarts[k]
+}
+
 function contextFor(view: EditorView, block: Block, scope: MarkdownScope): GripMenuContext {
   const host = view.state.facet(editorHost)
   switch (block.kind) {
@@ -71,11 +80,11 @@ function contextFor(view: EditorView, block: Block, scope: MarkdownScope): GripM
         kind: 'webpage',
         zoom: embedZoomAt(view.state, block.from),
       }
-    case 'list':
-      return {
-        kind: 'list',
-        current: listKindOf(docScan(view.state.doc), block.from, block.to, host.settings(), scope),
-      }
+    case 'list': {
+      const scan = docScan(view.state.doc)
+      const at = firstItemOf(scan, block, scope)
+      return { kind: 'list', current: listKindOf(scan, at, at, host.settings(), scope) }
+    }
     default:
       return { kind: 'plain' }
   }
@@ -168,12 +177,11 @@ export const gripMenu = (scope: MarkdownScope) =>
             userEvent: 'input',
           })
         } else if (zoom !== undefined) applyEmbedZoom(view, block.from, Number(zoom))
-        else if (action.startsWith('list:'))
-          applyEdit(
-            view,
-            editFor(action, docScan(view.state.doc), block.from, block.to, host.settings(), scope),
-          )
-        else if (action === 'editLink') {
+        else if (action.startsWith('list:')) {
+          const scan = docScan(view.state.doc)
+          const at = firstItemOf(scan, block, scope)
+          applyEdit(view, editFor(action, scan, at, at, host.settings(), scope))
+        } else if (action === 'editLink') {
           // The seat un-forms the tile back to its raw address with that address selected; leaving the line re-forms it.
           const line = view.state.doc.lineAt(block.from)
           const span = webpageEmbedUrlSpan(line.text)

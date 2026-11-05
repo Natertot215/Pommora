@@ -3,16 +3,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { EditorView } from '@codemirror/view'
 import { runCommand } from './commandRouter'
 import { pushUndo, resetUndo } from '../Session/undo'
-import { applyEditorAction } from '../MarkdownPM/Menus/menu'
+import { pasteFromClipboard } from '../MarkdownPM/Links/pasteLink'
 
-vi.mock('../MarkdownPM/Menus/menu', () => ({ applyEditorAction: vi.fn() }))
+vi.mock('../MarkdownPM/Links/pasteLink', () => ({ pasteFromClipboard: vi.fn() }))
 
 const tell = vi.fn()
 
 beforeEach(() => {
   resetUndo()
   tell.mockClear()
-  vi.mocked(applyEditorAction).mockClear()
+  vi.mocked(pasteFromClipboard).mockClear()
   ;(window as unknown as { nexus: unknown }).nexus = { tell }
 })
 
@@ -39,7 +39,7 @@ describe('the Edit menu rows the window answers', () => {
     const page = new EditorView({ doc: 'page', parent: document.body })
     const cell = new EditorView({ doc: 'cell', parent: page.contentDOM })
     runCommand('paste:literal', cell.contentDOM)
-    expect(applyEditorAction).toHaveBeenCalledWith(cell, 'paste:literal')
+    expect(pasteFromClipboard).toHaveBeenCalledWith(cell, 'literal')
     expect(tell).not.toHaveBeenCalled()
     page.destroy()
     cell.destroy()

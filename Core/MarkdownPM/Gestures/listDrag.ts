@@ -13,6 +13,7 @@ interface Drop {
   left: number
   right: number
   indent: string
+  line: number
 }
 
 // The page wrap boundary, except inside a box, where it is that line's own content-box right — read from the rendered element so the callout's CSS padding owns the width.
@@ -51,6 +52,7 @@ function collectBoundaries(
           left: (cMarker ?? cTop).left,
           right: lineRightEdge(view, line.from, gutterRight),
           indent: line.text.slice(0, lm.markerStart),
+          line: line.number - 1,
         }
         out.push({ at: line.from, y: cTop.top, slot })
         out.push({ at: line.to < doc.length ? line.to + 1 : doc.length, y: cEnd.bottom, slot })
@@ -98,7 +100,12 @@ export const listDragExtension = (scope: MarkdownScope): Extension => [
             ? null
             : { left: slot.left, top: y, width: slot.right - slot.left },
         commit: ({ at, slot }) =>
-          dropChanges(docScan(view.state.doc), block, { at, indent: slot.indent }, scope),
+          dropChanges(
+            docScan(view.state.doc),
+            block,
+            { at, indent: slot.indent, line: slot.line },
+            scope,
+          ),
         onTap: () => clickAction(view, pos),
       })
       return true

@@ -3,7 +3,7 @@ import { cycle } from '../Navigation/tabsModel'
 import { useSession } from '../Session/store'
 import { undoValue } from '../Session/undo'
 import { dialer } from '../Platform/dialer'
-import { applyEditorAction } from '../MarkdownPM/Menus/menu'
+import { pasteFromClipboard } from '../MarkdownPM/Links/pasteLink'
 import { editorAt } from '../MarkdownPM/api'
 import type { EditMenuAction, KeyedCommand, MenuCommand } from './commands'
 import { newPage } from './createActions'
@@ -68,7 +68,7 @@ export function runCommand(id: RoutedCommand, target: EventTarget | null = null)
       return true
     case PASTE_LITERAL_ACTION: {
       const view = target instanceof Element ? editorAt(target) : null
-      if (view) applyEditorAction(view, PASTE_LITERAL_ACTION)
+      if (view) void pasteFromClipboard(view, 'literal')
       else dialer().tell('edit:native', 'pasteAndMatchStyle')
       return true
     }

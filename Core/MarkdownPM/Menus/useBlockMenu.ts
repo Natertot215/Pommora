@@ -47,7 +47,7 @@ export function useBlockMenu(viewRef: RefObject<EditorView | null>): BlockMenu {
       annotations: Transaction.addToHistory.of(false),
       userEvent: 'input',
     })
-    applyEditorAction(view, action)
+    applyEditorAction(view, action, 'page')
   }
 
   const { row, ctl } = usePaneCtl(

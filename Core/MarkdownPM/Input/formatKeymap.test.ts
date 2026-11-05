@@ -15,7 +15,7 @@ const boundKeys = (state: EditorState): (string | undefined)[] =>
 
 describe('the format keymap', () => {
   it('binds the key the table spells for every formatting id', () => {
-    const state = EditorState.create({ extensions: formatKeymap(DEFAULT_COMMANDS) })
+    const state = EditorState.create({ extensions: formatKeymap('page')(DEFAULT_COMMANDS) })
     expect(boundKeys(state)).toEqual(
       FORMAT_ACTIONS.map((action) => toKeyBinding(DEFAULT_COMMANDS[action])),
     )
@@ -23,12 +23,14 @@ describe('the format keymap', () => {
 
   it('rebinds through a compartment reconfigure', () => {
     const gate = new Compartment()
-    const state = EditorState.create({ extensions: gate.of(formatKeymap(DEFAULT_COMMANDS)) })
+    const state = EditorState.create({
+      extensions: gate.of(formatKeymap('page')(DEFAULT_COMMANDS)),
+    })
     expect(boundKeys(state)).toContain('Mod-b')
 
     const rebound = state.update({
       effects: gate.reconfigure(
-        formatKeymap({ ...DEFAULT_COMMANDS, 'format:bold': 'cmd+shift+b' }),
+        formatKeymap('page')({ ...DEFAULT_COMMANDS, 'format:bold': 'cmd+shift+b' }),
       ),
     }).state
     expect(boundKeys(rebound)).toContain('Mod-Shift-b')
@@ -41,7 +43,7 @@ describe('the format keymap', () => {
       state: EditorState.create({
         doc,
         selection: { anchor: 5 },
-        extensions: [editorHost.of(testHost()), formatKeymap(DEFAULT_COMMANDS)],
+        extensions: [editorHost.of(testHost()), formatKeymap('page')(DEFAULT_COMMANDS)],
       }),
     })
     const key = toKeyBinding(DEFAULT_COMMANDS['format:connection'])

@@ -7,6 +7,7 @@ import {
   ordinalText,
   parseListMarker,
   parseListMarkerPrefixed,
+  readsLists,
   type BlockSpan,
   type ListMarker,
   type MarkdownScope,
@@ -36,12 +37,17 @@ export function checkboxToggleChange(doc: string, pos: number): TextEdit | null 
 
 type Reader = number | 'outside'
 
-/** Whether line `k` is open text to a `reader` on another line, or to one outside every block: on a page a code block is read only from inside it, so a list written there switches and counts on its own and nothing outside reaches in, while math and tables are never read; a cell reads every line. */
+/** Whether line `k` is open text to a `reader` on another line, or to one outside every block: on a page a code block is read only from inside it, so a list written there switches and counts on its own and nothing outside reaches in, while math and tables are never read; a cell reads every line. A reader outside a code or math block reads it as its opening line, `openerOf`, so a block whose opener joins a list rides it whole and one whose opener sits outside is never pulled in. */
 export function readsFrom(scan: DocScan, k: number, reader: Reader, scope: MarkdownScope): boolean {
   if (scope !== 'page') return true
   const code = scan.fences[k]
   const own = reader === 'outside' ? undefined : scan.fences[reader]
   return code?.from === own?.from && (code !== undefined || !inSealedLine(scan, k))
+}
+
+export function openerOf(scan: DocScan, k: number): number {
+  const block = scan.fences[k] ?? spanAt(scan.maths, scan.lineStarts[k])
+  return block === undefined ? k : lineIndexAt(scan, block.from)
 }
 
 export function itemAt(
@@ -50,6 +56,7 @@ export function itemAt(
   reader: Reader,
   scope: MarkdownScope,
 ): ListMarker | null {
+  if (!readsLists(scope)) return null
   if (scope !== 'page') return parseListMarker(scan.lines[k])
   return readsFrom(scan, k, reader, scope) ? scan.markers[k] : null
 }
@@ -67,8 +74,7 @@ export function rolesAgainst(
     let k = line
     if (!readsFrom(scan, k, i, scope)) {
       if (scan.fences[i] !== undefined) return 'ends'
-      const code = scan.fences[k] ?? spanAt(scan.maths, scan.lineStarts[k])
-      if (code !== undefined) k = lineIndexAt(scan, code.from)
+      k = openerOf(scan, k)
     }
     const own = quoteDepthOf(scan.lines[k])
     const lm = itemAt(scan, k, i, scope)
@@ -142,10 +148,7 @@ function endsListsAbove(
   lm: ListMarker | null,
   scope: MarkdownScope,
 ): boolean {
-  const block =
-    scope === 'page' ? (scan.fences[j] ?? spanAt(scan.maths, scan.lineStarts[j])) : undefined
-  if (lm !== null ? lm.level > 0 : block !== undefined && lineIndexAt(scan, block.from) !== j)
-    return false
+  if (lm !== null ? lm.level > 0 : scope === 'page' && openerOf(scan, j) !== j) return false
   const line = scan.lines[j]
   for (let d = quoteDepthOf(line) - (lm === null ? 0 : 1); d >= 0; d--)
     if (continuesList(line, d) !== 'ends') return false
@@ -304,7 +307,7 @@ function renumberRun(
 export function dropChanges(
   scan: DocScan,
   block: BlockSpan,
-  slot: Slot,
+  slot: Slot & { line: number },
   scope: MarkdownScope,
 ): TextEdit[] | null {
   const doc = scan.text
@@ -315,11 +318,7 @@ export function dropChanges(
   const at = own.indexOf(first)
   const looseSource = gapBefore(own, at) || gapBefore(own, at + 1)
   const t = lineIndexAt(scan, slot.at)
-  const lead = slot.indent ?? leadOf(scan.lines[first])
-  const anchor = [t, t - 1].find(
-    (k) => k >= 0 && itemAt(scan, k, k, scope) !== null && leadOf(scan.lines[k]) === lead,
-  )
-  const group = anchor === undefined ? [] : siblingsAt(scan, anchor, scope).items
+  const group = siblingsAt(scan, slot.line, scope).items
   const n = group.findIndex((k) => k >= t)
   const looseSlot = gapBefore(group, n < 0 ? group.length - 1 : Math.max(n, 1))
   const moved = rebuildMove(doc, block, slot, { looseSource, looseSlot })

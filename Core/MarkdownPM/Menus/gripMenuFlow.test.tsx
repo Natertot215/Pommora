@@ -46,8 +46,13 @@ beforeEach(() => {
 })
 afterEach(cleanupEditor)
 
-const mount = (initialBody: string): Promise<EditorView> =>
-  mountEditor({ initialBody, connections: conn, embedAncestors: ['Notes/EmbedHost.md'] })
+const mount = (initialBody: string, preserveListLevels = true): Promise<EditorView> =>
+  mountEditor({
+    initialBody,
+    connections: conn,
+    embedAncestors: ['Notes/EmbedHost.md'],
+    host: { settings: { preserveListLevels } },
+  })
 
 const offeredPaths = (): string[] => {
   const out: string[] = []
@@ -86,21 +91,36 @@ describe("a list grip's Type switch", () => {
     expect(view.state.doc.toString()).toBe('1. alpha\n2. beta')
   })
 
-  it('Checklist and Arrowed reach every level of the block', async () => {
+  it('Checklist and Arrowed reach as a pick at the first item does, as Preserve List-Level Formatting decides', async () => {
     const view = await mount('1. alpha\n\t2. sub\n\nafter')
     nextPick = 'list:checkbox'
     await gripMenu(view, 'alpha')
-    expect(view.state.doc.toString()).toBe('- [ ] alpha\n\t- [ ] sub\n\nafter')
+    expect(view.state.doc.toString()).toBe('- [ ] alpha\n\t2. sub\n\nafter')
     nextPick = 'list:arrow'
     await gripMenu(view, 'alpha')
-    expect(view.state.doc.toString()).toBe('→ alpha\n\t→ sub\n\nafter')
+    expect(view.state.doc.toString()).toBe('→ alpha\n\t2. sub\n\nafter')
+    await cleanupEditor()
+    const off = await mount('1. alpha\n\t2. sub\n\nafter', false)
+    nextPick = 'list:checkbox'
+    await gripMenu(off, 'alpha')
+    expect(off.state.doc.toString()).toBe('- [ ] alpha\n\t- [ ] sub\n\nafter')
   })
 
-  it('a block whose markers disagree reports no current kind', async () => {
-    const view = await mount('- alpha\n1. beta')
+  it('a block opening on an indented paragraph reaches from its first item', async () => {
+    const view = await mount('  para\n- a')
+    nextPick = 'list:ordered'
+    await gripMenu(view, 'para')
+    expect(calls[0]).toEqual(gripMenuItems({ kind: 'list', current: 'bullet' }))
+    expect(view.state.doc.toString()).toBe('  para\n1. a')
+  })
+
+  it('the check reads what the pick reaches', async () => {
     nextPick = null
-    await gripMenu(view, 'alpha')
-    expect(calls[0]).toEqual(gripMenuItems({ kind: 'list', current: null }))
+    await gripMenu(await mount('- alpha\n1. beta'), 'alpha')
+    expect(calls[0]).toEqual(gripMenuItems({ kind: 'list', current: 'bullet' }))
+    await cleanupEditor()
+    await gripMenu(await mount('- alpha\n1. beta', false), 'alpha')
+    expect(calls[1]).toEqual(gripMenuItems({ kind: 'list', current: null }))
   })
 })
 

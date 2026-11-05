@@ -302,7 +302,7 @@ const joins = (state: EditorState, at: number): boolean => {
   )
 }
 
-/** Every word gesture reads `wordAt`'s word, the one holding the character on `side` of `pos`: CodeMirror's word, carried across an apostrophe with a word character on both sides as CodeMirror reads one there, so `don't` reads whole and `'quoted'` reads `quoted`, and a code fence's language adds its own word characters to both. A right-click's word on every surface is it, and while a double-click or a group motion or selection runs in a view, or a group deletion from a caret, each joined word in view is one atom to it, so every other motion still steps through one, and a deletion over a selection takes exactly the selection. */
+/** Every word gesture reads `wordAt`'s word, the one holding the character on `side` of `pos`: CodeMirror's word, carried across an apostrophe with a word character on both sides as CodeMirror reads one there, so `don't` reads whole and `'quoted'` reads `quoted`, and a code fence's language adds its own word characters to both. A right-click's word on every surface is it, and while a double-click or a group motion or selection runs in a view, or a group deletion from a caret, each joined word in view is one atom to it, so every other motion still steps through one, and a deletion over a selection takes exactly the selection. A double-click's atoms last only its press, since CodeMirror reads atomic ranges once, when it creates the mouse selection, which the press's microtask outlives. */
 export function wordAt(state: EditorState, pos: number, side: -1 | 1): SelectionRange | null {
   const word = state.wordAt(pos)
   if (!word) return null

@@ -2,6 +2,7 @@
 import { continuesList, isBlank, type BlockSpan, type CalloutLine } from './detect'
 import { type DocScan, perScan, spanAt } from './docScan'
 import { lineEndOf, lineIndexAt } from './markdownCode'
+import { openerOf } from './listModel'
 import { headingSections } from './headingScan'
 
 type BlockKind =
@@ -40,13 +41,10 @@ function blockContext(scan: DocScan): BlockContext {
   } = scan
   const n = lines.length
 
-  // Only where a run actually holds a marker, so a bare indented paragraph isn't swept in. A code or math block reads as its opening line, as the list model reads it, so one whose opener joined the run rides it whole and one whose opener sits outside never gets pulled in.
-  const read = (i: number): number => {
-    const block = fences[i] ?? spanAt(scan.maths, starts[i])
-    return block === undefined ? i : lineIndexAt(scan, block.from)
-  }
-  const isMarker = (i: number): boolean => markers[read(i)] !== null
-  const joins = (i: number): boolean => isMarker(i) || continuesList(lines[read(i)], 0) === 'nested'
+  // Only where a run actually holds a marker, so a bare indented paragraph isn't swept in.
+  const isMarker = (i: number): boolean => markers[openerOf(scan, i)] !== null
+  const joins = (i: number): boolean =>
+    isMarker(i) || continuesList(lines[openerOf(scan, i)], 0) === 'nested'
   const listMember = new Array<boolean>(n).fill(false)
   for (let i = 0; i < n; ) {
     if (!joins(i)) {

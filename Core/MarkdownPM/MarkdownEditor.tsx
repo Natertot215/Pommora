@@ -125,7 +125,7 @@ export function MarkdownEditor({
   }, [citesShown])
 
   const ac = useConnectionAutocomplete(viewRef, host, 'page')
-  const formatExt = useReconfigured(viewRef, settings.commands, formatKeymap)
+  const formatExt = useReconfigured(viewRef, settings.commands, formatKeymap('page'))
   const htmlExt = useReconfigured(viewRef, settings.htmlShortcuts, htmlShortcuts)
   const block = useBlockMenu(viewRef)
 

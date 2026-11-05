@@ -25,7 +25,6 @@ import {
 } from '../Engine/markdownCode'
 import {
   isBlank,
-  parseListMarker,
   isSequenced,
   ordinalOf,
   ordinalText,
@@ -39,7 +38,7 @@ import {
   type MarkdownScope,
   readsLists,
 } from '../Engine/detect'
-import { ownersOf, readsFrom } from '../Engine/listModel'
+import { itemAt, ownersOf } from '../Engine/listModel'
 import { tokenize } from '../Engine/tokens'
 import { isPaint } from '../Engine/paints'
 
@@ -58,7 +57,6 @@ const shorthandCheckboxRe = /^([ \t]*)([-+])\[([ xX]?)\]$/
 export const blockPrefix = (line: string, scope: MarkdownScope = 'page'): string =>
   scope === 'page' ? quotePrefix(line) : ''
 
-// A line inside a page's code, math, or table is that block's text, whatever it looks like; a cell holds none of them, and the page-shaped scan would pair a fence there.
 function listLineAt(
   scan: DocScan,
   selStart: number,
@@ -66,13 +64,11 @@ function listLineAt(
   scope: MarkdownScope,
 ): { ls: number; line: string; pfx: string; lm: ListMarker } | null {
   if (selStart !== selEnd) return null
-  if (!readsFrom(scan, lineIndexAt(scan, selStart), 'outside', scope)) return null
-  const doc = scan.text
-  const ls = lineStartAt(doc, selStart)
-  const line = doc.slice(ls, lineEndAt(doc, selStart))
-  const pfx = blockPrefix(line, scope)
-  const lm = parseListMarker(line.slice(pfx.length))
-  return lm === null ? null : { ls, line, pfx, lm }
+  const k = lineIndexAt(scan, selStart)
+  const lm = itemAt(scan, k, 'outside', scope)
+  if (lm === null) return null
+  const line = scan.lines[k]
+  return { ls: scan.lineStarts[k], line, pfx: blockPrefix(line, scope), lm }
 }
 
 export function continueListOnEnter(
@@ -84,10 +80,10 @@ export function continueListOnEnter(
   const at = listLineAt(scan, selStart, selEnd, scope)
   if (at === null) return null
   const { ls, line, pfx, lm } = at
-  if (selStart < ls + pfx.length + lm.contentStart) return null
+  if (selStart < ls + lm.contentStart) return null
 
   // Enter ALWAYS continues the list, even on an empty item — the exits are Shift+Enter and Backspace on the empty marker.
-  const indent = line.slice(pfx.length, pfx.length + lm.markerStart)
+  const indent = line.slice(pfx.length, lm.markerStart)
   const next = isSequenced(lm)
     ? `${ordinalText(lm.kind, ordinalOf(lm) + 1)}. `
     : lm.kind === 'checkbox'
@@ -189,19 +185,20 @@ export function outdentListOnShiftTab(
   }
 }
 
-/** Where a Backspace takes a list marker read from `at`: the marker is one unit, so a caret anywhere past its first character takes all of it rather than leaving a stray space or half a box, and the line keeps its indent only where an item above owns it, as that item's continuation. */
+/** Where a Backspace takes the list marker of the line at `ls`, behind its `pfx`-long prefix: the marker is one unit, so a caret anywhere past its first character takes all of it rather than leaving a stray space or half a box, and the line keeps its indent only where an item above owns it, as that item's continuation. */
 function takeMarker(
   scan: DocScan,
-  at: number,
+  ls: number,
+  pfx: number,
   lm: ListMarker,
   selStart: number,
   scope: MarkdownScope,
 ): Edit | null {
-  const from = at + lm.markerStart
-  const to = at + lm.contentStart
+  const from = ls + lm.markerStart
+  const to = ls + lm.contentStart
   if (selStart <= from || selStart > to) return null
-  const k = lineIndexAt(scan, at)
-  const cut = ownersOf(scan, k, k, scope).some((o) => o.k !== k) ? from : at
+  const k = lineIndexAt(scan, ls)
+  const cut = ownersOf(scan, k, k, scope).some((o) => o.k !== k) ? from : ls + pfx
   return { from: cut, to, insert: '', selection: cut }
 }
 
@@ -240,11 +237,8 @@ export function smartBackspace(
   }
 
   const pfx = blockPrefix(line, scope)
-  const lm =
-    readsLists(scope) && readsFrom(scan, lineIndexAt(scan, selStart), 'outside', scope)
-      ? parseListMarker(line.slice(pfx.length))
-      : null
-  const taken = lm && takeMarker(scan, ls + pfx.length, lm, selStart, scope)
+  const lm = itemAt(scan, lineIndexAt(scan, selStart), 'outside', scope)
+  const taken = lm && takeMarker(scan, ls, pfx.length, lm, selStart, scope)
   if (taken) return taken
   if (scope !== 'page') return null
   // Inside a callout, never strip a lone `>` — that would drop the line out of the box, splitting it into a stray quote.

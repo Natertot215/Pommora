@@ -153,7 +153,7 @@ export function CellEditor({
   const onFillRef = useLatest(onFill)
   const onCloseRef = useLatest(onClose)
   const ac = useConnectionAutocomplete(viewRef, host, 'cell')
-  const formatExt = useReconfigured(viewRef, host.settings().commands, formatKeymap)
+  const formatExt = useReconfigured(viewRef, host.settings().commands, formatKeymap('cell'))
 
   useEffect(() => {
     const view = new EditorView({
