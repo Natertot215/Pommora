@@ -19,7 +19,7 @@ export function readFormatState(
   const lineTo = to - ls
   const wraps = (kind: string): boolean => covering.some((tk) => tk.kind === kind)
   const painted = covering.find((tk): tk is TokenOf<Paint> => isPaint(tk.kind))
-  const fenced = scope === 'page' && scan.fences[lineIndexAt(scan, selFrom)] !== undefined
+  const fenced = scan.fences[lineIndexAt(scan, selFrom)] !== undefined
 
   // Heading state reads the line's INNER body so a `> # item` reports as a heading — the render layer draws it behind the `>`, and the menu must agree with what the user sees.
   const hm = headingParts(splitPrefix(line, scope).body)

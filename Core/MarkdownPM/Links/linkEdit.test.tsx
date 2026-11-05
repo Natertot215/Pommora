@@ -460,7 +460,7 @@ describe('Insert Link over a selected address', () => {
     const view = await mountEditor({ initialBody: body })
     view.dispatch({ selection: { anchor: from, head: to } })
     await act(async () => {
-      applyEditorAction(view, 'link:insert', 'page')
+      applyEditorAction(view, 'link:insert')
     })
     return view
   }

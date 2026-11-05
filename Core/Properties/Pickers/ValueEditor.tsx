@@ -59,7 +59,7 @@ export function ValueEditor({
   const onCloseRef = useLatest(onClose)
   const invalidRef = useLatest(invalid)
   const ac = useConnectionAutocomplete(viewRef, host, 'text')
-  const formatExt = useReconfigured(viewRef, host.settings().commands, formatKeymap('text'))
+  const formatExt = useReconfigured(viewRef, host.settings().commands, formatKeymap)
 
   const commit = (): void => {
     const view = viewRef.current

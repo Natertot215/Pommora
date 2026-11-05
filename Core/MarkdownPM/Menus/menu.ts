@@ -20,7 +20,7 @@ import { editFor } from '../Input/format'
 export function applyEditorAction(
   view: EditorView,
   action: string,
-  scope: MarkdownScope,
+  scope: MarkdownScope = 'page',
   { from, to }: { from: number; to: number } = view.state.selection.main,
 ): void {
   const how = pasteModeOf(action)
