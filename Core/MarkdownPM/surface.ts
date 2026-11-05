@@ -61,7 +61,7 @@ const joins = (state: EditorState, at: number): boolean =>
   isWordChar(state.sliceDoc(at - 1, at)) &&
   isWordChar(state.sliceDoc(at + 1, at + 2))
 
-/** The word holding the character on `side` of `pos`: CodeMirror's word, carried across an apostrophe with a letter or digit on both sides, so `don't` reads whole and `'quoted'` reads `quoted`; a code fence's language adds its own word characters. A double-click selects by it, a right-click's word on every surface is it, and while a group motion, selection, or deletion runs, each joined word in view is one atom to it, so every other motion still steps through one. */
+/** The word holding the character on `side` of `pos`: CodeMirror's word, carried across an apostrophe with a letter or digit on both sides, so `don't` reads whole and `'quoted'` reads `quoted`; a code fence's language adds its own word characters. A right-click's word on every surface is it, and while a double-click or a group motion, selection, or deletion runs, each joined word in view is one atom to it, so every other motion still steps through one. */
 export function wordAt(state: EditorState, pos: number, side: -1 | 1): SelectionRange | null {
   const word = state.wordAt(pos)
   if (!word) return null
@@ -71,35 +71,17 @@ export function wordAt(state: EditorState, pos: number, side: -1 | 1): Selection
   return (side < 0 ? from < pos : to > pos) ? EditorSelection.range(from, to) : null
 }
 
-const wordPress = EditorView.mouseSelectionStyle.of((view, start) => {
-  const under = (e: MouseEvent): SelectionRange => {
-    const { pos, assoc } = view.posAndSideAtCoords({ x: e.clientX, y: e.clientY }, false)
-    return wordAt(view.state, pos, assoc) ?? EditorSelection.cursor(pos)
-  }
-  const pressed = start.button === 0 && start.detail === 2 ? under(start) : null
-  if (!pressed || pressed.empty) return null
-  let first = pressed
-  let before = view.state.selection
-  return {
-    get(e, extend) {
-      const cur = under(e)
-      const range =
-        cur.from < first.from
-          ? EditorSelection.range(first.to, cur.from)
-          : EditorSelection.range(first.from, Math.max(first.to, cur.to))
-      return extend
-        ? before.replaceRange(before.main.extend(range.from, range.to))
-        : EditorSelection.create([range])
-    },
-    update(u) {
-      first = first.map(u.changes)
-      before = before.map(u.changes)
-    },
-  }
-})
-
 let grouping = false
 const JOINED = Decoration.mark({})
+const wordPress = EditorView.mouseSelectionStyle.of((_, press) => {
+  if (press.button === 0 && press.detail === 2) {
+    grouping = true
+    queueMicrotask(() => {
+      grouping = false
+    })
+  }
+  return null
+})
 const joinedWords = EditorView.atomicRanges.of((view) => {
   if (!grouping) return Decoration.none
   const { state } = view
