@@ -99,9 +99,11 @@ non-zero on any failed check.
 
 `List Types Drive/live-drive.mjs` drives the list-type switch against the real app, in five groups: the
 glyph menu on a page (its rows and check, both reaches of Preserve List-Level Formatting, undo, the
-re-pick that writes nothing, the right-press that leaves the caret, quoted lists, and a glyph inside and
-outside a selection); a focused table cell, where the first glyph and the grip's inset each open their own
-menu; a resting cell, which commits a pick without entering; Lists ▸ from an item's text, a selection, and
+re-pick that writes nothing, the right-press that leaves the caret, a revealed marker and an item drawing
+no glyph, quoted lists, a glyph inside, outside, and just below a selection, and a page tile at rest and
+while editing); a focused table cell, where the first glyph and the grip's inset each open their own
+menu and a pick undoes inside the cell and after Escape; a resting cell, which commits and undoes a pick
+without entering; Lists ▸ from an item's text, a selection, a triple-clicked line, a drag-selection, and
 a plain line, beside Format ▸, the grip's Type ▸, and the `/` menu; and the setting's row in Pages &
 Writing, turned off there and read by the open page. Each item names the decisions it proves and the plan
 phase that owns it, and an item owned by a phase later than `POMMORA_LGM_LANDED` (default 0) prints

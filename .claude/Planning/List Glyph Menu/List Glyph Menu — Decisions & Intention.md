@@ -75,7 +75,7 @@ Example used throughout:
 - **C-2 [INFERRED]:** A right-click on an item's text with no prior selection should act as right-clicking its glyph. The word the platform selects under a right-click isn't a prior selection. Nathan delegated this call: one rule for pointing at an item keeps the switch unaware of where it was asked from, and a single item stays one selection away (B-7).
 - **C-3 [INFERRED]:** Picking the type every selected item already has should no longer remove their markers. On a page, **Heading ▸ Paragraph** still turns items back into plain lines at the left edge; in a table cell, which has no **Heading ▸**, Backspace on the marker does.
 - **C-4 [INFERRED]:** **Lists ▸**'s check should follow A-3 rather than reading the clicked line alone.
-- **C-5 [INFERRED]:** In a table cell, where `>` is literal text, **Lists ▸** should turn a line beginning `>` into an item holding that text, the switch reading lines by the surface's scope as I-037 proposes, with I-037's list of sites updated to match.
+- **C-5 [INFERRED]:** In a table cell, where `>` is literal text, **Lists ▸** should turn a line beginning `>` into an item holding that text, the switch reading lines by the surface's scope as I-036 proposes, with I-036's list of sites updated to match.
 - **C-6 [CONFIRMED]:** The general right-click menu's other rows should keep how they act today; this work changes only what list types do.
 - **C-7 [CONFIRMED]:** A list written inside a code block should switch and renumber within that block from **Lists ▸**, while changes from outside the block — the surrounding list's glyph, its grip, its numbering, or a drag — never reach in, so a code sample such as a diff isn't rewritten.
 
