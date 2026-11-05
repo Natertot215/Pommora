@@ -54,7 +54,8 @@ import {
 } from '../../Connections/linkValue'
 import { CITE_GLYPH, followCitation } from '../Citations/citationPointer'
 import type { EditorHost } from '../api'
-import { wordRule } from '../surface'
+import { wordAt } from '../surface'
+import { keepSeatedSelection } from '../lineDom'
 import type { Seat } from './CellEditor'
 import type { HeadingLinkStyle } from '../../Settings/personalization'
 import { CheckMark, checkboxClass } from '@pommora/uix/Controls/Checkbox'
@@ -407,7 +408,7 @@ function restingRange(
   glyph: boolean,
 ): [number, number] {
   const sel = window.getSelection()
-  const range = sel && !sel.isCollapsed && sel.rangeCount > 0 ? sel.getRangeAt(0) : null
+  const range = sel && sel.rangeCount > 0 ? sel.getRangeAt(0) : null
   if (!range?.intersectsNode(cell)) return [at, at]
   const from = cell.contains(range.startContainer)
     ? cellOffsetAt(cell, range.startContainer, range.startOffset, 'start')
@@ -416,6 +417,36 @@ function restingRange(
     ? cellOffsetAt(cell, range.endContainer, range.endOffset, 'end')
     : text.length
   return clickInside(text, at, from, to, glyph) ? [from, to] : [at, at]
+}
+
+function sideOf({ offsetNode: node, offset }: CaretPosition, x: number, y: number): -1 | 1 | null {
+  if (node.nodeType !== Node.TEXT_NODE) return null
+  const char = document.createRange()
+  for (const side of [-1, 1] as const) {
+    const i = side < 0 ? offset - 1 : offset
+    if (i < 0 || i >= (node as Text).length) continue
+    char.setStart(node, i)
+    char.setEnd(node, i + 1)
+    const box = char.getBoundingClientRect()
+    if (x >= box.left && x <= box.right && y >= box.top && y <= box.bottom) return side
+  }
+  return null
+}
+
+function pointAt(cell: HTMLElement, offset: number): [Node, number] | null {
+  const walker = document.createTreeWalker(cell, NodeFilter.SHOW_TEXT)
+  for (let n = walker.nextNode() as Text | null; n; n = walker.nextNode() as Text | null) {
+    const start = cellOffsetAt(cell, n, 0)
+    if (cellOffsetAt(cell, n, n.length) - start !== n.length) continue
+    if (offset >= start && offset <= start + n.length) return [n, offset - start]
+  }
+  return null
+}
+
+function showSource(cell: HTMLElement, from: number, to: number): void {
+  const a = pointAt(cell, from)
+  const b = pointAt(cell, to)
+  if (a && b) window.getSelection()?.setBaseAndExtent(a[0], a[1], b[0], b[1])
 }
 
 interface RestingHit {
@@ -529,20 +560,23 @@ function StaticCellImpl({
     if (!ask) return
     const cell = e.currentTarget
     const glyph = (e.target as HTMLElement).closest('.md-list-item > [data-src]')
-    const caret = glyph ? null : document.caretPositionFromPoint(e.clientX, e.clientY)
+    const found = glyph ? null : document.caretPositionFromPoint(e.clientX, e.clientY)
+    const caret = found && cell.contains(found.offsetNode) ? found : null
     const at = glyph
       ? srcOf(glyph)![0]
-      : caret && cell.contains(caret.offsetNode)
+      : caret
         ? cellOffsetAt(cell, caret.offsetNode, caret.offset)
         : text.length
     const [from, to] = restingRange(cell, at, text, glyph !== null)
-    const word =
-      glyph || from !== to
-        ? null
-        : EditorState.create({ doc: text, extensions: wordRule }).wordAt(at)
+    const side = caret && from === to ? sideOf(caret, e.clientX, e.clientY) : null
+    const word = side && wordAt(EditorState.create({ doc: text }), at, side)
     const [start, end] = word ? [word.from, word.to] : [from, to]
     const state = readFormatState(scanDoc(text), from, to, host.settings(), 'cell')
     if (glyph) e.preventDefault()
+    else {
+      showSource(cell, start, end)
+      keepSeatedSelection()
+    }
     const pick = glyph
       ? host.menus.grip({ kind: 'glyph', current: state.list })
       : ask({

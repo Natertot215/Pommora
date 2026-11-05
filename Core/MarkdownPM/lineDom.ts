@@ -45,3 +45,10 @@ export function gutterLineAt(
 
 export const glyphAt = (e: { target: EventTarget | null }): Element | null =>
   (e.target as HTMLElement).closest?.(`.${GLYPH_CLASS}`) ?? null
+
+/** Chromium seats its own word after a right-click's handler wherever the selection doesn't hold the click, so a surface that seated the selection itself refuses the browser's for that press. */
+export function keepSeatedSelection(): void {
+  const refuse = (e: Event): void => e.preventDefault()
+  document.addEventListener('selectstart', refuse, true)
+  setTimeout(() => document.removeEventListener('selectstart', refuse, true))
+}

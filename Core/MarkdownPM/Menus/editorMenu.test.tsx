@@ -1,9 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
-import { EditorSelection } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
-import { cursorGroupForward, deleteGroupBackward } from '@codemirror/commands'
 import { ok } from '../../Contract/result'
 import type { LinkMenuAction } from '../../Actions/connectionMenu'
 import type { EditorMenuRequest } from '../../Actions/editorMenu'
@@ -37,8 +35,16 @@ beforeEach(() => {
 })
 afterEach(cleanupEditor)
 
-async function rightClick(view: EditorView, at: number, target?: Element): Promise<MouseEvent> {
+// The pointer sits on the character after `at`, or on blank space past the one before it when `onText` is false.
+async function rightClick(
+  view: EditorView,
+  at: number,
+  target?: Element,
+  onText = true,
+): Promise<MouseEvent> {
   vi.spyOn(view, 'posAtCoords').mockReturnValue(at)
+  vi.spyOn(view, 'posAndSideAtCoords').mockReturnValue({ pos: at, assoc: onText ? 1 : -1 })
+  vi.spyOn(view, 'coordsAtPos').mockReturnValue({ left: 0, right: 0, top: 0, bottom: 100 })
   const el = target ?? (view.dom.querySelector('.cm-line') as HTMLElement)
   const event = new MouseEvent('contextmenu', {
     bubbles: true,
@@ -77,38 +83,27 @@ describe('the editor’s native menu', () => {
     edge.dispatch({ selection: { anchor: 0, head: 4 } })
     await rightClick(edge, 4, edge.dom.querySelectorAll('.cm-line')[1])
     expect(edge.state.doc.toString()).toBe('one\n**two** two')
-    for (const [body, at, want] of [
-      ["don't stop", 2, "**don't** stop"],
-      ['the end.', 5, 'the **end**.'],
+    let refused = false
+    format.mockImplementation(async () => {
+      const reseat = new Event('selectstart', { cancelable: true })
+      document.dispatchEvent(reseat)
+      refused = reseat.defaultPrevented
+      return 'format:bold'
+    })
+    for (const [body, caret, at, onText, want] of [
+      ["don't stop", 0, 2, true, "**don't** stop"],
+      ["don't stop", 2, 2, true, "**don't** stop"],
+      ["'quoted' it", 0, 1, true, "'**quoted**' it"],
+      ['the end.', 0, 5, true, 'the **end**.'],
+      ['ab\nnext', 7, 2, false, 'ab****\nnext'],
     ] as const) {
       await cleanupEditor()
       const word = await mountEditor({ initialBody: body, host: host() })
-      await rightClick(word, at)
+      word.dispatch({ selection: { anchor: caret } })
+      await rightClick(word, at, undefined, onText)
       expect(word.state.doc.toString()).toBe(want)
+      expect(refused).toBe(true)
     }
-  })
-
-  it('takes an apostrophe inside the word every word gesture reads', async () => {
-    const view = await mountEditor({ initialBody: "don't 'quoted' it’s", host: host() })
-    expect([0, 8, 16].map((at) => view.state.wordAt(at + 2))).toEqual([
-      EditorSelection.range(0, 5),
-      EditorSelection.range(6, 14),
-      EditorSelection.range(15, 19),
-    ])
-    vi.spyOn(view, 'posAtCoords').mockReturnValue(2)
-    const line = view.dom.querySelector('.cm-line') as HTMLElement
-    for (const detail of [1, 2]) {
-      const init = { bubbles: true, cancelable: true, button: 0, detail, clientX: 5, clientY: 5 }
-      line.dispatchEvent(new MouseEvent('mousedown', init))
-      document.dispatchEvent(new MouseEvent('mouseup', init))
-    }
-    expect([view.state.selection.main.from, view.state.selection.main.to]).toEqual([0, 5])
-    view.dispatch({ selection: { anchor: 0 } })
-    cursorGroupForward(view)
-    expect(view.state.selection.main.head).toBe(5)
-    view.dispatch({ selection: { anchor: 5 } })
-    deleteGroupBackward(view)
-    expect(view.state.doc.toString()).toBe(" 'quoted' it’s")
   })
 
   it('reads the embed seat at the click, not at the caret', async () => {
@@ -165,7 +160,7 @@ describe('the editor’s native menu', () => {
   it('pastes plain text as a tagged paste, so a table payload is refused on a list line', async () => {
     format.mockResolvedValue('paste:literal')
     const view = await mountEditor({ initialBody: '- item', host: host() })
-    const menu = () => rightClick(view, 6)
+    const menu = () => rightClick(view, 6, undefined, false)
     const chord = () =>
       act(async () => {
         view.contentDOM.dispatchEvent(

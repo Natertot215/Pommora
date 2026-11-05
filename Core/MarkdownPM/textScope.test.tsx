@@ -1,14 +1,14 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { EditorState, Prec, type Extension } from '@codemirror/state'
-import { EditorView } from '@codemirror/view'
+import { EditorView, runScopeHandlers } from '@codemirror/view'
 import { decorationsFor } from '../Testing/markdownEngine'
 import { testHost } from '../Testing/editorHarness'
 import { tokenize } from './Engine/tokens'
 import { scanDoc } from './Engine/docScan'
 import { canonicalizeCheckbox, smartBackspace } from './Input/edits'
 import { editorHost, heldOf, heldPage } from './api'
-import { editorBase } from './surface'
+import { editorBase, wordAt } from './surface'
 import { buildPageIndex } from '../Connections/pageIndex'
 import type { ConnectionsApi } from './Links/connectionsApi'
 import { followTarget } from './Links/linkClicks'
@@ -141,5 +141,41 @@ describe('a bare heading in a Text value', () => {
     const view = mount('[[#Gone]] x', heldPage.of(null))
     expect(view.dom.querySelector('.md-connection-heading')).not.toBeNull()
     expect(view.dom.querySelector('.md-connection-heading-missing')).toBeNull()
+  })
+})
+
+describe('a word', () => {
+  it('holds an apostrophe between letters for every word gesture', () => {
+    const doc = "don't it’s Ada's 'quoted' ‘quoted’ students'"
+    const view = mount(doc)
+    const written = ["don't", 'it’s', "Ada's", "'quoted'", '‘quoted’', "students'"]
+    const words = ["don't", 'it’s', "Ada's", 'quoted', 'quoted', 'students']
+    const inside = (w: string) => doc.indexOf(w) + 1
+    const read = (r: { from: number; to: number } | null) => r && doc.slice(r.from, r.to)
+    expect(written.map((w) => read(wordAt(view.state, inside(w), 1)))).toEqual(words)
+    const line = view.dom.querySelector('.cm-line') as HTMLElement
+    const pressed = written.map((w) => {
+      vi.spyOn(view, 'posAtCoords').mockReturnValue(inside(w))
+      vi.spyOn(view, 'posAndSideAtCoords').mockReturnValue({ pos: inside(w), assoc: 1 })
+      const init = { bubbles: true, cancelable: true, button: 0, detail: 2, clientX: 5, clientY: 5 }
+      line.dispatchEvent(new MouseEvent('mousedown', init))
+      document.dispatchEvent(new MouseEvent('mouseup', init))
+      return read(view.state.selection.main)
+    })
+    expect(pressed).toEqual(words)
+    const key = (key: string, shiftKey = false) =>
+      runScopeHandlers(
+        view,
+        new KeyboardEvent('keydown', { key, ctrlKey: true, shiftKey }),
+        'editor',
+      )
+    view.dispatch({ selection: { anchor: 0 } })
+    key('ArrowRight')
+    expect(view.state.selection.main.head).toBe(5)
+    key('ArrowLeft', true)
+    expect(read(view.state.selection.main)).toBe("don't")
+    view.dispatch({ selection: { anchor: 10 } })
+    key('Backspace')
+    expect(view.state.doc.toString()).toBe(`don't ${doc.slice(10)}`)
   })
 })

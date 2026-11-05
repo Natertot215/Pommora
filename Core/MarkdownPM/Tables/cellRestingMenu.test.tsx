@@ -116,11 +116,21 @@ function textNode(drawn: string): Text {
   throw new Error(`no text node "${drawn}"`)
 }
 
-async function rightClick(drawn: string, offset: number): Promise<MouseEvent> {
+// The pointer sits on the character after `offset`, the one before it at the node's end, or on blank space when `onText` is false.
+async function rightClick(drawn: string, offset: number, onText = true): Promise<MouseEvent> {
   const node = textNode(drawn)
   ;(document as { caretPositionFromPoint?: unknown }).caretPositionFromPoint = () => ({
     offsetNode: node,
     offset,
+  })
+  const char = offset < node.length ? offset : offset - 1
+  vi.spyOn(Range.prototype, 'getBoundingClientRect').mockImplementation(function (this: Range) {
+    return onText &&
+      this.startContainer === node &&
+      this.startOffset === char &&
+      this.endOffset === char + 1
+      ? new DOMRect(0, 0, 100, 100)
+      : new DOMRect()
   })
   const event = new MouseEvent('contextmenu', {
     bubbles: true,
@@ -228,12 +238,20 @@ describe('a row chosen at rest', () => {
   })
 
   it('enters the cell with the caret in the slot Bold writes at a point', async () => {
-    await mount('ab ')
-    await rightClick('ab ', 3)
+    const reseat = new Event('selectstart', { cancelable: true })
+    format.mockImplementation(() => {
+      document.dispatchEvent(reseat)
+      return new Promise((resolve) => {
+        reply = resolve
+      })
+    })
+    await mount('ab')
+    await rightClick('ab', 2, false)
+    expect(reseat.defaultPrevented).toBe(true)
     await choose('format:bold')
-    expect(committed).toHaveBeenLastCalledWith(1, 0, 'ab ****')
-    expect(liveCell()?.state.doc.toString()).toBe('ab ****')
-    expect(liveCell()?.state.selection.main.head).toBe(5)
+    expect(committed).toHaveBeenLastCalledWith(1, 0, 'ab****')
+    expect(liveCell()?.state.doc.toString()).toBe('ab****')
+    expect(liveCell()?.state.selection.main.head).toBe(4)
   })
 
   it('enters the cell with the caret in the slot Text Color writes at a point', async () => {
@@ -244,16 +262,18 @@ describe('a row chosen at rest', () => {
     expect(liveCell()?.state.selection.main.head).toBe(6)
   })
 
-  it('commits Bold over the word under an unselected click, at rest', async () => {
+  it('highlights and commits Bold over the word under an unselected click, at rest', async () => {
     await mount('')
-    for (const [text, at, want] of [
-      ['ab cd', 3, 'ab **cd**'],
-      ["don't stop", 2, "**don't** stop"],
-      ['the end.', 5, 'the **end**.'],
+    for (const [text, at, shown, want] of [
+      ['ab cd', 3, 'cd', 'ab **cd**'],
+      ["don't stop", 2, "don't", "**don't** stop"],
+      ["'quoted' it", 1, 'quoted', "'**quoted**' it"],
+      ['the end.', 5, 'end', 'the **end**.'],
     ] as const) {
       cellText = text
       await draw()
       await rightClick(text, at)
+      expect(window.getSelection()?.toString()).toBe(shown)
       await choose('format:bold')
       expect(committed).toHaveBeenLastCalledWith(1, 0, want)
       expect(entered()).toBe(false)

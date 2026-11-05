@@ -28,7 +28,7 @@ import type { BlockFormat, LinkWrapKind } from '../../Actions/blockMenu'
 import { emptyTable } from '../Engine/Tables/model'
 import { isPaint, type Paint, type PaintColor, writtenMark } from '../Engine/paints'
 import { serialize } from '../Engine/Tables/codec'
-import { type DocScan, inFenceAt } from '../Engine/docScan'
+import { type DocScan, inCodeAt, inFenceAt } from '../Engine/docScan'
 import { itemAt, ownersOf, readsFrom, siblingsAt, subBlockAt } from '../Engine/listModel'
 import { drawnKind } from '../Engine/intents'
 import { type Personalization, settingOf } from '../../Settings/personalization'
@@ -111,7 +111,7 @@ export function toggleInline(
     selFrom,
     selTo,
   )
-  if (fenced) return null
+  if (fenced || (fmt !== 'inlineCode' && inCodeAt(scan, from))) return null
   const doc = scan.text
   if (fmt in LINKS) return toggleWrap(doc, from, to, LINKS[fmt as LinkWrapKind])
   const kind = fmt as keyof typeof WRAP & TokenKind

@@ -187,18 +187,25 @@ export function lineIndexAt(d: LineTable, pos: number): number {
 export const lineEndOf = (d: LineTable, line: number): number =>
   d.lineStarts[line] + d.lines[line].length
 
+export const isWordChar = (ch: string | undefined): boolean =>
+  ch !== undefined && /[\p{L}\p{N}_]/u.test(ch)
+
 export const lineStartAt = (doc: string, pos: number): number =>
   pos <= 0 ? 0 : doc.lastIndexOf('\n', pos - 1) + 1
-/** A range ending at a line's start ends on the line above, so a single trailing newline is the terminator, not a phantom empty line. A right-click inside that reach, or on a glyph on any line the range touches, acts on the range; outside it, the list rows and the format flags read the click's point, since a click points at an item, and every other row acts on the word under the click, or at the point where there's none, which the menu shows as its selection. */
+/** A range ending at a line's start ends on the line above, so a single trailing newline is the terminator, not a phantom empty line. */
 export const reachEnd = (doc: string, from: number, to: number): number =>
   to > from && lineStartAt(doc, to) === to ? to - 1 : to
+/** A right-click on text inside a selection's reach, or on a glyph on any line it touches, acts on the selection; anywhere else, and at a caret, the list rows and the format flags read the click's point, since a click points at an item, and every other row acts on the word under the pointer, or at the point where it sits on none, which the menu shows as its selection. */
 export const clickInside = (
   doc: string,
   at: number,
   from: number,
   to: number,
   glyph: boolean,
-): boolean => at >= (glyph ? lineStartAt(doc, from) : from) && at <= reachEnd(doc, from, to)
+): boolean =>
+  (glyph || from < to) &&
+  at >= (glyph ? lineStartAt(doc, from) : from) &&
+  at <= reachEnd(doc, from, to)
 export const lineEndAt = (doc: string, pos: number): number => {
   const i = doc.indexOf('\n', pos)
   return i === -1 ? doc.length : i

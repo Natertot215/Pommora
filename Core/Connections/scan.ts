@@ -8,6 +8,7 @@ import {
   codeMask,
   type CodeMask,
   inUrlRun,
+  isWordChar,
   lineEndAt,
   lineStartAt,
   type Span,
@@ -19,8 +20,6 @@ interface SectionRun {
   to: number
   heading: string
 }
-
-const wordChar = /[\p{L}\p{N}_]/u
 
 // A blank title names nothing; a bare fragment names this page, whose key is '', and `[[#]]` names nothing at all.
 const names = (target: string, written: string, qualifier: string): boolean =>
@@ -50,7 +49,7 @@ export function sectionRunsIn(
     if (inLink || inCode(i) || onHeading(i) || inUrlRun(text, i)) continue
     for (const length of lengths) {
       const end = i + 1 + length
-      if (end > text.length || (end < text.length && wordChar.test(text[end]))) continue
+      if (end > text.length || (end < text.length && isWordChar(text[end]))) continue
       const heading = byLength.get(length)?.get(normalizeTitle(text.slice(i + 1, end)))
       if (heading === undefined) continue
       out.push({ from: i, to: end, heading })

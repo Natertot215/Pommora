@@ -55,12 +55,21 @@ const listsRows = (rows) => (rows ?? []).find((r) => r.label === 'Lists')?.subme
 const hitAt = (cdp, { x, y }) =>
   cdp.evaluate(`(() => { const e = document.elementFromPoint(${x}, ${y}); return e && (e.className || e.tagName) + ' ' + JSON.stringify(e.textContent.slice(0, 16)) })()`)
 const seen = ({ hit, rows }) => `${hit ?? 'no target'} · ${rows === null ? 'no menu' : show(flat(rows))}`
+// `shown` is the page's selection while the menu is up, what its highlight, Cut, Copy, Speech, and Share read.
 async function pop(cdp, at, path) {
   const hit = at && (await hitAt(cdp, at))
   const rows = at ? await popNative(cdp, at, 'right') : null
+  const shown = rows !== null ? await cdp.evaluate('getSelection().toString()') : null
   const chosen = rows !== null && (await pickNative(path))
   await sleep(500)
-  return { rows, chosen, hit }
+  return { rows, chosen, hit, shown }
+}
+// The text Bold wrapped, against what the menu showed selected.
+const bolded = (text) => /\*\*(.*?)\*\*/.exec(text)?.[1] ?? null
+// A point `dx` past the right edge of `text`'s first occurrence inside `scope`, on blank space.
+const pastEnd = async (cdp, scope, text, dx) => {
+  const { x, y, left } = await textAt(cdp, scope, text)
+  return { x: 2 * x - left + dx, y }
 }
 const glyphPick = async (cdp, text, label) => pop(cdp, await boxOf(cdp, glyphOf(text)), label ? [label] : [])
 const wordPick = async (cdp, word, path) => pop(cdp, await textAt(cdp, PAGE_TEXT, word), path)
@@ -232,6 +241,18 @@ async function group3(cdp) {
   await setBody(cdp, CELL('- a<br>- b'))
   const text = await pop(cdp, await textAt(cdp, restingCell('b'), 'b'), ['Lists', 'Numbered List'])
   item(3, 3, 'C-2', "Lists ▸ Numbered from an unselected item's text at rest acts at the click", (await body(cdp)).endsWith('| 1. a<br>2. b | x |'), `${seen(text)} · ${show(await body(cdp))}`)
+  for (const [cell, word, want] of [["don't stop", "don't", "**don't** stop"], ["'quoted' it", 'quoted', "'**quoted**' it"]]) {
+    await setBody(cdp, CELL(cell))
+    const picked = await pop(cdp, await textAt(cdp, restingCell(word), word, 1), ['Format', 'Bold'])
+    const after = await body(cdp)
+    item(3, 3, 'C-6', `a resting right-click on ${show(word)} highlights what Bold wraps, ${show(want)}`, after.endsWith(`| ${want} | x |`) && picked.shown === bolded(after), `${seen(picked)} · ${show([picked.shown, after])}`)
+  }
+  await setBody(cdp, CELL('ab'))
+  const blank = await pop(cdp, await pastEnd(cdp, restingCell('ab'), 'ab', 12), ['Format', 'Bold'])
+  const blankBody = await body(cdp)
+  await pressKey(cdp, 'Escape')
+  await sleep(400)
+  item(3, 3, 'C-6', 'a resting right-click on blank space past the text acts at the point', blankBody.endsWith('| ab**** | x |') && blank.shown === '', `${seen(blank)} · ${show([blank.shown, blankBody])}`)
   await shot(cdp, 'g3-resting')
 }
 
@@ -285,6 +306,17 @@ async function group4(cdp) {
   await setBody(cdp, 'plain word here')
   await wordPick(cdp, 'word', ['Format', 'Bold'])
   item(4, 0, 'C-6', 'Format ▸ Bold still bolds the word under the click', (await body(cdp)) === 'plain **word** here', show(await body(cdp)))
+  for (const [text, word, want, caret] of [["don't stop", "don't", "**don't** stop", false], ["don't stop", "don't", "**don't** stop", true], ["'quoted' it", 'quoted', "'**quoted**' it", false]]) {
+    await setBody(cdp, text)
+    const at = await textAt(cdp, PAGE_TEXT, word, 1)
+    if (caret) await mouseAt(cdp, at)
+    const picked = await pop(cdp, at, ['Format', 'Bold'])
+    const after = await body(cdp)
+    item(4, 3, 'C-6', `a right-click on ${show(word)}${caret ? ' at the caret' : ''} highlights what Bold wraps, ${show(want)}`, after === want && picked.shown === bolded(after), `${seen(picked)} · ${show([picked.shown, after])}`)
+  }
+  await setBody(cdp, 'ab\nlonger line')
+  const blank = await pop(cdp, await pastEnd(cdp, PAGE_TEXT, 'ab', 40), ['Format', 'Bold'])
+  item(4, 3, 'C-6', 'a right-click on blank space past a short line acts at the point', (await body(cdp)) === 'ab****\nlonger line', `${seen(blank)} · ${show(await body(cdp))}`)
 
   await setBody(cdp, '- a\n- b\n\n- c')
   await gripPick(cdp, 'a', ['Type', 'Numbered'])

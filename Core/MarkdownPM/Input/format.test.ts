@@ -144,8 +144,14 @@ describe('toggleInline', () => {
       'foo ==[[Bar]]== baz',
     )
   })
-  it('stands down on a fenced line', () => {
+  it('stands down on a fenced line, and inside inline code for every mark but Code', () => {
     expect(toggleInline(scanDoc('```\n**b**\n```'), 6, 6, 'bold')).toBeNull()
+    const code = scanDoc('a `code` b')
+    for (const action of ['format:bold', 'format:link', 'highlight:accent', 'textColor:red'])
+      expect(editFor(action, code, 3, 7, {}, 'page')).toBeNull()
+    expect(apply('a `code` b', editFor('format:inlineCode', code, 3, 7, {}, 'page'))).toBe(
+      'a code b',
+    )
   })
 })
 

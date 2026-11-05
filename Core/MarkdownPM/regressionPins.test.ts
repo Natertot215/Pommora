@@ -62,6 +62,7 @@ describe('autoPair — doubled-marker branch', () => {
   })
   it('does not pair a doubled marker glued to a word', () => {
     expect(autoPair(scanDoc('snake_'), 6, 6, '_')).toBeNull()
+    expect(autoPair(scanDoc('café_'), 5, 5, '_')).toBeNull()
   })
 })
 

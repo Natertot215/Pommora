@@ -14,6 +14,7 @@ import {
   isBlockquoteLine,
   lineEndOf,
   inUrlRun,
+  isWordChar,
   lineIndexAt,
   lineStartAt,
   lineEndAt,
@@ -437,11 +438,11 @@ export function autoPair(
     // A doubled marker only pairs as a fresh OPENER — not glued to a word, and not completing an earlier unmatched double.
     const beforeRun = doc.slice(lineStartAt(doc, c), c - 1)
     const openDoubles = beforeRun.split(inserted + inserted).length - 1
-    const glued = doc[c - 2] !== undefined && /\w/.test(doc[c - 2])
+    const glued = isWordChar(doc[c - 2])
     if (glued || openDoubles % 2 === 1) return null
     return { from: c, to: c, insert: inserted + pair.multi, selection: c + 1 }
   }
-  if (doc[c] === inserted && pair.close === inserted && !isWordCh(doc[runEndAt(doc, c)]))
+  if (doc[c] === inserted && pair.close === inserted && !isWordChar(doc[runEndAt(doc, c)]))
     return { from: c, to: c, insert: '', selection: c + 1 }
   if (DOUBLED_ONLY.has(inserted)) return null
   if (!isPairEdge(prev, OPEN_MARKS) && !(inserted === '(' && prev === ']')) return null
@@ -482,8 +483,8 @@ const wrappedBy = (doc: string, from: number, to: number, wrapper: string): bool
   from >= wrapper.length &&
   doc.startsWith(wrapper, from - wrapper.length) &&
   doc.startsWith(closeOf(wrapper), to) &&
-  !isWordCh(doc[from - wrapper.length - 1]) &&
-  !isWordCh(doc[to + wrapper.length])
+  !isWordChar(doc[from - wrapper.length - 1]) &&
+  !isWordChar(doc[to + wrapper.length])
 
 export function wrapSelection(
   scan: DocScan,
@@ -548,8 +549,6 @@ const CLOSERS: readonly { close: string; open: string }[] = [
   { close: '`', open: '`' },
 ]
 
-const isWordCh = (ch: string | undefined): boolean => ch !== undefined && /\w/.test(ch)
-
 function closerEndAt(scan: DocScan, caret: number): number | null {
   if (inCodeAt(scan, caret)) return null
   const doc = scan.text
@@ -561,7 +560,7 @@ function closerEndAt(scan: DocScan, caret: number): number | null {
     if (s.length > 1) return before.split(s).length - 1
     let n = 0
     for (let i = before.indexOf(s); i !== -1; i = before.indexOf(s, i + 1)) {
-      if (!(isWordCh(before[i - 1]) && isWordCh(before[i + 1] ?? doc[caret]))) n++
+      if (!(isWordChar(before[i - 1]) && isWordChar(before[i + 1] ?? doc[caret]))) n++
     }
     return n
   }
@@ -570,8 +569,8 @@ function closerEndAt(scan: DocScan, caret: number): number | null {
     if (
       close.length === 1 &&
       open === close &&
-      isWordCh(doc[caret - 1]) &&
-      isWordCh(doc[caret + 1])
+      isWordChar(doc[caret - 1]) &&
+      isWordChar(doc[caret + 1])
     )
       continue
     // Symmetric markers count parity; asymmetric ones compare opens to closes, or `**a**|**b**` false-positives.
@@ -805,7 +804,7 @@ export function equations(
   const c = selStart
   const glyph = EQUATIONS[`${doc[c - 1]}${inserted}`]
   if (!glyph || doc[c - 2] === doc[c - 1] || isLiteralAt(scan, c)) return null
-  if ((doc[c - 1] === '/' || inserted === '/') && /\w/.test(doc[c - 2] ?? '')) return null
+  if ((doc[c - 1] === '/' || inserted === '/') && isWordChar(doc[c - 2])) return null
   return { from: c - 1, to: c, insert: glyph, selection: c }
 }
 
