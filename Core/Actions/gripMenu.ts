@@ -9,7 +9,7 @@ export type ListKind = 'ordered' | 'alphabetical' | 'bullet' | 'checkbox' | 'arr
 export type GripMenuContext =
   | { kind: 'embed'; tree: readonly PickItem<string>[]; zoom: number | null }
   | { kind: 'webpage'; zoom: number | null }
-  | { kind: 'list'; current: ListKind | null }
+  | { kind: 'list' | 'glyph'; current: ListKind | null }
   | { kind: 'heading'; level: number; linkable: boolean; editable: boolean }
   | { kind: 'plain' }
 
@@ -56,6 +56,13 @@ const scaleRow = (zoom: number | null): ActionItem<GripMenuAction> => ({
   submenu: zoom === null ? [] : scaleRows('zoom:', zoom),
 })
 
+const listRows = (current: ListKind | null): ActionItem<GripMenuAction>[] =>
+  LIST_KINDS.map(({ kind, short }) => ({
+    label: short,
+    action: `list:${kind}`,
+    checked: current === kind,
+  }))
+
 function ownRows(ctx: GripMenuContext): ActionItem<GripMenuAction>[] {
   switch (ctx.kind) {
     case 'embed':
@@ -66,16 +73,9 @@ function ownRows(ctx: GripMenuContext): ActionItem<GripMenuAction>[] {
     case 'webpage':
       return [{ label: 'Edit Link', action: 'editLink' }, scaleRow(ctx.zoom)]
     case 'list':
-      return [
-        {
-          label: 'Type',
-          submenu: LIST_KINDS.map(({ kind, short }) => ({
-            label: short,
-            action: `list:${kind}`,
-            checked: ctx.current === kind,
-          })),
-        },
-      ]
+      return [{ label: 'Type', submenu: listRows(ctx.current) }]
+    case 'glyph':
+      return listRows(ctx.current)
     case 'heading': {
       const size = {
         label: 'Size',
@@ -97,6 +97,6 @@ function ownRows(ctx: GripMenuContext): ActionItem<GripMenuAction>[] {
 }
 
 export function gripMenuItems(ctx: GripMenuContext): ActionItem<GripMenuAction>[] {
-  const editable = ctx.kind !== 'heading' || ctx.editable
-  return joinGroups([ownRows(ctx), editable ? [{ label: 'Delete', action: 'delete' }] : []])
+  const deletable = ctx.kind === 'heading' ? ctx.editable : ctx.kind !== 'glyph'
+  return joinGroups([ownRows(ctx), deletable ? [{ label: 'Delete', action: 'delete' }] : []])
 }

@@ -721,6 +721,13 @@ export const FRAMES = roster([
             label: 'Outliner Lines',
             caption: 'Show indent rails on nested lists in the editor.',
           },
+          {
+            kind: 'toggle',
+            key: 'preserveListLevels',
+            label: 'Preserve List-Level Formatting',
+            caption:
+              "Leave indented lists and other types unchanged when adjusting a list's format.",
+          },
           { kind: 'toggle', key: 'titleIcon', label: 'Show Icon In Title' },
         ],
       },

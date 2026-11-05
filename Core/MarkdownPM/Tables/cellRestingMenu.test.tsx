@@ -7,6 +7,7 @@ import { MarkdownTable } from './MarkdownTable'
 import { cellToSource } from '../Engine/Tables/codec'
 import { tableStubs, testHost } from '../../Testing/editorHarness'
 import type { EditorMenuRequest } from '../../Actions/editorMenu'
+import type { GripMenuAction } from '../../Actions/gripMenu'
 import type { TablePayload } from '../Engine/Tables/clipboard'
 import type { ConnectionsApi } from '../Links/connectionsApi'
 import { buildPageIndex } from '../../Connections/pageIndex'
@@ -259,12 +260,21 @@ describe('a row chosen at rest', () => {
     expect(committed).toHaveBeenLastCalledWith(1, 0, '1. a\n2. b\n3. c')
   })
 
-  it('enters with the caret in the slot Bold writes at a point on a list glyph', async () => {
+  it('answers a list glyph with its type menu and commits the pick at rest', async () => {
+    const grip = vi.fn(
+      () =>
+        new Promise<GripMenuAction | null>((resolve) => {
+          reply = (action) => resolve(action as GripMenuAction | null)
+        }),
+    )
+    host = { ...host, menus: { ...host.menus, grip } }
     await mount('- ab')
-    await rightClick('•', 1)
-    await choose('format:bold')
-    expect(committed).toHaveBeenLastCalledWith(1, 0, '- ****ab')
-    expect(liveCell()?.state.selection.main.head).toBe(4)
+    const event = await rightClick('•', 1)
+    expect(grip).toHaveBeenCalledWith({ kind: 'glyph', current: 'bullet' })
+    expect(event.defaultPrevented).toBe(true)
+    await choose('list:ordered')
+    expect(committed).toHaveBeenLastCalledWith(1, 0, '1. ab')
+    expect(entered()).toBe(false)
   })
 
   it('enters with the caret inside the empty address External Link writes over a selection', async () => {

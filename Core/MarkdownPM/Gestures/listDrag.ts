@@ -4,9 +4,8 @@ import type { BlockSpan, MarkdownScope } from '../Engine/detect'
 import { docScan, docString } from '../docCache'
 import { forEachLine, shadeField, type Boundary } from './dragChrome'
 import { beginRelocateDrag, editorGestureCleanup } from './editorGesture'
-import { lineElementAt, textColumn } from '../lineDom'
+import { glyphAt, lineElementAt, textColumn } from '../lineDom'
 import { subBlockAt, dropChanges, checkboxToggleChange, itemAt } from '../Engine/listModel'
-import { GLYPH_CLASS } from '../Engine/intents'
 
 // Measured at drag start and re-measured only on scroll: the doc is static during a drag, so re-measuring per pointermove would be layout thrash.
 interface Drop {
@@ -76,7 +75,7 @@ export const listDragExtension = (scope: MarkdownScope): Extension => [
   EditorView.domEventHandlers({
     // CM starts its text-selection drag on mousedown, which still arrives when the pointerdown below resolves no block and returns without cancelling.
     mousedown(e) {
-      if (e.button === 0 && (e.target as HTMLElement).closest?.(`.${GLYPH_CLASS}`)) {
+      if (e.button === 0 && glyphAt(e)) {
         e.preventDefault()
         return true
       }
@@ -84,7 +83,7 @@ export const listDragExtension = (scope: MarkdownScope): Extension => [
     },
     pointerdown(e, view) {
       if (e.button !== 0) return false
-      const glyph = (e.target as HTMLElement).closest?.(`.${GLYPH_CLASS}`)
+      const glyph = glyphAt(e)
       if (!glyph) return false
       const pos = view.posAtDOM(glyph)
       const scan = docScan(view.state.doc)

@@ -29,7 +29,7 @@ import { decodePayload, type TablePayload } from '../Engine/Tables/clipboard'
 import { pastedCellText } from '../Links/pasteLink'
 import { RESTING_EDITS } from '../../Actions/editorMenu'
 import { pasteModeOf, type PasteMode } from '../../Actions/pasteAsMenu'
-import { codeMask, lineOffsetsOf, type TextEdit } from '../Engine/markdownCode'
+import { codeMask, lineOffsetsOf, reachEnd, type TextEdit } from '../Engine/markdownCode'
 import { sectionRunsIn } from '../../Connections/scan'
 import { mayNameOwnHeading } from '../../Connections/connections'
 import { labelEscapes } from '../../Connections/links'
@@ -390,12 +390,7 @@ export function cellOffsetAt(
   return acc
 }
 
-function restingRange(cell: HTMLElement, x: number, y: number, length: number): [number, number] {
-  const caret = document.caretPositionFromPoint(x, y)
-  const at =
-    caret && cell.contains(caret.offsetNode)
-      ? cellOffsetAt(cell, caret.offsetNode, caret.offset)
-      : length
+function restingRange(cell: HTMLElement, at: number, text: string): [number, number] {
   const sel = window.getSelection()
   const range = sel && !sel.isCollapsed && sel.rangeCount > 0 ? sel.getRangeAt(0) : null
   if (!range?.intersectsNode(cell)) return [at, at]
@@ -404,8 +399,8 @@ function restingRange(cell: HTMLElement, x: number, y: number, length: number): 
     : 0
   const to = cell.contains(range.endContainer)
     ? cellOffsetAt(cell, range.endContainer, range.endOffset, 'end')
-    : length
-  return at >= from && at <= to ? [from, to] : [at, at]
+    : text.length
+  return at >= from && at <= reachEnd(text, from, to) ? [from, to] : [at, at]
 }
 
 interface RestingHit {
@@ -476,14 +471,11 @@ function StaticCellImpl({
     return go
   }
 
-  // A resting cell has no editor, so the toggle the list drag extension serves in a live one has to be offered here too.
+  // A resting cell has no editor, so the toggle and the type menu the list gestures serve in a live one have to be offered here too.
   const claimCheckbox = (e: React.MouseEvent): (() => void) | null => {
     if (readOnly()) return null
     const seat = (e.target as HTMLElement | null)?.closest?.('.md-list-checkbox-seat')
-    const row = seat?.closest('[data-cell-line]') as HTMLElement | null
-    const index = row?.dataset.cellLine
-    if (index === undefined) return null
-    const change = checkboxToggleChange(text, lineOffsetsOf(text.split('\n'))[Number(index)])
+    const change = seat && checkboxToggleChange(text, srcOf(seat)![0])
     if (!change) return null
     e.preventDefault()
     e.stopPropagation()
@@ -520,16 +512,29 @@ function StaticCellImpl({
   const restingMenu = (e: React.MouseEvent<HTMLElement>): void => {
     const ask = host.menus.format
     if (!ask) return
-    const [from, to] = restingRange(e.currentTarget, e.clientX, e.clientY, text.length)
-    void ask({
-      ...readFormatState(scanDoc(text), from, to, host.settings(), 'cell'),
-      scope: 'cell',
-      x: e.clientX,
-      y: e.clientY,
-      embedSeat: false,
-      citeSeat: false,
-      resting: { selection: text.slice(from, to) },
-    }).then((action) => {
+    const cell = e.currentTarget
+    const glyph = (e.target as HTMLElement).closest('.md-list-item > [data-src]')
+    const caret = document.caretPositionFromPoint(e.clientX, e.clientY)
+    const at = glyph
+      ? srcOf(glyph)![0]
+      : caret && cell.contains(caret.offsetNode)
+        ? cellOffsetAt(cell, caret.offsetNode, caret.offset)
+        : text.length
+    const [from, to] = restingRange(cell, at, text)
+    const state = readFormatState(scanDoc(text), from, to, host.settings(), 'cell')
+    if (glyph) e.preventDefault()
+    const pick = glyph
+      ? host.menus.grip({ kind: 'glyph', current: state.list })
+      : ask({
+          ...state,
+          scope: 'cell',
+          x: e.clientX,
+          y: e.clientY,
+          embedSeat: false,
+          citeSeat: false,
+          resting: { selection: text.slice(from, to) },
+        })
+    void pick.then((action) => {
       if (action) void restingAction(action, from, to)
     })
   }

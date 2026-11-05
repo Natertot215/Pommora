@@ -1,4 +1,5 @@
 import type { EditorView } from '@codemirror/view'
+import { GLYPH_CLASS } from './Engine/intents'
 
 // Reads a line's OUTER box edge, which for a callout/quote/code box lies outside the visible border (where the drop lands), unlike coordsAtPos (the inner text position, which sits inside the box).
 export function lineElementAt(view: EditorView, pos: number): HTMLElement | null {
@@ -41,3 +42,6 @@ export function gutterLineAt(
   const line = (e.target as HTMLElement).closest?.(selector) as HTMLElement | null
   return line && inGripStrip(e, line) ? line : null
 }
+
+export const glyphAt = (e: { target: EventTarget | null }): Element | null =>
+  (e.target as HTMLElement).closest?.(`.${GLYPH_CLASS}`) ?? null

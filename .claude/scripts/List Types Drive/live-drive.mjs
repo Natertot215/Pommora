@@ -136,6 +136,11 @@ async function group1(cdp) {
   await select(cdp, 'B')
   const outside = await glyphPick(cdp, 'F', 'Numbered')
   item(1, 3, 'B-7', 'a glyph outside the selection acts on its group', (await body(cdp)) === '1. A\n\t- B\n\t\t- C\n\t\t- D\n\t- E\n2. F', `${seen(outside)} · ${show(await body(cdp))}`)
+
+  await setBody(cdp, '- A\n1. B\n2. C')
+  await select(cdp, '- A\n')
+  const below = await glyphPick(cdp, 'B', 'Checklist')
+  item(1, 3, 'B-7', "a glyph on the line a triple-click's range ends at acts on its own group", (await body(cdp)) === '- A\n- [ ] B\n- [ ] C', `${seen(below)} · ${show(await body(cdp))}`)
 }
 
 // ── Groups 2 and 3 — a table cell, focused and at rest ──────────────────────

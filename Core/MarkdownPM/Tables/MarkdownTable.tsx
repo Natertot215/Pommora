@@ -15,8 +15,8 @@ import { type CellPage, StaticCell } from './cellStatic'
 import type { HeadingLinkStyle } from '../../Settings/personalization'
 import { cellToDisplay, cellToSource } from '../Engine/Tables/codec'
 import { decodePayload, encodeRect, rectGrid, type TablePayload } from '../Engine/Tables/clipboard'
-import { GLYPH_CLASS, GRIP_LINE } from '../Engine/intents'
-import { gutterLineAt } from '../lineDom'
+import { GRIP_LINE } from '../Engine/intents'
+import { glyphAt, gutterLineAt } from '../lineDom'
 import { nextCell, type NavDir } from '../Engine/Tables/navigate'
 import type { EditorHost } from '../api'
 import { clamp } from '@pommora/uix/Utilities/clamp'
@@ -159,8 +159,7 @@ export function MarkdownTable({
   const startSweep = (e: React.PointerEvent<HTMLTableElement>): void => {
     if (e.button !== 0) return
     // A list glyph is a drag handle and a checkbox target, and the grip band is the block's. Capture runs first and the gesture singleton is claimed before any threshold, so sweeping here would leave the press dead rather than shared.
-    const target = e.target as HTMLElement
-    if (target.closest?.(`.${GLYPH_CLASS}`)) return
+    if (glyphAt(e)) return
     if (gutterLineAt(e, GRIP_LINE)) return
     const start = cellPosOf(e.target)
     const wrap = wrapRef.current

@@ -5,6 +5,7 @@ import { EditorView } from '@codemirror/view'
 import { ok } from '../../Contract/result'
 import type { LinkMenuAction } from '../../Actions/connectionMenu'
 import type { EditorMenuRequest } from '../../Actions/editorMenu'
+import type { GripMenuAction, GripMenuContext } from '../../Actions/gripMenu'
 import { buildPageIndex } from '../../Connections/pageIndex'
 import { showConnectionMenu } from '../../Interface/Menus/connectionMenuActions'
 import type { ConnectionsApi } from '../Links/connectionsApi'
@@ -19,12 +20,15 @@ const connMenu = vi.fn<(req: unknown) => Promise<LinkMenuAction | null>>()
 stubEditorBridge({ menu: async (req: unknown) => ok(await connMenu(req)) })
 
 const format = vi.fn<(req: EditorMenuRequest) => Promise<string | null>>()
+const grip = vi.fn<(ctx: GripMenuContext) => Promise<GripMenuAction | null>>()
 let clipboard = ''
-const host = () => ({ menus: { format }, clipboard: { read: async () => clipboard } })
+const host = () => ({ menus: { format, grip }, clipboard: { read: async () => clipboard } })
 
 beforeEach(() => {
   format.mockReset()
   format.mockResolvedValue(null)
+  grip.mockReset()
+  grip.mockResolvedValue(null)
   connMenu.mockReset()
   connMenu.mockResolvedValue(null)
   clipboard = ''
@@ -72,6 +76,14 @@ describe('the editor’s native menu', () => {
     view.dispatch({ selection: { anchor: 0 } })
     await rightClick(view, 5, view.dom.querySelectorAll('.cm-line')[1])
     expect(format).toHaveBeenCalledWith(expect.objectContaining({ embedSeat: true }))
+  })
+
+  it('acts on a glyph’s own group when it sits on the line a triple-click’s range ends at', async () => {
+    grip.mockResolvedValue('list:checkbox')
+    const view = await mountEditor({ initialBody: '- a\n1. b\n2. c', host: host() })
+    view.dispatch({ selection: { anchor: 0, head: 4 } })
+    await rightClick(view, 4, view.dom.querySelectorAll('.md-list-glyph')[1])
+    expect(view.state.doc.toString()).toBe('- a\n- [ ] b\n- [ ] c')
   })
 
   it('never asks from a read-only editor', async () => {
