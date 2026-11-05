@@ -133,6 +133,8 @@ describe('smart backspace (whole marker, all markers)', () => {
     expect(at('> [!note] Head\n> - x', 18)).toBe('> [!note] Head\n> x')
     expect(at('> - item', 3)).toBe('> item')
     expect(at('> 1. item', 4)).toBe('> item')
+    expect(at('> - item', 2)).toBe('- item')
+    expect(smartBackspace(scanDoc('> [!note] x\n> - item'), 14, 14)).toBeNull()
     expect(at('para\n\n\t- b', 9)).toBe('para\n\nb')
     expect(smartBackspace(scanDoc('## x'), 1, 1)).toBeNull()
   })

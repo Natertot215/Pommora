@@ -240,7 +240,8 @@ export function smartBackspace(
 
   const pfx = blockPrefix(line, scope)
   const lm = readsLists(scope) ? parseListMarker(line.slice(pfx.length)) : null
-  if (lm) return takeMarker(scan, ls + pfx.length, lm, selStart, scope)
+  const taken = lm && takeMarker(scan, ls + pfx.length, lm, selStart, scope)
+  if (taken) return taken
   if (scope !== 'page') return null
   // Inside a callout, never strip a lone `>` — that would drop the line out of the box, splitting it into a stray quote.
   if (inCalloutAt(scan, selStart)) {
@@ -250,7 +251,7 @@ export function smartBackspace(
         return { from: ls, to: ls + headLen, insert: '', selection: ls }
       return null
     }
-    if (selStart === ls + pfx.length && ls > 0)
+    if (!lm && selStart === ls + pfx.length && ls > 0)
       return { from: ls - 1, to: ls + pfx.length, insert: '', selection: ls - 1 }
     return null
   }
