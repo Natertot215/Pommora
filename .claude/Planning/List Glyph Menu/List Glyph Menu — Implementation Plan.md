@@ -22,7 +22,7 @@
 | 1 · The List Model | +74 (the rename 0) | +70 (+177 / −107) |
 | 2 · One Switch | +143 (+69 its own) | +168 (+619 / −451) |
 | 3 · The Glyph Menu | +186 (+18 its own: the patch's +16 and the click test's end rule) | +283 (+843 / −560) |
-| 4 · Docs and Issues | +186 (±0 its own; docs +33) | |
+| 4 · Docs and Issues | +186 (±0 its own; docs +33) | +283 (+843 / −560) |
 | **Total** | **+186 excluding comments, against the ratified +159 (+458 / −299); one file renamed, one drive added** | |
 
 `listModel.ts` pairs with its old name at exactly 50% similarity, so `view-delta` may count it as a rename or as a delete and an add; the split moves with it, and the net doesn't.
@@ -180,8 +180,8 @@ The order is what makes each step land once. Phase 0 lands the drive and records
   - [x] Task 3-1 · The glyph menu, the click-time range, the resting cell, and the row
   - [x] The Interaction Sweep
   - [x] Review Checkpoint
-- [ ] **Phase 4** — Docs and Issues
-  - [ ] Task 4-1 · Docs and issues
+- [x] **Phase 4** — Docs and Issues
+  - [x] Task 4-1 · Docs and issues
 - [ ] *§Final Verification* over `<BASELINE>..HEAD`
 - [ ] `[Stop: the final report, per §Final Verification]`
 
@@ -405,9 +405,9 @@ Every interaction the feature can meet should be driven or probed, and every res
 
 **VERIFY**
 
-- [ ] Run the gates; `node .claude/scripts/check-atlas.mjs` exits 0.
-- [ ] `git grep -n "listDragModel\|setListKind\|counts for itself" -- .claude/Features .claude/Guidelines .claude/IssuesPM.md .claude/scripts` prints nothing.
-- [ ] The Number recorded for Phase 4; its own delta ±0 in production.
+- [x] Run the gates; `node .claude/scripts/check-atlas.mjs` exits 0.
+- [x] `git grep -n "listDragModel\|setListKind\|counts for itself" -- .claude/Features .claude/Guidelines .claude/IssuesPM.md .claude/scripts` prints nothing.
+- [x] The Number recorded for Phase 4; its own delta ±0 in production.
 
 ---
 
