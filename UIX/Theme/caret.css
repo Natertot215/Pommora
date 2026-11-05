@@ -72,11 +72,11 @@
   margin-left: calc(var(--caret-width) / -2);
   background: var(--caret-color);
   border-radius: var(--radius-full);
+  pointer-events: none;
 }
 
 .caret-overlay {
   position: absolute;
-  pointer-events: none;
   z-index: var(--z-caret);
   animation: var(--caret-blink);
 }

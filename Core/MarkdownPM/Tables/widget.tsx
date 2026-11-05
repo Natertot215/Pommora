@@ -240,7 +240,11 @@ class TableWidget extends ReactWidget {
       return cells ? (cells[col] ?? '') : null
     }
     // The widget replaces exactly the table's lines, so its own edges draw the caret in the gutter; the exit lands one line past the edge, making that line when the table bounds the document.
-    const exit = (dir: 'before' | 'after'): void => {
+    const exit = (dir: 'before' | 'after' | 'out'): void => {
+      if (dir === 'out') {
+        view.focus()
+        return
+      }
       const region = docScan(view.state.doc).tables[this.tableIndex]
       if (!region) return
       if (dir === 'after') {

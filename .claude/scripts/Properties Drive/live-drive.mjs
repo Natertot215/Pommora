@@ -5,7 +5,7 @@ import { ulid } from 'ulidx'
 import {
   mintOptionId, optionId,
   FM, frontmatter, frontRaw, pageFile, pageIds, pagePath,
-  activeTab, ask, BACK, boxOf, chooseInApp, chooseNative, closePageWindow, closePanel, click, closeSettings, createPage, DIALOG, doubleClick, entry, escapeAll, field, inMain, labels, launch, META, mouseAt, mouseClick, must, NEXUS, notice,
+  activeTab, ask, BACK, boxOf, chooseInApp, chooseNative, closePageWindow, closePanel, click, closeSettings, createPage, DIALOG, clicks, entry, escapeAll, field, inMain, labels, launch, META, mouseAt, mouseClick, must, NEXUS, notice,
   openCollection, openPage, openPane, openPanel, openSettings, openSidePane, overlaps, pickNative, popNative, portalOpen, pressDialog, pressKey, read, relaunch, restore, ribbon, row, sel, selectField, SET,
   holds, hover, item, LIVE_ROWS, manageButton, nativeRows, PANE, PANE_LAYER, PORTAL_ROWS, press, resizeBy, SETTINGS_BUTTON, SHIFT, settles, shot, sleep, slideTo, statusDividers, sweep, SWITCH, tally, textEl, trashRowEl, typeText, until, viewFrame, watch, zoom,
 } from '../drive-harness.mjs'
@@ -2505,7 +2505,7 @@ async function group19(cdp) {
     onlyClosed(hour, 'control'), show(hour))
   item(19, 'MP-E-3', 'a second press on Minute opens its list', thenOpens(hour), show(hour))
   await openCalendar()
-  await doubleClick(cdp, HOUR)
+  await clicks(cdp, await boxOf(cdp, HOUR), 2)
   const typing = await cdp.evaluate(`document.activeElement?.tagName === 'INPUT' && ${CAL}.contains(document.activeElement)`)
   const lists = await layerCount(cdp)
   item(19, 'MP-E-3', 'a double-click on Hour lands in its field with no list left open', typing && lists === 1, show({ typing, lists }))

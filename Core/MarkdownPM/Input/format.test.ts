@@ -258,7 +258,6 @@ describe('listKindOf', () => {
 
   it('reads the kind a whole block’s items agree on, through every level', () => {
     expect(kindOf('- a\n\t- b')).toBe('bullet')
-    expect(kindOf('  para\n- a')).toBe('bullet')
     expect(kindOf('1. a\n2. b')).toBe('ordered')
     expect(kindOf('- [x] a\n- [ ] b')).toBe('checkbox')
     expect(kindOf('→ a\n→ b')).toBe('arrow')
@@ -266,6 +265,8 @@ describe('listKindOf', () => {
 
   it('is null where the markers disagree, and where there are none', () => {
     expect(kindOf('- a\n1. b')).toBeNull()
+    expect(kindOf('- a\nplain\n- b')).toBeNull()
+    expect(kindOf('  para\n- a')).toBeNull()
     expect(kindOf('just prose')).toBeNull()
   })
 
@@ -325,15 +326,15 @@ describe('setList over a whole block', () => {
 
 describe('setBlock', () => {
   it('toggles a blockquote on and off', () => {
-    expect(apply('text', setBlock('text', 0, 4, 'quote'))).toBe('> text')
-    expect(apply('> text', setBlock('> text', 2, 6, 'quote'))).toBe('text')
+    expect(apply('text', setBlock(scanDoc('text'), 0, 4, 'quote'))).toBe('> text')
+    expect(apply('> text', setBlock(scanDoc('> text'), 2, 6, 'quote'))).toBe('text')
   })
   it('quote toggle does NOT strip a callout (its `>` is box chrome) — wraps instead', () => {
     const c = '> [!callout] hi'
-    expect(apply(c, setBlock(c, 4, 4, 'quote'))).toBe(`> ${c}`)
+    expect(apply(c, setBlock(scanDoc(c), 4, 4, 'quote'))).toBe(`> ${c}`)
   })
   it('callout insert uses the `[!callout]` default (matches the `||` shorthand)', () => {
-    expect(apply('hi', setBlock('hi', 0, 2, 'callout'))).toBe('> [!callout] hi')
+    expect(apply('hi', setBlock(scanDoc('hi'), 0, 2, 'callout'))).toBe('> [!callout] hi')
   })
   it('callout takes a heading’s or quote’s marker, and a list’s alone', () => {
     for (const [line, out] of [
@@ -341,71 +342,80 @@ describe('setBlock', () => {
       ['> hi', '> [!callout] hi'],
       ['- > foo', '> [!callout] > foo'],
     ])
-      expect(apply(line, setBlock(line, 0, line.length, 'callout'))).toBe(out)
+      expect(apply(line, setBlock(scanDoc(line), 0, line.length, 'callout'))).toBe(out)
   })
   // The dispatcher hands a line formatter the whole selection, so quoting a block of prose makes one blockquote, not a quoted first line.
   const three = 'one\ntwo\nthree'
   it('quotes every selected line', () => {
-    expect(apply(three, setBlock(three, 0, three.length, 'quote'))).toBe('> one\n> two\n> three')
-    expect(apply(three, setBlock(three, 0, 4, 'quote'))).toBe('> one\ntwo\nthree')
+    expect(apply(three, setBlock(scanDoc(three), 0, three.length, 'quote'))).toBe(
+      '> one\n> two\n> three',
+    )
+    expect(apply(three, setBlock(scanDoc(three), 0, 4, 'quote'))).toBe('> one\ntwo\nthree')
   })
   it('clears the quote only where every selected line already is one', () => {
     const all = '> one\n> two'
-    expect(apply(all, setBlock(all, 0, all.length, 'quote'))).toBe('one\ntwo')
+    expect(apply(all, setBlock(scanDoc(all), 0, all.length, 'quote'))).toBe('one\ntwo')
     const mixed = '> one\ntwo'
-    expect(apply(mixed, setBlock(mixed, 0, mixed.length, 'quote'))).toBe('> > one\n> two')
-    const quote = (scan: DocScan, f: number, t: number) => setBlock(scan.text, f, t, 'quote')
+    expect(apply(mixed, setBlock(scanDoc(mixed), 0, mixed.length, 'quote'))).toBe('> > one\n> two')
+    const quote = (scan: DocScan, f: number, t: number) => setBlock(scan, f, t, 'quote')
     expect(picked('one\ntwo', 1, 5, quote, quote)).toBe('one\ntwo')
   })
   // A bare `>` is the quote's own blank line — skipping it would split one quote into two.
   it("carries a blank line through as the quote's own", () => {
     const gapped = 'one\n\ntwo'
-    expect(apply(gapped, setBlock(gapped, 0, gapped.length, 'quote'))).toBe('> one\n>\n> two')
+    expect(apply(gapped, setBlock(scanDoc(gapped), 0, gapped.length, 'quote'))).toBe(
+      '> one\n>\n> two',
+    )
   })
   it('quotes a blank line on its own with the marker and its space', () => {
-    const edit = setBlock('', 0, 0, 'quote')
+    const edit = setBlock(scanDoc(''), 0, 0, 'quote')
     expect(apply('', edit)).toBe('> ')
     expect(edit.selection).toBe(2)
   })
   it('seats the caret below a rule written on a blank line', () => {
-    const edit = setBlock('', 0, 0, 'hr')
+    const edit = setBlock(scanDoc(''), 0, 0, 'hr')
     expect(apply('', edit)).toBe('---\n')
     expect(edit.selection).toBe(4)
     const doc = 'a\n\nb'
-    const below = setBlock(doc, 2, 2, 'hr')
+    const below = setBlock(scanDoc(doc), 2, 2, 'hr')
     expect(apply(doc, below)).toBe('a\n\n---\n\nb')
     expect(below.selection).toBe(7)
     const spaced = 'a\n\n\nb'
-    expect(apply(spaced, setBlock(spaced, 3, 3, 'hr'))).toBe('a\n\n---\n\nb')
-    expect(apply(spaced, setBlock(spaced, 2, 2, 'hr'))).toBe('a\n\n---\n\nb')
+    expect(apply(spaced, setBlock(scanDoc(spaced), 3, 3, 'hr'))).toBe('a\n\n---\n\nb')
+    expect(apply(spaced, setBlock(scanDoc(spaced), 2, 2, 'hr'))).toBe('a\n\n---\n\nb')
     const opening = '\ntext'
-    const first = setBlock(opening, 0, 0, 'hr')
+    const first = setBlock(scanDoc(opening), 0, 0, 'hr')
     expect(apply(opening, first)).toBe('---\n\ntext')
     expect(first.selection).toBe(4)
   })
   it('fences the whole selection as one block', () => {
-    expect(apply(three, setBlock(three, 0, three.length, 'code'))).toBe('```\none\ntwo\nthree\n```')
-    expect(apply(three, setBlock(three, 0, 4, 'code'))).toBe('```\none\n```\ntwo\nthree')
+    expect(apply(three, setBlock(scanDoc(three), 0, three.length, 'code'))).toBe(
+      '```\none\ntwo\nthree\n```',
+    )
+    expect(apply(three, setBlock(scanDoc(three), 0, 4, 'code'))).toBe('```\none\n```\ntwo\nthree')
+    const code = (scan: DocScan, f: number, t: number) => setBlock(scan, f, t, 'code')
+    expect(picked('one\ntwo', 0, 4, code, code)).toBe('one\ntwo')
+    expect(picked('one\ntwo', 1, 5, code, code)).toBe('one\ntwo')
   })
 
   it('fences a line as code', () => {
-    expect(apply('x = 1', setBlock('x = 1', 0, 5, 'code'))).toBe('```\nx = 1\n```')
+    expect(apply('x = 1', setBlock(scanDoc('x = 1'), 0, 5, 'code'))).toBe('```\nx = 1\n```')
   })
   it('inserts a 3×3 GFM table, blank-line separated as its own block', () => {
     const t = '|  |  |  |\n| --- | --- | --- |\n|  |  |  |\n|  |  |  |'
-    expect(apply('', setBlock('', 0, 0, 'table'))).toBe(`${t}\n`)
-    expect(apply('hi', setBlock('hi', 2, 2, 'table'))).toBe(`hi\n\n${t}\n`)
+    expect(apply('', setBlock(scanDoc(''), 0, 0, 'table'))).toBe(`${t}\n`)
+    expect(apply('hi', setBlock(scanDoc('hi'), 2, 2, 'table'))).toBe(`hi\n\n${t}\n`)
   })
 
   it('seats the caret below the table on an empty document and on one ending in a newline', () => {
     const t = '|  |  |  |\n| --- | --- | --- |\n|  |  |  |\n|  |  |  |'
-    const empty = setBlock('', 0, 0, 'table')
+    const empty = setBlock(scanDoc(''), 0, 0, 'table')
     expect(apply('', empty)).toBe(`${t}\n`)
     expect(empty.selection).toBe(t.length + 1)
-    const trailing = setBlock('a\n\n', 2, 2, 'table')
+    const trailing = setBlock(scanDoc('a\n\n'), 2, 2, 'table')
     expect(apply('a\n\n', trailing)).toBe(`a\n\n${t}\n\n`)
     expect(trailing.selection).toBe(t.length + 4)
-    const fenced = setBlock('text\n\n\nrest', 5, 5, 'table')
+    const fenced = setBlock(scanDoc('text\n\n\nrest'), 5, 5, 'table')
     expect(apply('text\n\n\nrest', fenced)).toBe(`text\n\n${t}\n\nrest`)
     expect(fenced.selection).toBe(6 + t.length + 1)
   })
@@ -413,12 +423,12 @@ describe('setBlock', () => {
   it('blank-line-fences the inserted table below too, so it never merges with an adjacent table', () => {
     const t = '|  |  |  |\n| --- | --- | --- |\n|  |  |  |\n|  |  |  |'
     const below = '| A | B |\n| --- | --- |\n| 1 | 2 |'
-    expect(apply(`text\n\n${below}`, setBlock(`text\n\n${below}`, 5, 5, 'table'))).toBe(
+    expect(apply(`text\n\n${below}`, setBlock(scanDoc(`text\n\n${below}`), 5, 5, 'table'))).toBe(
       `text\n\n${t}\n\n${below}`,
     )
-    expect(apply(`text\n\n\n${below}`, setBlock(`text\n\n\n${below}`, 5, 5, 'table'))).toBe(
-      `text\n\n${t}\n\n${below}`,
-    )
+    expect(
+      apply(`text\n\n\n${below}`, setBlock(scanDoc(`text\n\n\n${below}`), 5, 5, 'table')),
+    ).toBe(`text\n\n${t}\n\n${below}`)
   })
 })
 

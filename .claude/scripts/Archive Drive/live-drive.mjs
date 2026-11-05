@@ -3,7 +3,7 @@ import { join } from 'node:path'
 import { parse } from 'yaml'
 import {
   optionId,
-  activeTab, ask, boxOf, chooseNative, click, closeSettings, createPage, DIALOG, doubleClick, escapeAll, FM, holds, hover, labels, launch, mintPageId, mouseAt,
+  activeTab, ask, boxOf, chooseNative, click, closeSettings, createPage, DIALOG, clicks, escapeAll, FM, holds, hover, labels, launch, mintPageId, mouseAt,
   mouseClick, must, nativeRows, NEXUS, notice, openCollection, openPage, openSettings, PAGE_VIEW, pageIds, pickNative, popNative, portalOpen, press, pressDialog, pressKey,
   item, menuByEvent, META, RAIL, refusal, relaunch, resizeBy, restore, ribbon, row, sel, SETTINGS_BUTTON, settles, shot, sleep, SWITCH, tally, textEl, trashRowEl, typeText, until, watch, writeBody,
 } from '../drive-harness.mjs'
@@ -1176,12 +1176,12 @@ async function group6B() {
     narrowed && alone && unsearched, show({ order, shown: await arcTitles(cdp) }))
 
   const ROOT_TITLE = `(${arcRow('Drive Arc Root')}).querySelector('.cell-title-text')`
-  await doubleClick(cdp, ROOT_TITLE)
+  await clicks(cdp, await boxOf(cdp, ROOT_TITLE), 2)
   await until('the reader', () => cdp.evaluate(`!!${READER}`)).catch(() => {})
   await until('the reader’s body', () => cdp.evaluate(`(${READER})?.querySelector('.cm-content')?.textContent.includes('Root body.') ?? false`)).catch(() => {})
   const crumbs = `(${READER})?.querySelector('.page-window-crumbs')`
   const crumbTrail = await trailOf(cdp, crumbs)
-  if (await cdp.evaluate(`!!(${crumbs})`)) await doubleClick(cdp, `(${crumbs}).lastElementChild`)
+  if (await cdp.evaluate(`!!(${crumbs})`)) await clicks(cdp, await boxOf(cdp, `(${crumbs}).lastElementChild`), 2)
   const reader = await cdp.evaluate(`(() => { const w = ${READER}; return w && { lock: !!w.querySelector('.reader-lock[title="Read Only"]'), input: !!w.querySelector('input'), restore: [...w.querySelectorAll('button')].some((b) => b.textContent.trim() === 'Restore'), doc: w.querySelector('.cm-content')?.textContent ?? null } })()`)
   await shot(cdp, 'g6b-reader')
   if (reader) await click(cdp, `(${READER}).querySelector('button[title="Close"]')`)
@@ -1193,7 +1193,7 @@ async function group6B() {
     show({ reader, crumbTrail, closed, leftChecked, oneBar }))
 
   // A double-click's first press toggles the checked row off and its second checks it again, so the row stays checked.
-  await doubleClick(cdp, ROOT_TITLE)
+  await clicks(cdp, await boxOf(cdp, ROOT_TITLE), 2)
   await until('the reader', () => cdp.evaluate(`!!${READER}`)).catch(() => {})
   const stillBar = await settles(async () => (await notice(cdp)) === 'Restore1 Page')
   await mouseClick(cdp, barButton('Restore'))
@@ -1389,7 +1389,7 @@ async function group7(cdp) {
   const unboxed = { checked: await trashChecked(cdp, 'Nest Set'), revealed: await revealedAll('') }
   await mouseClick(cdp, titleIn(trashRowEl('Nest Set')))
   const folded = await settles(async () => (await expandedOf(cdp, trashRowEl('Nest Set'))) === 'false' && !(await listedTitles(cdp)).includes('Nest Deep'))
-  await doubleClick(cdp, titleIn(trashRowEl('Nest Set')))
+  await clicks(cdp, await boxOf(cdp, titleIn(trashRowEl('Nest Set'))), 2)
   await sleep(600)
   const openedOnce = (await expandedOf(cdp, trashRowEl('Nest Set'))) === 'true' && same(titlesAfter(await listedTitles(cdp), 'Nest Set', 1), ['Nest Deep'])
   item(7, 'Clicks, Chevron, Double-Click', "a container's box checks it in place, every box shows, a top chevron follows its title, and a double-click opens a container once",
@@ -1397,10 +1397,10 @@ async function group7(cdp) {
     show({ boxed, topChevron, unboxed, folded, openedOnce }))
 
   const tabs = await tabCount(cdp)
-  await doubleClick(cdp, titleIn(trashRowEl('Nest One')))
+  await clicks(cdp, await boxOf(cdp, titleIn(trashRowEl('Nest One'))), 2)
   await sleep(600)
   const byTitle = { checked: await trashChecked(cdp, 'Nest One'), reader: await cdp.evaluate(`!!${READER}`), tabs: await tabCount(cdp), settings: await cdp.evaluate(`!!document.querySelector('.settings-rail')`) }
-  await doubleClick(cdp, boxIn(trashRowEl('Nest One')))
+  await clicks(cdp, await boxOf(cdp, boxIn(trashRowEl('Nest One'))), 2)
   await sleep(600)
   const byBox = { checked: await trashChecked(cdp, 'Nest One'), reader: await cdp.evaluate(`!!${READER}`), tabs: await tabCount(cdp) }
   await mouseClick(cdp, boxIn(trashRowEl('Nest One')))
@@ -1544,9 +1544,9 @@ async function group7(cdp) {
   const subOpened = await settles(async () => same(titlesAfter(await arcTitles(cdp), 'Lane Sub', 1), ['Lane Deep']))
   const subChevron = await cdp.evaluate(`!!(${arcRow('Lane Sub')})?.querySelector('.row-chevron')`)
   const laneTrail = await trailOf(cdp, `(${arcRow('Lane Deep')})?.querySelector('.bundle-trail')`)
-  await doubleClick(cdp, boxIn(arcRow('Lane Top')))
+  await clicks(cdp, await boxOf(cdp, boxIn(arcRow('Lane Top'))), 2)
   const boxOpened = await settles(() => cdp.evaluate(`!!${READER}`), 800)
-  await doubleClick(cdp, titleIn(arcRow('Lane Deep')))
+  await clicks(cdp, await boxOf(cdp, titleIn(arcRow('Lane Deep'))), 2)
   await until('the reader', () => cdp.evaluate(`!!${READER}`)).catch(() => {})
   const laneCrumbs = await trailOf(cdp, `(${READER})?.querySelector('.page-window-crumbs')`)
   await pressKey(cdp, 'Escape')
@@ -2262,7 +2262,7 @@ async function group7D(cdp) {
     checkedOnClick[t] = await trashChecked(cdp, t)
   }
   const tabs = await tabCount(cdp)
-  await doubleClick(cdp, titleIn(trashRowEl('Drive Prop')))
+  await clicks(cdp, await boxOf(cdp, titleIn(trashRowEl('Drive Prop'))), 2)
   await sleep(600)
   const propDouble = { checked: await trashChecked(cdp, 'Drive Prop'), reader: await cdp.evaluate(`!!${READER}`), tabs: await tabCount(cdp) }
   const selectGlyph = await cdp.evaluate(`!!(${trashRowEl('Drive Prop')}).querySelector('.cell-title svg.lucide-send')`)

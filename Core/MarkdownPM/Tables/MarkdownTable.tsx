@@ -122,7 +122,7 @@ export function MarkdownTable({
   onCellCommit: (row: number, col: number, text: string) => void
   cellAt: (row: number, col: number) => string | null
   onSettled: () => void
-  onExit: (dir: 'before' | 'after') => void
+  onExit: (dir: 'before' | 'after' | 'out') => void
   onReorder: (axis: Axis, from: number, to: number) => boolean
   onResize: (widths: number[]) => boolean
   onAppend: (axis: Axis) => void
@@ -402,7 +402,7 @@ export function MarkdownTable({
 
   const navigate = (row: number, col: number, dir: NavDir): void => {
     const target = nextCell(totalRows, cols, row, col, dir)
-    if (target === 'before' || target === 'after') {
+    if (typeof target === 'string') {
       setActive(null)
       onExit(target)
       return

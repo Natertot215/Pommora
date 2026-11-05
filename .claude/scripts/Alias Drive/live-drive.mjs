@@ -2,7 +2,7 @@ import { readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import {
   mintOptionId,
-  against, ask, boxOf, check, chooseNative, click, closePageWindow, closePanel, createPage, doubleClick, drag, escapeAll, field, frontmatter,
+  against, ask, boxOf, check, chooseNative, click, closePageWindow, closePanel, createPage, clicks, drag, escapeAll, field, frontmatter,
   launch, manageButton, manageRow, measure, metrics, mouseAt, mouseClick, must, NEXUS, openCollection, openPage, openPane, openPanel, openSidePane,
   closeSettings, openSettings, PAGE_VIEW, pageFile, pageIds, pagePath, PANE, PANE_VIEW, portalOpen, pressKey, printMetrics, read, refusal, restore, results,
   row, sel, selectField, SETTINGS_BUTTON, settles, shot, sleep, sweep, typeText, until, writeBody, writeMetrics,
@@ -286,7 +286,7 @@ async function group2(cdp) {
 
   await step(cdp, 'group 2: a single click on a name', () => mouseClick(cdp, nameOf(MANAGE, 'Q3 doc')), { writes: aliasWrites(0), window: 1200 })
   check('group 2: a single click opens no field', !(await editingIn(cdp, MANAGE)))
-  await step(cdp, 'group 2: a double-click on a name', () => doubleClick(cdp, nameOf(MANAGE, 'roadmap')), { reflect: `!!${inputOf(MANAGE)}`, writes: aliasWrites(0), window: 900 })
+  await step(cdp, 'group 2: a double-click on a name', async () => clicks(cdp, await boxOf(cdp, nameOf(MANAGE, 'roadmap')), 2), { reflect: `!!${inputOf(MANAGE)}`, writes: aliasWrites(0), window: 900 })
   check("group 2: a double-click opens the name's field, focused", same(await editingIn(cdp, MANAGE), { value: 'roadmap', focused: true }), JSON.stringify(await editingIn(cdp, MANAGE)))
   // Every text the renamed row shows once its field closes, in turn.
   const recordTexts = (name) => cdp.evaluate(`(() => { const r = (${inputOf(MANAGE)}).closest('[data-reveal]'); r.dataset.drive = ${JSON.stringify(name)}; window.__texts = []; new MutationObserver(() => { if (r.querySelector('input')) return; const t = r.textContent.trim(); if (window.__texts.at(-1) !== t) window.__texts.push(t) }).observe(r, { subtree: true, childList: true, characterData: true }) })()`)
@@ -296,7 +296,7 @@ async function group2(cdp) {
   await step(cdp, 'group 2: Enter renames roadmap', () => pressKey(cdp, 'Enter'), { reflect: `!!${rowOf(MANAGE, 'Road Map')}`, writes: aliasWrites(1) })
   const texts = await cdp.evaluate('window.__texts')
   check('group 2: the rename lands in place, the label reading Road Map from the commit on', same(aliasesOf(TARGET), ['LAUNCH', 'liftoff', 'Q3 doc', 'Road Map']) && same(texts, ['Road Map']), JSON.stringify([aliasesOf(TARGET), texts]))
-  await doubleClick(cdp, nameOf(MANAGE, 'Road Map'))
+  await clicks(cdp, await boxOf(cdp, nameOf(MANAGE, 'Road Map')), 2)
   await recordTexts('kept')
   await selectAll(cdp)
   await typeText(cdp, 'Drive Target')
@@ -304,10 +304,10 @@ async function group2(cdp) {
   const held = await cdp.evaluate('window.__texts')
   check('group 2: a rename onto the title closes the field unsent, the row reading Road Map throughout', same(held, ['Road Map']) && same(aliasesOf(TARGET), ['LAUNCH', 'liftoff', 'Q3 doc', 'Road Map']), JSON.stringify(held))
 
-  await doubleClick(cdp, nameOf(MANAGE, 'Q3 doc'))
+  await clicks(cdp, await boxOf(cdp, nameOf(MANAGE, 'Q3 doc')), 2)
   await selectAll(cdp)
   await typeText(cdp, 'Q4 doc')
-  await step(cdp, "group 2: a double-click on another name mid-rename", () => doubleClick(cdp, nameOf(MANAGE, 'LAUNCH')), { reflect: `(${inputOf(MANAGE)})?.value === 'LAUNCH'`, writes: aliasWrites(1) })
+  await step(cdp, "group 2: a double-click on another name mid-rename", async () => clicks(cdp, await boxOf(cdp, nameOf(MANAGE, 'LAUNCH')), 2), { reflect: `(${inputOf(MANAGE)})?.value === 'LAUNCH'`, writes: aliasWrites(1) })
   check('group 2: the first rename commits and the second field opens', same(aliasesOf(TARGET), ['LAUNCH', 'liftoff', 'Q4 doc', 'Road Map']) && same(await editingIn(cdp, MANAGE), { value: 'LAUNCH', focused: true }), JSON.stringify([aliasesOf(TARGET), await editingIn(cdp, MANAGE)]))
   await step(cdp, 'group 2: Escape in a rename', () => pressKey(cdp, 'Escape'), { reflect: `!${inputOf(MANAGE)}`, writes: aliasWrites(0) })
   check('group 2: Escape in a rename closes the field and keeps the pane', !(await editingIn(cdp, MANAGE)) && (await cdp.evaluate(`!!${MANAGE}`)))
@@ -316,7 +316,7 @@ async function group2(cdp) {
   await step(cdp, 'group 2: × on Q4 doc', () => mouseClick(cdp, xOf(MANAGE, 'Q4 doc')), { reflect: `!${tagged('leaving')}`, writes: aliasWrites(1) })
   const gone = await leftAtOnce(cdp)
   check('group 2: × deletes Q4 doc with no collapse, and the count follows', same(aliasesOf(TARGET), ['LAUNCH', 'liftoff', 'Road Map']) && gone.gone && gone.changed === 0 && (await countOf(cdp, 'Aliases')) === '3', JSON.stringify([aliasesOf(TARGET), gone]))
-  await doubleClick(cdp, nameOf(MANAGE, 'liftoff'))
+  await clicks(cdp, await boxOf(cdp, nameOf(MANAGE, 'liftoff')), 2)
   await selectAll(cdp)
   await typeText(cdp, 'discarded')
   await step(cdp, 'group 2: × on the row being renamed', () => mouseClick(cdp, `(${inputOf(MANAGE)}).closest('[data-reveal]').querySelector('[aria-label="Delete alias"]')`), { reflect: `!${inputOf(MANAGE)}`, writes: aliasWrites(1) })
@@ -348,7 +348,7 @@ async function group2(cdp) {
   }, { reflect: `${rows(MANAGE)}[2]?.textContent.trim() === 'Q3 doc'`, writes: aliasWrites(1) })
   const spoken = await cdp.evaluate(`document.querySelector('[role="status"][aria-live="assertive"]')?.textContent ?? null`)
   check('group 2: the keyboard moves Q3 doc above liftoff and announces it', spoken === 'Moved Q3 doc.' && same(aliasesOf(TARGET), ['launch', 'roadmap', 'Q3 doc', 'liftoff']), JSON.stringify([spoken, aliasesOf(TARGET)]))
-  await doubleClick(cdp, nameOf(MANAGE, 'launch'))
+  await clicks(cdp, await boxOf(cdp, nameOf(MANAGE, 'launch')), 2)
   chrome = null
   await step(cdp, 'group 2: a drag while renaming', () => drag(cdp, lineRowOf(MANAGE, 'liftoff'), lineRowOf(MANAGE, 'roadmap'), async () => { chrome = await dragChrome(cdp, MANAGE) }), { writes: aliasWrites(0) })
   check('group 2: a drag while renaming draws no drop line and writes nothing', chrome && !chrome.line && same(aliasesOf(TARGET), ['launch', 'roadmap', 'Q3 doc', 'liftoff']), JSON.stringify([chrome, aliasesOf(TARGET)]))
@@ -425,14 +425,14 @@ async function group3(cdp) {
   check("group 3: moving to another link's slot inside the double-click window inserts nothing in either", !(await docOf(cdp, V)).includes('launch'), await docOf(cdp, V))
 
   await openStage(cdp, V)
-  await step(cdp, 'group 3: a double-click on liftoff', () => doubleClick(cdp, nameOf(PICKER, 'liftoff')), { reflect: `!!${inputOf(PICKER)}`, writes, window: 900 })
+  await step(cdp, 'group 3: a double-click on liftoff', async () => clicks(cdp, await boxOf(cdp, nameOf(PICKER, 'liftoff')), 2), { reflect: `!!${inputOf(PICKER)}`, writes, window: 900 })
   check("group 3: a double-click opens liftoff's field and inserts nothing", same(await editingIn(cdp, PICKER), { value: 'liftoff', focused: true }) && (await docOf(cdp, V)) === blank, JSON.stringify([await editingIn(cdp, PICKER), await docOf(cdp, V)]))
   await selectAll(cdp)
   await typeText(cdp, 'lift-off')
   await step(cdp, 'group 3: Enter renames liftoff in the picker', () => pressKey(cdp, 'Enter'), { reflect: inSlot(V), writes: writes1 })
   list = ['launch', 'lift-off', 'Q3 doc']
   check('group 3: the rename lands, the caret is back in the slot, and the link is untouched', same(aliasesOf(TARGET), list) && (await cdp.evaluate(inSlot(V))) && (await docOf(cdp, V)) === blank, JSON.stringify([aliasesOf(TARGET), await docOf(cdp, V)]))
-  await doubleClick(cdp, nameOf(PICKER, 'Q3 doc'))
+  await clicks(cdp, await boxOf(cdp, nameOf(PICKER, 'Q3 doc')), 2)
   await step(cdp, 'group 3: Escape in an alias field', () => pressKey(cdp, 'Escape'), { reflect: inSlot(V), writes })
   check('group 3: Escape in an alias field returns the caret to the slot with the picker open', (await cdp.evaluate(inSlot(V))) && !(await editingIn(cdp, PICKER)) && (await shownIn(cdp, PICKER)).length === 3)
 
@@ -482,7 +482,7 @@ async function group3(cdp) {
 
   await openStage(cdp, V)
   const open = await cdp.evaluate(linkLine(V))
-  await doubleClick(cdp, nameOf(PICKER, 'launch'))
+  await clicks(cdp, await boxOf(cdp, nameOf(PICKER, 'launch')), 2)
   const held = await cdp.evaluate(linkLine(V))
   check('group 3: the link keeps its open decoration while an edit runs in the picker', open === held && (await editingIn(cdp, PICKER))?.focused, JSON.stringify({ open, held }))
   await shot(cdp, 'picker-rename')

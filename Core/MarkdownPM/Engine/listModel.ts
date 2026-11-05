@@ -142,15 +142,14 @@ function reindentBlock(blockLines: string[], targetIndent: string | undefined): 
   })
 }
 
-type MoveSeams = 'exact' | 'fenced'
+type MoveSeams = { looseSource: boolean; looseSlot: boolean }
 
 function rebuildMove(
   doc: string,
   range: BlockSpan,
   slot: Slot,
-  seams: MoveSeams,
+  { looseSource, looseSlot }: MoveSeams,
 ): { doc: string; sourceAt: number; destAt: number } | null {
-  const fenced = seams === 'fenced'
   const trailingNL = doc.endsWith('\n')
   const lines = doc.split('\n')
   if (trailingNL) lines.pop()
@@ -164,38 +163,38 @@ function rebuildMove(
 
   let tLine = slot.at >= doc.length ? lines.length : starts.indexOf(slot.at)
   if (tLine < 0) return null
-  while (fenced && blankAt(tLine)) tLine++
+  while (looseSlot && blankAt(tLine)) tLine++
   if (tLine >= bStart && tLine <= bEnd + 1) return null
 
   const blockLines = reindentBlock(lines.slice(bStart, bEnd + 1), slot.indent)
   let cutStart = bStart
   let cutEnd = bEnd
-  if (fenced && blankAt(bEnd + 1)) cutEnd = bEnd + 1
-  else if (fenced && blankAt(bStart - 1)) cutStart = bStart - 1
+  if (looseSource && blankAt(bEnd + 1)) cutEnd = bEnd + 1
+  else if (looseSource && blankAt(bStart - 1)) cutStart = bStart - 1
 
   const out: string[] = []
-  const sep = (): void => {
-    if (fenced && out.length && !isBlank(out[out.length - 1])) out.push('')
+  const sep = (wanted: boolean): void => {
+    if (wanted && out.length && !isBlank(out[out.length - 1])) out.push('')
   }
   let destLine = 0
   let sourceLine = 0
   for (let i = 0; i < lines.length; i++) {
     if (i === tLine) {
-      sep()
+      sep(looseSlot)
       destLine = out.length
       out.push(...blockLines)
-      if (fenced) out.push('')
+      if (looseSlot) out.push('')
     }
     if (i < cutStart || i > cutEnd) {
       if (i === cutEnd + 1) {
-        sep()
+        sep(looseSource)
         sourceLine = out.length
       }
       out.push(lines[i])
     }
   }
   if (tLine === lines.length) {
-    sep()
+    sep(looseSlot)
     destLine = out.length
     out.push(...blockLines)
   }
@@ -277,7 +276,22 @@ export function dropChanges(
   slot: Slot,
   scope: MarkdownScope,
 ): TextEdit[] | null {
-  const moved = rebuildMove(doc, block, slot, 'exact')
+  const scan = scanDoc(doc)
+  const gapBefore = (items: readonly number[], n: number): boolean =>
+    n > 0 && n < items.length && isBlank(scan.lines[items[n] - 1])
+  const first = lineIndexAt(scan, block.from)
+  const own = siblingsAt(scan, first, scope).items
+  const at = own.indexOf(first)
+  const looseSource = gapBefore(own, at) || gapBefore(own, at + 1)
+  const t = lineIndexAt(scan, slot.at)
+  const lead = slot.indent ?? leadOf(scan.lines[first])
+  const anchor = [t, t - 1].find(
+    (k) => k >= 0 && itemAt(scan, k, k, scope) !== null && leadOf(scan.lines[k]) === lead,
+  )
+  const group = anchor === undefined ? [] : siblingsAt(scan, anchor, scope).items
+  const n = group.findIndex((k) => k >= t)
+  const looseSlot = gapBefore(group, n < 0 ? group.length - 1 : Math.max(n, 1))
+  const moved = rebuildMove(doc, block, slot, { looseSource, looseSlot })
   if (moved === null) return null
 
   const finalDoc = applyEdits(
@@ -288,6 +302,6 @@ export function dropChanges(
 }
 
 export function moveRange(doc: string, range: BlockSpan, slot: Slot): TextEdit[] | null {
-  const moved = rebuildMove(doc, range, slot, 'fenced')
+  const moved = rebuildMove(doc, range, slot, { looseSource: true, looseSlot: true })
   return moved === null ? null : diffAsSingleReplace(doc, moved.doc)
 }

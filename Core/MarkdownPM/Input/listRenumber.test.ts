@@ -88,7 +88,12 @@ describe('a level change recounts the run it joined and the run it left', () => 
       '- p\n\t1. a\n\t- b\n\t\t- kid\n\t1. c',
     )
     expect(landEdit(doc, [smartBackspace(scanDoc(doc), b, b)!], 'delete', 'page')).toBe(
-      '- p\n\t1. a\nb\n\t\t- kid\n\t1. c',
+      '- p\n\t1. a\n\tb\n\t\t- kid\n\t2. c',
+    )
+    const run = '- p\n\t1. x\n\t2. y\n\t3. z'
+    const y = run.indexOf('y')
+    expect(landEdit(run, [smartBackspace(scanDoc(run), y, y)!], 'delete', 'page')).toBe(
+      '- p\n\t1. x\n\ty\n\t2. z',
     )
     const loose = '- p\n\t1. a\n\n\t2. b\n\t3. c'
     const a = loose.indexOf('a')

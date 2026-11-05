@@ -188,13 +188,16 @@ export function outdentListOnShiftTab(
   }
 }
 
-/** Where a Backspace takes a line's whole marker: a list marker is one unit, so a caret anywhere past its first character takes all of it rather than leaving a stray space or half a box; a heading or quote prefix only from its end. */
-function markerSpanOf(line: string, scope: MarkdownScope): { from: number; to: number } | null {
+/** Where a Backspace takes a line's whole marker: a list marker is one unit, so a caret anywhere past its first character takes all of it, keeping the line's indent, rather than leaving a stray space or half a box; a heading or quote prefix only from its end, with the line's start. */
+function markerSpanOf(
+  line: string,
+  scope: MarkdownScope,
+): { cut: number; from: number; to: number } | null {
   const lm = readsLists(scope) ? parseListMarker(line) : null
-  if (lm) return { from: lm.markerStart + 1, to: lm.contentStart }
+  if (lm) return { cut: lm.markerStart, from: lm.markerStart + 1, to: lm.contentStart }
   if (scope !== 'page') return null
   const end = headingParts(line)?.contentStart ?? (quotePrefix(line).length || null)
-  return end === null ? null : { from: end, to: end }
+  return end === null ? null : { cut: 0, from: end, to: end }
 }
 
 /** A diff line's margin takes only a sign, which replaces the one the line wears; the same sign again changes nothing. */
@@ -241,14 +244,14 @@ export function smartBackspace(
       }
       const lm = parseListMarker(line.slice(pfx.length))
       if (lm) {
+        const innerMarkerStart = ls + pfx.length + lm.markerStart
         const innerContentStart = ls + pfx.length + lm.contentStart
-        if (selStart <= ls + pfx.length + lm.markerStart || selStart > innerContentStart)
-          return null
+        if (selStart <= innerMarkerStart || selStart > innerContentStart) return null
         return {
-          from: ls + pfx.length,
+          from: innerMarkerStart,
           to: innerContentStart,
           insert: '',
-          selection: ls + pfx.length,
+          selection: innerMarkerStart,
         }
       }
       if (selStart === ls + pfx.length && ls > 0)
@@ -259,7 +262,7 @@ export function smartBackspace(
 
   const marker = markerSpanOf(line, scope)
   if (marker === null || selStart < ls + marker.from || selStart > ls + marker.to) return null
-  return { from: ls, to: ls + marker.to, insert: '', selection: ls }
+  return { from: ls + marker.cut, to: ls + marker.to, insert: '', selection: ls + marker.cut }
 }
 
 export function canonicalizeCheckbox(

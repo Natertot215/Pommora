@@ -83,6 +83,8 @@ describe('drag reorders source lines', () => {
     const doc = '- a\n- b\n- c'
     const out = drop(doc, lineStart(doc, 'a'), lineStart(doc, '- c'))
     expect(out).toBe('- b\n- a\n- c')
+    const loose = '- x\n\n- y\n\npara\n\n- a\n- b'
+    expect(drop(loose, 0, lineStart(loose, '- b'))).toBe('- y\n\npara\n\n- a\n- x\n- b')
   })
   it('moves a bullet item to the end', () => {
     const doc = '- a\n- b\n- c'
@@ -96,6 +98,8 @@ describe('ordered list renumbers after a move', () => {
     const doc = '1. a\n2. b\n3. c'
     const out = drop(doc, lineStart(doc, 'c'), 0)
     expect(out).toBe('1. c\n2. a\n3. b')
+    const loose = '1. a\n\n2. b\n\n3. c'
+    expect(drop(loose, lineStart(loose, 'c'), 0)).toBe('1. c\n\n2. a\n\n3. b')
   })
   it('reletters an alphabetical run', () => {
     const doc = 'A. a\nB. b\nC. c'
@@ -106,6 +110,9 @@ describe('ordered list renumbers after a move', () => {
     const doc = '1. a\n2. b\n3. c'
     const out = drop(doc, lineStart(doc, 'a'), doc.length)
     expect(out).toBe('1. b\n2. c\n3. a')
+    const loose = '1. a\n\n2. b\n\n3. c'
+    expect(drop(loose, 0, loose.length)).toBe('1. b\n\n2. c\n\n3. a')
+    expect(drop(loose, lineStart(loose, 'b'), loose.length)).toBe('1. a\n\n2. c\n\n3. b')
   })
   it('renumbers the whole run when an item with a continuation line moves up', () => {
     const doc = '1. a\n2. b\n3. c\n   more about c\n4. d'

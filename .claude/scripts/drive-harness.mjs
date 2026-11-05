@@ -219,11 +219,10 @@ export async function mouseAt(cdp, { x, y }, { button = 'left', modifiers = 0, s
   await sleep(settle)
 }
 export const mouseClick = async (cdp, expr, opts) => mouseAt(cdp, await boxOf(cdp, expr), opts)
-// Two presses the second counted as such, so the element sees click (detail 1), click (detail 2), then dblclick.
-export async function doubleClick(cdp, expr, { settle = 500 } = {}) {
-  const { x, y } = await boxOf(cdp, expr)
+// `n` presses each counted as such, so the element sees click (detail 1) through click (detail n), with dblclick after the second.
+export async function clicks(cdp, { x, y }, n, { settle = 500 } = {}) {
   await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y, button: 'none' })
-  for (const clickCount of [1, 2])
+  for (let clickCount = 1; clickCount <= n; clickCount++)
     for (const type of ['mousePressed', 'mouseReleased'])
       await cdp.send('Input.dispatchMouseEvent', { type, x, y, button: 'left', buttons: type === 'mousePressed' ? 1 : 0, clickCount })
   await sleep(settle)

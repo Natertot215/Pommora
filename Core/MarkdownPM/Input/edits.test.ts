@@ -976,6 +976,9 @@ describe('nested list behavior inside a callout', () => {
     expect(apply(doc, smartBackspace(scanDoc(doc), contentStart, contentStart)!)).toBe(
       callout('> x'),
     )
+    const nested = callout('> \t- x')
+    const x = nested.length - 1
+    expect(apply(nested, smartBackspace(scanDoc(nested), x, x)!)).toBe(callout('> \tx'))
   })
   it('backspace at a plain body line-start joins up rather than stripping the `>`', () => {
     const doc = '> [!callout] head\n> body'

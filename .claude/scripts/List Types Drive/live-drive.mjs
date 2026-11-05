@@ -1,6 +1,6 @@
 import {
-  ask, boxOf, closeSettings, createPage, hover, launch, META, mouseAt, must, openCollection, openPage, openSettings,
-  PAGE_VIEW, phasedItem, pickNative, popNative, press, pressKey, restore, row, shot, sleep, SWITCH, tally, typeText, until,
+  ask, boxOf, clicks, closeSettings, createPage, hover, launch, META, mouseAt, must, openCollection, openPage, openSettings, PAGE_VIEW,
+  phasedItem, pickNative, popNative, press, pressKey, restore, row, shot, sleep, sweep, SWITCH, tally, typeText, until, writeBody,
 } from '../drive-harness.mjs'
 
 const PORT = 9413
@@ -43,9 +43,9 @@ const lineOf = (text) =>
   `[...document.querySelectorAll('.cm-line.md-list-item')].find((e) => !e.closest('.mdpm-tbl-cell-editor') && e.querySelector('.md-list-text')?.textContent.trim() === ${JSON.stringify(text)})`
 const glyphOf = (text) => `(${lineOf(text)}).querySelector('.md-list-glyph')`
 const PAGE_TEXT = `[...document.querySelectorAll('.cm-content')].find((c) => !c.closest('.text-pane') && !c.closest('[inert]'))`
-// The center of `from`'s first occurrence inside `scope`'s text, `length` characters wide, for a right-click on the text itself.
+// The center and left edge of `from`'s first occurrence inside `scope`'s text, `length` characters wide, for a right-click on the text itself.
 const textAt = (cdp, scope, from, length = from.length) =>
-  cdp.evaluate(`(() => { const w = document.createTreeWalker(${scope}, NodeFilter.SHOW_TEXT); let n; while ((n = w.nextNode())) { const i = n.data.indexOf(${JSON.stringify(from)}); if (i < 0) continue; const r = document.createRange(); r.setStart(n, i); r.setEnd(n, i + ${length}); const b = r.getBoundingClientRect(); return { x: b.x + b.width / 2, y: b.y + b.height / 2 } } return null })()`)
+  cdp.evaluate(`(() => { const w = document.createTreeWalker(${scope}, NodeFilter.SHOW_TEXT); let n; while ((n = w.nextNode())) { const i = n.data.indexOf(${JSON.stringify(from)}); if (i < 0) continue; const r = document.createRange(); r.setStart(n, i); r.setEnd(n, i + ${length}); const b = r.getBoundingClientRect(); return { x: b.x + b.width / 2, y: b.y + b.height / 2, left: b.left } } return null })()`)
 const flat = (rows) => (rows ?? []).map((r) => (r.separator ? '—' : `${r.label}${r.checked ? ' ✓' : ''}${r.submenu ? ' ▸' : ''}`))
 const checked = (rows) => flat(rows).filter((r) => r.endsWith(' ✓'))
 const typeRows = (current) => TYPES.map((t) => (t === current ? `${t} ✓` : t))
@@ -141,6 +141,28 @@ async function group1(cdp) {
   await select(cdp, '- A\n')
   const below = await glyphPick(cdp, 'B', 'Checklist')
   item(1, 3, 'B-7', "a glyph on the line a triple-click's range ends at acts on its own group", (await body(cdp)) === '- A\n- [ ] B\n- [ ] C', `${seen(below)} · ${show(await body(cdp))}`)
+
+  // A page tile mounts the page's own editor, read-only until a click begins editing.
+  const TILE = '.mdpm-embed-tile .cm-content'
+  const tileDoc = () => cdp.evaluate(`document.querySelector(${JSON.stringify(TILE)})?.cmTile.root.view.state.doc.toString() ?? null`)
+  const tileGlyph = (n) => `document.querySelectorAll(${JSON.stringify(`${TILE} .md-list-glyph`)})[${n}]`
+  await createPage(cdp, 'LT Embedded')
+  writeBody('LT Embedded', '- a\n- b\n\nText.\n\n1. c\n2. d\n')
+  await sleep(800)
+  await setBody(cdp, '![[LT Embedded]]')
+  await until('the tile', () => cdp.evaluate(`!!(${tileGlyph(3)})`))
+  const resting = await pop(cdp, await boxOf(cdp, tileGlyph(1)), [])
+  const restingNumber = await pop(cdp, await boxOf(cdp, tileGlyph(2)), [])
+  item(1, 3, 'A-4 A-6', "a read-only tile's glyph opens no type menu", resting.rows === null && !flat(restingNumber.rows).includes('Numbered'), `${seen(resting)} · ${seen(restingNumber)}`)
+  await mouseAt(cdp, await textAt(cdp, `document.querySelector(${JSON.stringify(TILE)})`, 'b'))
+  await until('the tile editing', () => cdp.evaluate(`!!document.querySelector('.mdpm-embed-tile.is-editing-tile')`))
+  const inTile = await pop(cdp, await boxOf(cdp, tileGlyph(1)), ['Numbered'])
+  item(1, 3, 'A-1 A-4', "an editing tile's glyph opens the type menu and numbers its own group", show(flat(inTile.rows)) === show(typeRows('Bulleted')) && (await tileDoc()) === '1. a\n2. b\n\nText.\n\n1. c\n2. d\n' && (await body(cdp)) === '![[LT Embedded]]', `${seen(inTile)} · ${show([await tileDoc(), await body(cdp)])}`)
+  await pressKey(cdp, 'z', META)
+  await sleep(400)
+  item(1, 3, 'A-7', '⌘Z in the tile undoes its pick', (await tileDoc()) === '- a\n- b\n\nText.\n\n1. c\n2. d\n', show(await tileDoc()))
+  await pressKey(cdp, 'Escape')
+  await sleep(400)
 }
 
 // ── Groups 2 and 3 — a table cell, focused and at rest ──────────────────────
@@ -163,6 +185,17 @@ async function group2(cdp) {
   await pressKey(cdp, 'Escape')
   await sleep(500)
   item(2, 3, 'A-4', "Numbered from the second line's glyph numbers the cell", (await body(cdp)).endsWith('| 1. a<br>2. b | x |'), `${seen(second)} · ${show(await body(cdp))}`)
+  await pressKey(cdp, 'z', META)
+  await sleep(500)
+  item(2, 3, 'A-7', "⌘Z after leaving the cell with Escape puts the cell back", (await body(cdp)) === CELL('- a<br>- b'), show(await body(cdp)))
+  await mouseAt(cdp, await textAt(cdp, restingCell('b'), 'b'))
+  await until('the live cell again', () => cdp.evaluate(`!!document.querySelector('.mdpm-tbl-cell-editor .md-list-glyph')`))
+  await pop(cdp, await boxOf(cdp, `[...document.querySelectorAll('.mdpm-tbl-cell-editor .md-list-glyph')][1]`), ['Numbered'])
+  await pressKey(cdp, 'z', META)
+  await sleep(300)
+  await pressKey(cdp, 'Escape')
+  await sleep(500)
+  item(2, 3, 'A-7', "⌘Z inside the live cell after its pick puts the cell back", (await body(cdp)) === CELL('- a<br>- b'), show(await body(cdp)))
   await shot(cdp, 'g2-cell')
 }
 
@@ -172,6 +205,21 @@ async function group3(cdp) {
     const menu = await pop(cdp, await boxOf(cdp, restingGlyph('a')), ['Checklist'])
     const mounted = await cdp.evaluate(`!!document.querySelector('.mdpm-tbl-cell-editor')`)
     item(3, 3, 'A-8', `${show(text)} at rest: the glyph menu's Checklist commits without entering the cell`, flat(menu.rows).length === TYPES.length && !mounted && (await body(cdp)).endsWith('| - [ ] a<br>- [ ] b | x |'), `${seen(menu)} · ${show([mounted, await body(cdp)])}`)
+  }
+  for (const [text, type, n, want] of [
+    ['A. a<br>B. b', 'Alphabetical', 1, '1. a<br>2. b'],
+    ['- [x] a<br>- [ ] b', 'Checklist', 1, '1. a<br>2. b'],
+    ['+ a<br>+ b', 'Arrowed', 1, '1. a<br>2. b'],
+    ['- a<br>\t- b', 'Bulleted', 1, '- a<br>\t1. b'],
+  ]) {
+    await setBody(cdp, CELL(text))
+    const glyph = `[...(${restingCell('a')}).querySelectorAll('.md-list-item > [data-src]')][${n}]`
+    const menu = await pop(cdp, await boxOf(cdp, glyph), ['Numbered'])
+    const picked = await body(cdp)
+    const mounted = await cdp.evaluate(`!!document.querySelector('.mdpm-tbl-cell-editor')`)
+    await pressKey(cdp, 'z', META)
+    await sleep(500)
+    item(3, 3, 'A-7 A-8', `${show(text)} at rest: line ${n + 1}'s glyph checks ${type}, Numbered commits at rest, and ⌘Z reverts it`, show(flat(menu.rows)) === show(typeRows(type)) && picked.endsWith(`| ${want} | x |`) && !mounted && (await body(cdp)) === CELL(text), `${seen(menu)} · ${show([picked, mounted, await body(cdp)])}`)
   }
   await setBody(cdp, CELL('> a'))
   const quote = await pop(cdp, await textAt(cdp, restingCell('a'), 'a'), ['Lists', 'Bullet List'])
@@ -204,6 +252,28 @@ async function group4(cdp) {
   const on = await wordPick(cdp, 'B', [])
   item(4, 2, 'C-4', "Lists ▸'s check follows the reach: none off, Bullet List on", off.rows !== null && show(checked(listsRows(off.rows))) === '[]' && show(checked(listsRows(on.rows))) === show(['Bullet List ✓']), `${off.hit} · ${show([flat(listsRows(off.rows)), flat(listsRows(on.rows))])}`)
 
+  // The left edge of `word`'s first character, where a click reads as the line's start.
+  const edgeOf = async (word) => {
+    const { left, y } = await textAt(cdp, PAGE_TEXT, word, 1)
+    return { x: left + 1, y }
+  }
+  for (const [path, want] of [
+    [['Format', 'Bold'], 'one\n**two** two'],
+    [['Lists', 'Bullet List'], 'one\n- two two'],
+  ]) {
+    await setBody(cdp, 'one\ntwo two')
+    await clicks(cdp, await textAt(cdp, PAGE_TEXT, 'one'), 3, { settle: 400 })
+    const tripled = await selection(cdp)
+    const edge = await pop(cdp, await edgeOf('two'), path)
+    item(4, 3, 'B-7 C-6', `a triple-clicked line, then ${path.join(' ▸ ')} from the next line's first pixel, acts on that line`, show(tripled) === show([0, 4]) && (await body(cdp)) === want, `${seen(edge)} · ${show([tripled, await selection(cdp), await body(cdp)])}`)
+  }
+
+  await setBody(cdp, 'one\ntwo two')
+  await sweep(cdp, await edgeOf('one'), await edgeOf('two'), { steps: 6 })
+  const swept = await selection(cdp)
+  const dragged = await wordPick(cdp, 'one', ['Lists', 'Numbered List'])
+  item(4, 3, 'B-7', "a drag-selection ending at the next line's start numbers only its own line", show(swept) === show([0, 4]) && (await body(cdp)) === '1. one\ntwo two', `${seen(dragged)} · ${show([swept, await body(cdp)])}`)
+
   await setBody(cdp, 'plain word here')
   await select(cdp, 'word')
   await wordPick(cdp, 'word', ['Format', 'Bold'])
@@ -224,6 +294,9 @@ async function group4(cdp) {
   await pressKey(cdp, 'Enter')
   await sleep(500)
   item(4, 0, 'C-1 D-2', 'the / menu turns its empty line into an item', (await body(cdp)) === '- ', show(await body(cdp)))
+  await pressKey(cdp, 'z', META)
+  await sleep(400)
+  item(4, 3, 'A-7', '⌘Z after a / pick takes the item back to the empty line', (await body(cdp)) === '', show(await body(cdp)))
 }
 
 // ── Group 5 — the setting ───────────────────────────────────────────────────

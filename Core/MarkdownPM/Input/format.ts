@@ -184,7 +184,7 @@ export function editFor(
     case 'list':
       return setList(scan, from, to, value as ListKind, settings, scope)
     case 'block':
-      return setBlock(scan.text, from, to, value as BlockFormat)
+      return setBlock(scan, from, to, value as BlockFormat)
     default:
       return null
   }
@@ -362,7 +362,7 @@ export function listKindOf(
   scope: MarkdownScope,
 ): ListKind | null {
   const kinds = new Set(
-    listReach(scan, from, to, settings, scope).flatMap(({ lm }) => (lm ? [drawnKind(lm)] : [])),
+    listReach(scan, from, to, settings, scope).map(({ lm }) => lm && drawnKind(lm)),
   )
   return kinds.size === 1 ? [...kinds][0] : null
 }
@@ -409,7 +409,8 @@ function spannedLines(doc: string, from: number, to: number): { ls: number; le: 
   return out
 }
 
-export function setBlock(doc: string, from: number, to: number, fmt: BlockFormat): FormatEdit {
+export function setBlock(scan: DocScan, from: number, to: number, fmt: BlockFormat): FormatEdit {
+  const doc = scan.text
   const ls = lineStartAt(doc, from)
   const le = lineEndAt(doc, from)
   const line = doc.slice(ls, le)
@@ -441,7 +442,18 @@ export function setBlock(doc: string, from: number, to: number, fmt: BlockFormat
       return { changes: [{ from: ls, to: le, insert: next }], selection: ls + next.length }
     }
     case 'code': {
-      // One fence around the whole selection: a block of code pasted in and then fenced is the gesture this exists for.
+      // Inside a fence, the pick takes its two fence lines off; elsewhere, one fence goes around the whole selection, the gesture for a block of code pasted in.
+      const fence = scan.fences[lineIndexAt(scan, from)]
+      if (fence) {
+        const body = scan.lineStarts[lineIndexAt(scan, fence.from) + 1]
+        const close = scan.lineStarts[lineIndexAt(scan, fence.to)]
+        return {
+          changes: [
+            { from: fence.from, to: body, insert: '' },
+            { from: Math.max(body, close - 1), to: fence.to, insert: '' },
+          ],
+        }
+      }
       const end = lineEndAt(doc, reachEnd(doc, from, to))
       const body = doc.slice(ls, end)
       const next = `\`\`\`\n${body}\n\`\`\``
