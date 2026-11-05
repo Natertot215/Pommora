@@ -48,11 +48,19 @@ describe('the block grip menu', () => {
     ])
   })
 
-  it('a list offers its Type set with the current kind in force', () => {
+  it('a list offers its Type set with the current kind in force, and a glyph the same set flat, without Delete', () => {
     const items = gripMenuItems({ kind: 'list', current: 'bullet' })
     expect(items[0].submenu?.map((r) => [r.label, r.action, r.checked])).toEqual([
       ['Bulleted', 'list:bullet', true],
       ['Numbered', 'list:ordered', false],
+      ['Alphabetical', 'list:alphabetical', false],
+      ['Checklist', 'list:checkbox', false],
+      ['Arrowed', 'list:arrow', false],
+    ])
+    const glyph = gripMenuItems({ kind: 'glyph', current: 'ordered' })
+    expect(glyph.map((r) => [r.label, r.action, r.checked])).toEqual([
+      ['Bulleted', 'list:bullet', false],
+      ['Numbered', 'list:ordered', true],
       ['Alphabetical', 'list:alphabetical', false],
       ['Checklist', 'list:checkbox', false],
       ['Arrowed', 'list:arrow', false],

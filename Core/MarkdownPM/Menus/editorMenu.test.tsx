@@ -64,11 +64,17 @@ describe('the editor’s native menu', () => {
     expect(view.state.doc.toString()).toBe('**bold**')
   })
 
-  it('reads the flags at the click when it lands outside the selection', async () => {
+  it('reads the flags at the click when it lands outside the selection, and acts there', async () => {
     const view = await mountEditor({ initialBody: 'plain **bold** plain', host: host() })
     view.dispatch({ selection: { anchor: 0 } })
     await rightClick(view, 9)
     expect(format).toHaveBeenCalledWith(expect.objectContaining({ bold: true }))
+    await cleanupEditor()
+    format.mockResolvedValue('format:bold')
+    const edge = await mountEditor({ initialBody: 'one\ntwo two', host: host() })
+    edge.dispatch({ selection: { anchor: 0, head: 4 } })
+    await rightClick(edge, 4, edge.dom.querySelectorAll('.cm-line')[1])
+    expect(edge.state.doc.toString()).toBe('one\n**two** two')
   })
 
   it('reads the embed seat at the click, not at the caret', async () => {
@@ -78,12 +84,24 @@ describe('the editor’s native menu', () => {
     expect(format).toHaveBeenCalledWith(expect.objectContaining({ embedSeat: true }))
   })
 
-  it('acts on a glyph’s own group when it sits on the line a triple-click’s range ends at', async () => {
+  it('acts on the selection from a glyph on a line it touches, and on the glyph’s group past it', async () => {
     grip.mockResolvedValue('list:checkbox')
     const view = await mountEditor({ initialBody: '- a\n1. b\n2. c', host: host() })
     view.dispatch({ selection: { anchor: 0, head: 4 } })
     await rightClick(view, 4, view.dom.querySelectorAll('.md-list-glyph')[1])
     expect(view.state.doc.toString()).toBe('- a\n- [ ] b\n- [ ] c')
+    await cleanupEditor()
+    grip.mockResolvedValue('list:ordered')
+    const drag = await mountEditor({ initialBody: '- a\n- b\n- c\n- d', host: host() })
+    drag.dispatch({ selection: { anchor: 6, head: 11 } })
+    await rightClick(drag, 4, drag.dom.querySelectorAll('.md-list-glyph')[1])
+    expect(drag.state.doc.toString()).toBe('- a\n1. b\n2. c\n- d')
+    let pick: (action: GripMenuAction) => void = () => {}
+    grip.mockReturnValue(new Promise((r) => (pick = r)))
+    await rightClick(drag, 0, drag.dom.querySelector('.md-list-glyph')!)
+    drag.dispatch({ changes: { from: 0, insert: 'x' } })
+    await act(async () => pick('list:checkbox'))
+    expect(drag.state.doc.toString()).toBe('x- a\n1. b\n2. c\n- d')
   })
 
   it('never asks from a read-only editor', async () => {

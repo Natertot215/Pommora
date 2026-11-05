@@ -57,11 +57,15 @@ describe('the editor’s right-click block', () => {
     expect(branch('Insert').map((r) => r.checked)).toEqual([
       true,
       undefined,
-      undefined,
+      false,
       undefined,
       undefined,
       undefined,
     ])
+    const fenced = editorContextItems({ ...state, block: 'code' }, DEFAULT_COMMANDS, '')
+    expect(fenced.find((i) => i.label === 'Insert')?.submenu?.find((r) => r.checked)?.label).toBe(
+      'Code Block',
+    )
     expect(branch('Heading').find((r) => r.checked)?.label).toBe('Heading 2')
     expect(branch('Heading')[0]).toMatchObject({ label: 'Paragraph', action: 'heading:0' })
     expect(branch('Lists').find((r) => r.checked)?.label).toBe('Arrowed List')

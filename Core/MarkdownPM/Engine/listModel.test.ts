@@ -47,7 +47,7 @@ function drop(doc: string, grab: number, at: number): string {
   const block = subBlockAt(scanDoc(doc), grab, 'page')
   if (!block) throw new Error('grab not on a list line')
   const slot: Slot = { at }
-  const changes = dropChanges(doc, block, slot, 'page')
+  const changes = dropChanges(scanDoc(doc), block, slot, 'page')
   return changes ? applyEdits(doc, changes) : doc
 }
 
@@ -76,8 +76,8 @@ describe('drag reorders source lines', () => {
   it("refuses a drop on the dragged item's own edges, so a release there cancels in place", () => {
     const doc = '- a\n- b\n  - child\n- c'
     const block = subBlockAt(scanDoc(doc), lineStart(doc, '- b'), 'page')!
-    expect(dropChanges(doc, block, { at: block.from }, 'page')).toBeNull()
-    expect(dropChanges(doc, block, { at: block.to + 1 }, 'page')).toBeNull()
+    expect(dropChanges(scanDoc(doc), block, { at: block.from }, 'page')).toBeNull()
+    expect(dropChanges(scanDoc(doc), block, { at: block.to + 1 }, 'page')).toBeNull()
   })
   it('moves a bullet item down past a sibling', () => {
     const doc = '- a\n- b\n- c'
@@ -148,13 +148,13 @@ describe('re-nesting on drop (slot.indent adopts the target depth)', () => {
   it('flattens a nested item to root when dropped at a root-indent target', () => {
     const doc = '- a\n\t- nested\n- b'
     const block = subBlockAt(scanDoc(doc), lineStart(doc, 'nested'), 'page')!
-    const changes = dropChanges(doc, block, { at: doc.length, indent: '' }, 'page')!
+    const changes = dropChanges(scanDoc(doc), block, { at: doc.length, indent: '' }, 'page')!
     expect(applyEdits(doc, changes)).toBe('- a\n- b\n- nested')
   })
   it('re-indents the whole sub-block, preserving relative nesting', () => {
     const doc = '- a\n\t- p\n\t\t- c\n- b'
     const block = subBlockAt(scanDoc(doc), lineStart(doc, '- p'), 'page')!
-    const changes = dropChanges(doc, block, { at: doc.length, indent: '' }, 'page')!
+    const changes = dropChanges(scanDoc(doc), block, { at: doc.length, indent: '' }, 'page')!
     expect(applyEdits(doc, changes)).toBe('- a\n- b\n- p\n\t- c')
   })
 })
@@ -189,7 +189,7 @@ describe('drag inside a callout (prefix-aware)', () => {
   it('reorders a callout bullet without doubling the `>` prefix', () => {
     const doc = '> [!callout] head\n> - one\n> - two'
     const block = subBlockAt(scanDoc(doc), doc.indexOf('one'), 'page')!
-    const changes = dropChanges(doc, block, { at: doc.length, indent: '> ' }, 'page')!
+    const changes = dropChanges(scanDoc(doc), block, { at: doc.length, indent: '> ' }, 'page')!
     expect(applyEdits(doc, changes)).toBe('> [!callout] head\n> - two\n> - one')
   })
   it('subBlockAt does NOT swallow a top-level indented sibling across the box boundary', () => {

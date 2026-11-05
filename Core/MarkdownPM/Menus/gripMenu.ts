@@ -20,7 +20,7 @@ import { titleFromPath } from '../../Paths/posix'
 import { lineEndAt, lineStartAt } from '../Engine/markdownCode'
 import { applyEdit } from '../Input/applyEdit'
 import { type EditorHost, editorHost } from '../api'
-import { glyphAt, gutterLineAt } from '../lineDom'
+import { gutterLineAt } from '../lineDom'
 import { GRIP_LINE } from '../Engine/intents'
 
 const gripLineAt = (e: MouseEvent): HTMLElement | null => gutterLineAt(e, GRIP_LINE)
@@ -127,9 +127,9 @@ function popHeadingMenu(view: EditorView, headingEl: HTMLElement): void {
 
 export const gripMenu = (scope: MarkdownScope) =>
   EditorView.domEventHandlers({
-    // A grip acts on its block and a glyph on its group, never on the caret, and a right-press needs the same suppression the drag gestures give a left-press: preventing the contextmenu comes far too late to stop the seat.
+    // A grip acts on its block, never on the caret, and a right-press needs the same suppression the drag gestures give a left-press: preventing the contextmenu comes far too late to stop the seat.
     mousedown(e) {
-      if (e.button !== 2 || (!glyphAt(e) && !gripLineAt(e) && !headingLineAt(e))) return false
+      if (e.button !== 2 || (!gripLineAt(e) && !headingLineAt(e))) return false
       e.preventDefault()
       return true
     },

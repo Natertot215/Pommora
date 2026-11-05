@@ -20,7 +20,7 @@ import { glyphAt, gutterLineAt } from '../lineDom'
 import { nextCell, type NavDir } from '../Engine/Tables/navigate'
 import type { EditorHost } from '../api'
 import { clamp } from '@pommora/uix/Utilities/clamp'
-import { useDismissal } from '@pommora/uix/Interactions/dismissalStack'
+import { useDismissal, useEscape } from '@pommora/uix/Interactions/dismissalStack'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 
 function alignClass(align: Align): string {
@@ -122,7 +122,7 @@ export function MarkdownTable({
   onCellCommit: (row: number, col: number, text: string) => void
   cellAt: (row: number, col: number) => string | null
   onSettled: () => void
-  onExit: (dir: 'before' | 'after' | 'out') => void
+  onExit: (dir: 'before' | 'after') => void
   onReorder: (axis: Axis, from: number, to: number) => boolean
   onResize: (widths: number[]) => boolean
   onAppend: (axis: Axis) => void
@@ -312,6 +312,14 @@ export function MarkdownTable({
     layer: () => wrapRef.current,
     dismiss: () => setActive(null),
   })
+  useEscape(
+    active !== null,
+    () => {
+      setActive(null)
+      onExit('after')
+    },
+    () => wrapRef.current,
+  )
 
   // The grip is re-rendered mid-drag, which is why the shared skeleton binds its listeners on window.
   const beginGesture = usePointerGesture()

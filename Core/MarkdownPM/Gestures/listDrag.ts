@@ -5,6 +5,7 @@ import { docScan, docString } from '../docCache'
 import { forEachLine, shadeField, type Boundary } from './dragChrome'
 import { beginRelocateDrag, editorGestureCleanup } from './editorGesture'
 import { glyphAt, lineElementAt, textColumn } from '../lineDom'
+import { isSecondaryClick } from '@pommora/uix/Interactions/chords'
 import { subBlockAt, dropChanges, checkboxToggleChange, itemAt } from '../Engine/listModel'
 
 // Measured at drag start and re-measured only on scroll: the doc is static during a drag, so re-measuring per pointermove would be layout thrash.
@@ -73,16 +74,14 @@ export const listDragExtension = (scope: MarkdownScope): Extension => [
   shadeField,
   editorGestureCleanup,
   EditorView.domEventHandlers({
-    // CM starts its text-selection drag on mousedown, which still arrives when the pointerdown below resolves no block and returns without cancelling.
+    // A glyph owns every press on it: a primary press is the drag below, and a secondary one, a right press or a Mac Ctrl-click, only opens the type menu. Neither seats the caret or starts CM's text-selection drag, which mousedown still starts when the pointerdown resolves no block.
     mousedown(e) {
-      if (e.button === 0 && glyphAt(e)) {
-        e.preventDefault()
-        return true
-      }
-      return false
+      if ((e.button !== 0 && e.button !== 2) || !glyphAt(e)) return false
+      e.preventDefault()
+      return true
     },
     pointerdown(e, view) {
-      if (e.button !== 0) return false
+      if (e.button !== 0 || isSecondaryClick(e)) return false
       const glyph = glyphAt(e)
       if (!glyph) return false
       const pos = view.posAtDOM(glyph)
@@ -98,8 +97,7 @@ export const listDragExtension = (scope: MarkdownScope): Extension => [
           at >= block.from && at <= block.to + 1
             ? null
             : { left: slot.left, top: y, width: slot.right - slot.left },
-        commit: ({ at, slot }) =>
-          dropChanges(docString(view.state.doc), block, { at, indent: slot.indent }, scope),
+        commit: ({ at, slot }) => dropChanges(scan, block, { at, indent: slot.indent }, scope),
         onTap: () => clickAction(view, pos),
       })
       return true

@@ -14,10 +14,13 @@ describe('readFormatState', () => {
     expect(readFormatState(scanDoc('plain'), 2, 2, {}, 'page').heading).toBe(0)
   })
 
-  it('reads list kind and blockquote', () => {
+  it('reads list kind, blockquote, and code block', () => {
     expect(readFormatState(scanDoc('- [ ] task'), 7, 7, {}, 'page').list).toBe('checkbox')
     expect(readFormatState(scanDoc('1. item'), 4, 4, {}, 'page').list).toBe('ordered')
     expect(readFormatState(scanDoc('> quote'), 3, 3, {}, 'page').block).toBe('quote')
+    const fence = '```\n> code\n```'
+    for (const at of [0, 6, fence.length])
+      expect(readFormatState(scanDoc(fence), at, at, {}, 'page').block).toBe('code')
   })
 
   it('a callout is NOT reported as a quote (re-toggling quote would orphan the `[!type]`)', () => {

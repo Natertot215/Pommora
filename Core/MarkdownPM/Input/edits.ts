@@ -38,7 +38,7 @@ import {
   type MarkdownScope,
   readsLists,
 } from '../Engine/detect'
-import { readsFrom } from '../Engine/listModel'
+import { itemAt, readsFrom, subBlockAt } from '../Engine/listModel'
 import { tokenize } from '../Engine/tokens'
 import { isPaint } from '../Engine/paints'
 
@@ -188,16 +188,26 @@ export function outdentListOnShiftTab(
   }
 }
 
-/** Where a Backspace takes a line's whole marker: a list marker is one unit, so a caret anywhere past its first character takes all of it, keeping the line's indent, rather than leaving a stray space or half a box; a heading or quote prefix only from its end, with the line's start. */
-function markerSpanOf(
-  line: string,
+/** Where a Backspace takes a list marker read from `at`: the marker is one unit, so a caret anywhere past its first character takes all of it rather than leaving a stray space or half a box, and the line keeps its indent only where an item above owns it, as that item's continuation. */
+function takeMarker(
+  scan: DocScan,
+  at: number,
+  lm: ListMarker,
+  selStart: number,
   scope: MarkdownScope,
-): { cut: number; from: number; to: number } | null {
-  const lm = readsLists(scope) ? parseListMarker(line) : null
-  if (lm) return { cut: lm.markerStart, from: lm.markerStart + 1, to: lm.contentStart }
-  if (scope !== 'page') return null
-  const end = headingParts(line)?.contentStart ?? (quotePrefix(line).length || null)
-  return end === null ? null : { cut: 0, from: end, to: end }
+): Edit | null {
+  const from = at + lm.markerStart
+  const to = at + lm.contentStart
+  if (selStart <= from || selStart > to) return null
+  const k = lineIndexAt(scan, at)
+  let cut = at
+  for (let j = k - 1; lm.level > 0 && j >= 0; j--) {
+    const above = itemAt(scan, j, k, scope)
+    if (above === null || above.level >= lm.level) continue
+    if (subBlockAt(scan, scan.lineStarts[j], scope)!.to >= scan.lineStarts[k]) cut = from
+    break
+  }
+  return { from: cut, to, insert: '', selection: cut }
 }
 
 /** A diff line's margin takes only a sign, which replaces the one the line wears; the same sign again changes nothing. */
@@ -243,26 +253,19 @@ export function smartBackspace(
         return null
       }
       const lm = parseListMarker(line.slice(pfx.length))
-      if (lm) {
-        const innerMarkerStart = ls + pfx.length + lm.markerStart
-        const innerContentStart = ls + pfx.length + lm.contentStart
-        if (selStart <= innerMarkerStart || selStart > innerContentStart) return null
-        return {
-          from: innerMarkerStart,
-          to: innerContentStart,
-          insert: '',
-          selection: innerMarkerStart,
-        }
-      }
+      if (lm) return takeMarker(scan, ls + pfx.length, lm, selStart, scope)
       if (selStart === ls + pfx.length && ls > 0)
         return { from: ls - 1, to: ls + pfx.length, insert: '', selection: ls - 1 }
       return null
     }
   }
 
-  const marker = markerSpanOf(line, scope)
-  if (marker === null || selStart < ls + marker.from || selStart > ls + marker.to) return null
-  return { from: ls + marker.cut, to: ls + marker.to, insert: '', selection: ls + marker.cut }
+  const lm = readsLists(scope) ? parseListMarker(line) : null
+  if (lm) return takeMarker(scan, ls, lm, selStart, scope)
+  if (scope !== 'page') return null
+  const end = headingParts(line)?.contentStart ?? (quotePrefix(line).length || null)
+  if (end === null || selStart !== ls + end) return null
+  return { from: ls, to: ls + end, insert: '', selection: ls }
 }
 
 export function canonicalizeCheckbox(

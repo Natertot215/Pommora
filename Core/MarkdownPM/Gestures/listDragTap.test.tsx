@@ -29,8 +29,20 @@ async function pressGlyph(view: EditorView, dx: number): Promise<void> {
 }
 
 describe('a list glyph press is a click or a drag, never both', () => {
-  it('released in place, a checkbox glyph toggles', async () => {
+  it('released in place, a checkbox glyph toggles, and a Mac Ctrl-click is its menu’s alone', async () => {
     const view = await mountEditor({ initialBody: '- [ ] task' })
+    const ctrl = { bubbles: true, cancelable: true, button: 0, ctrlKey: true }
+    const down = new MouseEvent('mousedown', ctrl)
+    const press = new MouseEvent('pointerdown', { ...ctrl, buttons: 1 })
+    Object.defineProperties(press, { pointerId: { value: 1 }, isPrimary: { value: true } })
+    await act(async () => {
+      glyphOf(view).dispatchEvent(press)
+      glyphOf(view).dispatchEvent(down)
+      firePointer(window, 'pointerup')
+      await Promise.resolve()
+    })
+    expect(down.defaultPrevented).toBe(true)
+    expect(view.state.doc.toString()).toBe('- [ ] task')
     await pressGlyph(view, 2)
     expect(view.state.doc.toString()).toBe('- [x] task')
   })

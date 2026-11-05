@@ -269,14 +269,14 @@ function renumberRun(
   return changes
 }
 
-/** Both renumber passes run against the POST-MOVE doc so the ordinal offsets are correct, then map back onto the original. */
+/** A separator moves with the item only where the source or the slot sits between blank-separated siblings, and both renumber passes run against the POST-MOVE doc so the ordinal offsets are correct, then diff back onto the original as one replace. */
 export function dropChanges(
-  doc: string,
+  scan: DocScan,
   block: BlockSpan,
   slot: Slot,
   scope: MarkdownScope,
 ): TextEdit[] | null {
-  const scan = scanDoc(doc)
+  const doc = scan.text
   const gapBefore = (items: readonly number[], n: number): boolean =>
     n > 0 && n < items.length && isBlank(scan.lines[items[n] - 1])
   const first = lineIndexAt(scan, block.from)

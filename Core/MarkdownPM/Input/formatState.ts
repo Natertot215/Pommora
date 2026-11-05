@@ -4,6 +4,7 @@ import { headingParts, type MarkdownScope } from '../Engine/detect'
 import { isQuoteToggleable, listKindOf, splitPrefix, underSelection } from './format'
 import type { EditorMenuRequest } from '../../Actions/editorMenu'
 import type { DocScan } from '../Engine/docScan'
+import { lineIndexAt } from '../Engine/markdownCode'
 import type { Personalization } from '../../Settings/personalization'
 
 export function readFormatState(
@@ -18,6 +19,7 @@ export function readFormatState(
   const lineTo = to - ls
   const wraps = (kind: string): boolean => covering.some((tk) => tk.kind === kind)
   const painted = covering.find((tk): tk is TokenOf<Paint> => isPaint(tk.kind))
+  const fenced = scan.fences[lineIndexAt(scan, selFrom)] !== undefined
 
   // Heading state reads the line's INNER body so a `> # item` reports as a heading — the render layer draws it behind the `>`, and the menu must agree with what the user sees.
   const hm = headingParts(splitPrefix(line, scope).body)
@@ -36,6 +38,6 @@ export function readFormatState(
     ),
     heading: hm ? hm.hashes.length : 0,
     list: listKindOf(scan, selFrom, selTo, settings, scope),
-    block: isQuoteToggleable(line) ? 'quote' : null,
+    block: fenced ? 'code' : isQuoteToggleable(line) ? 'quote' : null,
   }
 }

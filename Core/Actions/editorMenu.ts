@@ -40,7 +40,7 @@ export const editorMenuRequest = z.object({
   // 0 = paragraph, 1–6
   heading: z.number().int().min(0).max(6),
   list: z.enum(LIST_KINDS.map((k) => k.kind) as [ListKind, ...ListKind[]]).nullable(),
-  block: z.literal('quote').nullable(),
+  block: z.enum(['quote', 'code']).nullable(),
   embedSeat: z.boolean(),
   citeSeat: z.boolean(),
   resting: z.object({ selection: z.string() }).nullable(),
@@ -120,8 +120,10 @@ function checkedIn(s: EditorMenuRequest, action: EditorMenuAction): boolean | un
       return s.list === value
     case 'format':
       return s[value as FormatFlag]
+    case 'block':
+      return value === 'quote' || value === 'code' ? s.block === value : undefined
     default:
-      return action === 'block:quote' ? s.block === 'quote' : undefined
+      return undefined
   }
 }
 

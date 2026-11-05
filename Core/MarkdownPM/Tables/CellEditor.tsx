@@ -205,7 +205,6 @@ export function CellEditor({
                   if (!continueList(view)) view.dispatch(view.state.replaceSelection('\n'))
                 }),
               },
-              { key: 'Escape', run: consume(() => onNavigateRef.current('out')) },
               // The exit is the list's final item alone; above it, and outside a list, the break is the body's own, and the row does NOT split, because cellToSource serializes it as <br> on disk.
               {
                 key: 'Shift-Enter',

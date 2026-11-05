@@ -189,9 +189,16 @@ export const lineEndOf = (d: LineTable, line: number): number =>
 
 export const lineStartAt = (doc: string, pos: number): number =>
   pos <= 0 ? 0 : doc.lastIndexOf('\n', pos - 1) + 1
-/** A range ending at a line's start ends on the line above, so a single trailing newline is the terminator, not a phantom empty line. */
+/** A range ending at a line's start ends on the line above, so a single trailing newline is the terminator, not a phantom empty line; a click inside that reach acts on the range, a glyph on any line the range touches, and any other click at itself. */
 export const reachEnd = (doc: string, from: number, to: number): number =>
   to > from && lineStartAt(doc, to) === to ? to - 1 : to
+export const clickInside = (
+  doc: string,
+  at: number,
+  from: number,
+  to: number,
+  glyph: boolean,
+): boolean => at >= (glyph ? lineStartAt(doc, from) : from) && at <= reachEnd(doc, from, to)
 export const lineEndAt = (doc: string, pos: number): number => {
   const i = doc.indexOf('\n', pos)
   return i === -1 ? doc.length : i

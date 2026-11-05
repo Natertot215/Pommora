@@ -1,4 +1,4 @@
-import { Prec, type Extension } from '@codemirror/state'
+import { EditorSelection, Prec, type Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { pasteModeOf } from '../../Actions/pasteAsMenu'
 import { citationSeatAt, insertCitation } from '../Citations/citationActions'
@@ -9,7 +9,7 @@ import type { MarkdownScope } from '../Engine/detect'
 import { editorHost } from '../api'
 import { applyEdit } from '../Input/applyEdit'
 import { docScan } from '../docCache'
-import { reachEnd } from '../Engine/markdownCode'
+import { clickInside } from '../Engine/markdownCode'
 import { glyphAt } from '../lineDom'
 import { editFor } from '../Input/format'
 
@@ -39,15 +39,15 @@ export const editorMenu = (scope: MarkdownScope): Extension =>
         const ask = host.menus.format
         if (!ask || view.state.readOnly) return false
         const glyph = glyphAt(event)
-        // The browser seats the word under a right-click after this handler, so a click outside the selection reads the flags at the click, and a list row acts there too, since a click points at an item; every other row acts on the seated word.
+        // A text click outside the selection seats the word under it here, before the browser reseats or doesn't, so the flags and every row act where the click points; a list row keeps the click-time range, since a click points at an item.
         const opened = view.state.doc
         const sel = view.state.selection.main
         const at = glyph ? view.posAtDOM(glyph) : view.posAtCoords(event)
         const scan = docScan(opened)
-        const [from, to] =
-          at !== null && (at < sel.from || at > reachEnd(scan.text, sel.from, sel.to))
-            ? [at, at]
-            : [sel.from, sel.to]
+        const inside = at === null || clickInside(scan.text, at, sel.from, sel.to, glyph !== null)
+        const [from, to] = inside ? [sel.from, sel.to] : [at, at]
+        if (!inside && !glyph)
+          view.dispatch({ selection: view.state.wordAt(at) ?? EditorSelection.cursor(at) })
         const state = readFormatState(scan, from, to, host.settings(), scope)
         const page = scope === 'page'
         if (glyph) event.preventDefault()

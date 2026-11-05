@@ -95,6 +95,11 @@ describe('a level change recounts the run it joined and the run it left', () => 
     expect(landEdit(run, [smartBackspace(scanDoc(run), y, y)!], 'delete', 'page')).toBe(
       '- p\n\t1. x\n\ty\n\t2. z',
     )
+    const unowned = 'para\n\n\t- b'
+    const ub = unowned.length - 1
+    expect(landEdit(unowned, [smartBackspace(scanDoc(unowned), ub, ub)!], 'delete', 'page')).toBe(
+      'para\n\nb',
+    )
     const loose = '- p\n\t1. a\n\n\t2. b\n\t3. c'
     const a = loose.indexOf('a')
     const l = setList(scanDoc(loose), a, a + 1, 'bullet', {}, 'page')

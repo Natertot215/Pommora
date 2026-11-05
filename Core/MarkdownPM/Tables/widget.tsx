@@ -10,7 +10,7 @@ import {
   type Extension,
   type Range,
   type Text,
-  type Transaction,
+  Transaction,
 } from '@codemirror/state'
 import { undo, redo } from '@codemirror/commands'
 import { modelFromRegion, type TableRegion } from '../Engine/Tables/regions'
@@ -240,21 +240,17 @@ class TableWidget extends ReactWidget {
       return cells ? (cells[col] ?? '') : null
     }
     // The widget replaces exactly the table's lines, so its own edges draw the caret in the gutter; the exit lands one line past the edge, making that line when the table bounds the document.
-    const exit = (dir: 'before' | 'after' | 'out'): void => {
-      if (dir === 'out') {
-        view.focus()
-        return
-      }
+    const exit = (dir: 'before' | 'after'): void => {
       const region = docScan(view.state.doc).tables[this.tableIndex]
       if (!region) return
-      if (dir === 'after') {
-        if (region.to === view.state.doc.length)
-          view.dispatch({ changes: { from: region.to, insert: '\n' } })
-        focusAt(view, region.to + 1)
-      } else if (region.from === 0) {
-        view.dispatch({ changes: { from: 0, insert: '\n' } })
-        focusAt(view, 0)
-      } else focusAt(view, region.from - 1)
+      const after = dir === 'after'
+      const bounds = after ? region.to === view.state.doc.length : region.from === 0
+      if (bounds)
+        view.dispatch({
+          changes: { from: after ? region.to : 0, insert: '\n' },
+          annotations: Transaction.addToHistory.of(false),
+        })
+      focusAt(view, after ? region.to + 1 : bounds ? 0 : region.from - 1)
     }
     const structural = (transform: (m: TableModel) => TableModel): boolean => {
       const change = structuralEditChange(docScan(view.state.doc), this.tableIndex, transform)

@@ -29,7 +29,7 @@ import { decodePayload, type TablePayload } from '../Engine/Tables/clipboard'
 import { pastedCellText } from '../Links/pasteLink'
 import { RESTING_EDITS } from '../../Actions/editorMenu'
 import { pasteModeOf, type PasteMode } from '../../Actions/pasteAsMenu'
-import { codeMask, lineOffsetsOf, reachEnd, type TextEdit } from '../Engine/markdownCode'
+import { clickInside, codeMask, lineOffsetsOf, type TextEdit } from '../Engine/markdownCode'
 import { sectionRunsIn } from '../../Connections/scan'
 import { mayNameOwnHeading } from '../../Connections/connections'
 import { labelEscapes } from '../../Connections/links'
@@ -51,6 +51,7 @@ import type { Seat } from './CellEditor'
 import type { HeadingLinkStyle } from '../../Settings/personalization'
 import { CheckMark, checkboxClass } from '@pommora/uix/Controls/Checkbox'
 import { cx } from '@pommora/uix/Utilities/cx'
+import { isSecondaryClick } from '@pommora/uix/Interactions/chords'
 
 export type CellPage = Pick<PageHeadings, 'keys' | 'texts'> & {
   ordinalOf: (label: string) => number | null
@@ -390,7 +391,12 @@ export function cellOffsetAt(
   return acc
 }
 
-function restingRange(cell: HTMLElement, at: number, text: string): [number, number] {
+function restingRange(
+  cell: HTMLElement,
+  at: number,
+  text: string,
+  glyph: boolean,
+): [number, number] {
   const sel = window.getSelection()
   const range = sel && !sel.isCollapsed && sel.rangeCount > 0 ? sel.getRangeAt(0) : null
   if (!range?.intersectsNode(cell)) return [at, at]
@@ -400,7 +406,7 @@ function restingRange(cell: HTMLElement, at: number, text: string): [number, num
   const to = cell.contains(range.endContainer)
     ? cellOffsetAt(cell, range.endContainer, range.endOffset, 'end')
     : text.length
-  return at >= from && at <= reachEnd(text, from, to) ? [from, to] : [at, at]
+  return clickInside(text, at, from, to, glyph) ? [from, to] : [at, at]
 }
 
 interface RestingHit {
@@ -471,7 +477,7 @@ function StaticCellImpl({
     return go
   }
 
-  // A resting cell has no editor, so the toggle and the type menu the list gestures serve in a live one have to be offered here too.
+  // A resting cell has no editor, so the toggle the list drag extension serves in a live one has to be offered here too.
   const claimCheckbox = (e: React.MouseEvent): (() => void) | null => {
     if (readOnly()) return null
     const seat = (e.target as HTMLElement | null)?.closest?.('.md-list-checkbox-seat')
@@ -514,13 +520,13 @@ function StaticCellImpl({
     if (!ask) return
     const cell = e.currentTarget
     const glyph = (e.target as HTMLElement).closest('.md-list-item > [data-src]')
-    const caret = document.caretPositionFromPoint(e.clientX, e.clientY)
+    const caret = glyph ? null : document.caretPositionFromPoint(e.clientX, e.clientY)
     const at = glyph
       ? srcOf(glyph)![0]
       : caret && cell.contains(caret.offsetNode)
         ? cellOffsetAt(cell, caret.offsetNode, caret.offset)
         : text.length
-    const [from, to] = restingRange(cell, at, text)
+    const [from, to] = restingRange(cell, at, text, glyph !== null)
     const state = readFormatState(scanDoc(text), from, to, host.settings(), 'cell')
     if (glyph) e.preventDefault()
     const pick = glyph
@@ -561,7 +567,7 @@ function StaticCellImpl({
       onPointerOver={onPointerOver}
       onPointerOut={onPointerOut}
       onClick={(e) => {
-        if (e.button !== 0) return
+        if (e.button !== 0 || isSecondaryClick(e)) return
         dismiss(e)
         const go = claimCheckbox(e) ?? claimCite(e) ?? claimLink(e)
         if (go) return go()
@@ -588,7 +594,7 @@ function StaticCellImpl({
         queueMicrotask(() => onActivate(at))
       }}
       onMouseDown={(e) => {
-        if (e.button === 2) return e.preventDefault()
+        if (e.button === 2 || isSecondaryClick(e)) return e.preventDefault()
         if (e.button === 0) claimCheckbox(e) ?? claimCite(e) ?? claimLink(e)
       }}
     >

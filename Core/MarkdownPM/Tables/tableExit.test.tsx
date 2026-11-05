@@ -1,7 +1,9 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
-import type { EditorView } from '@codemirror/view'
+import { EditorView } from '@codemirror/view'
+import { undo } from '@codemirror/commands'
+import { type DismissalHandle, pushDismissal } from '@pommora/uix/Interactions/dismissalStack'
 import {
   cleanupEditor,
   editorContainer,
@@ -14,7 +16,12 @@ afterEach(cleanupEditor)
 
 const TABLE = '| A |\n| --- |\n| x |'
 
-async function pressInCell(row: number, key: string, shiftKey = false): Promise<void> {
+async function pressInCell(
+  row: number,
+  key: string,
+  shiftKey = false,
+  inCell: (cell: EditorView) => void = () => {},
+): Promise<void> {
   let table = editorContainer().querySelector('table.mdpm-tbl')
   for (let i = 0; !table && i < 50; i++) {
     await act(() => new Promise((r) => setTimeout(r, 20)))
@@ -34,6 +41,7 @@ async function pressInCell(row: number, key: string, shiftKey = false): Promise<
   })
   const content = cell.querySelector('.cm-content') as HTMLElement
   await act(async () => {
+    inCell(EditorView.findFromDOM(content)!)
     content.dispatchEvent(
       new KeyboardEvent('keydown', { key, shiftKey, bubbles: true, cancelable: true }),
     )
@@ -49,11 +57,28 @@ describe('leaving a table by keyboard lands on a real line, never the widget edg
     expect(caret(view)).toBe(TABLE.length + 1)
   })
 
-  it('makes that line when the table ends the document', async () => {
+  it('makes that line when the table ends the document, from Enter or Escape, outside the page’s history', async () => {
+    const type = (cell: EditorView): void =>
+      cell.dispatch({ changes: { from: cell.state.doc.length, insert: 'y' } })
+    for (const key of ['Enter', 'Escape']) {
+      const view = await mountEditor({ initialBody: TABLE })
+      await pressInCell(1, key, false, type)
+      expect(view.state.doc.toString()).toBe(`${TABLE.replace('x', 'xy')}\n`)
+      expect(caret(view)).toBe(TABLE.length + 2)
+      expect(view.hasFocus).toBe(true)
+      undo(view)
+      expect(view.state.doc.toString()).toBe(`${TABLE}\n`)
+      await cleanupEditor()
+    }
     const view = await mountEditor({ initialBody: TABLE })
-    await pressInCell(1, 'Enter')
-    expect(view.state.doc.toString()).toBe(`${TABLE}\n`)
-    expect(caret(view)).toBe(TABLE.length + 1)
+    const above = vi.fn()
+    let glance: DismissalHandle | undefined
+    await pressInCell(1, 'Escape', false, () => {
+      glance = pushDismissal({ layer: () => null, dismiss: above })
+    })
+    glance?.release()
+    expect(above).toHaveBeenCalledTimes(1)
+    expect(view.state.doc.toString()).toBe(TABLE)
   })
 
   it('Shift-Tab from the first cell seats the caret at the end of the line above', async () => {

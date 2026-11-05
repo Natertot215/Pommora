@@ -275,6 +275,13 @@ describe('a row chosen at rest', () => {
     await choose('list:ordered')
     expect(committed).toHaveBeenLastCalledWith(1, 0, '1. ab')
     expect(entered()).toBe(false)
+    await act(async () => root.unmount())
+    container.remove()
+    await mount('1. a\n2. b\n3. c\n4. d')
+    select('b', 0, 'c', 1)
+    await rightClick('2.', 1)
+    await choose('list:bullet')
+    expect(committed).toHaveBeenLastCalledWith(1, 0, '1. a\n- b\n- c\n4. d')
   })
 
   it('enters with the caret inside the empty address External Link writes over a selection', async () => {
