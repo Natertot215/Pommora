@@ -273,12 +273,15 @@ describe('blockAt', () => {
     expect(blockStarts(doc).filter((s) => s.kind === 'code')).toHaveLength(2)
   })
 
-  it('indented math with an internal blank rides its list item whole — dragging the bullet cannot tear it', () => {
+  it('indented math or code with an internal blank rides its list item whole — dragging the bullet cannot tear it', () => {
     const doc = '- item one\n  $$\n  x\n\n  y\n  $$\n- item two'
     const b = blockAt(doc, 0)
     expect(b?.kind).toBe('list')
     expect(slice(doc, b)).toBe(doc)
     expect(blockAt(doc, doc.indexOf('  x'))?.kind).toBe('math')
+    const fenced = '- item one\n  ```\nx\n\ny\n  ```\n- item two'
+    expect(slice(fenced, blockAt(fenced, 0))).toBe(fenced)
+    expect(blockAt(fenced, fenced.indexOf('x'))?.kind).toBe('code')
   })
 
   it('indented math without a blank stays inside its list block (unchanged shape)', () => {

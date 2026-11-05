@@ -40,10 +40,10 @@ function blockContext(scan: DocScan): BlockContext {
   } = scan
   const n = lines.length
 
-  // Only where a run actually holds a marker, so a bare indented paragraph isn't swept in. A math range reads as its opening line, as the list model reads it, so one whose opener joined the run rides it whole and one whose opener sits outside never gets pulled in.
+  // Only where a run actually holds a marker, so a bare indented paragraph isn't swept in. A code or math block reads as its opening line, as the list model reads it, so one whose opener joined the run rides it whole and one whose opener sits outside never gets pulled in.
   const read = (i: number): number => {
-    const math = spanAt(scan.maths, starts[i])
-    return math === undefined ? i : lineIndexAt(scan, math.from)
+    const block = fences[i] ?? spanAt(scan.maths, starts[i])
+    return block === undefined ? i : lineIndexAt(scan, block.from)
   }
   const isMarker = (i: number): boolean => markers[read(i)] !== null
   const joins = (i: number): boolean => isMarker(i) || continuesList(lines[read(i)], 0) === 'nested'
