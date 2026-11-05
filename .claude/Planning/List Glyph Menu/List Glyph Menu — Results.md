@@ -78,6 +78,12 @@ The Interaction Sweep drove the List Types Drive and headless probes through eve
 - **A Cell's `>`:** C-5 · g3, probe · a resting cell's `> a` → `- > a` · **Holds**
 - **A Cell's Fence Text:** C-5 · probe · in a cell, ```` ``` ```` lines are text, so Numbered over them numbers all three · **Holds**
 - **Other Rows Act on the Live Selection:** C-6 · g4 · Format ▸ Bold over a selected word → `plain **word** here` · **Holds**
+- **An Unselected Word at Rest:** C-6 · g3, probe · in a resting cell, a right-click on `word` in `plain word here`, then Bold → `plain **word** here` without entering the cell, Cut and Copy enabled, and the highlight while the menu is up is `word`; a right-click on blank space past the text acts at the point · **Holds**
+- **A Right-Click at the Caret:** C-6 · g4, probe · with the caret inside `don't`, a right-click at the same spot seats `don't`, and Bold → `**don't** stop`; past a short line's end it acts at the point → `ab****` · **Holds**
+- **An Apostrophe Between Letters:** C-6 · probe (`textScope.test.tsx`), g3, g4 · a double-click, ⌥+Arrow, Shift+⌥+Arrow, ⌥+Backspace, and a right-click read `don't`, `it’s`, and `Ada's` whole, `'quoted'` and `‘quoted’` as `quoted`, and `students'` as `students`, on a page and at rest; a plain arrow still steps through · **Holds**
+- **Speech and Share at Rest:** C-6 · probe (Desktop) · Speech and Share read the selection the rows act on, so a cell with no selection offers neither · **Holds**
+- **Format Rows Inside Inline Code:** C-6 · probe · Bold, Link, Highlight, and Text Color stand down inside `` `code` ``, and Code still takes itself off · **Holds**
+- **The Table Redrawing Under a Resting Menu:** C-6 · probe (`editorMenu.test.tsx`) · a hover redraw while the menu is up keeps the cell's highlight and leaves the page caret where it was · **Holds**
 - **A Code Block's Own List:** C-7 · probe · from inside ```` ``` ````, `- a\n- b` → Numbered → `1. a\n2. b` within the fence; the check reads Bulleted · **Holds**
 - **Nothing Outside Reaches In:** C-7 · probe · the surrounding list's glyph, its grip, and its numbering leave a nested or sibling code block's `- x` lines as written · **Holds**
 - **A Diff Block From Inside:** C-7 · probe · in ```` ```diff ````, `- old` checks Bulleted; Numbered from it rewrites the block's other `- ` lines on, and its `+ ` lines too off; a bare `-old` line becomes `1. -old`. Only a deliberate **Lists ▸** pick from inside reaches the block, which is what C-7 rules, and one ⌘Z restores it · **Holds**
