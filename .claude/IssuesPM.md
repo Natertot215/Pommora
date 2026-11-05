@@ -500,7 +500,7 @@ Waits for the next block kind. `contextFor` and `blockStarts` switch over every 
 
 **Description**
 
-A page, a live cell, and a resting cell read one inside test, `clickInside`, and differ only past it: a text right-click outside the selection in a page or a live cell seats the word under it before the menu opens, so every row acts on that word, while a resting cell defaults the press away and acts at the point the click lands. A Format ▸ row from an unselected word therefore wraps that word in a live editor and acts at the click's point in a resting cell; the list rows agree, since both act on the clicked item. The resting cell's general menu also carries Speech ▸ and Share ▸ beside a disabled Cut and Copy, because Chromium reports a `selectionText` the cell's own range doesn't hold, and Desktop builds those rows from Chromium's report rather than the request's.[^71]
+A page, a live cell, and a resting cell read one inside test, `clickInside`, and differ only past it: a text right-click outside the selection in a page or a live cell seats the word under it before the menu opens, so every row but the list types acts on that word, while a resting cell defaults the press away and acts at the point the click lands. A Format ▸ row from an unselected word therefore wraps that word in a live editor and acts at the click's point in a resting cell; the list rows agree, since both act on the clicked item. The resting cell's general menu also carries Speech ▸ and Share ▸ beside a disabled Cut and Copy, because Chromium reports a `selectionText` the cell's own range doesn't hold, and Desktop builds those rows from Chromium's report rather than the request's.[^71]
 
 **Solution** [TBD]
 

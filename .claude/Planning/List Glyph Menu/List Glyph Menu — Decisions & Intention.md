@@ -67,7 +67,7 @@ Example used throughout:
 - **B-12 [INFERRED]:** Checked and unchecked items are one type, so no pick unchecks an item that's already a checklist item.
 - **B-14 [INFERRED]:** A line indented beneath an item is that item's continuation, as the drag and the grip already read it, so a pick reaching it changes its item, and typing a marker is what makes it an item of its own.
 - **B-15 [CONFIRMED]:** A quote or code block indented beneath an item belongs to that item: numbering continues past it, a drag carries it whole, and a pick reaches the items beyond it.
-- **B-16 [CONFIRMED]:** The outliner's rails should follow the same line rule as the list itself, so a rail stops at a heading or paragraph between items and carries through an item's wrapped lines, closing what I-017 describes, provided the rail pass adds no measurable cost per keystroke.
+- **B-16 [CONFIRMED]:** The outliner's rails should follow the same line rule as the list itself, so a rail stops at a heading or paragraph between items and carries through an item's wrapped lines, closing the rails issue the index carried, provided the rail pass adds no measurable cost per keystroke.
 
 #### C - Lists ▸
 
