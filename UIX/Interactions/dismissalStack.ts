@@ -10,7 +10,7 @@ type DismissalEntry = {
   trigger?: () => Element | null
   /** A press on the trigger counts as one inside the layer rather than a toggle: the trigger is part of the pane, as a field is part of its dropdown. */
   triggerInside?: boolean
-  dismiss?: () => void
+  dismiss?: (via: 'escape' | 'press') => void
   shield?: boolean
   outsidePress?: boolean
 }
@@ -78,7 +78,7 @@ const onPointerDown = (e: PointerEvent): void => {
     break
   }
   for (let i = entries.length - 1; i > keep; i--)
-    if (closes(entries[i])) entries[i].entry.dismiss?.()
+    if (closes(entries[i])) entries[i].entry.dismiss?.('press')
   if (onTrigger) suppressReleaseClick()
 }
 
@@ -89,7 +89,7 @@ const onKeyDown = (e: KeyboardEvent): void => {
     const owner = ownerWindow(live.entry.scope?.() ?? live.entry.layer())
     if (!dismissable(live) || (owner !== null && owner !== windows.at(-1))) continue
     e.preventDefault()
-    live.entry.dismiss?.()
+    live.entry.dismiss?.('escape')
     return
   }
 }

@@ -121,6 +121,23 @@ export function subBlockAt(scan: DocScan, pos: number, scope: MarkdownScope): Bl
   return { from: scan.lineStarts[first], to: lineEndOf(scan, last) }
 }
 
+export function ownersOf(
+  scan: DocScan,
+  k: number,
+  reader: number | 'outside',
+  scope: MarkdownScope,
+): { k: number; end: number }[] {
+  const owners: { k: number; end: number }[] = []
+  for (let j = k; j >= 0; j--) {
+    const lm = itemAt(scan, j, reader, scope)
+    if (lm === null) continue
+    const end = subBlockAt(scan, scan.lineStarts[j], scope)!.to
+    if (end >= scan.lineStarts[k]) owners.push({ k: j, end })
+    if (lm.level === 0 && quoteDepthOf(scan.lines[j]) === 0) break
+  }
+  return owners
+}
+
 export interface Slot {
   at: number
   indent?: string

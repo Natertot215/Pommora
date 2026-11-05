@@ -17,7 +17,6 @@ import {
   lineStartAt,
   lineEndAt,
   lineIndexAt,
-  quoteDepthOf,
   quotePrefixWidth,
   reachEnd,
   trimmedRange,
@@ -29,7 +28,7 @@ import { emptyTable } from '../Engine/Tables/model'
 import { isPaint, type Paint, type PaintColor, writtenMark } from '../Engine/paints'
 import { serialize } from '../Engine/Tables/codec'
 import { type DocScan, inFenceAt } from '../Engine/docScan'
-import { itemAt, readsFrom, siblingsAt, subBlockAt } from '../Engine/listModel'
+import { itemAt, ownersOf, readsFrom, siblingsAt, subBlockAt } from '../Engine/listModel'
 import { drawnKind } from '../Engine/intents'
 import { type Personalization, settingOf } from '../../Settings/personalization'
 import { blockPrefix } from './edits'
@@ -311,14 +310,7 @@ function listReach(
   const reader = readsFrom(scan, upTo, anchor, scope) ? anchor : 'outside'
   const markerAt = (k: number): ListMarker | null => itemAt(scan, k, reader, scope)
   const endOf = (k: number): number => subBlockAt(scan, scan.lineStarts[k], scope)!.to
-  const owners: { k: number; end: number }[] = []
-  for (let j = anchor; j >= 0; j--) {
-    const lm = markerAt(j)
-    if (lm === null) continue
-    const end = endOf(j)
-    if (end >= scan.lineStarts[anchor]) owners.push({ k: j, end })
-    if (lm.level === 0 && quoteDepthOf(scan.lines[j]) === 0) break
-  }
+  const owners = ownersOf(scan, anchor, reader, scope)
   const item = owners[0]?.k ?? null
   const reached = new Set<number>()
   if (from === to) {

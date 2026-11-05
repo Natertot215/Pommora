@@ -228,14 +228,18 @@ describe('the stack', () => {
     const log: string[] = []
     const layers = { a: layer(), b: layer() }
     handles.push(
-      pushDismissal({ layer: () => layers.a, dismiss: () => log.push('a'), outsidePress: false }),
+      pushDismissal({
+        layer: () => layers.a,
+        dismiss: (via) => log.push(`a:${via}`),
+        outsidePress: false,
+      }),
+      pushDismissal({ layer: () => layers.b, dismiss: (via) => log.push(`b:${via}`) }),
     )
-    stack(['b'], log, layers)
     press(document.body)
-    expect(log).toEqual(['b'])
+    expect(log).toEqual(['b:press'])
     handles[1].release()
     pressEscape(document)
-    expect(log).toEqual(['b', 'a'])
+    expect(log).toEqual(['b:press', 'a:escape'])
   })
 
   it('passes an exiting popup by, so a press outside or Escape reaches the one beneath', () => {

@@ -38,7 +38,7 @@ import {
   type MarkdownScope,
   readsLists,
 } from '../Engine/detect'
-import { itemAt, readsFrom, subBlockAt } from '../Engine/listModel'
+import { ownersOf, readsFrom } from '../Engine/listModel'
 import { tokenize } from '../Engine/tokens'
 import { isPaint } from '../Engine/paints'
 
@@ -200,13 +200,7 @@ function takeMarker(
   const to = at + lm.contentStart
   if (selStart <= from || selStart > to) return null
   const k = lineIndexAt(scan, at)
-  let cut = at
-  for (let j = k - 1; lm.level > 0 && j >= 0; j--) {
-    const above = itemAt(scan, j, k, scope)
-    if (above === null || above.level >= lm.level) continue
-    if (subBlockAt(scan, scan.lineStarts[j], scope)!.to >= scan.lineStarts[k]) cut = from
-    break
-  }
+  const cut = ownersOf(scan, k, k, scope).some((o) => o.k !== k) ? from : at
   return { from: cut, to, insert: '', selection: cut }
 }
 
