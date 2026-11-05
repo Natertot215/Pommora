@@ -83,6 +83,7 @@ The Interaction Sweep drove the List Types Drive and headless probes through eve
 - **A Diff Block From Inside:** C-7 · probe · in ```` ```diff ````, `- old` checks Bulleted; Numbered from it rewrites the block's other `- ` lines on, and its `+ ` lines too off; a bare `-old` line becomes `1. -old`. Only a deliberate **Lists ▸** pick from inside reaches the block, which is what C-7 rules, and one ⌘Z restores it · **Holds**
 - **`*` Lines:** C-1 · probe · `* a` isn't a marker in MarkdownPM, so Checklist writes `- [ ] * a`, as for any plain line · **Holds**
 - **The `/` Menu:** C-1 D-2 · g4 · `/bul` + Enter on an empty line → `- ` · **Holds**
+- **The `/` Menu on a Blank Line Inside a Loose Item:** C-1 · probe (`format.test.ts`) · `- a\n\n  para` with the caret on the blank → Numbered → `- a\n1. \n  para`: a caret on a blank line reaches that line, never the item above · **Holds**
 - **⌘Z After a `/` Pick:** A-7 · g4 · one ⌘Z takes the item back to the empty line, since the query's deletion stays out of history · **Holds**
 
 #### D — The Grip and the Switch
@@ -107,6 +108,7 @@ The Interaction Sweep drove the List Types Drive and headless probes through eve
 
 - **Backspace on a Marker, Tight and Loose:** B-10 · probe · at b's text in `1. a\n2. b\n3. c` → `1. a\nb\n3. c`, loose alike: the top-level line has no indent to keep, so the paragraph ends the group and c keeps its run's own start · **Holds**
 - **Backspace on a Nested Marker:** B-10 B-14 · probe · `- p\n\t1. x\n\t2. y\n\t3. z` at y → `- p\n\t1. x\n\ty\n\t2. z`: the marker goes and the indent stays, since x owns the line, so y reads as x's continuation and the run below recounts; an indented item no item owns, `para\n\n\t- b`, loses its indent with its marker → `para\n\nb`, and a callout's items follow the same rule · **Holds**
+- **Backspace on a Quoted Marker:** B-10 · probe (`edits.test.ts`) · `> - item` and `> 1. item` with the caret inside the marker → `> item`, as a callout's item does; at the quote prefix's end → `- item`; a callout's item at its prefix end stays as it is · **Holds**
 - **A Whole-Line Deletion:** B-10 · probe · `2. b` out of `1. a\n2. b\n3. c` → `1. a\n2. c`; loose, with or without its gap → `2. c`; a nested line → `\t1. y` · **Holds**
 - **Tab Out of a Run, Tight and Loose:** B-10 · probe · Tab on b → `1. a\n\t1. b\n2. c`, loose alike · **Holds**
 - **Shift-Tab Into a Run:** B-10 · probe · `1. a\n\t1. x\n\t2. y\n2. b` at x → `1. a\n2. x\n\t1. y\n3. b` · **Holds**
