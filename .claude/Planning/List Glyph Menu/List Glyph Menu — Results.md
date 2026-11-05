@@ -35,6 +35,7 @@ The Interaction Sweep drove the List Types Drive and headless probes through eve
 
 - **On, From B:** B-1 · g1, probe · `- A\n\t- B\n\t\t- C\n\t\t- D\n\t- E\n- F` → `\t1. B … \t2. E`, A, C, D, and F unchanged · **Holds**
 - **Off, From E:** B-1 B-3 · g1, probe · → `\t1. B\n\t\t1. C\n\t\t2. D\n\t2. E` · **Holds**
+- **A Quote Under an Item, Drawn and Not:** B-1 B-14 B-15 · probe (mounted editor, drawn glyphs read from the DOM) · `- a\n  > - q\n  > - r\n- b` draws `q` and `r` as a quoted list, so Numbered from a, off, numbers them and b continues past the quote, while on leaves them; with a tab or four spaces before `>`, the lines draw as text, read as a's continuation, ride a's drag, and no pick, Enter, Tab, or Backspace treats them as items · **Holds**
 - **A Flat List:** B-1 · probe · `- a\n- b\n- c` from b → `1. a\n2. b\n3. c`, on and off · **Holds**
 - **A Leaf Group:** B-1 · probe · from C → only C and D numbered, on and off · **Holds**
 - **The Top Level:** B-1 B-6 · probe · from A → on `1. A … 2. F`; off every item numbered · **Holds**
@@ -81,6 +82,7 @@ The Interaction Sweep drove the List Types Drive and headless probes through eve
 - **An Unselected Word at Rest:** C-6 · g3, probe · in a resting cell, a right-click on `word` in `plain word here`, then Bold → `plain **word** here` without entering the cell, Cut and Copy enabled, and the highlight while the menu is up is `word`; a right-click on blank space past the text acts at the point · **Holds**
 - **A Right-Click at the Caret:** C-6 · g4, probe · with the caret inside `don't`, a right-click at the same spot seats `don't`, and Bold → `**don't** stop`; past a short line's end it acts at the point → `ab****` · **Holds**
 - **An Apostrophe Between Letters:** C-6 · probe (`textScope.test.tsx`), g3, g4 · a double-click, ⌥+Arrow, Shift+⌥+Arrow, ⌥+Backspace, and a right-click read `don't`, `it’s`, and `Ada's` whole, `'quoted'` and `‘quoted’` as `quoted`, and `students'` as `students`, on a page and at rest; a plain arrow still steps through · **Holds**
+- **A Word Deletion Over a Selection:** C-6 · probe (`textScope.test.tsx`) · with `n't` or `don` of `don't stop` selected, ⌥⌫ deletes exactly the selection (`do stop`, `'t stop`); from a caret it takes the whole joined word · **Holds**
 - **Speech and Share at Rest:** C-6 · probe (Desktop) · Speech and Share read the selection the rows act on, so a cell with no selection offers neither · **Holds**
 - **Format Rows Inside Inline Code:** C-6 · probe · Bold, Link, Highlight, and Text Color stand down inside `` `code` ``, and Code still takes itself off · **Holds**
 - **The Table Redrawing Under a Resting Menu:** C-6 · probe (`editorMenu.test.tsx`) · a hover redraw while the menu is up keeps the cell's highlight and leaves the page caret where it was · **Holds**
@@ -115,6 +117,7 @@ The Interaction Sweep drove the List Types Drive and headless probes through eve
 - **Backspace on a Marker, Tight and Loose:** B-10 · probe · at b's text in `1. a\n2. b\n3. c` → `1. a\nb\n3. c`, loose alike: the top-level line has no indent to keep, so the paragraph ends the group and c keeps its run's own start · **Holds**
 - **Backspace on a Nested Marker:** B-10 B-14 · probe · `- p\n\t1. x\n\t2. y\n\t3. z` at y → `- p\n\t1. x\n\ty\n\t2. z`: the marker goes and the indent stays, since x owns the line, so y reads as x's continuation and the run below recounts; an indented item no item owns, `para\n\n\t- b`, loses its indent with its marker → `para\n\nb`, and a callout's items follow the same rule · **Holds**
 - **Backspace on a Quoted Marker:** B-10 · probe (`edits.test.ts`) · `> - item` and `> 1. item` with the caret inside the marker → `> item`, as a callout's item does; at the quote prefix's end → `- item`; a callout's item at its prefix end stays as it is · **Holds**
+- **Backspace Inside Display Math:** B-15 · probe (`edits.test.ts`) · on a `- x` line inside `$$`, top-level or under an item, Backspace deletes one character and takes no marker, since no list reads inside math, as Enter and Tab treat it · **Holds**
 - **A Whole-Line Deletion:** B-10 · probe · `2. b` out of `1. a\n2. b\n3. c` → `1. a\n2. c`; loose, with or without its gap → `2. c`; a nested line → `\t1. y` · **Holds**
 - **Tab Out of a Run, Tight and Loose:** B-10 · probe · Tab on b → `1. a\n\t1. b\n2. c`, loose alike · **Holds**
 - **Shift-Tab Into a Run:** B-10 · probe · `1. a\n\t1. x\n\t2. y\n2. b` at x → `1. a\n2. x\n\t1. y\n3. b` · **Holds**
