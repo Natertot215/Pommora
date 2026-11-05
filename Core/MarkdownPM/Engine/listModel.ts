@@ -34,27 +34,24 @@ export function checkboxToggleChange(doc: string, pos: number): TextEdit | null 
   return { from: ls + lm.box.start, to: ls + lm.box.end, insert: lm.checked ? '[ ]' : '[x]' }
 }
 
-/** Whether line `k` is open text to a reader on line `from`, or to one outside every block: on a page a code block is read only from inside it, so a list written there switches and counts on its own and nothing outside reaches in, while math and tables are never read; a cell reads every line. */
-export function readsFrom(
-  scan: DocScan,
-  k: number,
-  from: number | 'outside',
-  scope: MarkdownScope,
-): boolean {
+type Reader = number | 'outside'
+
+/** Whether line `k` is open text to a `reader` on another line, or to one outside every block: on a page a code block is read only from inside it, so a list written there switches and counts on its own and nothing outside reaches in, while math and tables are never read; a cell reads every line. */
+export function readsFrom(scan: DocScan, k: number, reader: Reader, scope: MarkdownScope): boolean {
   if (scope !== 'page') return true
   const code = scan.fences[k]
-  const own = from === 'outside' ? undefined : scan.fences[from]
+  const own = reader === 'outside' ? undefined : scan.fences[reader]
   return code?.from === own?.from && (code !== undefined || !inSealedLine(scan, k))
 }
 
 export function itemAt(
   scan: DocScan,
   k: number,
-  from: number | 'outside',
+  reader: Reader,
   scope: MarkdownScope,
 ): ListMarker | null {
   if (scope !== 'page') return parseListMarker(scan.lines[k])
-  return readsFrom(scan, k, from, scope) ? scan.markers[k] : null
+  return readsFrom(scan, k, reader, scope) ? scan.markers[k] : null
 }
 
 type ListRole = 'sibling' | 'nested' | 'blank' | 'ends'
@@ -120,7 +117,7 @@ export function subBlockAt(scan: DocScan, pos: number, scope: MarkdownScope): Bl
 export function ownersOf(
   scan: DocScan,
   k: number,
-  reader: number | 'outside',
+  reader: Reader,
   scope: MarkdownScope,
 ): { k: number; end: number }[] {
   const owners: { k: number; end: number }[] = []

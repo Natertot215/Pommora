@@ -159,8 +159,7 @@ export function MarkdownTable({
   const startSweep = (e: React.PointerEvent<HTMLTableElement>): void => {
     if (e.button !== 0) return
     // A list glyph is a drag handle and a checkbox target, and the grip band is the block's. Capture runs first and the gesture singleton is claimed before any threshold, so sweeping here would leave the press dead rather than shared.
-    if (glyphAt(e)) return
-    if (gutterLineAt(e, GRIP_LINE)) return
+    if (glyphAt(e) || gutterLineAt(e, GRIP_LINE)) return
     const start = cellPosOf(e.target)
     const wrap = wrapRef.current
     if (!start || !wrap) return
@@ -405,7 +404,7 @@ export function MarkdownTable({
 
   const navigate = (row: number, col: number, dir: NavDir): void => {
     const target = nextCell(totalRows, cols, row, col, dir)
-    if (typeof target === 'string') {
+    if (target === 'before' || target === 'after') {
       setActive(null)
       onExit(target)
       return

@@ -236,28 +236,25 @@ export function smartBackspace(
       return { from: ls - 1, to: body, insert: '', selection: ls - 1 }
     // A fence holds literal text, so collapsing a marker there would eat characters the author typed as content.
     if (inCodeAt(scan, selStart)) return null
-
-    // Inside a callout, never strip a lone `>` — that would drop the line out of the box, splitting it into a stray quote.
-    if (inCalloutAt(scan, selStart)) {
-      const pfx = blockPrefix(line)
-      const headLen = calloutHeadPrefixLen(line)
-      if (headLen !== null) {
-        if (selStart > ls && selStart <= ls + headLen)
-          return { from: ls, to: ls + headLen, insert: '', selection: ls }
-        return null
-      }
-      const lm = parseListMarker(line.slice(pfx.length))
-      if (lm) return takeMarker(scan, ls + pfx.length, lm, selStart, scope)
-      if (selStart === ls + pfx.length && ls > 0)
-        return { from: ls - 1, to: ls + pfx.length, insert: '', selection: ls - 1 }
-      return null
-    }
   }
 
-  const lm = readsLists(scope) ? parseListMarker(line) : null
-  if (lm) return takeMarker(scan, ls, lm, selStart, scope)
+  const pfx = blockPrefix(line, scope)
+  const lm = readsLists(scope) ? parseListMarker(line.slice(pfx.length)) : null
+  if (lm) return takeMarker(scan, ls + pfx.length, lm, selStart, scope)
   if (scope !== 'page') return null
-  const end = headingParts(line)?.contentStart ?? (quotePrefix(line).length || null)
+  // Inside a callout, never strip a lone `>` — that would drop the line out of the box, splitting it into a stray quote.
+  if (inCalloutAt(scan, selStart)) {
+    const headLen = calloutHeadPrefixLen(line)
+    if (headLen !== null) {
+      if (selStart > ls && selStart <= ls + headLen)
+        return { from: ls, to: ls + headLen, insert: '', selection: ls }
+      return null
+    }
+    if (selStart === ls + pfx.length && ls > 0)
+      return { from: ls - 1, to: ls + pfx.length, insert: '', selection: ls - 1 }
+    return null
+  }
+  const end = headingParts(line)?.contentStart ?? (pfx.length || null)
   if (end === null || selStart !== ls + end) return null
   return { from: ls, to: ls + end, insert: '', selection: ls }
 }

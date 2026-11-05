@@ -20,7 +20,6 @@ import {
   wholeLink,
 } from '../../Connections/connections'
 import { isWebAddress } from '../../Paths/urlPath'
-import type { ListKind } from '../../Actions/gripMenu'
 import { colorsOf, leadingMark } from './paints'
 export const highlightRegex = (): RegExp => /(?<!=)==(?!=)((?:[^=\n]|=(?!=))+)==(?!=)/dg
 /** A lone `=` opens a text color only on a color mark, since a bare `=…=` is prose; its words hold no `=` outside code, links, and math, which would close it. */
@@ -536,6 +535,8 @@ interface MarkerSpan {
 }
 
 type Box = { start: number; end: number; inner: string }
+
+export type ListKind = 'ordered' | 'alphabetical' | 'bullet' | 'checkbox' | 'arrow'
 
 type SequencedKind = Extract<ListKind, 'ordered' | 'alphabetical'>
 

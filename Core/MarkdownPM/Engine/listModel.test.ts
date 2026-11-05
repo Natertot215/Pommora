@@ -1,4 +1,17 @@
 import { describe, it, expect } from 'vitest'
+import { scanDoc } from './docScan'
+import { applyEdits } from './markdownCode'
+import { blockAt as blockAtIn } from './blockModel'
+import {
+  subBlockAt,
+  dropChanges,
+  moveRange,
+  renumberRuns,
+  checkboxToggleChange,
+  type Slot,
+} from './listModel'
+
+const blockAt = (doc: string, pos: number) => blockAtIn(scanDoc(doc), pos)
 
 describe('subBlockAt × block math', () => {
   it('indented math with an internal blank rides the item — the reorder gesture cannot tear it', () => {
@@ -28,21 +41,8 @@ describe('subBlockAt × block math', () => {
     expect(doc.slice(b!.from, b!.to)).toBe('- one')
   })
 })
-import { scanDoc } from './docScan'
-import { applyEdits } from './markdownCode'
-import { blockAt as blockAtIn } from './blockModel'
 
-const blockAt = (doc: string, pos: number) => blockAtIn(scanDoc(doc), pos)
-import {
-  subBlockAt,
-  dropChanges,
-  moveRange,
-  renumberRuns,
-  checkboxToggleChange,
-  type Slot,
-} from './listModel'
-
-/** Drop the item whose line contains `grab` so it starts at the line containing `dropLine`. */
+/** Drop the item whose line contains `grab` so it starts at `at`. */
 function drop(doc: string, grab: number, at: number): string {
   const block = subBlockAt(scanDoc(doc), grab, 'page')
   if (!block) throw new Error('grab not on a list line')

@@ -1,6 +1,7 @@
 import type { LeafItem } from './menuModel'
 import { matchKey, matchQuery, rankMatches } from '../Paths/caseFold'
-import { HEADING_LEVELS, LIST_KINDS, type HeadingLevel, type ListKind } from './gripMenu'
+import { HEADING_LEVELS, LIST_KINDS, type HeadingLevel } from './gripMenu'
+import type { ListKind } from '../MarkdownPM/Engine/detect'
 
 export type LinkWrapKind = 'link' | 'linkText' | 'connection'
 export type BlockFormat = 'quote' | 'code' | 'hr' | 'callout' | 'table'

@@ -8,6 +8,7 @@ import {
   isSequenced,
   parseListMarker,
   stripQuotePrefix,
+  type ListKind,
   type ListMarker,
   type MarkdownScope,
 } from '../Engine/detect'
@@ -22,7 +23,7 @@ import {
   trimmedRange,
   overlaps,
 } from '../Engine/markdownCode'
-import type { HeadingLevel, ListKind } from '../../Actions/gripMenu'
+import type { HeadingLevel } from '../../Actions/gripMenu'
 import type { BlockFormat, LinkWrapKind } from '../../Actions/blockMenu'
 import { emptyTable } from '../Engine/Tables/model'
 import { isPaint, type Paint, type PaintColor, writtenMark } from '../Engine/paints'
@@ -310,11 +311,12 @@ function listReach(
   const reader = readsFrom(scan, upTo, anchor, scope) ? anchor : 'outside'
   const markerAt = (k: number): ListMarker | null => itemAt(scan, k, reader, scope)
   const endOf = (k: number): number => subBlockAt(scan, scan.lineStarts[k], scope)!.to
+  const blank = (k: number): boolean => isBlank(splitPrefix(scan.lines[k], scope).body)
   const owners = ownersOf(scan, anchor, reader, scope)
   const item = owners[0]?.k ?? null
   const reached = new Set<number>()
   if (from === to) {
-    if (item === null) reached.add(anchor)
+    if (item === null || blank(anchor)) reached.add(anchor)
     else {
       const { items, last } = siblingsAt(scan, item, scope)
       const kind = drawnKind(markerAt(item)!)
@@ -332,8 +334,7 @@ function listReach(
     for (let k = anchor; k <= upTo; k++) {
       while (open.length > 0 && open[open.length - 1].end < scan.lineStarts[k]) open.pop()
       if (markerAt(k) !== null && k !== item) open.push({ k, end: endOf(k) })
-      if (!isBlank(splitPrefix(scan.lines[k], scope).body))
-        reached.add(open[open.length - 1]?.k ?? k)
+      if (!blank(k)) reached.add(open[open.length - 1]?.k ?? k)
     }
   }
   const outOfReach = (k: number): boolean =>

@@ -80,7 +80,6 @@ The order is what makes each step land once. Phase 0 lands the drive and records
 | `subBlockAt`'s `inJoinedMath` rule • Branch | The drag's own math rule; display math reads as its opening line in the one walk. | `Engine/listModel.ts` |
 | `diffAsSingleReplace` in the list model • Placement | Moved beside `applyEdits`, since it isn't list logic. | `Engine/markdownCode.ts` |
 | `markerSpanOf` • Function | Backspace's marker window, folded with the callout branch's copy into `takeMarker`. | `Input/edits.ts` |
-| The cell's `'out'` exit • Branch | Escape's own cell exit; Escape leaves through the dismissal stack onto the line after the table. | `Engine/Tables/navigate.ts`, `Tables/widget.tsx` |
 
 #### Constraints
 

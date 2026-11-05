@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { capitalize } from '@pommora/uix/Utilities/capitalize'
 import { type ActionItem, joinGroups, type LeafItem } from './menuModel'
-import { HEADING_LEVELS, LIST_KINDS, type ListKind } from './gripMenu'
+import { HEADING_LEVELS, LIST_KINDS } from './gripMenu'
 import type { CommandId, Commands } from './commands'
 import {
   type BlockMenuAction,
@@ -19,6 +19,7 @@ import {
   type Paint,
   type PaintColor,
 } from '../MarkdownPM/Engine/paints'
+import type { ListKind } from '../MarkdownPM/Engine/detect'
 
 /** What sits under a right-click, sent to the host as the menu is asked for; main cannot see CM6 state. */
 export const editorMenuRequest = z.object({

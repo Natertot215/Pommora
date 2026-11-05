@@ -1,10 +1,9 @@
 import { type ActionItem, joinGroups, type PickItem, pickRows } from './menuModel'
 import { scaleRows } from '../Tiles/tileZoom'
 import { COPY_LINK_ROW } from './pageMenu'
+import type { ListKind } from '../MarkdownPM/Engine/detect'
 
 export type HeadingLevel = 0 | 1 | 2 | 3 | 4 | 5 | 6
-
-export type ListKind = 'ordered' | 'alphabetical' | 'bullet' | 'checkbox' | 'arrow'
 
 export type GripMenuContext =
   | { kind: 'embed'; tree: readonly PickItem<string>[]; zoom: number | null }

@@ -131,6 +131,9 @@ describe('smart backspace (whole marker, all markers)', () => {
     expect(at('-  x', 2)).toBe('x')
     expect(at('- [ ] x', 3)).toBe('x')
     expect(at('> [!note] Head\n> - x', 18)).toBe('> [!note] Head\n> x')
+    expect(at('> - item', 3)).toBe('> item')
+    expect(at('> 1. item', 4)).toBe('> item')
+    expect(at('para\n\n\t- b', 9)).toBe('para\n\nb')
     expect(smartBackspace(scanDoc('## x'), 1, 1)).toBeNull()
   })
   it('only fires at content-start, not mid-content', () => {

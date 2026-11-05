@@ -231,10 +231,8 @@ describe('setList', () => {
     expect(listed('> ', 'ordered', 2, 2)).toBe('> 1. ')
     expect(listed('> one\n>\n> two', 'bullet', 7, 7)).toBe('> one\n> - \n> two')
     expect(listed('one\n  \ntwo', 'bullet', 5, 5)).toBe('one\n- \ntwo')
-  })
-  it('keeps a nested item at its level, and restarts its numbering', () => {
-    const nested = '- one\n  - two\n- three'
-    expect(listed(nested, 'ordered')).toBe('1. one\n  1. two\n2. three')
+    expect(listed('- a\n\n  para', 'ordered', 4, 4)).toBe('- a\n1. \n  para')
+    expect(listed('- a\n  \n  para', 'ordered', 5, 5)).toBe('- a\n1. \n  para')
   })
 })
 
@@ -283,12 +281,16 @@ describe('setList over a whole block', () => {
     expect(listed('→ a\n→ b', 'bullet')).toBe('- a\n- b')
   })
 
-  it('numbers per indent level, so a nested run restarts and its parent keeps counting', () => {
+  it('numbers per level, tab- or space-indented, so a nested run restarts and its parent keeps counting', () => {
     expect(listed('- a\n\t- x\n\t- y\n- b', 'ordered')).toBe('1. a\n\t1. x\n\t2. y\n2. b')
+    expect(listed('- one\n  - two\n- three', 'ordered')).toBe('1. one\n  1. two\n2. three')
   })
 
   it('leaves wrapped continuation lines alone', () => {
     expect(listed('- a\n  wrapped body\n- b', 'ordered')).toBe('1. a\n  wrapped body\n2. b')
+  })
+
+  it('reads a code, math, or quote block and a loose paragraph under an item as that item’s', () => {
     for (const fence of ['```', '$$']) {
       const doc = `1. Run this:\n   ${fence}\n   cmd\n\n   cmd2\n   ${fence}\n   Then check.\n2. Next`
       const bulleted = doc.replace('1. Run', '- Run').replace('2. Next', '- Next')

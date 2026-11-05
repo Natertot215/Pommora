@@ -14,6 +14,7 @@ import {
   type CitationEntry,
   type DiffTally,
   type FenceInfo,
+  type ListKind,
   type ListMarker,
   type MarkdownScope,
   readsLists,
@@ -27,7 +28,6 @@ import {
   quotePrefixWidth,
 } from './markdownCode'
 import { cx } from '@pommora/uix/Utilities/cx'
-import type { ListKind } from '../../Actions/gripMenu'
 
 function calloutNestedQuote(
   lines: string[],
@@ -416,14 +416,13 @@ export function railIntents(
     const carries = shown[i] === CARRIES
     const level = carries ? -1 : listLevels[i]
     const prevSpan = span
+    if (shown[i] === -1) railKind.length = 0
     if (carries) span = Math.min(ahead[i], behind + 1)
     else if (level < 0) {
-      railKind.length &&= 0
       behind = -1
       span = 0
       continue
     } else {
-      if (shown[i] < 0) railKind.length = 0
       railKind[level] = listKinds[i]
       railKind.length = level + 1
       behind = level

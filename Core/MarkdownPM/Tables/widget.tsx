@@ -244,13 +244,13 @@ class TableWidget extends ReactWidget {
       const region = docScan(view.state.doc).tables[this.tableIndex]
       if (!region) return
       const after = dir === 'after'
-      const bounds = after ? region.to === view.state.doc.length : region.from === 0
-      if (bounds)
+      const at = after ? region.to : region.from
+      if (at === (after ? view.state.doc.length : 0))
         view.dispatch({
-          changes: { from: after ? region.to : 0, insert: '\n' },
+          changes: { from: at, insert: '\n' },
           annotations: Transaction.addToHistory.of(false),
         })
-      focusAt(view, after ? region.to + 1 : bounds ? 0 : region.from - 1)
+      focusAt(view, after ? at + 1 : Math.max(at - 1, 0))
     }
     const structural = (transform: (m: TableModel) => TableModel): boolean => {
       const change = structuralEditChange(docScan(view.state.doc), this.tableIndex, transform)
