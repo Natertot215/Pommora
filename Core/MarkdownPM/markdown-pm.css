@@ -481,9 +481,11 @@
 }
 
 .md-list-glyph {
-  cursor: grab;
   user-select: none;
   -webkit-user-select: none;
+}
+.md-list-glyph:not(.mdpm-tbl-cell-static *) {
+  cursor: grab;
 }
 
 .mdpm-editor .cm-line.md-list-drag-source {

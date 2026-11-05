@@ -10,6 +10,7 @@ import {
 } from '../Engine/tokens'
 import {
   contentClass,
+  GLYPH_CLASS,
   listGlyphOf,
   listLineClass,
   railClass,
@@ -23,20 +24,13 @@ import { parseListMarker, type ListMarker } from '../Engine/detect'
 import { checkboxToggleChange } from '../Engine/listModel'
 import { scanDoc } from '../Engine/docScan'
 import { isPaint } from '../Engine/paints'
-import { readFormatState } from '../Input/formatState'
 import { editFor } from '../Input/format'
 import { editEvent, landEdit } from '../Input/listRenumber'
 import { decodePayload, type TablePayload } from '../Engine/Tables/clipboard'
 import { pastedCellText } from '../Links/pasteLink'
 import { RESTING_EDITS } from '../../Actions/editorMenu'
 import { pasteModeOf, type PasteMode } from '../../Actions/pasteAsMenu'
-import {
-  clickInside,
-  codeMask,
-  lineOffsetsOf,
-  quoteDepthOf,
-  type TextEdit,
-} from '../Engine/markdownCode'
+import { codeMask, lineOffsetsOf, quoteDepthOf, type TextEdit } from '../Engine/markdownCode'
 import { sectionRunsIn } from '../../Connections/scan'
 import { mayNameOwnHeading } from '../../Connections/connections'
 import { labelEscapes } from '../../Connections/links'
@@ -55,7 +49,8 @@ import {
 import { CITE_GLYPH, followCitation } from '../Citations/citationPointer'
 import type { EditorHost } from '../api'
 import { wordAt } from '../Input/markdownInput'
-import { keepSeatedSelection } from '../lineDom'
+import { glyphAt } from '../lineDom'
+import { routeRightClick } from '../Menus/menu'
 import type { Seat } from './CellEditor'
 import type { HeadingLinkStyle } from '../../Settings/personalization'
 import { CheckMark, checkboxClass } from '@pommora/uix/Controls/Checkbox'
@@ -261,19 +256,19 @@ function MarkerGlyph({
   const src = `${at},${at + lm.contentStart}`
   if (lm.kind === 'checkbox')
     return (
-      <span className="md-list-checkbox-seat" data-src={src}>
+      <span className={`md-list-checkbox-seat ${GLYPH_CLASS}`} data-src={src}>
         <span className={checkboxClass(lm.checked)}>{lm.checked && <CheckMark size={12} />}</span>
       </span>
     )
   if (glyph === 'bullet')
     return (
-      <span className="md-list-bullet" data-src={src}>
+      <span className={`md-list-bullet ${GLYPH_CLASS}`} data-src={src}>
         •
       </span>
     )
   const text = line.slice(lm.markerStart, lm.markerEnd)
   return (
-    <span className={`md-list-${glyph} md-control`} data-src={src}>
+    <span className={`md-list-${glyph} md-control ${GLYPH_CLASS}`} data-src={src}>
       {text}
     </span>
   )
@@ -401,12 +396,7 @@ export function cellOffsetAt(
   return acc
 }
 
-function restingRange(
-  cell: HTMLElement,
-  at: number,
-  text: string,
-  glyph: boolean,
-): [number, number] {
+function restingSelection(cell: HTMLElement, at: number, text: string): [number, number] {
   const sel = window.getSelection()
   const range = sel && sel.rangeCount > 0 ? sel.getRangeAt(0) : null
   if (!range?.intersectsNode(cell)) return [at, at]
@@ -416,7 +406,7 @@ function restingRange(
   const to = cell.contains(range.endContainer)
     ? cellOffsetAt(cell, range.endContainer, range.endOffset, 'end')
     : text.length
-  return clickInside(text, at, from, to, glyph) ? [from, to] : [at, at]
+  return [from, to]
 }
 
 function sideOf({ offsetNode: node, offset }: CaretPosition, x: number, y: number): -1 | 1 | null {
@@ -559,10 +549,8 @@ function StaticCellImpl({
   }
 
   const restingMenu = (e: React.MouseEvent<HTMLElement>): void => {
-    const ask = host.menus.format
-    if (!ask) return
     const cell = e.currentTarget
-    const glyph = (e.target as HTMLElement).closest('.md-list-item > [data-src]')
+    const glyph = glyphAt(e)
     const found = glyph ? null : document.caretPositionFromPoint(e.clientX, e.clientY)
     const caret = found && cell.contains(found.offsetNode) ? found : null
     const at = glyph
@@ -570,31 +558,31 @@ function StaticCellImpl({
       : caret
         ? cellOffsetAt(cell, caret.offsetNode, caret.offset)
         : text.length
-    const [from, to] = restingRange(cell, at, text, glyph !== null)
-    const side = caret && from === to ? sideOf(caret, e.clientX, e.clientY) : null
-    const word = side && wordAt(EditorState.create({ doc: text }), at, side)
-    const [start, end] = word ? [word.from, word.to] : [from, to]
-    const state = readFormatState(scanDoc(text), from, to, host.settings(), 'cell')
-    if (glyph) e.preventDefault()
-    else {
-      showSource(cell, start, end)
-      keepSeatedSelection()
-    }
-    const pick = glyph
-      ? host.menus.grip({ kind: 'glyph', current: state.list })
-      : ask({
-          ...state,
-          scope: 'cell',
-          x: e.clientX,
-          y: e.clientY,
+    const [from, to] = restingSelection(cell, at, text)
+    routeRightClick(
+      host,
+      scanDoc(text),
+      'cell',
+      e,
+      {
+        at,
+        glyph: glyph !== null,
+        sel: { from, to },
+        word: () => {
+          const side = caret && sideOf(caret, e.clientX, e.clientY)
+          return side ? wordAt(EditorState.create({ doc: text }), at, side) : null
+        },
+      },
+      {
+        seat: (start, end) => showSource(cell, start, end),
+        request: (_from, _to, start, end) => ({
           embedSeat: false,
           citeSeat: false,
           resting: { selection: text.slice(start, end) },
-        })
-    void pick.then((action) => {
-      if (action?.startsWith('list:')) void restingAction(action, from, to)
-      else if (action) void restingAction(action, start, end)
-    })
+        }),
+        apply: (action, start, end) => void restingAction(action, start, end),
+      },
+    )
   }
 
   const claimCite = (e: React.MouseEvent): (() => void) | null => {

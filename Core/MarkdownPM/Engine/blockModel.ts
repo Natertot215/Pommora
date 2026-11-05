@@ -1,6 +1,6 @@
 // `to` is EXCLUSIVE of the trailing newline, matching subBlockAt, headingSections, and TableRegion, which the drag's self-drop guard relies on.
 import { continuesList, isBlank, type BlockSpan, type CalloutLine } from './detect'
-import { type DocScan, inJoinedMath, perScan, spanAt } from './docScan'
+import { type DocScan, perScan, spanAt } from './docScan'
 import { lineEndOf, lineIndexAt } from './markdownCode'
 import { headingSections } from './headingScan'
 
@@ -40,18 +40,21 @@ function blockContext(scan: DocScan): BlockContext {
   } = scan
   const n = lines.length
 
-  // Only where a run actually holds a marker, so a bare indented paragraph isn't swept in. A math range whose opener joined the run rides it whole; one whose opener sits outside never gets pulled in.
-  const isMarker = (i: number): boolean => markers[i] !== null
-  const isListCont = (i: number): boolean => continuesList(lines[i], 0) === 'nested'
+  // Only where a run actually holds a marker, so a bare indented paragraph isn't swept in. A math range reads as its opening line, as the list model reads it, so one whose opener joined the run rides it whole and one whose opener sits outside never gets pulled in.
+  const read = (i: number): number => {
+    const math = spanAt(scan.maths, starts[i])
+    return math === undefined ? i : lineIndexAt(scan, math.from)
+  }
+  const isMarker = (i: number): boolean => markers[read(i)] !== null
+  const joins = (i: number): boolean => isMarker(i) || continuesList(lines[read(i)], 0) === 'nested'
   const listMember = new Array<boolean>(n).fill(false)
   for (let i = 0; i < n; ) {
-    if (!isMarker(i) && !isListCont(i)) {
+    if (!joins(i)) {
       i++
       continue
     }
     let j = i
-    while (j + 1 < n && (isMarker(j + 1) || isListCont(j + 1) || inJoinedMath(scan, j + 1, i, j)))
-      j++
+    while (j + 1 < n && joins(j + 1)) j++
     let hasMarker = false
     for (let k = i; k <= j && !hasMarker; k++) hasMarker = isMarker(k)
     if (hasMarker) for (let k = i; k <= j; k++) listMember[k] = true

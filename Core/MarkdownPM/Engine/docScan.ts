@@ -2,7 +2,6 @@ import {
   codeAt,
   fenceAt,
   isBlockquoteLine,
-  lineEndOf,
   lineIndexAt,
   lineStartAt,
   type CodeMask,
@@ -333,13 +332,6 @@ export function spanAt<S extends BlockSpan>(spans: readonly S[], pos: number): S
   if (hit < 0) return undefined
   const s = spans[hit]
   return pos <= s.to ? s : undefined
-}
-
-export function inJoinedMath(scan: LineScan, i: number, first: number, last: number): boolean {
-  const math = spanAt(scan.maths, scan.lineStarts[i])
-  return (
-    math !== undefined && math.from >= scan.lineStarts[first] && math.from <= lineEndOf(scan, last)
-  )
 }
 
 /** Where a diff line's margin meets its code: past its sign, or at its start while it awaits one. */

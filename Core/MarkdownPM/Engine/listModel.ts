@@ -127,12 +127,29 @@ export function ownersOf(
   const owners: { k: number; end: number }[] = []
   for (let j = k; j >= 0; j--) {
     const lm = itemAt(scan, j, reader, scope)
-    if (lm === null) continue
-    const end = subBlockAt(scan, scan.lineStarts[j], scope)!.to
-    if (end >= scan.lineStarts[k]) owners.push({ k: j, end })
-    if (lm.level === 0 && quoteDepthOf(scan.lines[j]) === 0) break
+    if (lm !== null) {
+      const end = subBlockAt(scan, scan.lineStarts[j], scope)!.to
+      if (end >= scan.lineStarts[k]) owners.push({ k: j, end })
+    }
+    if (endsListsAbove(scan, j, lm, scope)) break
   }
   return owners
+}
+
+function endsListsAbove(
+  scan: DocScan,
+  j: number,
+  lm: ListMarker | null,
+  scope: MarkdownScope,
+): boolean {
+  const block =
+    scope === 'page' ? (scan.fences[j] ?? spanAt(scan.maths, scan.lineStarts[j])) : undefined
+  if (lm !== null ? lm.level > 0 : block !== undefined && lineIndexAt(scan, block.from) !== j)
+    return false
+  const line = scan.lines[j]
+  for (let d = quoteDepthOf(line) - (lm === null ? 0 : 1); d >= 0; d--)
+    if (continuesList(line, d) !== 'ends') return false
+  return true
 }
 
 export interface Slot {

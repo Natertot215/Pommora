@@ -394,18 +394,19 @@ export function railIntents(
   const n = listLevels.length
   const rails: RailIntent[][] = new Array(n)
   const CARRIES = -2
+  const LIST_ENDS = -1
   const shown: number[] = new Array(n)
   for (let i = 0, depth = 0; i < n; i++) {
     const own = quoteDepths[i]
     if (listLevels[i] >= 0 && own === depth) shown[i] = listLevels[i]
     else if (own >= depth && continuesList(lines[i], depth) !== 'ends') shown[i] = CARRIES
     else {
-      shown[i] = -1
+      shown[i] = LIST_ENDS
       if (listLevels[i] >= 0) depth = own
     }
   }
   const ahead: number[] = new Array(n)
-  for (let i = n - 1, next = -1; i >= 0; i--) {
+  for (let i = n - 1, next = LIST_ENDS; i >= 0; i--) {
     ahead[i] = next
     if (shown[i] !== CARRIES) next = shown[i]
   }
@@ -416,7 +417,7 @@ export function railIntents(
     const carries = shown[i] === CARRIES
     const level = carries ? -1 : listLevels[i]
     const prevSpan = span
-    if (shown[i] === -1) railKind.length = 0
+    if (shown[i] === LIST_ENDS) railKind.length = 0
     if (carries) span = Math.min(ahead[i], behind + 1)
     else if (level < 0) {
       behind = -1

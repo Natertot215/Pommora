@@ -45,11 +45,3 @@ export function gutterLineAt(
 
 export const glyphAt = (e: { target: EventTarget | null }): Element | null =>
   (e.target as HTMLElement).closest?.(`.${GLYPH_CLASS}`) ?? null
-
-/** A surface that seated the selection itself keeps it for the press. Chromium seats its own word after a right-click's handler wherever the selection doesn't hold the click, so the browser's is refused; and an editor reads the DOM selection on any mutation inside it, where only a `selectionchange` honors a widget's `ignoreEvent`, so the seat is announced at once, before a redraw inside a resting cell's table could hand its word to the page as the page's caret. */
-export function keepSeatedSelection(): void {
-  document.dispatchEvent(new Event('selectionchange'))
-  const refuse = (e: Event): void => e.preventDefault()
-  document.addEventListener('selectstart', refuse, true)
-  setTimeout(() => document.removeEventListener('selectstart', refuse, true))
-}

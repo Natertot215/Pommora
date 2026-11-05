@@ -1,5 +1,6 @@
 import { type Command, Decoration, EditorView, type KeyBinding, keymap } from '@codemirror/view'
 import {
+  CharCategory,
   EditorSelection,
   EditorState,
   type Extension,
@@ -49,7 +50,7 @@ import {
   type Edit,
 } from './edits'
 import { applyEdit } from './applyEdit'
-import { fenceAt, isWordChar, lineEndOf, lineIndexAt, lineOffsetsOf } from '../Engine/markdownCode'
+import { fenceAt, lineEndOf, lineIndexAt, lineOffsetsOf } from '../Engine/markdownCode'
 import { shownEnd } from '../Links/linkEdit'
 import { embedTileRanges } from '../Embeds/embedWidget'
 import { caretInMargin, type DocScan, signSeatAt } from '../Engine/docScan'
@@ -292,12 +293,16 @@ export const markdownInput = [
   ),
 ]
 
-const joins = (state: EditorState, at: number): boolean =>
-  /['’]/.test(state.sliceDoc(at, at + 1)) &&
-  isWordChar(state.sliceDoc(at - 1, at)) &&
-  isWordChar(state.sliceDoc(at + 1, at + 2))
+const joins = (state: EditorState, at: number): boolean => {
+  if (!/['’]/.test(state.sliceDoc(at, at + 1))) return false
+  const category = state.charCategorizer(at)
+  return (
+    category(state.sliceDoc(at - 1, at)) === CharCategory.Word &&
+    category(state.sliceDoc(at + 1, at + 2)) === CharCategory.Word
+  )
+}
 
-/** Every word gesture reads `wordAt`'s word, the one holding the character on `side` of `pos`: CodeMirror's word, carried across an apostrophe with a letter or digit on both sides, so `don't` reads whole and `'quoted'` reads `quoted`; a code fence's language adds its own word characters. A right-click's word on every surface is it, and while a double-click or a group motion or selection runs in a view, or a group deletion from a caret, each joined word in view is one atom to it, so every other motion still steps through one, and a deletion over a selection takes exactly the selection. */
+/** Every word gesture reads `wordAt`'s word, the one holding the character on `side` of `pos`: CodeMirror's word, carried across an apostrophe with a word character on both sides as CodeMirror reads one there, so `don't` reads whole and `'quoted'` reads `quoted`, and a code fence's language adds its own word characters to both. A right-click's word on every surface is it, and while a double-click or a group motion or selection runs in a view, or a group deletion from a caret, each joined word in view is one atom to it, so every other motion still steps through one, and a deletion over a selection takes exactly the selection. */
 export function wordAt(state: EditorState, pos: number, side: -1 | 1): SelectionRange | null {
   const word = state.wordAt(pos)
   if (!word) return null

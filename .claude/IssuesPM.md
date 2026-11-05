@@ -4,7 +4,7 @@
 
 | Total | Critical | High | Moderate | Low | Minimal |
 |-------|----------|------|----------|-----|---------|
-| 72 | 0 | 3 | 12 | 37 | 20 |
+| 73 | 0 | 3 | 12 | 38 | 20 |
 
 #### A1 • Sync & Devices
 
@@ -43,6 +43,7 @@
 | [I-021](#I-021 • Text that arrives from another copy of a page at the end of a folded section shows up below the fold.)                                                                                           | Text that arrives from another copy of a page at the end of a folded section shows up below the fold.                                                                                | Low      | Mini (=🟢+2=)           | Shortcut       | `70fc6063c` | **Created:** 10-08-2026<br>**Updated:** 10-16-2026 |
 | [I-013](#I-013 • Dragging a table row, column, or column edge redraws the whole table on every mouse movement.)                                                                                                   | Dragging a table row, column, or column edge redraws the whole table on every mouse movement.                                                                                        | Low      | Mini (=🟢+4=)           | Parallel Build | `f6511401d` | **Created:** 09-23-2026<br>**Updated:** 10-09-2026 |
 | [I-072](#I-072 • A word split by inline marks reads only its unmarked part, and Bold over it writes a second pair of marks beside the first.) | A word split by inline marks reads only its unmarked part, and Bold over it writes a second pair of marks beside the first. | Low | Medium (TBD) | Shortcut | `2080f3045` | **Created:** 11-05-2026<br>**Updated:** 11-05-2026 |
+| [I-073](#I-073 • Numbering recounts through two patterns: a drag builds, renumbers, and diffs its own document, while a list-type pick writes its markers and leaves the renumber filter to infer a re-pick from the edit's shape.) | Numbering recounts through two patterns: a drag builds, renumbers, and diffs its own document, while a list-type pick writes its markers and leaves the renumber filter to infer a re-pick from the edit's shape. | Low | Small (TBD) | Parallel Build | `aefcba940` | **Created:** 11-05-2026<br>**Updated:** 11-05-2026 |
 | [I-071](#I-071 • MarkdownPM's live coverage is split across five drives, so one editor change is driven five times over five launches.) | MarkdownPM's live coverage is split across five drives, so one editor change is driven five times over five launches. | Minimal | Medium (TBD) | Parallel Build | `e989eb865` | **Created:** 11-04-2026<br>**Updated:** 11-04-2026 |
 | [I-038](#I-038 • The host carries one typed menu member per construct, so a new construct menu needs a new host member in three places.)                                                                          | The host carries one typed menu member per construct, so a new construct menu needs a new host member in three places.                                                               | Minimal  | Small (=🔴≈ −4=)        | Shortcut       | `70fc6063c` | **Created:** 10-08-2026<br>**Updated:** 10-16-2026 |
 | [I-050](#I-050 • A heading rename to a heading holding a pipe turns a lone page embed into a link.) | A heading rename to a heading holding a pipe turns a lone page embed into a link. | Minimal | Small (TBD) | Drift | `a0441edc9` | **Created:** 10-19-2026<br>**Updated:** 10-19-2026 |
@@ -547,6 +548,20 @@ A right-click's word is read from the source text, where CodeMirror's word stops
 **Solution** [TBD]
 
 A word reader that steps over inline marks, so the word is the one the editor draws, and a Bold that merges over a partly formatted range, taking the marks inside it off and writing one pair around the whole, as other Markdown editors do; both belong to the inline-format engine rather than to the menus.
+
+#### I-073 • Numbering recounts through two patterns: a drag builds, renumbers, and diffs its own document, while a list-type pick writes its markers and leaves the renumber filter to infer a re-pick from the edit's shape.
+
+| Concern | Scale | Origin | Base | Date |
+|---------|-------|--------|------|------|
+| Low | Small (TBD) | Parallel Build | `aefcba940` | **Created:** 11-05-2026<br>**Updated:** 11-05-2026 |
+
+**Description**
+
+A list's numbers recount through two patterns. The list drag builds its moved document, runs `renumberRuns` over it from the source and the destination, and diffs the result against the original into one edit, so the drag states which runs it touched and what they restart from. A list-type pick only writes markers: `setList` writes `1. ` or `A. ` over every numbered or lettered marker it reaches, and `listRenumber`'s filter infers the pick's intent from the edit's shape. A marker-writing edit that rewrites a whole numbered or lettered marker counts as a re-pick, so its run restarts from 1 or A; a re-pick that changes nothing is detected by renumbering and comparing the result with the document before the edit, and the filter cancels the transaction with `{}`. Because the restart is read from the edit rather than stated by the pick, any future marker-writing edit that rewrites a whole marker restarts its run whether it means to or not.[^73]
+
+**Solution** [Proposed]
+
+One pattern for an edit that recounts. A pick building its switched text and recounting it with the lines it rewrote as `renumberRuns`' `repicked`, as the drag does, leaves less: the filter's whole-marker inference and its no-op compare leave, a pick that changes nothing lands no change on its own, and the filter keeps only Enter, Tab, and deletion. The pick would land its own changes with the recount's as a sequential second set, as the filter does now, rather than through one diff, which would map a selection inside the replaced span to its edge. The drag going through the filter instead would ask the filter to recover a moved block's source and destination from one replace, adding inference rather than removing it.
 
 #### I-071 • MarkdownPM's live coverage is split across five drives, so one editor change is driven five times over five launches.
 
@@ -1295,4 +1310,5 @@ In `MatrixCanvas`, keep a small map of active pointer ids on the host; while two
 [^69]: **I-069:** `UIX/Pickers/PickerMenu.tsx:~66` (`PickerMenu`), `Core/Interface/Menus/MenuPresenter.tsx:~103` (the action menus' shell), `UIX/Pickers/ManageRow.tsx:~3,~53-63` (the import and the pane), `UIX/Menus/MenuDropdown.tsx:~91` and `Core/Interface/Toolbar/SettingsMenu.tsx:~40` (the toolbar's `MenuSurface`), `.claude/Resources/PommoraUIX.md:~380` ("The pane action menus, managed lists, and pickers mount"), `.claude/CLAUDE.md:~109` (the folder's description)
 [^70]: **I-070:** `Core/Views/Host/pendingView.ts:~201-235` (`dropIO`, `persistAfter`), `Core/Views/Host/pendingView.ts:~117-133` (`unstageView`), `Core/Views/Host/useViewInteractions.tsx:~182-196` (`placeInView`), `Core/Views/Host/useViewCreation.ts:~116-130` (`orderPatch`), `Core/Views/Bands/bandRouter.ts:~72-107` (`routeSet`)
 [^71]: **I-071:** `.claude/scripts/List Types Drive/live-drive.mjs`, `.claude/scripts/Text Property Drive/live-drive.mjs` (group 4), `.claude/scripts/Path Links Drive/live-drive.mjs` (group 9), `.claude/scripts/Alias Drive/live-drive.mjs` (group 3), `.claude/scripts/editor-parity/` (`launch.sh`, `cdp.mjs`, `fixtures.mjs`, `run.mjs`, `compare.mjs`), `.claude/scripts/drive-harness.mjs` (`launch`, `restore`), `.claude/scripts/README.md`.
-[^72]: **I-072:** `Core/MarkdownPM/surface.ts:~59-71` (`joins`, `wordAt`), `Core/MarkdownPM/Input/format.ts:~102-161` (`toggleInline`), `Core/MarkdownPM/Input/format.ts:~79-100` (`underSelection`)
+[^72]: **I-072:** `Core/MarkdownPM/Input/markdownInput.ts:~296-314` (`joins`, `wordAt`), `Core/MarkdownPM/Input/format.ts:~102-161` (`toggleInline`), `Core/MarkdownPM/Input/format.ts:~79-100` (`underSelection`)
+[^73]: **I-073:** `Core/MarkdownPM/Engine/listModel.ts:~304-333` (`dropChanges`), `Core/MarkdownPM/Engine/listModel.ts:~245-251` (`renumberRuns`), `Core/MarkdownPM/Input/format.ts:~364-391` (`setList`), `Core/MarkdownPM/Input/listRenumber.ts:~12-65` (`listRenumber`)

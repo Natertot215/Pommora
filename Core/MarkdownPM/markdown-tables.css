@@ -195,7 +195,7 @@
   --grip-left: calc((var(--list-indent) - var(--icon-body) * var(--glyph-scale)) / 2);
 }
 
-/* The checkbox is the one glyph a resting cell still acts on; the rest carry no drag class, so they keep the cell's text cursor. */
+/* The checkbox is the one glyph a resting cell acts on; a resting cell has no drag, so the rest keep the cell's text cursor. */
 .mdpm-tbl-cell-static .md-list-checkbox-seat {
   cursor: pointer;
 }

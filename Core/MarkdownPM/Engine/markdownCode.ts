@@ -195,17 +195,6 @@ export const lineStartAt = (doc: string, pos: number): number =>
 /** A range ending at a line's start ends on the line above, so a single trailing newline is the terminator, not a phantom empty line. */
 export const reachEnd = (doc: string, from: number, to: number): number =>
   to > from && lineStartAt(doc, to) === to ? to - 1 : to
-/** A right-click on text inside a selection's reach, or on a glyph on any line it touches, acts on the selection; anywhere else, and at a caret, the list rows and the format flags read the click's point, since a click points at an item, and every other row acts on the word under the pointer, or at the point where it sits on none, which the menu shows as its selection. */
-export const clickInside = (
-  doc: string,
-  at: number,
-  from: number,
-  to: number,
-  glyph: boolean,
-): boolean =>
-  (glyph || from < to) &&
-  at >= (glyph ? lineStartAt(doc, from) : from) &&
-  at <= reachEnd(doc, from, to)
 export const lineEndAt = (doc: string, pos: number): number => {
   const i = doc.indexOf('\n', pos)
   return i === -1 ? doc.length : i
