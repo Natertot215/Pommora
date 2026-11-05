@@ -101,12 +101,12 @@ function systemItems(
 }
 
 // Last, so the Pommora formatting block sits directly under the edit items.
-function speechShareItems(params: ContextMenuParams): MenuItemConstructorOptions[] {
-  if (!params.selectionText || process.platform !== 'darwin') return []
+function speechShareItems(selection: string): MenuItemConstructorOptions[] {
+  if (!selection || process.platform !== 'darwin') return []
   return [
     { type: 'separator' },
     { label: 'Speech', submenu: [{ role: 'startSpeaking' }, { role: 'stopSpeaking' }] },
-    { role: 'shareMenu', sharingItem: { texts: [params.selectionText] } },
+    { role: 'shareMenu', sharingItem: { texts: [selection] } },
   ]
 }
 
@@ -135,14 +135,14 @@ export function installEditorContextMenu(win: BrowserWindow): void {
     const editor = takeEditorMenu(win, params)
     if (!params.isEditable && !editor?.req.resting) return editor?.resolve(null)
     const items = systemItems(win.webContents, params, editor)
+    const selection = editor?.req.resting?.selection ?? params.selectionText
     if (editor) {
-      const selection = editor.req.resting?.selection ?? params.selectionText
       items.push(
         { type: 'separator' },
         ...editorRows(editor, editorContextItems(editor.req, heldCommands(), selection)),
       )
     }
-    items.push(...speechShareItems(params))
+    items.push(...speechShareItems(selection))
     Menu.buildFromTemplate(items).popup({ window: win, callback: () => editor?.resolve(null) })
   })
 }

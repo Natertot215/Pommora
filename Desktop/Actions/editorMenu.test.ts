@@ -215,10 +215,18 @@ describe('the window’s right-click', () => {
       ])
     })
 
-    it('offers Insert Link from the source selection, not the drawn one', () => {
+    it('offers Insert Link, Speech, and Share from the source selection, not the drawn one', () => {
       void askEditorMenu(resting('example.com'))
       rightClick({ isEditable: false, selectionText: 'the site' })
       expect(labels()).toContain('Insert Link')
+      const platform = vi.spyOn(process, 'platform', 'get').mockReturnValue('darwin')
+      void askEditorMenu(resting(''))
+      rightClick({ isEditable: false, selectionText: 'cella' })
+      expect(labels()).not.toContain('Speech')
+      void askEditorMenu(resting('wo'))
+      rightClick({ isEditable: false, selectionText: '' })
+      expect(labels()).toContain('Speech')
+      platform.mockRestore()
     })
   })
 

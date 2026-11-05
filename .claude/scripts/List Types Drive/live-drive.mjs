@@ -224,6 +224,14 @@ async function group3(cdp) {
   await setBody(cdp, CELL('> a'))
   const quote = await pop(cdp, await textAt(cdp, restingCell('a'), 'a'), ['Lists', 'Bullet List'])
   item(3, 2, 'C-5', "a resting cell's `> a` becomes an item holding the `>`", (await body(cdp)).endsWith('| - > a | x |'), `${seen(quote)} · ${show(await body(cdp))}`)
+  await setBody(cdp, CELL('plain word here'))
+  const word = await pop(cdp, await textAt(cdp, restingCell('word'), 'word'), ['Format', 'Bold'])
+  const wordMounted = await cdp.evaluate(`!!document.querySelector('.mdpm-tbl-cell-editor')`)
+  const edits = ['Cut', 'Copy'].map((l) => word.rows?.find((r) => r.label === l)?.enabled)
+  item(3, 3, 'C-6', "Format ▸ Bold from an unselected word at rest bolds that word without entering the cell", show(edits) === show([true, true]) && !wordMounted && (await body(cdp)).endsWith('| plain **word** here | x |'), `${seen(word)} · ${show([edits, wordMounted, await body(cdp)])}`)
+  await setBody(cdp, CELL('- a<br>- b'))
+  const text = await pop(cdp, await textAt(cdp, restingCell('b'), 'b'), ['Lists', 'Numbered List'])
+  item(3, 3, 'C-2', "Lists ▸ Numbered from an unselected item's text at rest acts at the click", (await body(cdp)).endsWith('| 1. a<br>2. b | x |'), `${seen(text)} · ${show(await body(cdp))}`)
   await shot(cdp, 'g3-resting')
 }
 
@@ -275,7 +283,6 @@ async function group4(cdp) {
   item(4, 3, 'B-7', "a drag-selection ending at the next line's start numbers only its own line", show(swept) === show([0, 4]) && (await body(cdp)) === '1. one\ntwo two', `${seen(dragged)} · ${show([swept, await body(cdp)])}`)
 
   await setBody(cdp, 'plain word here')
-  await select(cdp, 'word')
   await wordPick(cdp, 'word', ['Format', 'Bold'])
   item(4, 0, 'C-6', 'Format ▸ Bold still bolds the word under the click', (await body(cdp)) === 'plain **word** here', show(await body(cdp)))
 

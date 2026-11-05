@@ -1,5 +1,5 @@
 import { EditorView, keymap } from '@codemirror/view'
-import { type Extension, Prec } from '@codemirror/state'
+import { EditorState, type Extension, Prec } from '@codemirror/state'
 import type { MarkdownScope } from './Engine/detect'
 import { markdownDecorations } from './decorations'
 import { listDragExtension } from './Gestures/listDrag'
@@ -39,7 +39,9 @@ function blockGestures(scope: MarkdownScope): Extension {
   }
 }
 
-/** Everything a page body, a table cell, and a property value share: inline rendering, the block gestures their scope holds, link and footnote pointers, the paste and alias rules, typing, and the right-click menu. The surfaces differ only in what wraps this. `oneLine` is a value field's surface: it scrolls where a body wraps, and it spellchecks nothing, since a field often holds an address or a name; `remembers` is when its alias memory writes. */
+export const wordRule = EditorState.languageData.of(() => [{ wordChars: "'’" }])
+
+/** Everything a page body, a table cell, and a property value share: inline rendering, the block gestures their scope holds, link and footnote pointers, the paste and alias rules, typing, the word rule every word gesture and a resting cell's right-click read, an apostrophe inside it, and the right-click menu. The surfaces differ only in what wraps this. `oneLine` is a value field's surface: it scrolls where a body wraps, and it spellchecks nothing, since a field often holds an address or a name; `remembers` is when its alias memory writes. */
 const inlineSurface = (
   scope: MarkdownScope,
   { oneLine = false, remembers = 'leave' }: { oneLine?: boolean; remembers?: Remembers } = {},
@@ -66,6 +68,7 @@ const inlineSurface = (
   }),
   Prec.high(keymap.of(wrapChords)),
   typedInput(scope),
+  wordRule,
   editorMenu(scope),
 ]
 

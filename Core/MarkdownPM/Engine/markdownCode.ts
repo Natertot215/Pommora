@@ -189,7 +189,7 @@ export const lineEndOf = (d: LineTable, line: number): number =>
 
 export const lineStartAt = (doc: string, pos: number): number =>
   pos <= 0 ? 0 : doc.lastIndexOf('\n', pos - 1) + 1
-/** A range ending at a line's start ends on the line above, so a single trailing newline is the terminator, not a phantom empty line; a click inside that reach acts on the range, a glyph on any line the range touches, and any other click at itself. */
+/** A range ending at a line's start ends on the line above, so a single trailing newline is the terminator, not a phantom empty line. A right-click inside that reach, or on a glyph on any line the range touches, acts on the range; outside it, the list rows and the format flags read the click's point, since a click points at an item, and every other row acts on the word under the click, or at the point where there's none, which the menu shows as its selection. */
 export const reachEnd = (doc: string, from: number, to: number): number =>
   to > from && lineStartAt(doc, to) === to ? to - 1 : to
 export const clickInside = (

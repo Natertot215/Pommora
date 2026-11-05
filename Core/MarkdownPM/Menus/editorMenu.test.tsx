@@ -1,7 +1,9 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
+import { EditorSelection } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
+import { cursorGroupForward, deleteGroupBackward } from '@codemirror/commands'
 import { ok } from '../../Contract/result'
 import type { LinkMenuAction } from '../../Actions/connectionMenu'
 import type { EditorMenuRequest } from '../../Actions/editorMenu'
@@ -75,6 +77,38 @@ describe('the editor’s native menu', () => {
     edge.dispatch({ selection: { anchor: 0, head: 4 } })
     await rightClick(edge, 4, edge.dom.querySelectorAll('.cm-line')[1])
     expect(edge.state.doc.toString()).toBe('one\n**two** two')
+    for (const [body, at, want] of [
+      ["don't stop", 2, "**don't** stop"],
+      ['the end.', 5, 'the **end**.'],
+    ] as const) {
+      await cleanupEditor()
+      const word = await mountEditor({ initialBody: body, host: host() })
+      await rightClick(word, at)
+      expect(word.state.doc.toString()).toBe(want)
+    }
+  })
+
+  it('takes an apostrophe inside the word every word gesture reads', async () => {
+    const view = await mountEditor({ initialBody: "don't 'quoted' it’s", host: host() })
+    expect([0, 8, 16].map((at) => view.state.wordAt(at + 2))).toEqual([
+      EditorSelection.range(0, 5),
+      EditorSelection.range(6, 14),
+      EditorSelection.range(15, 19),
+    ])
+    vi.spyOn(view, 'posAtCoords').mockReturnValue(2)
+    const line = view.dom.querySelector('.cm-line') as HTMLElement
+    for (const detail of [1, 2]) {
+      const init = { bubbles: true, cancelable: true, button: 0, detail, clientX: 5, clientY: 5 }
+      line.dispatchEvent(new MouseEvent('mousedown', init))
+      document.dispatchEvent(new MouseEvent('mouseup', init))
+    }
+    expect([view.state.selection.main.from, view.state.selection.main.to]).toEqual([0, 5])
+    view.dispatch({ selection: { anchor: 0 } })
+    cursorGroupForward(view)
+    expect(view.state.selection.main.head).toBe(5)
+    view.dispatch({ selection: { anchor: 5 } })
+    deleteGroupBackward(view)
+    expect(view.state.doc.toString()).toBe(" 'quoted' it’s")
   })
 
   it('reads the embed seat at the click, not at the caret', async () => {

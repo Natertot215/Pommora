@@ -1,4 +1,5 @@
 import { Fragment, memo } from 'react'
+import { EditorState } from '@codemirror/state'
 import {
   holdsTokens,
   linkTokenAt,
@@ -53,6 +54,7 @@ import {
 } from '../../Connections/linkValue'
 import { CITE_GLYPH, followCitation } from '../Citations/citationPointer'
 import type { EditorHost } from '../api'
+import { wordRule } from '../surface'
 import type { Seat } from './CellEditor'
 import type { HeadingLinkStyle } from '../../Settings/personalization'
 import { CheckMark, checkboxClass } from '@pommora/uix/Controls/Checkbox'
@@ -534,6 +536,11 @@ function StaticCellImpl({
         ? cellOffsetAt(cell, caret.offsetNode, caret.offset)
         : text.length
     const [from, to] = restingRange(cell, at, text, glyph !== null)
+    const word =
+      glyph || from !== to
+        ? null
+        : EditorState.create({ doc: text, extensions: wordRule }).wordAt(at)
+    const [start, end] = word ? [word.from, word.to] : [from, to]
     const state = readFormatState(scanDoc(text), from, to, host.settings(), 'cell')
     if (glyph) e.preventDefault()
     const pick = glyph
@@ -545,10 +552,11 @@ function StaticCellImpl({
           y: e.clientY,
           embedSeat: false,
           citeSeat: false,
-          resting: { selection: text.slice(from, to) },
+          resting: { selection: text.slice(start, end) },
         })
     void pick.then((action) => {
-      if (action) void restingAction(action, from, to)
+      if (action?.startsWith('list:')) void restingAction(action, from, to)
+      else if (action) void restingAction(action, start, end)
     })
   }
 

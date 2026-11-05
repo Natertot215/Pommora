@@ -168,7 +168,7 @@ describe('a right-click on a resting cell', () => {
         y: 34,
         embedSeat: false,
         citeSeat: false,
-        resting: { selection: '' },
+        resting: { selection: 'plain' },
       }),
     )
     expect(event.defaultPrevented).toBe(false)
@@ -179,7 +179,7 @@ describe('a right-click on a resting cell', () => {
     await mount('**a** bc')
     await rightClick('a', 1)
     expect(format).toHaveBeenCalledWith(
-      expect.objectContaining({ bold: true, resting: { selection: '' } }),
+      expect.objectContaining({ bold: true, resting: { selection: 'a' } }),
     )
   })
 
@@ -192,14 +192,14 @@ describe('a right-click on a resting cell', () => {
     )
   })
 
-  it('reads a point when the click lands outside the selection', async () => {
+  it('seats the word under a click outside the selection', async () => {
     await mount('**a** bc')
     select(' bc', 1, ' bc', 2)
     await rightClick('a', 1)
-    expect(format).toHaveBeenCalledWith(expect.objectContaining({ resting: { selection: '' } }))
+    expect(format).toHaveBeenCalledWith(expect.objectContaining({ resting: { selection: 'a' } }))
   })
 
-  it('claims the right press, so the browser seats no word before the menu', async () => {
+  it('claims the right press, so the selection and the page caret stay undisturbed', async () => {
     await mount('plain words')
     const press = new MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 2 })
     await act(async () => {
@@ -228,20 +228,43 @@ describe('a row chosen at rest', () => {
   })
 
   it('enters the cell with the caret in the slot Bold writes at a point', async () => {
-    await mount('ab cd')
-    await rightClick('ab cd', 3)
+    await mount('ab ')
+    await rightClick('ab ', 3)
     await choose('format:bold')
-    expect(committed).toHaveBeenLastCalledWith(1, 0, 'ab ****cd')
-    expect(liveCell()?.state.doc.toString()).toBe('ab ****cd')
+    expect(committed).toHaveBeenLastCalledWith(1, 0, 'ab ****')
+    expect(liveCell()?.state.doc.toString()).toBe('ab ****')
     expect(liveCell()?.state.selection.main.head).toBe(5)
   })
 
   it('enters the cell with the caret in the slot Text Color writes at a point', async () => {
-    await mount('ab cd')
-    await rightClick('ab cd', 3)
+    await mount('ab ')
+    await rightClick('ab ', 3)
     await choose('textColor:red')
-    expect(committed).toHaveBeenLastCalledWith(1, 0, 'ab =🔴=cd')
+    expect(committed).toHaveBeenLastCalledWith(1, 0, 'ab =🔴=')
     expect(liveCell()?.state.selection.main.head).toBe(6)
+  })
+
+  it('commits Bold over the word under an unselected click, at rest', async () => {
+    await mount('')
+    for (const [text, at, want] of [
+      ['ab cd', 3, 'ab **cd**'],
+      ["don't stop", 2, "**don't** stop"],
+      ['the end.', 5, 'the **end**.'],
+    ] as const) {
+      cellText = text
+      await draw()
+      await rightClick(text, at)
+      await choose('format:bold')
+      expect(committed).toHaveBeenLastCalledWith(1, 0, want)
+      expect(entered()).toBe(false)
+    }
+  })
+
+  it('a list row from an unselected item’s text acts at the click, as its glyph does', async () => {
+    await mount('- a\n- b')
+    await rightClick('b', 1)
+    await choose('list:ordered')
+    expect(committed).toHaveBeenLastCalledWith(1, 0, '1. a\n2. b')
   })
 
   it('commits Lists ▸ Bulleted at a point and stays at rest', async () => {
