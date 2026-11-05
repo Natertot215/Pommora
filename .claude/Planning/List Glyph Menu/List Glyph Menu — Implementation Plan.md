@@ -21,7 +21,7 @@
 | 0 · Drives and Baseline | 0 (scripts +273: the drive +261, the harness +8, Path Links −8, the README +12) | 0 (+0 / −0) |
 | 1 · The List Model | +74 (the rename 0) | +70 (+177 / −107) |
 | 2 · One Switch | +143 (+69 its own) | +168 (+619 / −451) |
-| 3 · The Glyph Menu | +186 (+18 its own: the patch's +16 and the click test's end rule) | |
+| 3 · The Glyph Menu | +186 (+18 its own: the patch's +16 and the click test's end rule) | +194 (+699 / −505) |
 | 4 · Docs and Issues | +186 (±0 its own; docs +33) | |
 | **Total** | **+186 excluding comments, against the ratified +159 (+458 / −299); one file renamed, one drive added** | |
 
@@ -59,7 +59,7 @@ The order is what makes each step land once. Phase 0 lands the drive and records
 | `listRows` • Function | The five type rows, built once for **Type ▸** and the glyph menu. | `Core/Actions/gripMenu.ts` |
 | `glyphAt` • Function | A pointer event's list glyph, looked up once for the drag, the table's sweep, the grip's suppression, and the editor menu. Replaces three inline copies. | `Core/MarkdownPM/lineDom.ts` |
 | `phasedItem` • Function | The drive item that prints `AWAIT` until its owning phase lands, shared by the List Types and Path Links drives. Replaces Path Links' own copy. | `.claude/scripts/drive-harness.mjs` |
-| `preserveListLevels` • Setting | **Preserve List-Level Formatting**, `flag(true)`, an editor-setting key, and a caption-less row under Outliner Lines. | `Core/Settings/personalization.ts`, `frames.ts`, `Core/MarkdownPM/api.ts` |
+| `preserveListLevels` • Setting | **Preserve List-Level Formatting**, `flag(true)`, an editor-setting key, and a row under Outliner Lines carrying Nathan's caption. | `Core/Settings/personalization.ts`, `frames.ts`, `Core/MarkdownPM/api.ts` |
 | `repicked` • Parameter | The lines a pick wrote over a whole numbered marker, whose runs restart from 1 or A. | `renumberRuns`, `Input/listRenumber.ts` |
 | `List Types Drive/live-drive.mjs` • File | The approved drive, port 9413, 33 items in five groups. | `.claude/scripts/` |
 
@@ -118,7 +118,7 @@ The order is what makes each step land once. Phase 0 lands the drive and records
 - **Tests:** a test is added only where what it pins is clearly defined and genuinely needs to exist. The plan adds seven pins (P6-T1 to P6-T7) and extends two (*9 — Folds · §Pins*), each run red without its change during planning and run red again by its executor before the task commits; a rewritten case counts as that test.
 - **Comments:** the production comment count, `git grep -c -E '^[[:space:]]*(//|/\*\*|/\*)' -- 'Core' 'Desktop' 'UIX' 'Sync' ':!*.test.*'` summed, reads 3,511 at the BASELINE head and 3,511 at the end; Phase 1 ends at +1 and Phase 2 at −1, and no task adds a comment the ledger in *6 — Phases · §Comment Ledger* doesn't name, as *9 — Folds* rewrote it in place. A rewrite in place counts zero.
 - **Documentation:** feature documentation changes by one or two sentences; deleting a sentence the work makes false, and the setting's row in the settings table, don't count against it. *§Reconciliation* is the list.
-- **The Caption:** Nathan writes **Preserve List-Level Formatting**'s caption, and the run's one stop waits for it: at Task 3-1, before the row lands, the orchestrator sends a PushNotification asking for it and pauses. The row lands with Nathan's caption verbatim, the `ConfigurationPM.md` row takes it in Task 4-1, and no placeholder text is ever written. If it arrives earlier, the stop is skipped.
+- **The Caption:** Nathan wrote **Preserve List-Level Formatting**'s caption: *"Leave indented lists and other types unchanged when adjusting a list's format."* The row takes it in Task 3-1 and `ConfigurationPM.md`'s row in Task 4-1, verbatim with the trailing period every prose caption carries.
 - **Sync:** nothing here makes decisions for sync work. `git diff --stat <BASELINE>..HEAD -- Core/Sync Sync` prints nothing at the end. The only persisted addition is `preserveListLevels`, which a Nexus stores only when it's off.
 - **Gates:** "Run the gates" means `npm run typecheck`, `npm run test`, and `npm run lint` from the repo root, lint clean. A file written by a shell command skips Biome's hook, so `npm run format` follows any scripted edit. `npm run build`, confirming `✓ built in`, runs from a clean state at the final head.
 - **Commits:** each task commits once its VERIFY passes, through `git commit --only -m "…" -- <paths>` after `git add` for new or renamed files (*Development-Environment · §Gates & Commits*). Messages are past tense, one to three sentences, and end with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`. The post-commit hook pushes `active`. A Bash command carrying `git` can't contain a personal name anywhere, paths included. The plan file commits with `--only` whenever its BASELINE, Net Ledger, ticks, or *§Deviations* change.
@@ -148,7 +148,7 @@ The order is what makes each step land once. Phase 0 lands the drive and records
   A checkpoint's drives run after its reviewers' folds land, from a worktree of the folded head, and each checkpoint's VERIFY reads its row here as the one schedule.
 
 - **Screenshots:** Remote Control shows what the session reads, so the orchestrator itself runs `Read` on four to six named shots per checkpoint, any `failure` shot first, with one caption line each: what it shows and whether it's right. Shots live in the session scratchpad.
-- **Execution:** the plan runs end to end through `c/plan-execution`, and no step waits on Nathan except *§The Caption*'s stop; a message from him during the run is input to fold in, not a stop. An ambiguity is taken at its simplest reading and recorded under *§Deviations*. Each task goes to an `execution-agent` (`opus-medium`) informed of *§Context* and *§Overview*, which applies the task's AFTER as written and reports insights, concerns, and suggestions rather than diverging; the orchestrator checks its result against AFTER and VERIFY. PushNotification marks every checkpoint (review, compaction, the caption's stop, and each final wave) and every update to Nathan, in plain language: what landed, what the drives and reviewers found, and what's next.
+- **Execution:** the plan runs end to end through `c/plan-execution`, and no step waits on Nathan before the final report; a message from him during the run is input to fold in, not a stop. An ambiguity is taken at its simplest reading and recorded under *§Deviations*. Each task goes to an `execution-agent` (`opus-medium`) informed of *§Context* and *§Overview*, which applies the task's AFTER as written and reports insights, concerns, and suggestions rather than diverging; the orchestrator checks its result against AFTER and VERIFY. PushNotification marks every checkpoint (review, compaction, the caption's stop, and each final wave) and every update to Nathan, in plain language: what landed, what the drives and reviewers found, and what's next.
 - **Reviews:** a review checkpoint is two read-only agents at `opus-high`, one under `code-simplification` and one under `adversarial-review`, each weighing the phase against these constraints and its place in the plan, reading outward rather than in isolation; what holds is folded before the next phase opens. *§Final Verification* holds the waves after the last phase.
 - **Cold Machine:** the run should end ice-cold, with no process, test run, drive instance, worktree, scratch Nexus, userData, fixture, or script of its own left, proven by *§Final Verification · The Cold-Machine Check*. Each task stops every process it starts before it commits, so nothing runs between tasks; the base worktree and its `results/base` are the one fixture held across tasks, for the compares, and the teardown removes them. An instance Nathan launched himself isn't the run's, and it's left alone.
 - **Neutral Gate:** the post-implementation neutral reviewer (`opus-high`) gets only the BASELINE head, HEAD, the Approach and Principles, and this intention: *"Pommora's Markdown editor changed a list's type through two writers that disagreed: the block grip's Type menu counted numbers itself by level, while the right-click menu's Lists submenu rewrote selected lines, stripped markers on a repeated pick, and left counting to a renumber pass that matched siblings by exact indent text. A right-click on a bullet or checkbox showed no menu. This work should leave one list-type switch, one sibling walk by quote depth and drawn level that numbering, the drag, and the switch share, whose line rule the outliner's rails read too, and one numbering rule, and on them a menu of the five list types on every list glyph, whose reach a setting, Preserve List-Level Formatting, decides; the Lists submenu follows the same rules from an item's text, and a list inside a code block switches within that block while nothing outside reaches in."*
@@ -172,8 +172,7 @@ The order is what makes each step land once. Phase 0 lands the drive and records
   - [x] Broader Review Checkpoint
   - [x] Compaction Checkpoint
 - [ ] **Phase 3** — The Glyph Menu
-  - [ ] `[Stop: Nathan's caption for Preserve List-Level Formatting]`
-  - [ ] Task 3-1 · The glyph menu, the click-time range, the resting cell, and the row
+  - [x] Task 3-1 · The glyph menu, the click-time range, the resting cell, and the row
   - [ ] The Interaction Sweep
   - [ ] Review Checkpoint
 - [ ] **Phase 4** — Docs and Issues
@@ -355,15 +354,15 @@ The glyph should open its type menu, list rows should act over the click-time ra
 - **`Menus/menu.ts`:** a glyph target asks `host.menus.grip({ kind: 'glyph', current })` and prevents the default; list rows act over the click-time range behind a document-identity guard, every other row on the live selection; `applyEditorAction` takes the range.
 - **`Core/MarkdownPM/lineDom.ts`:** `glyphAt(e)`, beside `gutterLineAt`; `Gestures/listDrag.ts`, `Tables/MarkdownTable.tsx`, `Menus/gripMenu.ts` (its right-press suppression), and `Menus/menu.ts` call it.
 - **`Tables/cellStatic.tsx`:** one resting menu flow answering a glyph, `restingRange(cell, at, length)` taking the resolved offset with a glyph's read through `srcOf`, and `claimCheckbox` through `srcOf` (K3).
-- **`Core/Settings/frames.ts`:** the caption-less toggle directly beneath Outliner Lines.
+- **`Core/Settings/frames.ts`:** the toggle directly beneath Outliner Lines, with Nathan's caption (*§The Caption*).
 - **Tests:** P6-C11 changed.
 
 **Difference From the Patch:** a click counts as inside the selection by the same end rule the reach reads, so `editorMenu`'s test and `restingRange` compare against `reachEnd(doc, from, to)`, imported from `Engine/markdownCode.ts`, rather than the raw end; otherwise a glyph right-pressed just below a triple-clicked line acts on the selected line and leaves its own group untouched (B-7). One pin covers it (triple-click A, right-press B's glyph, B's group changes), run red against the patch's raw test, and the List Types Drive gains the same case as a Phase 3 item in its existing shape.
 
 **VERIFY**
 
-- [ ] Run the gates: every test passes but the 2 skipped, the count up by this task's one pin; the comment count reads BASELINE.
-- [ ] The Number recorded for Phase 3; its own delta about +16.
+- [x] Run the gates: every test passes but the 2 skipped, the count up by this task's one pin; the comment count reads BASELINE.
+- [x] The Number recorded for Phase 3; its own delta about +18.
 
 #### The Interaction Sweep
 
@@ -436,7 +435,7 @@ The reviews run over `<BASELINE>..HEAD`, each wave closed before the next opens.
 
 - `.claude/Features/MarkdownPM.md:24` — "The grip menu's **Type ▸** switches a whole block between the five kinds, counting from 1 or A, and the context menu's **Lists ▸** turns each selected line into an item, removing the marker only when every selected line already has one" — Task 4-1
 - `.claude/Features/MarkdownPM.md` — the paragraph listing what answers a right-press itself, which gains a list glyph — Task 4-1
-- `.claude/Features/ConfigurationPM.md` — the Pages & Writing table, which gains the setting's row beneath Outliner Lines — Task 4-1, and its caption when Nathan sends it
+- `.claude/Features/ConfigurationPM.md` — the Pages & Writing table, which gains the setting's row beneath Outliner Lines and its caption — Task 4-1
 - `.claude/Guidelines/Editor-Internals.md:40` — "the grip's Type ▸ is the one writer that counts for itself, because it rewrites a whole list and restarts it" — Task 4-1
 - `.claude/Guidelines/Editor-Internals.md:18` — the cell-model bullet's `listDragModel.ts` sentence — Task 4-1
 - `.claude/IssuesPM.md` — I-037's counts and unscoped readers; I-017's shapes; the new I-072 and I-073; the cites the work moves in I-013, I-018, I-037, I-040, I-058, and I-072 — Task 4-1
