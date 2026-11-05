@@ -1,6 +1,6 @@
 ### List Glyph Menu — Results
 
-The Interaction Sweep drove the List Types Drive and headless probes through every gesture, surface, and list shape of the matrix on 11-04-2026, each case read against the decision it should prove; the results read at `86f1f8511`, which fixed what the sweep found at `ecf5e75ee`.
+The Interaction Sweep drove the List Types Drive and headless probes through every gesture, surface, and list shape of the matrix on 11-04-2026, each case read against the decision it should prove; the results read at `e989eb865`, after the fixes for what the sweep found at `ecf5e75ee` and Phase 3's checkpoint folds.
 
 **Coverage:** a drive item is `g<group>` in `.claude/scripts/List Types Drive/live-drive.mjs`; a probe ran the real handlers through jsdom (`editorMenu`, `gripMenu`, and the resting cell mounted as `editorMenu.test.tsx` and `cellRestingMenu.test.tsx` mount them) or the pure path (`setList` and `editFor` landed through `landEdit`, `dropChanges`, `blockAt`).
 
@@ -13,11 +13,12 @@ The Interaction Sweep drove the List Types Drive and headless probes through eve
 - **A Pick From Each Kind:** A-1 · probe · `1.`, `A.`, `→`, `+`, and `- [x] one / - [ ] two` → Numbered give `1. one\n2. two`; a quoted list gives `> 1. one\n> 2. two`; a callout's list numbers under its untouched head · **Holds**
 - **Each Glyph Re-Picked:** A-1 B-8 B-12 B-13 · g1 · `1. one\n2. two`, `- [ ] open\n- [x] done`, `→ a\n→ b`, and `+ p` check their own type, and picking it leaves the text · **Holds**
 - **A Right-Press Seats No Caret:** A-9 · g1 (number, arrow), probe (every kind) · the right mousedown is prevented and the caret stays where it was · **Holds**
+- **A Ctrl-Click on a Glyph:** A-9 · probe (`listDragTap.test.tsx`) · a macOS Ctrl-click is a secondary click, so the glyph's press handler only suppresses the caret seat, a checkbox doesn't toggle, and the type menu's pick lands; a resting cell ignores the secondary click alike · **Holds**
 - **A Revealed Marker:** A-9 C-2 · g1 · with the caret on A's marker, **Lists ▸** Numbered from the revealed `-` → `1. A … 2. F`, as A's glyph acts · **Holds**
 - **An Item Drawing No Glyph:** A-9 · g1, probe (resting) · `- [] bare` → **Lists ▸** Task List from its text → `- [ ] bare`; a resting `- [] a` → `- [ ] a` · **Holds**
 - **A Live Cell's Glyphs:** A-4 A-5 · g2, probe · the first glyph opens the type menu and the inset left of it the grip's; `- x<br>- y` → Checklist from y's glyph → `- [ ] x<br>- [ ] y` · **Holds**
 - **A Live Cell's Pick, Then ⌘Z in the Cell:** A-7 · g2 · `- a<br>- b` → Numbered from b's glyph → `1. a<br>2. b`; ⌘Z inside the cell, forwarded to the page's history, restores `- a<br>- b` · **Holds**
-- **A Live Cell's Pick, Then Escape and ⌘Z:** A-7 · g2 · Escape leaves the cell through its own exit path, which hands focus back to the page editor with its selection kept, so ⌘Z restores the pick; an outside press still leaves focus where it landed · **Holds**
+- **A Live Cell's Pick, Then Escape and ⌘Z:** A-7 · g2, probe (`tableExit.test.tsx`) · Escape leaves the cell through the dismissal stack onto the line after the table, as arrowing out does, and a line it creates at the document's end stays out of history, so ⌘Z restores the pick; a layer above the cell, such as a glance, closes first, and an outside press leaves focus where it landed · **Holds**
 - **Every Glyph a Resting Cell Draws:** A-4 A-8 · probe, g3 · a bullet, number, letter, unchecked and checked box (through its inner box), arrow, `+`, and gapped number are each caught by `.md-list-item > [data-src]`, ask the glyph menu with their type checked, and commit without entering the cell · **Holds**
 - **A Resting Pick, Then ⌘Z:** A-7 A-8 · g3 · `A. a<br>B. b`, `- [x] a<br>- [ ] b`, `+ a<br>+ b`, and nested `- a<br>\t- b` → Numbered (`1. a<br>2. b`, nested `- a<br>\t1. b`), then one ⌘Z restores each; the page editor keeps focus because the resting cell prevents its right mousedown · **Holds**
 - **A Resting Re-Pick:** A-8 B-12 · probe · `- [x] a\n- [ ] b` → Checklist commits nothing · **Holds**
@@ -56,6 +57,7 @@ The Interaction Sweep drove the List Types Drive and headless probes through eve
 - **A Quote, Code Block, or Display Math Under an Item:** B-15 C-7 · probe · `- a\n  > q\n- b`, a nested ` ``` ` block holding `- x`, and nested `$$` → Numbered from a numbers a and b around them, the block's own lines untouched, on and off · **Holds**
 - **A Code Block Between Items:** B-11 · probe · `- p\n\n```\n- a\n```\n\n- q` from p → `1. p` alone: a top-level block ends the group as a paragraph does · **Holds**
 - **A Glyph Inside a Selection:** B-7 · g1, probe · the selection over B to E → Checklist from C's glyph changes B, C, D, and E; a selection touching B and D numbers only B, C, and D · **Holds**
+- **A Glyph on a Drag-Selection's First Line:** B-7 · probe (page and resting) · `- a\n- b\n- c\n- d` drag-selected from b's text to c, then Numbered from b's glyph → `- a\n1. b\n2. c\n- d`, as from c's: a glyph on any line the selection touches is inside it · **Holds**
 - **A Selected Word:** B-7 · probe · a word selected in b → only b; in E, setting off → only E · **Holds**
 - **A Click Outside the Selection:** B-7 · g1, probe · a glyph or text outside the selection acts on its own group · **Holds**
 - **A Glyph Below a Triple-Clicked Line:** B-7 · g1, probe (page and resting) · `- a\n1. b\n2. c` with a triple-clicked → Checklist from b's glyph → `- a\n- [ ] b\n- [ ] c` · **Holds**
@@ -64,7 +66,7 @@ The Interaction Sweep drove the List Types Drive and headless probes through eve
 - **⌘A:** B-7 · probe; a glyph inside ⌘A is collapsed onto it, since `menu.ts`'s inside test hands the glyph the selection's range · every item and plain line becomes an item, while code, math, a table, and a callout head stay; `# H` → `- H` and `---` → `- ---`, still a rule, as at base · **Holds**
 - **A Range Whose Top Line Is a Continuation:** B-14 · probe · from `cont` under b through c → Checklist → b and c, A and D unchanged · **Holds**
 - **A Range Across a Fence's Edge:** C-7 · probe · a range from inside a fence to a list below it, or the reverse, numbers only the outside line · **Holds**
-- **A Text Right-Click at the Next Line's Start After a Triple-Click:** B-7 C-6 · g4 · the drawn caret bar takes no press, so a right-click on the first pixel of `two` after a triple-click on `one` reaches the editor's menu, and **Lists ▸** Bullet List → `one\n- two two`; the platform reseats the word under the click (`[0,4]` → `[4,7]`), so the menu's flags and the rows acting on the live selection agree on `two` · **Holds**
+- **A Text Right-Click at the Next Line's Start After a Triple-Click:** B-7 C-6 · g4, probe · the drawn caret bar takes no press, and a text click outside the selection seats the live selection at the click before the menu opens, so after a triple-click on `one`, a right-click on the first pixel of `two` gives **Lists ▸** Bullet List → `one\n- two two` and **Format ▸** Bold → `one\n**two** two`, every row acting where the click points · **Holds**
 - **The Check Over Items and a Plain Line:** A-3 C-4 · probe · `- a\nplain\n- b` selected checks no row, since a line the pick turns into an item doesn't yet share its type; a block opening on an indented paragraph checks none on the grip's Type ▸ alike · **Holds**
 
 #### C — Lists ▸
@@ -104,7 +106,7 @@ The Interaction Sweep drove the List Types Drive and headless probes through eve
 #### Fold Cases
 
 - **Backspace on a Marker, Tight and Loose:** B-10 · probe · at b's text in `1. a\n2. b\n3. c` → `1. a\nb\n3. c`, loose alike: the top-level line has no indent to keep, so the paragraph ends the group and c keeps its run's own start · **Holds**
-- **Backspace on a Nested Marker:** B-10 B-14 · probe · `- p\n\t1. x\n\t2. y\n\t3. z` at y → `- p\n\t1. x\n\ty\n\t2. z`: the marker goes and the indent stays, so y reads as x's continuation and the run below recounts; a callout's nested item keeps its indent alike · **Holds**
+- **Backspace on a Nested Marker:** B-10 B-14 · probe · `- p\n\t1. x\n\t2. y\n\t3. z` at y → `- p\n\t1. x\n\ty\n\t2. z`: the marker goes and the indent stays, since x owns the line, so y reads as x's continuation and the run below recounts; an indented item no item owns, `para\n\n\t- b`, loses its indent with its marker → `para\n\nb`, and a callout's items follow the same rule · **Holds**
 - **A Whole-Line Deletion:** B-10 · probe · `2. b` out of `1. a\n2. b\n3. c` → `1. a\n2. c`; loose, with or without its gap → `2. c`; a nested line → `\t1. y` · **Holds**
 - **Tab Out of a Run, Tight and Loose:** B-10 · probe · Tab on b → `1. a\n\t1. b\n2. c`, loose alike · **Holds**
 - **Shift-Tab Into a Run:** B-10 · probe · `1. a\n\t1. x\n\t2. y\n2. b` at x → `1. a\n2. x\n\t1. y\n3. b` · **Holds**
@@ -115,5 +117,5 @@ The Interaction Sweep drove the List Types Drive and headless probes through eve
 - **Enter Inside a Code Block:** C-7 · probe · at the end of `- x` inside ```` ``` ```` → a plain new line · **Holds**
 - **Heading ▸ Picked Twice:** C-6 · probe · a triple-click → `## one`, then `### one`; a partial two-line selection keeps both lines → `## one\n## two`, then `### one\n### two` · **Holds**
 - **Quote Picked Twice:** C-6 · probe · a triple-click → `> one`, then back to `one`; a partial two-line selection → both quoted, then both back · **Holds**
-- **Code Block Picked Twice:** C-6 · probe · a triple-click → ```` ```\none\n``` ````, then a second pick from inside the fence takes its two fence lines off → `one`; a partial two-line selection fences both lines and comes back alike · **Holds**
+- **Code Block Picked Twice:** C-6 · probe · a triple-click → ```` ```\none\n``` ````, then a second pick from inside the fence, where the row now reads checked, takes its two fence lines off → `one`; a partial two-line selection fences both lines and comes back alike · **Holds**
 - **Lists Picked Twice:** C-3 · probe · Numbered over a triple-click or a partial two-line selection, picked twice, keeps `1. one` or `1. one\n2. two` · **Holds**

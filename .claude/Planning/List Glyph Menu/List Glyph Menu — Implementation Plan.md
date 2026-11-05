@@ -21,7 +21,7 @@
 | 0 · Drives and Baseline | 0 (scripts +273: the drive +261, the harness +8, Path Links −8, the README +12) | 0 (+0 / −0) |
 | 1 · The List Model | +74 (the rename 0) | +70 (+177 / −107) |
 | 2 · One Switch | +143 (+69 its own) | +168 (+619 / −451) |
-| 3 · The Glyph Menu | +186 (+18 its own: the patch's +16 and the click test's end rule) | +229 (+750 / −521) |
+| 3 · The Glyph Menu | +186 (+18 its own: the patch's +16 and the click test's end rule) | +283 (+843 / −560) |
 | 4 · Docs and Issues | +186 (±0 its own; docs +33) | |
 | **Total** | **+186 excluding comments, against the ratified +159 (+458 / −299); one file renamed, one drive added** | |
 
@@ -49,15 +49,18 @@ The order is what makes each step land once. Phase 0 lands the drive and records
 | `readsFrom` • Function | Whether a line is open text to a reader on another line, or to one outside every block: a code block reads only from inside it, math and tables never. | `Engine/listModel.ts` |
 | `itemAt` • Function | A line's list marker as a reader on a line, or outside every block, sees it, scoped. Replaces two `scope === 'page' && inSealedLine` copies. | `Engine/listModel.ts` |
 | `ListRole`, `rolesAgainst` • Type, Function | One classification of a line against an item: sibling, nested, blank, or ends, by quote depth and drawn level. Replaces `renumberRun`'s indent-text test and `subBlockAt`'s own. | `Engine/listModel.ts` |
+| `ownersOf` • Function | The items whose branch covers a line, its own first, read by a pick to find a line's item and by Backspace to keep an owned line's indent. | `Engine/listModel.ts` |
 | `siblingsAt`, `runAt` • Functions | A group's items and the end of its nesting, each side stopping at the first sibling `joins` rejects; a numbered run within it, read through that stop. | `Engine/listModel.ts` |
-| `reachEnd` • Function | Where a range's reach ends: a non-empty range ending at a line's start stops on the line before. Read by Lists, Heading, Quote, Code, the selection stats, and the glyph menu's click test; replaces the stats' own copy. | `Engine/markdownCode.ts` |
+| `reachEnd` • Function | Where a range's reach ends: a non-empty range ending at a line's start stops on the line before. Read by Lists, Heading, Quote, Code, the selection stats, and `clickInside`; replaces the stats' own copy. | `Engine/markdownCode.ts` |
+| `clickInside` • Function | Whether a right-click lands inside the selection: a glyph on any line the selection touches, a text click between its start and `reachEnd`. The live menu and the resting cell read it, and a text click outside seats the live selection at the click. | `Engine/markdownCode.ts` |
 | `mapAscending` • Function | The renumber's positions mapped through a transaction in one sweep, as `mapPos` maps each. | `Input/listRenumber.ts` |
-| `continuesList` • Function | Whether a line that isn't an item carries a list. Replaces `nestedUnder`, and the rails read it too. | `Engine/detect.ts` |
+| `continuesList` • Function | How a line that isn't an item reads against a list at a quote depth: nested, blank, or ends. Replaces `nestedUnder` and the walk's own tail; the walk, the block model, and the rails read it. | `Engine/detect.ts` |
+| `quoteDepths` • Line Fact | Each line's quote depth, carried with the line facts so the rails read a quote boundary without re-reading every line per keystroke. | `Engine/intents.ts` |
 | `drawnKind` • Function | The type a marker reads as: `+` is Arrowed, `- []` has none. | `Engine/intents.ts` |
 | `listReach`, `readLine` • Functions | What a list-type pick reaches; one line read by scope. | `Input/format.ts` |
 | `'glyph'` • Context Kind | The glyph's menu in the grip's model, sharing the list member's shape, flat and without Delete. | `Core/Actions/gripMenu.ts` |
 | `listRows` • Function | The five type rows, built once for **Type ▸** and the glyph menu. | `Core/Actions/gripMenu.ts` |
-| `glyphAt` • Function | A pointer event's list glyph, looked up once for the drag, the table's sweep, the grip's suppression, and the editor menu. Replaces three inline copies. | `Core/MarkdownPM/lineDom.ts` |
+| `glyphAt` • Function | A pointer event's list glyph, looked up once for the drag, which owns every press on a glyph, the table's sweep, and the editor menu. Replaces three inline copies. | `Core/MarkdownPM/lineDom.ts` |
 | `phasedItem` • Function | The drive item that prints `AWAIT` until its owning phase lands, shared by the List Types and Path Links drives. Replaces Path Links' own copy. | `.claude/scripts/drive-harness.mjs` |
 | `preserveListLevels` • Setting | **Preserve List-Level Formatting**, `flag(true)`, an editor-setting key, and a row under Outliner Lines carrying Nathan's caption. | `Core/Settings/personalization.ts`, `frames.ts`, `Core/MarkdownPM/api.ts` |
 | `repicked` • Parameter | The lines a pick wrote over a whole numbered marker, whose runs restart from 1 or A. | `renumberRuns`, `Input/listRenumber.ts` |
@@ -76,6 +79,8 @@ The order is what makes each step land once. Phase 0 lands the drive and records
 | `listDragModel.ts` • File | Renamed `listModel.ts`. | `Core/MarkdownPM/Engine/` |
 | `subBlockAt`'s `inJoinedMath` rule • Branch | The drag's own math rule; display math reads as its opening line in the one walk. | `Engine/listModel.ts` |
 | `diffAsSingleReplace` in the list model • Placement | Moved beside `applyEdits`, since it isn't list logic. | `Engine/markdownCode.ts` |
+| `markerSpanOf` • Function | Backspace's marker window, folded with the callout branch's copy into `takeMarker`. | `Input/edits.ts` |
+| The cell's `'out'` exit • Branch | Escape's own cell exit; Escape leaves through the dismissal stack onto the line after the table. | `Engine/Tables/navigate.ts`, `Tables/widget.tsx` |
 
 #### Constraints
 
@@ -171,10 +176,10 @@ The order is what makes each step land once. Phase 0 lands the drive and records
   - [x] Review Checkpoint
   - [x] Broader Review Checkpoint
   - [x] Compaction Checkpoint
-- [ ] **Phase 3** — The Glyph Menu
+- [x] **Phase 3** — The Glyph Menu
   - [x] Task 3-1 · The glyph menu, the click-time range, the resting cell, and the row
-  - [ ] The Interaction Sweep
-  - [ ] Review Checkpoint
+  - [x] The Interaction Sweep
+  - [x] Review Checkpoint
 - [ ] **Phase 4** — Docs and Issues
   - [ ] Task 4-1 · Docs and issues
 - [ ] *§Final Verification* over `<BASELINE>..HEAD`
@@ -376,13 +381,13 @@ Every interaction the feature can meet should be driven or probed, and every res
 
 **VERIFY**
 
-- [ ] Every matrix cell has a driven or probed result, read and judged; none is left "not covered" without a reason in *§Deviations*.
-- [ ] Run the gates; the List Types Drive at `LANDED=3` passes every item, the new ones included.
+- [x] Every matrix cell has a driven or probed result, read and judged; none is left "not covered" without a reason in *§Deviations*.
+- [x] Run the gates; the List Types Drive at `LANDED=3` passes every item, the new ones included.
 
 #### Review Checkpoint
 
-- [ ] Every surface that draws a glyph answers its right-press with the type menu, and no list row acts on the platform's seated word; both reviewers' findings folded or recorded.
-- [ ] *§When Drives Run*'s row for Phase 3 green: all five, every List Types item passing. Six shots read and captioned, at least one per decision group: B's glyph menu, the setting off on E, a resting cell's glyph menu, a quoted list, a code block's own list, and Settings › Pages & Writing.
+- [x] Every surface that draws a glyph answers its right-press with the type menu, and no list row acts on the platform's seated word; both reviewers' findings folded or recorded.
+- [x] *§When Drives Run*'s row for Phase 3 green: all five, every List Types item passing. Six shots read and captioned: the List Types Drive's four (the example before B's pick, a live cell's list, a resting cell's `> a` item, and Settings › Pages & Writing with the captioned row), whose native menus the drive records as rows, and one each from Path Links and Text Property.
 
 ---
 
@@ -459,3 +464,5 @@ The reviews run over `<BASELINE>..HEAD`, each wave closed before the next opens.
 - **Phase 2's Checkpoint Folds:** beyond the patch, a pick finds a line's item through a stack of the items whose branch covers it, as `subBlockAt` reads them (B-14); a pick keeps a multi-line selection, seating the caret only when it reaches one line; the check reads only the items a pick reaches (A-3); and the renumber maps its positions in one sweep and walks each run to its edges only.
 - **Phase 2's Broader Review (Nathan's Direction):** a second review after the folds, with three reviewers. Its folds: every line transform edits only the lead it changes, so a selection carries to the next pick; a loose item's blank-separated paragraph rides it in the drag and the switch, so a glyph drag now carries it; the run below a loose list recounts; Enter and Tab read lists through the one read rule, so neither continues a list inside display math or a table; `reachEnd` and `diffAsSingleReplace` moved to `markdownCode.ts`; and P6-C8 left, since B-14 makes its line a continuation.
 - **The Interaction Sweep's Fixes (Nathan's Direction):** the sweep found six results that wouldn't make sense to a user, four of them as at base, and each was fixed rather than filed. The drawn caret bar takes no press, so a right-click just past a triple-clicked line reaches the editor's menu; a line a pick would turn into an item counts as not sharing its type, so the check over items and a plain line marks no row, which also empties the grip's check on a block opening on an indented paragraph (the reading of A-3 taken); a drag keeps a loose list's separators with the list, carrying a separator only where the source or the slot sits between blank-separated siblings; Code Block picked inside a fence takes the fence off, as Quote toggles; Escape from a live cell hands focus back to the page, so ⌘Z after it undoes the cell's edit; and Backspace on a list marker keeps the line's indent, so a nested item's text stays in its list as its sibling's continuation. The drives' double- and triple-clicks share one harness `clicks`.
+- **Phase 3's Checkpoint Folds:** a right-click's inside test is one rule, `clickInside`, which reads a glyph on any line the selection touches as inside it, so a glyph on a drag-selection's first line acts on the selection, and a text click outside the selection seats the live selection at the click, so every row of one menu acts where the click points. Every press on a glyph belongs to the list drag's handler, so the grip's right-press suppression returned to base, and a macOS Ctrl-click counts as a secondary click there and in a resting cell. Escape leaves a live cell through the dismissal stack onto the line after the table, as arrowing out does, since a binding in the cell shadowed every layer above it; `dismiss` now receives whether Escape or an outside press closed it, and a line an exit creates stays out of history. Code Block's row reads checked inside a fence, as Blockquote's does. Backspace keeps a marker's indent only where an item owns the line, read through `ownersOf`, which a pick reads too, so an indented item under a paragraph no longer leaves a tab-indented line. `dropChanges` takes its caller's scan.
+- **The Quoted Rails (Phase 3's Checkpoint):** the rails read quote depth through the walk's own line rule, so a quote boundary ends an unquoted list's rails, a quoted list's wrapped line carries its rail, and a depth-0 blank no longer threads a quoted list's rail into the next quote; this closes I-017's quoted cases rather than narrowing the issue to them. Each line's quote depth is carried with the line facts, since reading it in the rail pass doubled that pass at 20,000 lines; the per-keystroke step measured +1.6% at 20,000 lines, inside its run-to-run spread, from carrying the fourth array the step already slices like the other three.
