@@ -551,27 +551,29 @@ function StaticCellImpl({
   const restingMenu = (e: React.MouseEvent<HTMLElement>): void => {
     const cell = e.currentTarget
     const glyph = glyphAt(e)
-    const found = glyph ? null : document.caretPositionFromPoint(e.clientX, e.clientY)
-    const caret = found && cell.contains(found.offsetNode) ? found : null
-    const at = glyph
-      ? srcOf(glyph)![0]
-      : caret
-        ? cellOffsetAt(cell, caret.offsetNode, caret.offset)
-        : text.length
-    const [from, to] = restingSelection(cell, at, text)
     routeRightClick(
       host,
       scanDoc(text),
       'cell',
       e,
-      {
-        at,
-        glyph: glyph !== null,
-        sel: { from, to },
-        word: () => {
-          const side = caret && sideOf(caret, e.clientX, e.clientY)
-          return side ? wordAt(EditorState.create({ doc: text }), at, side) : null
-        },
+      () => {
+        const found = glyph ? null : document.caretPositionFromPoint(e.clientX, e.clientY)
+        const caret = found && cell.contains(found.offsetNode) ? found : null
+        const at = glyph
+          ? srcOf(glyph)![0]
+          : caret
+            ? cellOffsetAt(cell, caret.offsetNode, caret.offset)
+            : text.length
+        const [from, to] = restingSelection(cell, at, text)
+        return {
+          at,
+          glyph: glyph !== null,
+          sel: { from, to },
+          word: () => {
+            const side = caret && sideOf(caret, e.clientX, e.clientY)
+            return side ? wordAt(EditorState.create({ doc: text }), at, side) : null
+          },
+        }
       },
       {
         seat: (start, end) => showSource(cell, start, end),

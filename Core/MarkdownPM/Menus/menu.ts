@@ -46,13 +46,13 @@ function keepSeatedSelection(): void {
   setTimeout(() => document.removeEventListener('selectstart', refuse, true))
 }
 
-/** Every surface's right-click, routed from where its own hit test lands, `at` null where the pointer resolves no position: a list glyph asks for its type menu, anything else for the format menu. A click on text inside a selection's reach, or on a glyph on any line it touches, acts on the selection; anywhere else, and at a caret, the list rows and the format flags read the click's point, since a click points at an item, and every other row acts on the word under the pointer, or at the point where it sits on none, which the surface seats as its selection. */
+/** Every surface's right-click, routed from where its own hit test lands, run only once the host can ask, `at` null where the pointer resolves no position: a list glyph asks for its type menu, anything else for the format menu. A click on text inside a selection's reach, or on a glyph on any line it touches, acts on the selection; anywhere else, and at a caret, the list rows and the format flags read the click's point, since a click points at an item, and every other row acts on the word under the pointer, or at the point where it sits on none, which the surface seats as its selection. */
 export function routeRightClick(
   host: EditorHost,
   scan: DocScan,
   scope: MarkdownScope,
   event: { clientX: number; clientY: number; preventDefault(): void },
-  click: {
+  click: () => {
     at: number | null
     glyph: boolean
     sel: { from: number; to: number }
@@ -71,10 +71,10 @@ export function routeRightClick(
 ): void {
   const ask = host.menus.format
   if (!ask) return
-  const { at, glyph, sel } = click
+  const { at, glyph, sel, word: wordOf } = click()
   const inside = at === null || clickInside(scan.text, at, sel.from, sel.to, glyph)
   const [from, to] = inside ? [sel.from, sel.to] : [at, at]
-  const word = inside || glyph ? null : click.word()
+  const word = inside || glyph ? null : wordOf()
   const [start, end] = word ? [word.from, word.to] : [from, to]
   if (!inside && !glyph) {
     surface.seat(start, end)
@@ -123,12 +123,12 @@ export const editorMenu = (scope: MarkdownScope): Extension =>
           docScan(opened),
           scope,
           event,
-          {
+          () => ({
             at: glyph ? view.posAtDOM(glyph) : (hit?.pos ?? null),
             glyph: glyph !== null,
             sel: view.state.selection.main,
             word: wordUnder,
-          },
+          }),
           {
             seat: (from, to) => view.dispatch({ selection: EditorSelection.range(from, to) }),
             request: (from, to) => ({
