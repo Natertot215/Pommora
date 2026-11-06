@@ -43,6 +43,7 @@ The drive's cases, derived from *List Consolidation — Decisions & Intention*, 
 - **Enter, Tab, and Shift-Tab off an item in a cell:** they're the cell's navigation rather than a list's key, which `cellLists.test.tsx` pins; group 6 reads the keys a list claims.
 - **⌘Z after every cell key:** a cell forwards undo to the page's history, one path whatever the key, so one recount proves it.
 - **Each key in a quote or a callout:** a page's Enter, Backspace, and Delete come from its own chain while `listKeys` holds its Tab and Shift-Tab, and groups 3 and 7 hold what's particular to those blocks.
+- **A callout head's type menu:** a head draws no glyph (F-1), so nothing opens one, and `format.test.ts` pins what a pick writes there.
 
 #### Group 1 — One Scan Per Surface
 
@@ -205,3 +206,18 @@ Every row runs for all five types on a page and in a focused cell, asserted agai
 | The last item | A page | Shift-Enter | a plain break | G-9 |
 | The last item | A focused cell | Shift-Enter | leaves the cell, writing nothing | G-9, G-10 |
 | A numbered item | A focused cell | Enter, ⌘Z | stays in the cell and recounts; one ⌘Z takes both | G-9 |
+
+#### Group 7 — One Definition Per Type
+
+| Case | Surface | Operation | Expected | Decisions |
+| --- | --- | --- | --- | --- |
+| `/` | A page | type | the five names, none ending in List | D-6 |
+| `/` and each type's name | A page | type, Enter, ⌘Z | its row, its marker, and one ⌘Z back | B-7, D-6 |
+| A word in a list | A page, a resting and a focused cell | right-click | Lists ▸ reads the five names with Bulleted checked, beside Format ▸ | D-3, D-6 |
+| A list's grip | A page, a focused cell | right-click | Format ▸ and Delete, no Type ▸, the five names under it | D-3, D-6 |
+| A glyph | A page | right-click | the five names | D-6 |
+| Each type | A page | a glyph's pick to each other type | that type's own markers | B-7 |
+| `- `, `+ `, `1. `, `A. `, `- [ ] `, `→ ` in a head | A callout | read, caret away and on the line | no glyph, no item, the marker as text | F-1 |
+| A head over a body item | A callout | read | the body keeps its glyph | F-1 |
+| A caret past a head's `- ` | A callout | seat, type | it stands at the text, and typing lands there | F-1 |
+| A press on a head's text | A callout | click | the caret seats in that text | F-1 |

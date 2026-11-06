@@ -16,6 +16,9 @@ const S = {
   grip: '.cm-line.md-block-handle',
   codeOpener: '.cm-line.codeblock-first',
   blockMenu: '.mdpm-block-menu',
+  blockRow: '.mdpm-block-row',
+  calloutHead: '.cm-line.md-callout-first',
+  caret: '.caret-bar',
   rail: '.md-outline-rail',
   italic: '.md-italic',
   math: '.md-latex',
@@ -77,6 +80,8 @@ async function enterCell(cdp, word) {
 }
 async function leaveCell(cdp) {
   await pressKey(cdp, 'Escape')
+  // An Escape over a selection clears it, and the next one leaves.
+  if (await cdp.evaluate(`!!${LIVE_CELL}`)) await pressKey(cdp, 'Escape')
   await until('the cell at rest', () => cdp.evaluate(`!${LIVE_CELL}`))
   await sleep(300)
 }
@@ -107,25 +112,19 @@ const flat = (rows) => (rows ?? []).map((r) => (r.separator ? '—' : `${r.label
 const checked = (rows) => flat(rows).filter((r) => r.endsWith(' ✓'))
 const typeRows = (current) => TYPES.map(({ name }) => (name === current ? `${name} ✓` : name))
 const listsRows = (rows) => (rows ?? []).find((r) => r.label === 'Lists')?.submenu
-// A type's Lists ▸ row, by its place in TYPES' order, since its label is group 7's.
-const listPath = (name) => (rows) => {
-  const row = listsRows(rows)?.[TYPES.findIndex((t) => t.name === name)]
-  return row ? ['Lists', row.label] : []
-}
-// The grip's type row, found by the rows it holds, since the submenu's label is group 7's.
-const gripTypes = (rows) => rows?.find((r) => r.submenu?.some((s) => s.label === 'Numbered'))
-const gripPath = (name) => (rows) => [gripTypes(rows)?.label, name]
-const listChecked = (rows) => TYPES.filter((_, i) => listsRows(rows)?.[i]?.checked).map((t) => t.name)
+const listPath = (name) => ['Lists', name]
+const gripFormat = (rows) => rows?.find((r) => r.label === 'Format')?.submenu
+const gripPath = (name) => ['Format', name]
+const listChecked = (rows) => checked(listsRows(rows)).map((r) => r.replace(' ✓', ''))
 
 // What a press met and the menu it popped, the detail a failed item prints.
 const hitAt = (cdp, { x, y }) =>
   cdp.evaluate(`(() => { const e = document.elementFromPoint(${x}, ${y}); return e && (e.className || e.tagName) + ' ' + JSON.stringify(e.textContent.slice(0, 16)) })()`)
 const seen = ({ hit, rows }) => `${hit ?? 'no target'} · ${rows === null ? 'no menu' : show(flat(rows))}`
-// `path` is the labels to choose, or a function of the rows that answers them.
 async function pop(cdp, at, path) {
   const hit = at && (await hitAt(cdp, at))
   const rows = at ? await popNative(cdp, at, 'right') : null
-  if (rows !== null) await pickNative(typeof path === 'function' ? path(rows) : path)
+  if (rows !== null) await pickNative(path)
   await sleep(500)
   return { rows, hit }
 }
@@ -534,12 +533,12 @@ async function group3(cdp) {
     item(3, 'D-2', `the grip changes every item in its block, Preserve ${on ? 'on' : 'off'}`, (await body(cdp)) === NESTED, show(await body(cdp)))
     await setBody(cdp, MIXED)
     const { rows } = await gripPick(cdp, lineOf('A'), [])
-    item(3, 'D-2', `a mixed block checks no row in the grip, Preserve ${on ? 'on' : 'off'}`, gripTypes(rows) !== undefined && gripTypes(rows).submenu.every((r) => !r.checked), show(flat(gripTypes(rows)?.submenu)))
+    item(3, 'D-2', `a mixed block checks no row in the grip, Preserve ${on ? 'on' : 'off'}`, gripFormat(rows) !== undefined && gripFormat(rows).every((r) => !r.checked), show(flat(gripFormat(rows))))
   }
   await setting(cdp, true)
   await setBody(cdp, EXAMPLE)
   const uniform = await gripPick(cdp, lineOf('A'), [])
-  item(3, 'D-2', "a block of one type checks that row in the grip", show(checked(gripTypes(uniform.rows)?.submenu)) === show(['Bulleted ✓']), show(flat(gripTypes(uniform.rows)?.submenu)))
+  item(3, 'D-2', "a block of one type checks that row in the grip", show(checked(gripFormat(uniform.rows))) === show(['Bulleted ✓']), show(flat(gripFormat(uniform.rows))))
   await picked('D-2', 'Preserve on: a glyph acts on its group', EXAMPLE, () => glyphPick(cdp, 'B', 'Numbered'), '- A\n\t1. B\n\t\t- C\n\t\t- D\n\t2. E\n- F')
   await picked('D-2', 'Preserve on: a caret acts as its glyph does', EXAMPLE, () => wordPick(cdp, 'E', listPath('Numbered')), '- A\n\t1. B\n\t\t- C\n\t\t- D\n\t2. E\n- F')
   await setting(cdp, false)
@@ -830,6 +829,91 @@ async function group6(cdp) {
   item(6, 'G-9', "a focused cell's Enter stays in the cell, and one ⌘Z takes its recount", stays && recounted === '1. ab\n2. \n3. cd' && (await body(cdp)) === table('1. ab<br>2. cd'), show([stays, recounted, await body(cdp)]))
 }
 
+// ── Group 7 — One Definition Per Type ───────────────────────────────────────
+
+async function group7(cdp) {
+  await setting(cdp, true)
+  const NAMES = TYPES.map((t) => t.name)
+  const blockRows = () => cdp.evaluate(`[...document.querySelectorAll(${show(S.blockRow)})].map((r) => r.textContent.trim())`)
+
+  await setBody(cdp, '')
+  await caretAt(cdp, 0)
+  await typeText(cdp, '/')
+  await sleep(500)
+  const offered = await blockRows()
+  await pressKey(cdp, 'Escape')
+  item(7, 'D-6', 'the / menu lists the five types by their one names', NAMES.every((n) => offered.includes(n)) && !offered.some((r) => / List$/.test(r)), show(offered))
+  for (const { name, marker } of TYPES) {
+    await setBody(cdp, '')
+    await caretAt(cdp, 0)
+    await typeText(cdp, `/${name.toLowerCase()}`)
+    await sleep(500)
+    const rows = await blockRows()
+    await ENTER(cdp)
+    await sleep(300)
+    const got = await body(cdp)
+    await pressKey(cdp, 'z', META)
+    item(7, 'B-7 D-6', `/${name.toLowerCase()} finds ${name} and writes its marker, and ⌘Z takes it back`, rows.includes(name) && got === marker(1) && (await body(cdp)) === '', show([rows, got, await body(cdp)]))
+  }
+
+  const reads = (surface, rows) => {
+    item(7, 'D-6', `${surface}: Lists ▸ reads the five names, Bulleted checked`, show(flat(listsRows(rows))) === show(typeRows('Bulleted')), show(flat(listsRows(rows))))
+    item(7, 'D-3', `${surface}: Lists ▸ stays beside Format ▸`, flat(rows).includes('Lists ▸') && flat(rows).includes('Format ▸'), show(flat(rows)))
+  }
+  const grips = (surface, rows) => item(7, 'D-3 D-6', `${surface}: a list grip reads Format ▸, with the five names and no Type ▸`, show(flat(rows)) === show(['Format ▸', '—', 'Delete']) && show(flat(gripFormat(rows))) === show(typeRows('Bulleted')), show([flat(rows), flat(gripFormat(rows))]))
+
+  await setBody(cdp, '- pa\n- pb')
+  reads('a page', (await wordPick(cdp, 'pa', [])).rows)
+  grips('a page', (await gripPick(cdp, lineOf('pa'), [])).rows)
+  const glyph = await glyphPick(cdp, 'pa')
+  item(7, 'D-6', 'a glyph reads the five names, Bulleted checked', show(flat(glyph.rows)) === show(typeRows('Bulleted')), seen(glyph))
+  await setBody(cdp, table('- pa<br>- pb'))
+  reads('a resting cell', (await pop(cdp, await textAt(cdp, restingCell('pa'), 'pa'), [])).rows)
+  await setBody(cdp, table('- pa<br>- pb'))
+  await enterCell(cdp, 'pa')
+  reads('a focused cell', (await pop(cdp, await textAt(cdp, LIVE_CELL, 'pb'), [])).rows)
+  grips('a focused cell', (await gripPick(cdp, `${LIVE_CELL}.querySelector(${show(S.grip)})`, [])).rows)
+  await leaveCell(cdp)
+
+  for (const from of TYPES) {
+    const landed = []
+    for (const to of TYPES.filter((t) => t !== from)) {
+      await setBody(cdp, `${from.marker(1)}pa\n${from.marker(2)}pb`)
+      await glyphPick(cdp, 'pa', to.name)
+      landed.push([to.name, (await body(cdp)) === `${to.marker(1)}pa\n${to.marker(2)}pb`, await body(cdp)])
+    }
+    item(7, 'B-7', `${from.name} picks to every other type, each writing its own markers`, landed.every(([, held]) => held), show(landed.filter(([, held]) => !held)))
+  }
+
+  const head = `${PAGE_TEXT}.querySelector(${show(S.calloutHead)})`
+  const headReads = () => cdp.evaluate(`(() => { const l = ${head}; return { glyphs: l.querySelectorAll(${show(S.glyph)}).length, items: l.matches(${show(S.item)}), text: l.textContent } })()`)
+  for (const marker of ['- ', '+ ', '1. ', 'A. ', '- [ ] ', '→ ']) {
+    const seed = `> [!note] ${marker}foo\n> body`
+    await setBody(cdp, seed)
+    const away = await headReads()
+    await caretPast(cdp, `${marker}f`)
+    const on = await headReads()
+    const plain = (r) => r.glyphs === 0 && !r.items && r.text.includes(`${marker}foo`)
+    item(7, 'F-1', `a callout head draws no glyph, its \`${marker.trim()}\` showing as text, with the caret away and on the line`, plain(away) && plain(on), show([away, on]))
+  }
+  await setBody(cdp, '> [!note] - foo\n> - bar')
+  await shot(cdp, 'g7-callout-head')
+  const bodyGlyphs = await drawnIn(cdp, PAGE_TEXT)
+  item(7, 'F-1', "a callout's body keeps its glyph under a head that draws none", show(bodyGlyphs) === show(['• bar']), show(bodyGlyphs))
+  await caretPast(cdp, '- ')
+  await sleep(300)
+  const seat = await boxOf(cdp, `document.querySelector(${show(S.caret)})`)
+  const letter = await textAt(cdp, head, 'foo', 1)
+  await shot(cdp, 'g7-callout-caret')
+  await typeText(cdp, 'z')
+  await sleep(300)
+  item(7, 'F-1', 'a caret seated in a head stands at its text, and typing lands there', Math.abs(seat.x - letter.left) <= 3 && (await body(cdp)) === '> [!note] - zfoo\n> - bar', show([seat.x, letter.left, await body(cdp)]))
+  await setBody(cdp, '> [!note] - foo\n> - bar')
+  await clicks(cdp, await textAt(cdp, head, 'foo', 1), 1, { settle: 300 })
+  const pressed = (await selection(cdp))[0]
+  item(7, 'F-1', 'a press on a head\'s text seats the caret in that text', pressed >= '> [!note] - '.length && pressed <= '> [!note] - foo'.length, show(pressed))
+}
+
 // ── The run ─────────────────────────────────────────────────────────────────
 
 const GROUPS = {
@@ -839,6 +923,7 @@ const GROUPS = {
   4: ['Paste', group4],
   5: ['One Marker Grammar', group5],
   6: ['One Set of List Keys', group6],
+  7: ['One Definition Per Type', group7],
 }
 const chosen = process.argv.slice(2).map(Number)
 if (chosen.length === 0 || chosen.some((g) => !GROUPS[g])) {
