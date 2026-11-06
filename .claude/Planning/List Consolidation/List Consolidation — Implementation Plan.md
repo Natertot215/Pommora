@@ -224,10 +224,10 @@ The order is what makes each step land once. The scan goes first, since every la
 
 #### Process Overview
 
-- [ ] `[Stop: ratified; no code changes before this]`
+- [x] `[Stop: ratified; no code changes before this]`
 - [ ] **Phase 0** — Drives and Baseline
-  - [ ] Task 0-1 · The List Types Drive's frame
-  - [ ] Task 0-2 · The baseline drives
+  - [x] Task 0-1 · The List Types Drive's frame
+  - [x] Task 0-2 · The baseline drives
 - [ ] **Phase 1** — One Scan Per Surface
   - [ ] Task 1-1 · One scan per surface
   - [ ] Task 1-2 · Drive group 1
@@ -310,8 +310,8 @@ The List Types Drive should stop being gated and take its one-group-per-phase sh
 
 **VERIFY**
 
-- [ ] `git grep -n "POMMORA_LGM_LANDED" -- .claude/scripts` prints nothing, and `phasedItem` stands only in the harness and the Path Links Drive.
-- [ ] With no group yet landed, `node live-drive.mjs` exits 2 at its usage line.
+- [x] `git grep -n "POMMORA_LGM_LANDED" -- .claude/scripts` prints nothing, and `phasedItem` stands only in the harness and the Path Links Drive.
+- [x] With no group yet landed, `node live-drive.mjs` exits 2 at its usage line.
 
 #### Task 0-2
 
@@ -319,8 +319,8 @@ The existing MarkdownPM drives should be green at the BASELINE head.
 
 **VERIFY**
 
-- [ ] From the base worktree, one at a time: Text Property group 4 (37/37), Alias group 3 (121/121), Path Links group 9 (498/498), and Editor Parity as `base` and `base2`, whose compare reports 0 differing lines and nine behaviors `same`. Editor Parity's `results/base` stays for later compares.
-- [ ] A red drive is reported by notification with its failure before Phase 1 opens; one red at the head the run starts from isn't this plan's to fix, and is recorded under *§Deviations*. The same holds at Phase 10 for Properties, Archive, or Option Picker, which this work never changes, once the red reproduces at the BASELINE head.
+- [x] From the base worktree, one at a time: Text Property group 4 (37/37), Alias group 3 (121/121), Path Links group 9 (498/498), and Editor Parity as `base` and `base2`, whose compare reports 0 differing lines and nine behaviors `same`. Editor Parity's `results/base` stays for later compares.
+- [x] A red drive is reported by notification with its failure before Phase 1 opens; one red at the head the run starts from isn't this plan's to fix, and is recorded under *§Deviations*. The same holds at Phase 10 for Properties, Archive, or Option Picker, which this work never changes, once the red reproduces at the BASELINE head.
 
 ---
 
