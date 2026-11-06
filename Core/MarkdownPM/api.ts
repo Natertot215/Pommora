@@ -188,7 +188,7 @@ export interface EditorHost {
     table(ctx: TableMenuContext): Promise<TableMenuAction | null>
     citation(ctx: CitationMenuContext): Promise<CitationMenuAction | null>
     alias(): Promise<AliasRowAction | null>
-    format?: (req: EditorMenuRequest) => Promise<string | null>
+    format(req: EditorMenuRequest): Promise<string | null>
   }
   /** Absent on a surface that never glances (a read-only snapshot); `contains` answers whether an element sits inside an open glance. */
   glance?: {

@@ -9,8 +9,7 @@ import {
 
 const state: EditorMenuRequest = {
   scope: 'page',
-  x: 0,
-  y: 0,
+  menu: 'live',
   bold: true,
   italic: false,
   strikethrough: false,
@@ -23,7 +22,7 @@ const state: EditorMenuRequest = {
   block: 'quote',
   embedSeat: false,
   citeSeat: true,
-  resting: null,
+  selection: null,
 }
 
 const items = editorContextItems(state, DEFAULT_COMMANDS, '')

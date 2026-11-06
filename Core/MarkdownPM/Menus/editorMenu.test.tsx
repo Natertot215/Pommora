@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest'
 import { act } from 'react'
 import { EditorView } from '@codemirror/view'
 import { ok } from '../../Contract/result'
@@ -61,13 +61,15 @@ async function rightClick(
 }
 
 describe('the editor’s native menu', () => {
+  const TABLE = '| A | B |\n| --- | --- |\n| x | z |'
+
   it('asks at the click, leaves the event to the browser, and applies the reply', async () => {
     format.mockResolvedValue('format:bold')
     const view = await mountEditor({ initialBody: 'bold', host: host() })
     view.dispatch({ selection: { anchor: 0, head: 4 } })
     const event = await rightClick(view, 2)
     expect(format).toHaveBeenCalledTimes(1)
-    expect(format).toHaveBeenCalledWith(expect.objectContaining({ scope: 'page', x: 12, y: 34 }))
+    expect(format).toHaveBeenCalledWith(expect.objectContaining({ scope: 'page', menu: 'live' }))
     expect(event.defaultPrevented).toBe(false)
     expect(view.state.doc.toString()).toBe('**bold**')
   })
@@ -162,10 +164,58 @@ describe('the editor’s native menu', () => {
     expect(drag.state.doc.toString()).toBe('x1. a\n2. b\n3. c\n4. d')
   })
 
-  it('never asks from a read-only editor', async () => {
+  it('asks the short menu from a read-only editor, with Copy over the seat and Select All', async () => {
+    format.mockResolvedValue('edit:copy')
+    const write = vi.fn(async () => {})
+    const view = await mountEditor({
+      initialBody: 'one two',
+      readOnly: true,
+      host: { ...host(), clipboard: { write } },
+    })
+    await rightClick(view, 5)
+    expect(format).toHaveBeenCalledWith(
+      expect.objectContaining({ menu: 'short', selection: 'two' }),
+    )
+    expect(write).toHaveBeenCalledWith('two')
+    format.mockResolvedValue('edit:selectAll')
+    await rightClick(view, 1)
+    expect(view.state.selection.main).toMatchObject({ from: 0, to: 7 })
+  })
+
+  it('keeps a right-click from the layers above, whose cancelling would strand the ask', async () => {
+    const above = vi.fn()
+    document.addEventListener('contextmenu', above)
+    onTestFinished(() => document.removeEventListener('contextmenu', above))
     const view = await mountEditor({ initialBody: 'text', readOnly: true, host: host() })
     await rightClick(view, 1)
-    expect(format).not.toHaveBeenCalled()
+    expect(above).not.toHaveBeenCalled()
+  })
+
+  it('reads a glyph on a read-only editor as text', async () => {
+    const view = await mountEditor({ initialBody: '- a', readOnly: true, host: host() })
+    await rightClick(view, 2, view.dom.querySelector('.md-list-glyph')!)
+    expect(grip).not.toHaveBeenCalled()
+    expect(format).toHaveBeenCalledWith(expect.objectContaining({ menu: 'short' }))
+  })
+
+  it('selects and focuses the page from a read-only table’s Select All, so ⌘C reads it', async () => {
+    format.mockResolvedValue('edit:selectAll')
+    const doc = document as { caretPositionFromPoint?: unknown }
+    doc.caretPositionFromPoint = () => null
+    onTestFinished(() => {
+      delete doc.caretPositionFromPoint
+    })
+    const page = await mountEditor({ initialBody: `x\n\n${TABLE}`, readOnly: true, host: host() })
+    let cell: Element | null = null
+    for (let i = 0; !cell && i < 50; i++) {
+      await act(() => new Promise((r) => setTimeout(r, 20)))
+      cell = editorContainer().querySelector('tbody .mdpm-tbl-cell-static')
+    }
+    await act(async () => {
+      cell?.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }))
+    })
+    expect(page.state.selection.main).toMatchObject({ from: 0, to: page.state.doc.length })
+    expect(document.activeElement).toBe(page.contentDOM)
   })
 
   it('leaves a connection’s right-click to the connection menu', async () => {
@@ -217,8 +267,6 @@ describe('the editor’s native menu', () => {
       expect(await paste(via, 'x')).toBe('- itemx')
     }
   })
-
-  const TABLE = '| A | B |\n| --- | --- |\n| x | z |'
 
   async function liveCell(body: string): Promise<{ page: EditorView; cell: EditorView }> {
     const page = await mountEditor({ initialBody: body, host: host() })

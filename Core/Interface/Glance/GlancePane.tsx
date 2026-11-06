@@ -35,7 +35,7 @@ import {
 } from './glanceAction'
 import './glance-pane.css'
 
-// Contract: no dismiss backdrop and `focus="leave"` — a glance must never eat the next click or pull focus out of its host.
+// Contract: no dismiss backdrop and `focus="leave"` — a glance must never eat the next click or pull focus out of its host unless a row asks for it, as Select All does.
 
 // KNOB — the default and floor sizes; the ceiling is the viewport and the anchor's band as the glance opens.
 export const GLANCE_DEFAULT: Size = { w: 260, h: 120 }
@@ -319,7 +319,7 @@ export function GlancePane(): React.JSX.Element {
     })
     dismiss()
   }
-  // `keepFocus` holds the pane's never-take-focus contract — a focusable button would else steal focus the close path can't restore.
+  // `keepFocus` holds the pane's focus contract — a focusable button would else steal focus the close path can't restore.
   const lockBtn = page && (
     <button
       type="button"
@@ -356,7 +356,7 @@ export function GlancePane(): React.JSX.Element {
         origin="center"
         resize={resize}
       >
-        {/* biome-ignore lint/a11y/noStaticElementInteractions: a pointer-only glance surface — the pane never takes focus by contract */}
+        {/* biome-ignore lint/a11y/noStaticElementInteractions: a pointer-only glance surface — the pane takes no focus of its own by contract */}
         {/* biome-ignore lint/a11y/useKeyWithClickEvents: same — no keyboard path exists into a glance */}
         <div
           ref={cardRef}
@@ -364,8 +364,7 @@ export function GlancePane(): React.JSX.Element {
           data-reveal-host=""
           className="glance-body"
           style={{ width: resize.size.w, height: resize.size.h }}
-          onPointerDownCapture={(e) => {
-            if (e.button !== 0) return
+          onPointerDownCapture={() => {
             if (!cardRef.current?.contains(document.activeElement))
               focusBefore.current = document.activeElement
           }}
@@ -418,7 +417,7 @@ export function GlancePane(): React.JSX.Element {
               modal={false}
               origin="center"
             >
-              {/* biome-ignore lint/a11y/noStaticElementInteractions: a pointer-only glance surface — the pane never takes focus by contract */}
+              {/* biome-ignore lint/a11y/noStaticElementInteractions: a pointer-only glance surface — the pane takes no focus of its own by contract */}
               {/* biome-ignore lint/a11y/useKeyWithClickEvents: same — no keyboard path exists into a glance */}
               <div
                 {...{ [GLANCE_BODY_ATTR]: '' }}

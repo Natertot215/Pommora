@@ -14,7 +14,7 @@ import {
   type LinkTarget,
 } from '../Connections/linkValue'
 import type { PageIndex } from '../Connections/pageIndex'
-import { PASTE_LITERAL_ACTION, RESTING_EDITS } from './editorMenu'
+import { PASTE_LITERAL_ACTION, SURFACE_EDITS } from './editorMenu'
 import type { LeafItem } from './menuModel'
 
 type PasteAsForm =
@@ -32,7 +32,7 @@ const PASTE_AS_PREFIX = 'pasteAs:'
 
 export const pasteModeOf = (action: string): PasteMode | null => {
   if (action === PASTE_LITERAL_ACTION) return 'literal'
-  if (action === RESTING_EDITS.paste) return 'auto'
+  if (action === SURFACE_EDITS.paste) return 'auto'
   return action.startsWith(PASTE_AS_PREFIX)
     ? (action.slice(PASTE_AS_PREFIX.length) as PasteAsForm)
     : null

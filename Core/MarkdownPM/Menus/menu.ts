@@ -1,7 +1,8 @@
+import { selectAll } from '@codemirror/commands'
 import { EditorSelection, Prec, type Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { pasteModeOf } from '../../Actions/pasteAsMenu'
-import type { EditorMenuRequest } from '../../Actions/editorMenu'
+import { type EditorMenuRequest, SURFACE_EDITS } from '../../Actions/editorMenu'
 import { citationSeatAt, insertCitation } from '../Citations/citationActions'
 import { embedInsertAtCaret, embedSeatAt, webpageInsertAtCaret } from '../Embeds/embedInsert'
 import { pasteFromClipboard } from '../Links/pasteLink'
@@ -23,12 +24,17 @@ export function applyEditorAction(
   { from, to }: BlockSpan = view.state.selection.main,
 ): void {
   const how = pasteModeOf(action)
-  const settings = view.state.facet(editorHost).settings()
+  const host = view.state.facet(editorHost)
   if (action === 'block:page') embedInsertAtCaret(view)
   else if (action === 'block:webpage') webpageInsertAtCaret(view)
   else if (action === 'block:citation') insertCitation(view)
-  else if (how) void pasteFromClipboard(view, how)
-  else if (applyEdit(view, editFor(action, docScan(view.state), from, to, settings))) view.focus()
+  else if (action === SURFACE_EDITS.copy) void host.clipboard.write(view.state.sliceDoc(from, to))
+  else if (action === SURFACE_EDITS.selectAll) {
+    selectAll(view)
+    view.focus()
+  } else if (how) void pasteFromClipboard(view, how)
+  else if (applyEdit(view, editFor(action, docScan(view.state), from, to, host.settings())))
+    view.focus()
 }
 
 const clickInside = (doc: string, at: number, from: number, to: number): boolean =>
@@ -41,29 +47,22 @@ function keepSeatedSelection(): void {
   setTimeout(() => document.removeEventListener('selectstart', refuse, true))
 }
 
-/** Every surface's right-click, routed from where its own hit test lands, run only once the host can ask: a list glyph asks for its type menu at its own point, which seats nothing, and anything else for the format menu over one range. That's the selection when the click lands in its reach, and otherwise the word under the pointer, or the point where it sits on none, as the surface seats it. */
+/** Every surface's right-click, routed from where its own hit test lands: a list glyph asks for its type menu at its own point, which seats nothing, and anything else for the format menu over one range. That's the selection when the click lands in its reach, and otherwise the word under the pointer, or the point where it sits on none, as the surface seats it. */
 export function routeRightClick(
   host: EditorHost,
   scan: DocScan,
-  event: { clientX: number; clientY: number; preventDefault(): void },
-  click: () => {
-    at: number
-    glyph: boolean
-    sel: BlockSpan
-    word: () => BlockSpan | null
-  },
+  event: { preventDefault(): void },
+  click: { at: number; glyph: boolean; sel: BlockSpan; word: () => BlockSpan | null },
   surface: {
     seat: (range: BlockSpan) => BlockSpan
     request: (
       from: number,
       to: number,
-    ) => Pick<EditorMenuRequest, 'embedSeat' | 'citeSeat' | 'resting'>
+    ) => Pick<EditorMenuRequest, 'menu' | 'selection' | 'embedSeat' | 'citeSeat'>
     apply: (action: string, from: number, to: number) => void
   },
 ): void {
-  const ask = host.menus.format
-  if (!ask) return
-  const { at, glyph, sel, word } = click()
+  const { at, glyph, sel, word } = click
   const point = { from: at, to: at }
   const inside = !glyph && clickInside(scan.text, at, sel.from, sel.to)
   const { from, to } = glyph ? point : inside ? sel : surface.seat(word() ?? point)
@@ -72,13 +71,7 @@ export function routeRightClick(
   if (glyph) event.preventDefault()
   const pick = glyph
     ? host.menus.grip({ kind: 'glyph', current: state.list })
-    : ask({
-        ...state,
-        scope: scan.scope,
-        x: event.clientX,
-        y: event.clientY,
-        ...surface.request(from, to),
-      })
+    : host.menus.format({ ...state, scope: scan.scope, ...surface.request(from, to) })
   void pick.then((action) => {
     if (action) surface.apply(action, from, to)
   })
@@ -89,8 +82,8 @@ export const editorMenu = (scope: MarkdownScope): Extension =>
   Prec.lowest(
     EditorView.domEventHandlers({
       contextmenu(event, view) {
-        if (view.state.readOnly) return false
-        const glyph = glyphAt(event)
+        const { readOnly } = view.state
+        const glyph = readOnly ? null : glyphAt(event)
         const opened = view.state.doc
         const hit = view.posAndSideAtCoords(event, false)
         const wordUnder = (): BlockSpan | null => {
@@ -107,12 +100,12 @@ export const editorMenu = (scope: MarkdownScope): Extension =>
           view.state.facet(editorHost),
           docScan(view.state),
           event,
-          () => ({
+          {
             at: glyph ? view.posAtDOM(glyph) : hit.pos,
             glyph: glyph !== null,
             sel: view.state.selection.main,
             word: wordUnder,
-          }),
+          },
           {
             seat: ({ from, to }) => {
               view.dispatch({
@@ -121,10 +114,11 @@ export const editorMenu = (scope: MarkdownScope): Extension =>
               })
               return view.state.selection.main
             },
-            request: () => ({
+            request: (from, to) => ({
+              menu: readOnly ? 'short' : 'live',
+              selection: readOnly ? view.state.sliceDoc(from, to) : null,
               embedSeat: page && embedSeatAt(view.state),
               citeSeat: page && citationSeatAt(view.state),
-              resting: null,
             }),
             apply: (action, from, to) => {
               if (!glyph) applyEditorAction(view, action)

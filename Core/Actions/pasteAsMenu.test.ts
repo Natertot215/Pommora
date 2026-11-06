@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { markdownLinkRegex } from '../Connections/links'
 import { readLinkText, type LinkTarget } from '../Connections/linkValue'
 import { buildPageIndex } from '../Connections/pageIndex'
-import { PASTE_LITERAL_ACTION, RESTING_EDITS } from './editorMenu'
+import { PASTE_LITERAL_ACTION, SURFACE_EDITS } from './editorMenu'
 import { pasteAsRows, pasteAsWrite, pasteModeOf, type PasteMode } from './pasteAsMenu'
 
 const URL = 'https://www.example.com/a/b'
@@ -230,7 +230,7 @@ describe('what a plain paste writes', () => {
 describe('which paste an action asks for', () => {
   it('reads the literal paste, the resting Paste, and each Paste As action, and nothing else', () => {
     expect(pasteModeOf(PASTE_LITERAL_ACTION)).toBe('literal')
-    expect(pasteModeOf(RESTING_EDITS.paste)).toBe('auto')
+    expect(pasteModeOf(SURFACE_EDITS.paste)).toBe('auto')
     expect(forms(URL, true)).toContain('embedLink')
     expect(pasteModeOf('format:bold')).toBeNull()
   })

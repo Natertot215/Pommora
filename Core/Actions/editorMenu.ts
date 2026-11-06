@@ -24,8 +24,7 @@ import type { ListKind } from '../MarkdownPM/Engine/detect'
 /** What sits under a right-click, sent to the host as the menu is asked for; main cannot see CM6 state. */
 export const editorMenuRequest = z.object({
   scope: z.enum(['page', 'lists', 'inline']),
-  x: z.number(),
-  y: z.number(),
+  menu: z.enum(['live', 'resting', 'short']),
   bold: z.boolean(),
   italic: z.boolean(),
   strikethrough: z.boolean(),
@@ -44,20 +43,35 @@ export const editorMenuRequest = z.object({
   block: z.enum(['quote', 'code']).nullable(),
   embedSeat: z.boolean(),
   citeSeat: z.boolean(),
-  resting: z.object({ selection: z.string() }).nullable(),
+  selection: z.string().nullable(),
 })
 export type EditorMenuRequest = z.infer<typeof editorMenuRequest>
 
 export const PASTE_LITERAL_ACTION = 'paste:literal' as const
-export const RESTING_EDITS = { cut: 'edit:cut', copy: 'edit:copy', paste: 'edit:paste' } as const
+export const SURFACE_EDITS = {
+  cut: 'edit:cut',
+  copy: 'edit:copy',
+  paste: 'edit:paste',
+  selectAll: 'edit:selectAll',
+} as const
 
-export function restingEditItems(selected: boolean, canPaste: boolean): ActionItem<string>[] {
-  return [
-    { label: 'Cut', action: RESTING_EDITS.cut, chord: 'cmd+x', disabled: !selected },
-    { label: 'Copy', action: RESTING_EDITS.copy, chord: 'cmd+c', disabled: !selected },
-    { label: 'Paste', action: RESTING_EDITS.paste, chord: 'cmd+v', disabled: !canPaste },
-  ]
-}
+const copyRow = (selected: boolean): ActionItem<string> => ({
+  label: 'Copy',
+  action: SURFACE_EDITS.copy,
+  chord: 'cmd+c',
+  disabled: !selected,
+})
+
+export const restingRows = (selected: boolean, canPaste: boolean): ActionItem<string>[] => [
+  { label: 'Cut', action: SURFACE_EDITS.cut, chord: 'cmd+x', disabled: !selected },
+  copyRow(selected),
+  { label: 'Paste', action: SURFACE_EDITS.paste, chord: 'cmd+v', disabled: !canPaste },
+]
+
+export const shortRows = (selected: boolean): ActionItem<string>[] => [
+  copyRow(selected),
+  { label: 'Select All', action: SURFACE_EDITS.selectAll, chord: 'cmd+a' },
+]
 
 export type FormatChordAction = Extract<CommandId, `format:${string}`>
 

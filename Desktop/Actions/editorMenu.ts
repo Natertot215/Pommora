@@ -10,7 +10,8 @@ import {
   changeColorItems,
   editorContextItems,
   PASTE_LITERAL_ACTION,
-  restingEditItems,
+  restingRows,
+  shortRows,
 } from '@pommora/core/Actions/editorMenu'
 import type { ActionItem } from '@pommora/core/Actions/menuModel'
 import { pasteAsRows } from '@pommora/core/Actions/pasteAsMenu'
@@ -34,25 +35,6 @@ export function askEditorMenu(req: EditorMenuRequest): Promise<string | null> {
   })
 }
 
-/** The renderer truncates the click to whole CSS pixels and the event measures in window DIPs, differing by the window's zoom, so the slack is one CSS pixel at that zoom beyond two DIPs. */
-export function atClick(
-  req: EditorMenuRequest,
-  params: Pick<ContextMenuParams, 'x' | 'y'>,
-  zoom: number,
-): boolean {
-  const slack = 2 + zoom
-  return Math.abs(req.x * zoom - params.x) <= slack && Math.abs(req.y * zoom - params.y) <= slack
-}
-
-function takeEditorMenu(win: BrowserWindow, params: ContextMenuParams): EditorMenu | null {
-  const menu = pending
-  pending = null
-  if (!menu) return null
-  if (atClick(menu.req, params, win.webContents.getZoomFactor())) return menu
-  menu.resolve(null)
-  return null
-}
-
 function systemItems(
   wc: WebContents,
   params: ContextMenuParams,
@@ -74,11 +56,11 @@ function systemItems(
     )
   }
 
-  const resting = editor?.req.resting
+  const resting = editor?.req.menu === 'resting' ? editor : null
   const canPaste = resting ? clipboard.readText() !== '' : f.canPaste
   items.push(
-    ...(resting && editor
-      ? editorRows(editor, restingEditItems(resting.selection !== '', canPaste))
+    ...(resting
+      ? editorRows(resting, restingRows(!!resting.req.selection, canPaste))
       : ([
           { role: 'undo', enabled: f.canUndo },
           { role: 'redo', enabled: f.canRedo },
@@ -132,17 +114,23 @@ function editorRows(
 
 export function installEditorContextMenu(win: BrowserWindow): void {
   win.webContents.on('context-menu', (_e, params) => {
-    const editor = takeEditorMenu(win, params)
-    if (!params.isEditable && !editor?.req.resting) return editor?.resolve(null)
-    const items = systemItems(win.webContents, params, editor)
-    const selection = editor?.req.resting?.selection ?? params.selectionText
-    if (editor) {
-      items.push(
-        { type: 'separator' },
-        ...editorRows(editor, editorContextItems(editor.req, heldCommands(), selection)),
-      )
-    }
-    items.push(...speechShareItems(selection))
+    const editor = pending
+    pending = null
+    if (!params.isEditable && !editor) return
+    const selection = editor?.req.selection ?? params.selectionText
+    const items =
+      editor?.req.menu === 'short'
+        ? editorRows(editor, shortRows(selection !== ''))
+        : [
+            ...systemItems(win.webContents, params, editor),
+            ...(editor
+              ? [
+                  { type: 'separator' } as const,
+                  ...editorRows(editor, editorContextItems(editor.req, heldCommands(), selection)),
+                ]
+              : []),
+            ...speechShareItems(selection),
+          ]
     Menu.buildFromTemplate(items).popup({ window: win, callback: () => editor?.resolve(null) })
   })
 }

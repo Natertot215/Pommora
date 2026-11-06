@@ -18,7 +18,7 @@ import {
   textMarkerClass,
 } from '../Engine/intents'
 import { perText } from '../Engine/perText'
-import type { ListMarker } from '../Engine/detect'
+import type { BlockSpan, ListMarker } from '../Engine/detect'
 import { checkboxToggleChange } from '../Engine/listModel'
 import { scanDoc } from '../Engine/docScan'
 import { isPaint } from '../Engine/paints'
@@ -26,7 +26,7 @@ import { editFor } from '../Input/format'
 import { editEvent, landEdit } from '../Input/listRenumber'
 import { decodePayload, type TablePayload } from '../Engine/Tables/clipboard'
 import { pastedCellText } from '../Links/pasteLink'
-import { RESTING_EDITS } from '../../Actions/editorMenu'
+import { SURFACE_EDITS } from '../../Actions/editorMenu'
 import { pasteModeOf, type PasteMode } from '../../Actions/pasteAsMenu'
 import { inlineCodeMask, quoteDepthOf, type TextEdit } from '../Engine/markdownCode'
 import { sectionRunsIn } from '../../Connections/scan'
@@ -45,10 +45,10 @@ import {
   resolveLink,
 } from '../../Connections/linkValue'
 import { CITE_GLYPH, followCitation } from '../Citations/citationPointer'
-import type { EditorHost } from '../api'
+import { type EditorHost, pageEditorAt } from '../api'
 import { contractions, wordAt } from '../Input/markdownInput'
 import { glyphAt } from '../lineDom'
-import { routeRightClick } from '../Menus/menu'
+import { applyEditorAction, routeRightClick } from '../Menus/menu'
 import type { Seat } from './CellEditor'
 import type { HeadingLinkStyle } from '../../Settings/personalization'
 import { CheckMark, checkboxClass } from '@pommora/uix/Controls/Checkbox'
@@ -381,17 +381,17 @@ export function cellOffsetAt(
   return acc
 }
 
-function restingSelection(cell: HTMLElement, at: number, text: string): [number, number] {
+function restingSelection(cell: HTMLElement, at: number, text: string): BlockSpan {
   const sel = window.getSelection()
   const range = sel && sel.rangeCount > 0 ? sel.getRangeAt(0) : null
-  if (!range?.intersectsNode(cell)) return [at, at]
+  if (!range?.intersectsNode(cell)) return { from: at, to: at }
   const from = cell.contains(range.startContainer)
     ? cellOffsetAt(cell, range.startContainer, range.startOffset, 'start')
     : 0
   const to = cell.contains(range.endContainer)
     ? cellOffsetAt(cell, range.endContainer, range.endOffset, 'end')
     : text.length
-  return [from, to]
+  return { from, to }
 }
 
 function sideOf({ offsetNode: node, offset }: CaretPosition, x: number, y: number): -1 | 1 | null {
@@ -516,9 +516,9 @@ function StaticCellImpl({
 
   const restingAction = async (action: string, from: number, to: number): Promise<void> => {
     switch (action) {
-      case RESTING_EDITS.copy:
+      case SURFACE_EDITS.copy:
         return void host.clipboard.write(text.slice(from, to))
-      case RESTING_EDITS.cut:
+      case SURFACE_EDITS.cut:
         if (commitAtRest([{ from, to, insert: '' }], 'delete'))
           void host.clipboard.write(text.slice(from, to))
         return
@@ -535,31 +535,28 @@ function StaticCellImpl({
 
   const restingMenu = (e: React.MouseEvent<HTMLElement>): void => {
     const cell = e.currentTarget
-    const glyph = glyphAt(e)
+    const glyph = readOnly() ? null : glyphAt(e)
+    const found = glyph ? null : document.caretPositionFromPoint(e.clientX, e.clientY)
+    const caret = found && cell.contains(found.offsetNode) ? found : null
+    const at = glyph
+      ? srcOf(glyph)![0]
+      : caret
+        ? cellOffsetAt(cell, caret.offsetNode, caret.offset)
+        : text.length
     routeRightClick(
       host,
       cellScan(text),
       e,
-      () => {
-        const found = glyph ? null : document.caretPositionFromPoint(e.clientX, e.clientY)
-        const caret = found && cell.contains(found.offsetNode) ? found : null
-        const at = glyph
-          ? srcOf(glyph)![0]
-          : caret
-            ? cellOffsetAt(cell, caret.offsetNode, caret.offset)
-            : text.length
-        const [from, to] = restingSelection(cell, at, text)
-        return {
-          at,
-          glyph: glyph !== null,
-          sel: { from, to },
-          word: () => {
-            const side = caret && sideOf(caret, e.clientX, e.clientY)
-            return side
-              ? wordAt(EditorState.create({ doc: text, extensions: contractions }), at, side)
-              : null
-          },
-        }
+      {
+        at,
+        glyph: glyph !== null,
+        sel: restingSelection(cell, at, text),
+        word: () => {
+          const side = caret && sideOf(caret, e.clientX, e.clientY)
+          return side
+            ? wordAt(EditorState.create({ doc: text, extensions: contractions }), at, side)
+            : null
+        },
       },
       {
         seat: (range) => {
@@ -567,11 +564,16 @@ function StaticCellImpl({
           return range
         },
         request: (from, to) => ({
+          menu: readOnly() ? 'short' : 'resting',
+          selection: text.slice(from, to),
           embedSeat: false,
           citeSeat: false,
-          resting: { selection: text.slice(from, to) },
         }),
-        apply: (action, from, to) => void restingAction(action, from, to),
+        apply: (action, from, to) => {
+          if (action === SURFACE_EDITS.selectAll)
+            applyEditorAction(pageEditorAt(cell).view!, action)
+          else void restingAction(action, from, to)
+        },
       },
     )
   }
@@ -591,8 +593,7 @@ function StaticCellImpl({
     <div
       className="mdpm-tbl-cell-static"
       onContextMenu={(e) => {
-        if (onContextMenu(e) || readOnly()) return
-        restingMenu(e)
+        if (!onContextMenu(e)) restingMenu(e)
       }}
       onPointerOver={onPointerOver}
       onPointerOut={onPointerOut}

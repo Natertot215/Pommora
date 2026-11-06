@@ -126,6 +126,7 @@ function harnessHost(spec: HarnessHost, rerender: () => void = () => {}): Harnes
       table: async () => null,
       citation: async () => null,
       alias: async () => null,
+      format: async () => null,
       ...spec.menus,
     },
     glance: spec.glance === false ? undefined : (spec.glance ?? NO_GLANCE),

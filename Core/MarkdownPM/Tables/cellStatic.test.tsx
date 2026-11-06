@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, afterEach, vi } from 'vitest'
+import { describe, it, expect, afterEach, onTestFinished, vi } from 'vitest'
 import { createElement, act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { EditorView } from '@codemirror/view'
@@ -111,6 +111,11 @@ describe('an entered cell draws what the resting cell drew', () => {
   })
 
   it('a right-click leaves the cell resting', async () => {
+    const doc = document as { caretPositionFromPoint?: unknown }
+    doc.caretPositionFromPoint = () => null
+    onTestFinished(() => {
+      delete doc.caretPositionFromPoint
+    })
     await mount(numbering(2))
     const cell = [...container.querySelectorAll('.mdpm-tbl-cell-static')].find((el) =>
       el.textContent?.includes('see'),

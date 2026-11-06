@@ -103,12 +103,10 @@ function buildEditorHost(
       table: (ctx) => popMenu(tableMenuItems(ctx)),
       citation: (ctx) => popMenu(citationMenuModel(ctx)),
       alias: popAliasRowMenu,
-      format: inert
-        ? undefined
-        : (req) =>
-            dialer()
-              .ask('editor:menu', req)
-              .then((r) => valueOr(r, null)),
+      format: (req) =>
+        dialer()
+          .ask('editor:menu', req)
+          .then((r) => valueOr(r, null)),
     },
     glance: inert ? undefined : glanceHost,
     renderTile: (tile) =>

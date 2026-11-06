@@ -295,7 +295,8 @@ export function MarkdownEditor({
   }, [])
 
   return (
-    <div ref={shellRef} className="mdpm-shell mdpm-fill">
+    // biome-ignore lint/a11y/noStaticElementInteractions: a bubble guard, not a control: a right-click here has asked its menu, and a glance's or an info pane's layer would cancel it
+    <div ref={shellRef} className="mdpm-shell mdpm-fill" onContextMenu={(e) => e.stopPropagation()}>
       {header}
       <div ref={editorRef} className="mdpm-editor interface-inset" />
       <Scrollbar of={scroller} page timeline="--mdpm-scroll" />

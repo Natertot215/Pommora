@@ -12,7 +12,7 @@ export function readFormatState(
   selFrom: number,
   selTo: number,
   settings: Personalization,
-): Omit<EditorMenuRequest, 'scope' | 'x' | 'y' | 'embedSeat' | 'citeSeat' | 'resting'> {
+): Omit<EditorMenuRequest, 'scope' | 'menu' | 'embedSeat' | 'citeSeat' | 'selection'> {
   const { fenced, from, to, ls, line, tokens, covering } = underSelection(scan, selFrom, selTo)
   const lineFrom = from - ls
   const lineTo = to - ls

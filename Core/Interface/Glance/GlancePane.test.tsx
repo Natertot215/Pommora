@@ -312,10 +312,10 @@ describe('the leave grace', () => {
 
 describe('focus on close', () => {
   const body = (): HTMLElement => document.querySelector('[data-glance]') as HTMLElement
-  const pressInside = (): void => {
+  const pressInside = (button = 0): void => {
     const b = body()
     act(() => {
-      b.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0 }))
+      b.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button }))
     })
     const editable = b.querySelector('.cm-content') as HTMLElement | null
     editable?.focus()
@@ -338,6 +338,17 @@ describe('focus on close', () => {
     field.focus()
     present(link())
     pressInside()
+    expect(body().contains(document.activeElement)).toBe(true)
+    closeByEscape()
+    expect(document.activeElement).toBe(field)
+  })
+
+  it('hands focus back after a right press, whose row can ask for focus', () => {
+    const field = document.createElement('input')
+    document.body.appendChild(field)
+    field.focus()
+    present(link())
+    pressInside(2)
     expect(body().contains(document.activeElement)).toBe(true)
     closeByEscape()
     expect(document.activeElement).toBe(field)

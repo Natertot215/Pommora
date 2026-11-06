@@ -174,11 +174,10 @@ describe('a right-click on a resting cell', () => {
     expect(format).toHaveBeenCalledWith(
       expect.objectContaining({
         scope: 'lists',
-        x: 12,
-        y: 34,
+        menu: 'resting',
         embedSeat: false,
         citeSeat: false,
-        resting: { selection: 'plain' },
+        selection: 'plain',
       }),
     )
     expect(event.defaultPrevented).toBe(false)
@@ -188,9 +187,7 @@ describe('a right-click on a resting cell', () => {
   it('reads the format state at the point inside a mark', async () => {
     await mount('**a** bc')
     await rightClick('a', 1)
-    expect(format).toHaveBeenCalledWith(
-      expect.objectContaining({ bold: true, resting: { selection: 'a' } }),
-    )
+    expect(format).toHaveBeenCalledWith(expect.objectContaining({ bold: true, selection: 'a' }))
   })
 
   it('sends the source a selection under the click covers', async () => {
@@ -198,7 +195,7 @@ describe('a right-click on a resting cell', () => {
     select('a', 0, ' bc', 3)
     await rightClick(' bc', 1)
     expect(format).toHaveBeenCalledWith(
-      expect.objectContaining({ bold: false, resting: { selection: '**a** bc' } }),
+      expect.objectContaining({ bold: false, selection: '**a** bc' }),
     )
   })
 
@@ -206,7 +203,7 @@ describe('a right-click on a resting cell', () => {
     await mount('**a** bc')
     select(' bc', 1, ' bc', 2)
     await rightClick('a', 1)
-    expect(format).toHaveBeenCalledWith(expect.objectContaining({ resting: { selection: 'a' } }))
+    expect(format).toHaveBeenCalledWith(expect.objectContaining({ selection: 'a' }))
   })
 
   it('claims the right press, so the selection and the page caret stay undisturbed', async () => {
@@ -218,12 +215,27 @@ describe('a right-click on a resting cell', () => {
     expect(press.defaultPrevented).toBe(true)
   })
 
-  it('asks nothing of a read-only cell', async () => {
+  it('asks the short menu of a read-only cell', async () => {
     readOnly = true
     await mount('**a** bc')
     await rightClick('a', 1)
-    expect(format).not.toHaveBeenCalled()
+    expect(format).toHaveBeenCalledWith(expect.objectContaining({ menu: 'short', selection: 'a' }))
+    await choose('edit:copy')
+    expect(written).toHaveBeenCalledWith('a')
+    expect(committed).not.toHaveBeenCalled()
     expect(entered()).toBe(false)
+  })
+
+  it('reads a glyph on a read-only cell as text', async () => {
+    readOnly = true
+    const grip = vi.fn(async () => null)
+    host = { ...host, menus: { ...host.menus, grip } }
+    await mount('- ab')
+    const event = await rightClick('•', 1)
+    expect(grip).not.toHaveBeenCalled()
+    expect(event.defaultPrevented).toBe(false)
+    expect(format).toHaveBeenLastCalledWith(expect.objectContaining({ menu: 'short' }))
+    await choose(null)
   })
 })
 

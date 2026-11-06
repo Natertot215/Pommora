@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { BrowserWindow, ContextMenuParams, MenuItemConstructorOptions } from 'electron'
 import type { EditorMenuRequest } from '@pommora/core/Actions/editorMenu'
-import { askEditorMenu, atClick, installEditorContextMenu } from './editorMenu'
+import { askEditorMenu, installEditorContextMenu } from './editorMenu'
 
 const native = vi.hoisted(() => ({
   clipboard: '',
@@ -21,10 +21,9 @@ vi.mock('electron', () => ({
   },
 }))
 
-const req = (x: number, y: number): EditorMenuRequest => ({
+const req: EditorMenuRequest = {
   scope: 'page',
-  x,
-  y,
+  menu: 'live',
   bold: false,
   italic: false,
   strikethrough: false,
@@ -37,33 +36,13 @@ const req = (x: number, y: number): EditorMenuRequest => ({
   block: null,
   embedSeat: false,
   citeSeat: false,
-  resting: null,
-})
-
-describe('matching an editor’s ask to the click', () => {
-  it('matches the click it was sent from', () => {
-    expect(atClick(req(100, 40), { x: 100, y: 40 }, 1)).toBe(true)
-  })
-
-  it('converts CSS pixels to window DIPs', () => {
-    expect(atClick(req(101, 41), { x: 126, y: 51 }, 1.25)).toBe(true)
-  })
-
-  it('widens with the zoom, since the renderer truncates its click to whole CSS pixels', () => {
-    expect(atClick(req(282, 329), { x: 849, y: 990 }, 3)).toBe(true)
-    expect(atClick(req(262, 77), { x: 1052, y: 312 }, 3.9999)).toBe(true)
-  })
-
-  it('refuses a click farther than that slack', () => {
-    expect(atClick(req(100, 40), { x: 104, y: 40 }, 1)).toBe(false)
-    expect(atClick(req(100, 40), { x: 306, y: 120 }, 3)).toBe(false)
-  })
-})
+  selection: null,
+}
 
 describe('the parked ask', () => {
   it('answers an earlier ask with null when a second one arrives', async () => {
-    const first = askEditorMenu(req(0, 0))
-    void askEditorMenu(req(1, 1))
+    const first = askEditorMenu(req)
+    void askEditorMenu(req)
     await expect(first).resolves.toBeNull()
   })
 })
@@ -76,8 +55,6 @@ describe('the window’s right-click', () => {
       on: (_event: string, fn: (e: unknown, p: ContextMenuParams) => void) => {
         rightClick = (params) =>
           fn({}, {
-            x: 10,
-            y: 10,
             isEditable: true,
             selectionText: '',
             misspelledWord: '',
@@ -86,7 +63,6 @@ describe('the window’s right-click', () => {
             ...params,
           } as ContextMenuParams)
       },
-      getZoomFactor: () => 1,
       pasteAndMatchStyle,
     },
   } as unknown as BrowserWindow)
@@ -97,38 +73,29 @@ describe('the window’s right-click', () => {
   const pick = (item: MenuItemConstructorOptions | undefined): void =>
     (item?.click as (() => void) | undefined)?.()
 
-  it('builds the editor rows from the ask its click matches, and a row answers it', async () => {
-    const asked = askEditorMenu(req(10, 10))
+  it('builds the editor rows from the parked ask, and a row answers it', async () => {
+    const asked = askEditorMenu(req)
     rightClick({})
     expect(labels()).toContain('Format')
     pick((row('Format')?.submenu as MenuItemConstructorOptions[])[0])
     await expect(asked).resolves.toBe('format:italic')
   })
 
-  it('answers null to an ask whose click lands elsewhere, and offers no editor rows', async () => {
-    const asked = askEditorMenu(req(50, 50))
-    rightClick({})
-    expect(labels()).not.toContain('Format')
-    await expect(asked).resolves.toBeNull()
-  })
-
-  it('answers null and pops nothing over a field that isn’t editable', async () => {
+  it('pops nothing over a field that isn’t editable when nothing asked', () => {
     native.popped = null
-    const asked = askEditorMenu(req(10, 10))
     rightClick({ isEditable: false })
     expect(native.popped).toBeNull()
-    await expect(asked).resolves.toBeNull()
   })
 
   it('answers null when the menu closes with nothing picked', async () => {
-    const asked = askEditorMenu(req(10, 10))
+    const asked = askEditorMenu(req)
     rightClick({})
     native.close?.()
     await expect(asked).resolves.toBeNull()
   })
 
   it('sends Paste Without Formatting to the editor that asked, and to the browser otherwise', async () => {
-    const asked = askEditorMenu(req(10, 10))
+    const asked = askEditorMenu(req)
     rightClick({})
     pick(row('Paste Without Formatting'))
     await expect(asked).resolves.toBe('paste:literal')
@@ -139,19 +106,20 @@ describe('the window’s right-click', () => {
 
   it('offers Paste As from the seats the ask carries', () => {
     native.clipboard = 'plain words'
-    void askEditorMenu({ ...req(10, 10), citeSeat: true })
+    void askEditorMenu({ ...req, citeSeat: true })
     rightClick({})
     expect(labels()).toContain('Paste As')
-    void askEditorMenu(req(10, 10))
+    void askEditorMenu(req)
     rightClick({})
     expect(labels()).not.toContain('Paste As')
   })
 
   describe('over a resting cell, which Chromium reports as not editable', () => {
     const resting = (selection: string): EditorMenuRequest => ({
-      ...req(10, 10),
+      ...req,
       scope: 'lists',
-      resting: { selection },
+      menu: 'resting',
+      selection,
     })
 
     it('pops the edit rows the renderer acts on, without Undo, Redo, or Select All', async () => {
@@ -230,9 +198,32 @@ describe('the window’s right-click', () => {
     })
   })
 
+  describe('over a surface that can’t be edited', () => {
+    const short = (selection: string): EditorMenuRequest => ({ ...req, menu: 'short', selection })
+
+    it('offers Copy and Select All alone, the renderer answering each', async () => {
+      const copied = askEditorMenu(short('wo'))
+      rightClick({ isEditable: true, misspelledWord: 'wo', dictionarySuggestions: ['we'] })
+      expect(labels()).toEqual(['Copy', 'Select All'])
+      pick(row('Copy'))
+      await expect(copied).resolves.toBe('edit:copy')
+      const all = askEditorMenu(short('wo'))
+      rightClick({ isEditable: false })
+      pick(row('Select All'))
+      await expect(all).resolves.toBe('edit:selectAll')
+    })
+
+    it('turns Copy off with nothing selected', () => {
+      void askEditorMenu(short(''))
+      rightClick({ isEditable: false, selectionText: 'drawn' })
+      expect(row('Copy')?.enabled).toBe(false)
+      expect(row('Select All')?.enabled).toBe(true)
+    })
+  })
+
   it('seats Change Color under Select All, above the line over the editor block', async () => {
     const asked = askEditorMenu({
-      ...req(10, 10),
+      ...req,
       painted: { paint: 'highlight', color: 'accent' },
     })
     rightClick({})
@@ -245,7 +236,7 @@ describe('the window’s right-click', () => {
       ),
     )
     await expect(asked).resolves.toBe('highlight:blue')
-    void askEditorMenu(req(10, 10))
+    void askEditorMenu(req)
     rightClick({})
     expect(labels()).not.toContain('Change Color')
   })
