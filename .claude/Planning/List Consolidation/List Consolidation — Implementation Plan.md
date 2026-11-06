@@ -856,6 +856,8 @@ The List Types Drive's group 10 and the Text Property Drive's rewrite should pro
 
 `Scouts/Planning/Phases/Phase 11 — Docs and Issues.patch`: the five documents *§Reconciliation · Documents* lists, as a true description of the finished editor. I-073 closes and its number carries the new issue for Option+Up, Option+Down, and dragged text; I-036 recounts its compares and defaults at this head.
 
+Nathan's direction during the run: documents change surgically, and whether each one needs changing at all is an open question. The patch is a starting point rather than the AFTER here. Each hunk stays only if a sentence went false, it changes the words that went false rather than the paragraph around them, and a hunk that rephrases, adds description, or restates what still holds leaves. An issue's cite moves only where the cited line did.
+
 **VERIFY**
 
 - [ ] Run the gates; `node .claude/scripts/check-atlas.mjs` exits 0.
