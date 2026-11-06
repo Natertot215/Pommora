@@ -35,10 +35,10 @@ The drive's cases, derived from *List Consolidation — Decisions & Intention*, 
 - **Preserve List-Level Formatting inside a block in group 2:** a pick reaches through the one `listReach` a page uses (*Scouts/8*, 8-T26), and group 3 crosses the setting on a page.
 - **A paste in a Markdown block in group 2:** the recount arrives with paste, so group 4 holds it.
 - **A table pasted onto a code line:** it needs a table's clipboard payload, and `tableGuard`'s test reads the marker the block no longer holds.
-- **A cut at rest in group 3:** the resting menu's seat is Phase 9's rework, and a cut at rest lands through the `landEdit` a pick at rest takes; group 9 holds it.
+- **A cut at rest in group 3:** the resting menu's seat is Phase 9's rework, so group 9 holds it.
 - **A paste in group 3:** the saved tree holds paste already, and group 4 owns the row.
 - **Rails through wraps and the nesting cap:** `railIntents` reads lines, so a wrap is one line, and the cap writes no deeper level to draw; the elbow and join ends are read as part of each rail's reach.
-- **A paste at rest in group 4:** an empty paste at rest is E-2's, and the resting menu is Phase 9's rework; group 9 holds it.
+- **A paste at rest in group 4:** the resting menu is Phase 9's rework, so group 9 holds it.
 - **A table pasted into a list:** a table's clipboard payload reaches `tableGuard`, not the recount, and no decision names it.
 - **Enter, Tab, and Shift-Tab off an item in a cell:** they're the cell's navigation rather than a list's key, which `cellLists.test.tsx` pins; group 6 reads the keys a list claims.
 - **⌘Z after every cell key:** a cell forwards undo to the page's history, one path whatever the key, so one recount proves it.
@@ -46,6 +46,8 @@ The drive's cases, derived from *List Consolidation — Decisions & Intention*, 
 - **A callout head's type menu:** a head draws no glyph (F-1), so nothing opens one, and `format.test.ts` pins what a pick writes there.
 - **Word gestures in a Text value:** a value's editor mounts the same `sharedSurface`, and `inlineScope.test.tsx` reads the rule at that scope.
 - **The word rule's character classes past those a user types:** `𝒶'b` stays with `inlineScope.test.tsx`; a press can't land one half of an astral letter reliably.
+- **The info pane in group 9:** nothing mounts `InfoButton` today, so no surface draws one to press; `editorMenu.test.tsx` holds the bubble stop.
+- **A window tab and an embed in group 9:** both mount the unentered tile's read-only editor; the tile, the reader, and a glance cover the short menu's three routes in.
 
 #### Group 1 — One Scan Per Surface
 
@@ -240,3 +242,39 @@ Every row runs for all five types on a page and in a focused cell, asserted agai
 | `'don't'` | A resting cell | right-click, Bold | the quotes ride, the accepted departure | E-6 |
 | `// don't stop` | ` ```js ` | double-click, Option-arrow | the whole word, both ways | E-5 |
 | `// $a's` | ` ```js ` | double-click | `a's`, the language's `$` dropped for that gesture | E-6 |
+
+#### Group 9 — Right-Click
+
+The menu stays up between a press and its choice, so a seat's highlight is read from `CSS.highlights` and a screenshot while it's up. The clipboard is read first and written back.
+
+| Case | Surface | Operation | Expected | Decisions |
+| --- | --- | --- | --- | --- |
+| A word | A resting cell | right-click | Cut, Copy, Paste, Paste Without Formatting, Lists ▸, Format ▸, Speech ▸, Share ▸, and Format ▸'s rows as a live cell's | E-1 |
+| A word | A resting cell | Format ▸ Bold, Lists ▸ | writes in the cell; no editor, the page's caret and focus unmoved | E-1 |
+| Bullets, numbers, arrows | A resting cell | the glyph's Checklist, ⌘Z | commits without entering, and reverts | E-1 |
+| `> a`, blank past `ab` | A resting cell | Bulleted, Bold | `- > a`, `ab****` | E-1 |
+| A dismissal, Copy, an empty paste, a pick changing nothing | A resting cell | close, type | typing lands at the page's caret | E-2 |
+| A page selection | A resting cell | dismiss, type | it stands, and typing replaces it | E-2 |
+| A closed menu | A resting cell | click | one click enters | E-2 |
+| Cut, ⌘Z; Paste; lines pasted; a cut across lines | A resting cell | row | writes without entering, reverts, and recounts | E-1, F-2, B-10 |
+| Use Native Highlighting on and off | A resting cell | hold the menu, read, close | the word registered in the selection color, nothing in Chromium's selection; cleared on close | E-2, E-3 |
+| Text, a glyph, a read-only cell | An unentered tile | right-click | Copy and Select All alone, Copy off on a glyph | E-4 |
+| Copy, Select All | An unentered tile | row | the seated word; the tile's document | E-4 |
+| A link, a heading's band | An unentered tile | right-click | their own menus | E-4 |
+| A glyph | An editing tile | Numbered, ⌘Z | the type menu, its own group, undone | E-4 |
+| Text, a glyph | The page reader | right-click | Copy and Select All alone | E-4 |
+| Text | A glance | right-click | Copy and Select All alone | E-4 |
+| A read-only table's cell | An unentered tile, a glance | Select All, ⌘C by a key event carrying `copy` | the clipboard holds that surface's document | E-4 |
+| Select All in a glance | A glance | Escape until it closes | the page holds the focus again | E-4 |
+| `- `, nested, box, nested box, number | A page | a press left of the glyph and at the line's edge, Bold | writes past the marker | E-7 |
+| `> quote` | A page | a press on the prefix, Bold | writes past it | E-7 |
+| A bullet | A page | a left press left of it, type | seats at the content | E-7 |
+| A link settling on the line | A page | Bold on a word | lands | E-7 |
+| A word ending an inline code span | A page | Insert ▸ | no Footnote, where prose offers it | E-7 |
+| `_it_`'s revealed `_` | A page | right-click | Italic checked | D-5 |
+| Inside a line; a word filling its item | A page | Lists ▸ | the item's group | D-5 |
+| A whole line, a triple-click | A page | Lists ▸ | narrows to that item | D-5 |
+| A triple-click or a drag ending at the next line's start | A page | a row from the next line, or Lists ▸ | acts on the line it means | D-5 |
+| A glyph inside and outside a selection | A page | pick | its group | D-2 |
+| A glyph, a revealed marker, blank past a line | A page | press | the caret stays; the glyph's reach; acts at the point | E-7 |
+| The Settings row | Settings | read, turn off | sits under Outliner Lines, and a pick follows without a reload | D-1 |
