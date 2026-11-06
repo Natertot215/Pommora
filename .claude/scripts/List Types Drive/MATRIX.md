@@ -30,3 +30,21 @@ The drive's cases, derived from *List Consolidation — Decisions & Intention*, 
 
 - **The word and Bold items of the earlier drive:** they prove nothing about lists, and the word rule's pins and group 8 hold what they read.
 - **A Text value's one-line field:** it reads no list and stays plain (G-5), which the Text Property Drive proves.
+- **A quote, a callout, and an editing tile in group 1:** a quote and a callout are blocks a page's scan reads, and a tile mounts the page's own editor, so B-11 gives none of them a scan of its own; the groups whose decisions reach them cross them.
+
+#### Group 1 — One Scan Per Surface
+
+| Case | Surface | Operation | Expected | Decisions |
+| --- | --- | --- | --- | --- |
+| Each type's glyphs and text (5) | A page | read | `•`, `1.`, `A.`, `☐` and `☑`, and `→` draw beside the item's text | B-11 |
+| Each type's glyphs and text (5) | A resting cell | read | the same | B-11 |
+| Each type's glyphs and text (5) | A focused cell | click in, read | the same, with the caret on the line | B-11 |
+| The list between ` ``` ` lines, and between `$$` lines | A resting cell | read | both items draw | B-11 |
+| The same | A focused cell | click in, read | both items draw | B-11 |
+| The same | A focused cell | the grip's Numbered | the list numbers, and the edge lines stay as written | B-11 |
+| `(` between ` ``` ` lines | A focused cell | type a space and `(` | `pp ()`, since the line holds no code | B-11 |
+| `*it*` between ` ``` ` lines | A resting and a focused cell | read | italic on both | B-11 |
+| `$$`, `xq`, `$$` | A resting and a focused cell | read | the lines show as written, with no math mark | B-11 |
+| `[^1] zz`, `[^1]: note` | A resting and a focused cell | read | the lines show as written, with no citation row or marker | B-11 |
+| The same lines as blocks | A page | read | no item in a code block or math, and the math marks its line | B-11 |
+| `See [^1] now.` over a `[^1]: note` tail | A page | read | one citation row and one marker | B-11 |
