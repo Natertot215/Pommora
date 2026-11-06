@@ -94,4 +94,9 @@ describe('what a GFM cell can hold', () => {
     expect(cellToDisplay('-')).toBe('-')
     expect(cellToDisplay('n/a<br>-')).toBe('n/a\n-')
   })
+
+  it('leaves a box with no space after its bullet as the plain text it reads as', () => {
+    expect(cellToDisplay('-[ ]')).toBe('-[ ]')
+    expect(cellToDisplay('- a<br>-[x]')).toBe('- a\n-[x]')
+  })
 })

@@ -24,7 +24,7 @@ export function checkboxToggleChange(scan: DocScan, pos: number): TextEdit | nul
   const lm = scan.markers[k]
   if (lm?.kind !== 'checkbox') return null
   const ls = scan.lineStarts[k]
-  return { from: ls + lm.box.start, to: ls + lm.box.end, insert: lm.checked ? '[ ]' : '[x]' }
+  return { from: ls + lm.boxStart, to: ls + lm.markerEnd, insert: lm.checked ? '[ ]' : '[x]' }
 }
 
 function openerOf(scan: DocScan, k: number): number {

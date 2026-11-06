@@ -15,11 +15,10 @@ import {
   railClass,
   railIntents,
   railStyle,
-  railTypeClass,
   textMarkerClass,
 } from '../Engine/intents'
 import { perText } from '../Engine/perText'
-import type { ListMarker } from '../Engine/detect'
+import { LIST_TYPES, type ListMarker } from '../Engine/detect'
 import { checkboxToggleChange } from '../Engine/listModel'
 import { scanDoc } from '../Engine/docScan'
 import { isPaint } from '../Engine/paints'
@@ -286,7 +285,7 @@ function renderCellBody(
   const rails = railIntents(
     scan,
     markers.map((lm) => lm?.level ?? -1),
-    markers.map((lm) => (lm ? (railTypeClass(lm) ?? '') : '')),
+    markers.map((lm) => (lm ? (LIST_TYPES[lm.kind].rail ?? '') : '')),
     lines.map(quoteDepthOf),
   )
   return lines.map((line, i) => {

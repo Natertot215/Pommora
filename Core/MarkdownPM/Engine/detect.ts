@@ -534,9 +534,15 @@ interface MarkerSpan {
   contentStart: number
 }
 
-type Box = { start: number; end: number }
-
 export type ListKind = 'ordered' | 'alphabetical' | 'bullet' | 'checkbox' | 'arrow'
+
+export const LIST_TYPES: Record<ListKind, { marker: string; rail?: string }> = {
+  ordered: { marker: '1. ' },
+  alphabetical: { marker: 'A. ', rail: 'md-outline-alpha' },
+  bullet: { marker: '- ', rail: 'md-outline-bullet' },
+  checkbox: { marker: '- [ ] ', rail: 'md-outline-task' },
+  arrow: { marker: '→ ' },
+}
 
 type SequencedKind = Extract<ListKind, 'ordered' | 'alphabetical'>
 
@@ -544,7 +550,7 @@ export type SequencedMarker = MarkerSpan & { kind: SequencedKind; ordinal: strin
 
 export type ListMarker =
   | SequencedMarker
-  | (MarkerSpan & { kind: 'checkbox'; box: Box; checked: boolean })
+  | (MarkerSpan & { kind: 'checkbox'; boxStart: number; checked: boolean })
   | (MarkerSpan & { kind: 'bullet' | 'arrow' })
 
 // `-` and `+` are the only bullet characters: `*` and `•` stay prose.
@@ -563,20 +569,6 @@ export const ordinalText = (kind: SequencedKind, n: number): string =>
 /** Whether a line at quote depth `depth` or deeper that isn't an item there continues a list at that depth: a wrapped item's body, indented past the list's prefix, does, and a blank line ends the list. */
 export const continuesList = (line: string, depth: number): boolean =>
   /^[ \t]+\S/.test(line.slice(quotePrefixWidth(line, depth)))
-
-export function listMarkerText(kind: ListKind): string {
-  switch (kind) {
-    case 'ordered':
-    case 'alphabetical':
-      return `${ordinalText(kind, 1)}. `
-    case 'checkbox':
-      return '- [ ] '
-    case 'arrow':
-      return '→ '
-    case 'bullet':
-      return '- '
-  }
-}
 
 export function parseListMarker(line: string, offset = 0): ListMarker | null {
   if (isThematicBreakLine(line)) return null
@@ -599,14 +591,13 @@ export function parseListMarker(line: string, offset = 0): ListMarker | null {
   }
   const b = m.indices?.[3]
   if (b) {
-    const box = { start: offset + b[0], end: offset + b[1] }
     return {
       kind: 'checkbox',
       level,
       markerStart,
-      markerEnd: box.end,
+      markerEnd: offset + b[1],
       contentStart,
-      box,
+      boxStart: offset + b[0],
       checked: m[4] !== ' ',
     }
   }

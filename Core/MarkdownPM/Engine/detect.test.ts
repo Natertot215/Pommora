@@ -79,7 +79,7 @@ describe('parseListMarker (single marker source)', () => {
       markerStart: 0,
       markerEnd: 5,
       contentStart: 6,
-      box: { start: 2, end: 5 },
+      boxStart: 2,
       checked: true,
     })
   })
@@ -237,7 +237,7 @@ describe('lineMarker (lists behind a quote/callout prefix)', () => {
   it('finds a checkbox behind `> ` with shifted box offsets', () => {
     expect(lineMarker('> - [x] done', undefined)).toMatchObject({
       kind: 'checkbox',
-      box: { start: '> - '.length },
+      boxStart: '> - '.length,
     })
   })
   it('matches plain parseListMarker when there is no prefix', () => {

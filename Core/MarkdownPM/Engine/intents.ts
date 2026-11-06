@@ -4,6 +4,7 @@ import {
   isThematicBreakLine,
   isHeadingLine,
   isSequenced,
+  LIST_TYPES,
   parseListMarker,
   headingParts,
   fenceBodyStart,
@@ -98,14 +99,6 @@ export type DecoIntent =
       attributes?: Record<string, string>
     }
   | RailIntent
-
-// The rail's x sits on its ANCESTOR's glyph center; ordered and arrow return null, so no rail is drawn under one.
-export function railTypeClass(m: ListMarker): string | null {
-  if (m.kind === 'checkbox') return 'md-outline-task'
-  if (m.kind === 'bullet') return 'md-outline-bullet'
-  if (m.kind === 'alphabetical') return 'md-outline-alpha'
-  return null
-}
 
 export const railClass = (r: Pick<RailIntent, 'typeClass' | 'head' | 'first' | 'end'>): string =>
   cx(
@@ -456,7 +449,7 @@ function deriveLines(facts: LineFacts, scan: DocScan, from: number, to: number):
     const li = lineIntentsInto(scan, i, NO_CARET, out)
     facts.perLine[i] = out
     facts.listLevels[i] = li ? li.level : -1
-    facts.listKinds[i] = li ? (railTypeClass(li) ?? '') : ''
+    facts.listKinds[i] = li ? (LIST_TYPES[li.kind].rail ?? '') : ''
     facts.quoteDepths[i] = quoteDepthOf(scan.lines[i])
   }
 }
@@ -657,12 +650,12 @@ function pushConstruct(
       intents.push({
         kind: 'hide',
         from: innerStart + lm.markerStart,
-        to: innerStart + lm.box.start,
+        to: innerStart + lm.boxStart,
       })
       intents.push({
         kind: 'widget',
-        from: innerStart + lm.box.start,
-        to: innerStart + lm.box.end,
+        from: innerStart + lm.boxStart,
+        to: innerStart + lm.markerEnd,
         spec: {
           type: 'checkbox',
           checked: lm.checked,
@@ -670,7 +663,7 @@ function pushConstruct(
       })
       intents.push({
         kind: 'hide',
-        from: innerStart + lm.box.end,
+        from: innerStart + lm.markerEnd,
         to: innerStart + lm.contentStart,
       })
       intents.push({

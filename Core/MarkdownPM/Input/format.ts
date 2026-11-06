@@ -10,7 +10,7 @@ import {
   isBlank,
   headingParts,
   isCalloutHead,
-  listMarkerText,
+  LIST_TYPES,
   indentWidth,
   parseListMarker,
   stripQuotePrefix,
@@ -386,7 +386,7 @@ export function setList(
   kind: ListKind,
   settings: Personalization,
 ): FormatEdit {
-  const marker = listMarkerText(kind)
+  const { marker } = LIST_TYPES[kind]
   const changes: FormatEdit['changes'] = []
   let selection: number | undefined
   const reach = listReach(scan, from, to, settings)

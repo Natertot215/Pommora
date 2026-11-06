@@ -25,7 +25,7 @@ import {
 } from '../Engine/markdownCode'
 import {
   isBlank,
-  listMarkerText,
+  LIST_TYPES,
   MAX_NESTING_LEVEL,
   calloutHeadPrefixLen,
   codeSeat,
@@ -79,7 +79,7 @@ export function continueListOnEnter(scan: DocScan, selStart: number, selEnd: num
 
   // Enter ALWAYS continues the list, even on an empty item — the exits are Shift+Enter and Backspace on the empty marker.
   const indent = line.slice(pfx.length, lm.markerStart)
-  const insert = `\n${pfx}${indent}${listMarkerText(lm.kind)}`
+  const insert = `\n${pfx}${indent}${LIST_TYPES[lm.kind].marker}`
   return { from: selStart, to: selStart, insert, selection: selStart + insert.length, relist: true }
 }
 
