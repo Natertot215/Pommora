@@ -332,7 +332,7 @@ function listReach(
   const upTo = lineIndexAt(scan, reachEnd(scan.text, from, to))
   const own = scan.fences[anchor]?.from
   const region = scan.fences[upTo]?.from === own ? own : undefined
-  const endOf = (k: number): number => subBlockAt(scan, scan.lineStarts[k])!.to
+  const endOf = (k: number): number => subBlockAt(scan, scan.lineStarts[k]).to
   const blank = (k: number): boolean => isBlank(splitPrefix(scan, k).body)
   const owners = ownersOf(scan, anchor, region)
   const item = owners[0]?.k ?? null
@@ -452,9 +452,7 @@ export function setBlock(scan: DocScan, from: number, to: number, fmt: BlockForm
     case 'callout': {
       if (isCalloutHead(line) || fenceDelimiter(scan, k)) return { changes: [] }
       const at = pastSign(scan, ls)
-      const own = doc.slice(at, le)
-      const body = stripInnerMarkers(own)
-      const next = `> [!callout] ${parseListMarker(own) ? body : stripQuotePrefix(body)}`
+      const next = `> [!callout] ${stripInnerMarkers(stripQuotePrefix(doc.slice(at, le)))}`
       return { changes: [{ from: at, to: le, insert: next }], selection: at + next.length }
     }
     case 'code': {

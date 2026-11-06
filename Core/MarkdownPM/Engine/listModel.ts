@@ -82,9 +82,8 @@ export function siblingsAt(scan: DocScan, i: number): { items: number[]; last: n
 }
 
 /** `to` is the last line's end, EXCLUSIVE of the trailing newline. The move logic reads only these two offsets, so it is block-type-blind. */
-export function subBlockAt(scan: DocScan, pos: number): BlockSpan | null {
+export function subBlockAt(scan: DocScan, pos: number): BlockSpan {
   const first = lineIndexAt(scan, pos)
-  if (scan.markers[first] === null) return null
   const role = rolesAgainst(scan, first)
   let last = first
   while (last + 1 < scan.lines.length && role(last + 1) === 'nested') last++
@@ -100,7 +99,7 @@ export function ownersOf(
   for (let j = k; j >= 0; j--) {
     const lm = markerIn(scan, j, region)
     if (lm === null) continue
-    const end = subBlockAt(scan, scan.lineStarts[j])!.to
+    const end = subBlockAt(scan, scan.lineStarts[j]).to
     if (end >= scan.lineStarts[k]) owners.push({ k: j, end })
     if (lm.level === 0 && quoteDepthOf(scan.lines[j]) === 0) break
   }

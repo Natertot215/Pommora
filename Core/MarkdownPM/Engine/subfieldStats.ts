@@ -11,7 +11,6 @@ import {
   loneWebpageEmbed,
   type MarkdownScope,
   markerRegex,
-  parseListMarker,
 } from './detect'
 
 /** `lines` counts source lines the document holds; `words`/`characters` count the prose the editor draws. */
@@ -25,12 +24,13 @@ export interface PageStats {
 /** Chrome and widgets are replaced by a NEWLINE rather than a space: newlines are stripped before characters are counted, so a space placeholder was itself counted and made a long fence add a character per line. */
 const GONE = '\n'
 
-function proseStart(line: string): number {
+function proseStart(scan: DocScan, i: number): number {
+  const line = scan.lines[i]
   if (loneEmbedTitle(line) !== null || loneWebpageEmbed(line)) return line.length
   const base = calloutHeadPrefixLen(line) ?? quotePrefix(line).length
   const inner = line.slice(base)
   if (isThematicBreakLine(inner)) return line.length
-  return base + (headingParts(inner)?.contentStart ?? parseListMarker(inner)?.contentStart ?? 0)
+  return scan.markers[i]?.contentStart ?? base + (headingParts(inner)?.contentStart ?? 0)
 }
 
 type Hidden = readonly [from: number, to: number, fill: string]
@@ -158,7 +158,7 @@ export function rangeStats(scan: DocScan, from: number, to: number): PageStats {
       continue
     }
     const ls = lineStarts[i]
-    const start = ls + Math.max(proseStart(lines[i]), from - ls)
+    const start = ls + Math.max(proseStart(scan, i), from - ls)
     while (h < hidden.length && hidden[h][1] <= start) h++
     rows.push(drawnSlice(scan.text, start, clamp(ls + lines[i].length, start, to), hidden, h))
   }

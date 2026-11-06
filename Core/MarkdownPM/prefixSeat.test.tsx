@@ -134,7 +134,7 @@ describe('a selection a change or a keystroke has to answer for', () => {
       view.focus()
       view.dispatch({ selection: { anchor: word, head: word + 4 } })
       const scan = docScan(view.state)
-      const changes = dropChanges(scan, subBlockAt(scan, 0)!, {
+      const changes = dropChanges(scan, subBlockAt(scan, 0), {
         at: doc.indexOf('- delta'),
         indent: '',
         line: 3,

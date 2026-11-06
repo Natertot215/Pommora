@@ -80,6 +80,10 @@ describe('computeStats — a line is read from the base the renderer reads it fr
     expect(computeStats('> [!note] Remember the deadline\n> It is on Friday.').words).toBe(7)
   })
 
+  it("a callout head's `- foo` counts as the text it shows", () => {
+    expect(computeStats('> [!note] - foo')).toMatchObject({ words: 2, characters: 5 })
+  })
+
   it('a rule inside a quote is still a rule', () => {
     expect(computeStats('> ---')).toEqual({ lines: 1, words: 0, characters: 0, citations: 0 })
   })

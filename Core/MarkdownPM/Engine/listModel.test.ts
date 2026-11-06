@@ -41,7 +41,6 @@ describe('subBlockAt × block math', () => {
 /** Drop the item whose line contains `grab` so it starts at `at`. */
 function drop(doc: string, grab: number, at: number): string {
   const block = subBlockAt(scanDoc(doc), grab)
-  if (!block) throw new Error('grab not on a list line')
   const scan = scanDoc(doc)
   const changes = dropChanges(scan, block, { at, line: lineIndexAt(scan, at) })
   return changes ? applyEdits(doc, changes) : doc
@@ -63,26 +62,23 @@ describe('a drop in a cell', () => {
 describe('subBlockAt', () => {
   it('returns just the line for a flat item', () => {
     const doc = '- a\n- b\n- c'
-    const b = subBlockAt(scanDoc(doc), doc.indexOf('b'))!
+    const b = subBlockAt(scanDoc(doc), doc.indexOf('b'))
     expect(doc.slice(b.from, b.to)).toBe('- b')
   })
   it('includes deeper-indented descendants', () => {
     const doc = '- a\n\t- a1\n\t- a2\n- b'
-    const b = subBlockAt(scanDoc(doc), 1)!
+    const b = subBlockAt(scanDoc(doc), 1)
     expect(doc.slice(b.from, b.to)).toBe('- a\n\t- a1\n\t- a2')
     const apart = '- a\n\n- b\n\n  cont b\n\n- c'
-    const l = subBlockAt(scanDoc(apart), apart.indexOf('- b'))!
+    const l = subBlockAt(scanDoc(apart), apart.indexOf('- b'))
     expect(apart.slice(l.from, l.to)).toBe('- b')
-  })
-  it('returns null off a list line', () => {
-    expect(subBlockAt(scanDoc('plain text'), 2)).toBe(null)
   })
 })
 
 describe('drag reorders source lines', () => {
   it("refuses a drop on the dragged item's own edges, so a release there cancels in place", () => {
     const doc = '- a\n- b\n  - child\n- c'
-    const block = subBlockAt(scanDoc(doc), lineStart(doc, '- b'))!
+    const block = subBlockAt(scanDoc(doc), lineStart(doc, '- b'))
     expect(dropChanges(scanDoc(doc), block, { at: block.from, line: 1 })).toBeNull()
     expect(dropChanges(scanDoc(doc), block, { at: block.to + 1, line: 3 })).toBeNull()
   })
@@ -152,7 +148,7 @@ describe('a drag recounts on its own surface', () => {
     const doc = '```\n1. a\n2. b\n```'
     const scan = scanDoc(doc, 'lists')
     const at = doc.indexOf('1. a')
-    const block = subBlockAt(scan, doc.indexOf('2. b'))!
+    const block = subBlockAt(scan, doc.indexOf('2. b'))
     const changes = dropChanges(scan, block, { at, line: lineIndexAt(scan, at) })
     expect(applyEdits(doc, changes!)).toBe('```\n1. b\n2. a\n```')
   })
@@ -187,7 +183,7 @@ describe('a drag keeps the start of the run it lands in', () => {
 describe('a blank line ends a list', () => {
   it('stops the walks at it, and a carried block\u2019s own blank line does not count', () => {
     const doc = '- a\n\n  para\n- b'
-    expect(subBlockAt(scanDoc(doc), 0)!.to).toBe(3)
+    expect(subBlockAt(scanDoc(doc), 0).to).toBe(3)
     expect(siblingsAt(scanDoc(doc), 3).items).toEqual([3])
     const code = '- a\n  ```\n  x\n\nflush\n  ```\n- b'
     expect(siblingsAt(scanDoc(code), 0).items).toEqual([0, 6])
@@ -205,13 +201,13 @@ describe('nested sub-block moves as a unit', () => {
 describe('re-nesting on drop (slot.indent adopts the target depth)', () => {
   it('flattens a nested item to root when dropped at a root-indent target', () => {
     const doc = '- a\n\t- nested\n- b'
-    const block = subBlockAt(scanDoc(doc), lineStart(doc, 'nested'))!
+    const block = subBlockAt(scanDoc(doc), lineStart(doc, 'nested'))
     const changes = dropChanges(scanDoc(doc), block, { at: doc.length, indent: '', line: 2 })!
     expect(applyEdits(doc, changes)).toBe('- a\n- b\n- nested')
   })
   it('re-indents the whole sub-block, preserving relative nesting', () => {
     const doc = '- a\n\t- p\n\t\t- c\n- b'
-    const block = subBlockAt(scanDoc(doc), lineStart(doc, '- p'))!
+    const block = subBlockAt(scanDoc(doc), lineStart(doc, '- p'))
     const changes = dropChanges(scanDoc(doc), block, { at: doc.length, indent: '', line: 3 })!
     expect(applyEdits(doc, changes)).toBe('- a\n- b\n- p\n\t- c')
   })
@@ -267,7 +263,7 @@ describe('renumberRuns', () => {
 describe('drag inside a callout (prefix-aware)', () => {
   it('reorders a callout bullet without doubling the `>` prefix', () => {
     const doc = '> [!callout] head\n> - one\n> - two'
-    const block = subBlockAt(scanDoc(doc), doc.indexOf('one'))!
+    const block = subBlockAt(scanDoc(doc), doc.indexOf('one'))
     const changes = dropChanges(scanDoc(doc), block, { at: doc.length, indent: '> ', line: 2 })!
     expect(applyEdits(doc, changes)).toBe('> [!callout] head\n> - two\n> - one')
   })
@@ -279,12 +275,12 @@ describe('drag inside a callout (prefix-aware)', () => {
   })
   it('subBlockAt does NOT swallow a top-level indented sibling across the box boundary', () => {
     const doc = '> - a\n\t- x'
-    const block = subBlockAt(scanDoc(doc), doc.indexOf('a'))!
+    const block = subBlockAt(scanDoc(doc), doc.indexOf('a'))
     expect(block.to).toBe(doc.indexOf('\n')) // block is just `> - a`, not the `\t- x` line
   })
   it('subBlockAt DOES keep a same-box deeper child', () => {
     const doc = '> - a\n> \t- child'
-    const block = subBlockAt(scanDoc(doc), doc.indexOf('a'))!
+    const block = subBlockAt(scanDoc(doc), doc.indexOf('a'))
     expect(block.to).toBe(doc.length) // the `> \t- child` shares the `>` box → captured
   })
 })

@@ -19,6 +19,7 @@ describe('cached assembly ≡ pure derivation', () => {
   const corpus = [
     '- item\n\ttwo words here\n# Head\nbody\n---\npara',
     '> [!note] Head\n> - inner\n> > nested\nafter',
+    '> [!note] - foo\n> - inner\n> [!tip] 1. bar',
     '```js\nconst a = 1\n\nconst b = 2\n```\ntail',
     '> quote\n> ```\n> code\n> ```\n> after',
     '$$\nx=1\n\n- b\n$$\n- real\n1. num\n- [ ] task',
@@ -643,6 +644,21 @@ describe('callout box chrome + nested constructs', () => {
     const lineStart = doc.indexOf('> - item')
     const w = intents.find((d) => d.kind === 'widget' && d.spec.type === 'bullet')
     expect(w?.from).toBe(lineStart)
+  })
+  it('a head draws no list marker, its `- foo` showing as text', () => {
+    for (const marker of ['- ', '+ ', '1. ', 'A. ', '→ ', '- [ ] ']) {
+      const head = `> [!note] ${marker}foo`
+      for (const caret of [NO_CARET, head.length])
+        expect(
+          decorationsFor(head, tokenize(head), new Set(), caret).filter(
+            (d) =>
+              d.kind === 'widget' ||
+              d.kind === 'atomic' ||
+              (d.kind === 'line' && d.className.includes('md-list')) ||
+              (d.kind === 'class' && d.className.includes('md-list')),
+          ),
+        ).toEqual([])
+    }
   })
   it('a heading + HR render inside the box', () => {
     expect(intents.some((d) => d.kind === 'class' && d.className === 'md-h2')).toBe(true)

@@ -48,7 +48,7 @@ describe('a list block ends where the list model does', () => {
   it('takes the whole of a table an item carries, a flush row included', () => {
     const doc = '- a\n  | h | i |\n  |---|---|\n| 1 | 2 |\n- b'
     expect(span(doc)).toBe(doc)
-    expect(subBlockAt(scanDoc(doc), 0)?.to).toBe(doc.indexOf('\n- b'))
+    expect(subBlockAt(scanDoc(doc), 0).to).toBe(doc.indexOf('\n- b'))
   })
   it('ends at a blank line', () => {
     expect(span('- a\n\n- b')).toBe('- a')

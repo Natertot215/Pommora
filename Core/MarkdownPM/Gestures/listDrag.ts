@@ -73,7 +73,7 @@ export const listDragExtension: Extension = [
   shadeField,
   editorGestureCleanup,
   EditorView.domEventHandlers({
-    // A glyph owns every press on it: a primary press is the drag below, and a secondary one, a right press or a Mac Ctrl-click, only opens the type menu. Neither seats the caret or starts CM's text-selection drag, which mousedown still starts when the pointerdown resolves no block.
+    // A glyph owns every press on it: a primary press is the drag below, and a secondary one, a right press or a Mac Ctrl-click, only opens the type menu. Neither seats the caret or starts CM's text-selection drag.
     mousedown(e) {
       if ((e.button !== 0 && e.button !== 2) || !glyphAt(e)) return false
       e.preventDefault()
@@ -84,9 +84,7 @@ export const listDragExtension: Extension = [
       const glyph = glyphAt(e)
       if (!glyph) return false
       const pos = view.posAtDOM(glyph)
-      const scan = docScan(view.state)
-      const block = subBlockAt(scan, pos)
-      if (!block) return false
+      const block = subBlockAt(docScan(view.state), pos)
 
       e.preventDefault()
 

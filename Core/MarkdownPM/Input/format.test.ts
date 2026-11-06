@@ -474,6 +474,9 @@ describe('setBlock', () => {
     for (const [line, out] of [
       ['## hi', '> [!callout] hi'],
       ['> hi', '> [!callout] hi'],
+      ['> - foo', '> [!callout] foo'],
+      ['> 1. foo', '> [!callout] foo'],
+      ['> ## hi', '> [!callout] hi'],
       ['- > foo', '> [!callout] > foo'],
     ])
       expect(apply(line, setBlock(scanDoc(line), 0, line.length, 'callout'))).toBe(out)

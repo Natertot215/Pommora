@@ -5,7 +5,6 @@ import {
   isHeadingLine,
   isSequenced,
   LIST_TYPES,
-  parseListMarker,
   headingParts,
   fenceBodyStart,
   awaitsSign,
@@ -15,7 +14,6 @@ import {
   type DiffTally,
   type FenceInfo,
   type ListMarker,
-  readsLists,
 } from './detect'
 import { carriedFrom, type DocScan, spanAt } from './docScan'
 import { ridesList } from './listModel'
@@ -61,7 +59,7 @@ function pushPrefix(intents: DecoIntent[], from: number, to: number, drawnOver =
 
 function pushListLine(intents: DecoIntent[], ls: number, innerStart: number, lm: ListMarker): void {
   intents.push({ kind: 'line', from: ls, className: listLineClass(lm), level: lm.level })
-  pushPrefix(intents, innerStart, innerStart + lm.markerStart)
+  pushPrefix(intents, innerStart, ls + lm.markerStart)
 }
 
 const glyphOf = (e: CitationEntry): string => (e.ordinal === null ? '–' : `${e.ordinal}.`)
@@ -341,19 +339,10 @@ export function lineIntentsInto(
   intents: DecoIntent[],
   ranged = false,
 ): ListMarker | null {
-  const line = scan.lines[i]
-  const ls = scan.lineStarts[i]
-  const le = ls + line.length
   const base = lineChrome(scan, i, selStart, intents)
   if (base === null) return null
-
-  const li = pushConstruct(intents, scan, line, ls, base, selStart, ranged)
-  if (li) {
-    const contentFrom = ls + base + li.contentStart
-    if (contentFrom < le)
-      intents.push({ kind: 'class', from: contentFrom, to: le, className: 'md-list-text' })
-  }
-  return li
+  pushConstruct(intents, scan, i, base, selStart, ranged)
+  return scan.markers[i]
 }
 
 export function railIntents(
@@ -605,24 +594,22 @@ export function seatPastMarker(
 function pushConstruct(
   intents: DecoIntent[],
   scan: DocScan,
-  line: string,
-  ls: number,
+  i: number,
   base: number,
   selStart: number,
   ranged: boolean,
-): ListMarker | null {
+): void {
+  const line = scan.lines[i]
+  const ls = scan.lineStarts[i]
+  const lm = scan.markers[i]
   const inner = base === 0 ? line : line.slice(base)
   const innerStart = ls + base
   const le = ls + line.length
   const caretOnLine = selStart >= ls && selStart <= le
   const page = scan.scope === 'page'
-  const lm = readsLists(scan.scope) ? parseListMarker(inner) : null
   // Only a resting caret reveals the marker: a drag's head snapping across the atomic marker would otherwise swap glyph and source under the pointer on every move.
   const onMarker =
-    !ranged &&
-    lm !== null &&
-    selStart >= innerStart + lm.markerStart &&
-    selStart <= innerStart + lm.markerEnd
+    !ranged && lm !== null && selStart >= ls + lm.markerStart && selStart <= ls + lm.markerEnd
 
   const bulletAbsorbs = base > 0 && !onMarker && lm?.kind === 'bullet'
   const hrAbsorbs = base > 0 && !caretOnLine && isThematicBreakLine(inner)
@@ -649,13 +636,13 @@ function pushConstruct(
     if (!onMarker) {
       intents.push({
         kind: 'hide',
-        from: innerStart + lm.markerStart,
-        to: innerStart + lm.boxStart,
+        from: ls + lm.markerStart,
+        to: ls + lm.boxStart,
       })
       intents.push({
         kind: 'widget',
-        from: innerStart + lm.boxStart,
-        to: innerStart + lm.markerEnd,
+        from: ls + lm.boxStart,
+        to: ls + lm.markerEnd,
         spec: {
           type: 'checkbox',
           checked: lm.checked,
@@ -663,48 +650,45 @@ function pushConstruct(
       })
       intents.push({
         kind: 'hide',
-        from: innerStart + lm.markerEnd,
-        to: innerStart + lm.contentStart,
+        from: ls + lm.markerEnd,
+        to: ls + lm.contentStart,
       })
       intents.push({
         kind: 'atomic',
-        from: innerStart + lm.markerStart,
-        to: innerStart + lm.contentStart,
+        from: ls + lm.markerStart,
+        to: ls + lm.contentStart,
       })
     }
-    return lm
   } else if (lm?.kind === 'bullet') {
     // The replace runs THROUGH the marker-content gap, so neither a source tab nor pasted gap spaces occupy the in-flow slot; the visible gap is the glyph's CSS margin.
     intents.push({ kind: 'line', from: ls, className: listLineClass(lm), level: lm.level })
-    if (onMarker) pushPrefix(intents, innerStart, innerStart + lm.markerStart)
+    if (onMarker) pushPrefix(intents, innerStart, ls + lm.markerStart)
     else {
       const slotStart = bulletAbsorbs ? ls : innerStart
       intents.push({
         kind: 'widget',
         from: slotStart,
-        to: innerStart + lm.contentStart,
+        to: ls + lm.contentStart,
         spec: { type: 'bullet' },
       })
-      if (innerStart + lm.markerStart > slotStart)
-        intents.push({ kind: 'atomic', from: slotStart, to: innerStart + lm.markerStart })
+      if (ls + lm.markerStart > slotStart)
+        intents.push({ kind: 'atomic', from: slotStart, to: ls + lm.markerStart })
       intents.push({
         kind: 'atomic',
-        from: innerStart + lm.markerStart,
-        to: innerStart + lm.contentStart,
+        from: ls + lm.markerStart,
+        to: ls + lm.contentStart,
       })
     }
-    return lm
   } else if (lm) {
     // Literal recolored source, no widget, so typing after the marker can't hit an atomic range.
     pushListLine(intents, ls, innerStart, lm)
     intents.push({
       kind: 'class',
-      from: innerStart + lm.markerStart,
-      to: innerStart + lm.markerEnd,
+      from: ls + lm.markerStart,
+      to: ls + lm.markerEnd,
       className: textMarkerClass(lm),
     })
-    pushMarkerGap(intents, innerStart + lm.markerEnd, innerStart + lm.contentStart, le)
-    return lm
+    pushMarkerGap(intents, ls + lm.markerEnd, ls + lm.contentStart, le)
   } else if (page && isThematicBreakLine(inner) && !caretOnLine) {
     intents.push({
       kind: 'widget',
@@ -713,5 +697,6 @@ function pushConstruct(
       spec: { type: 'hr' },
     })
   }
-  return null
+  if (lm && ls + lm.contentStart < le)
+    intents.push({ kind: 'class', from: ls + lm.contentStart, to: le, className: 'md-list-text' })
 }
