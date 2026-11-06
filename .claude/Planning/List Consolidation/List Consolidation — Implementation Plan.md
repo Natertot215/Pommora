@@ -18,8 +18,8 @@
 
 | Phase | Estimate | Tests at the Phase's Head | Measured |
 |-------|----------|---------------------------|----------|
-| 0 · Drives and Baseline | 0 | 9,121 | |
-| 1 · One Scan Per Surface | -108 (+687 / -795) | 9,127 | |
+| 0 · Drives and Baseline | 0 | 9,121 | 0 |
+| 1 · One Scan Per Surface | -108 (+687 / -795) | 9,127 | -91 (+740 / -831), 9,134 tests |
 | 2 · Markdown Code Blocks and Masked Markers | -39 (+838 / -877), +69 its own | 9,140 | |
 | 3 · Blank Lines and Numbering | -126 (+1000 / -1126), -87 its own | 9,170 | |
 | 4 · Paste | -124 (+1002 / -1126), +2 its own | 9,177 | |
@@ -225,13 +225,13 @@ The order is what makes each step land once. The scan goes first, since every la
 #### Process Overview
 
 - [x] `[Stop: ratified; no code changes before this]`
-- [ ] **Phase 0** — Drives and Baseline
+- [x] **Phase 0** — Drives and Baseline
   - [x] Task 0-1 · The List Types Drive's frame
   - [x] Task 0-2 · The baseline drives
-- [ ] **Phase 1** — One Scan Per Surface
-  - [ ] Task 1-1 · One scan per surface
-  - [ ] Task 1-2 · Drive group 1
-  - [ ] Review Checkpoint
+- [x] **Phase 1** — One Scan Per Surface
+  - [x] Task 1-1 · One scan per surface
+  - [x] Task 1-2 · Drive group 1
+  - [x] Review Checkpoint
 - [ ] **Phase 2** — Markdown Code Blocks and Masked Markers
   - [ ] Task 2-1 · Code blocks and masked markers
   - [ ] Task 2-2 · Pins and delimiters
@@ -338,9 +338,9 @@ The existing MarkdownPM drives should be green at the BASELINE head.
 
 **VERIFY**
 
-- [ ] Before committing, the executor makes each pin's revert as *Phase 1 — Notes* names it (`literalLines`' branch and `withCitations`' scope test removed, and `pastedCellText` on `scanDoc(doc)`), watches the pins fail, then restores them.
-- [ ] Run the gates; the test count reads the Net Ledger's row.
-- [ ] `git grep -n -P "readsFrom\b" -- Core/MarkdownPM` still prints its Phase 1 readers, and `git grep -P "\bscope\b" -- Core/MarkdownPM ':!*.test.*' | wc -l` reads 64, from 223.
+- [x] Before committing, the executor makes each pin's revert as *Phase 1 — Notes* names it (`literalLines`' branch and `withCitations`' scope test removed, and `pastedCellText` on `scanDoc(doc)`), watches the pins fail, then restores them.
+- [x] Run the gates; the test count reads the Net Ledger's row.
+- [x] `git grep -n -P "readsFrom\b" -- Core/MarkdownPM` still prints its Phase 1 readers, and `git grep -P "\bscope\b" -- Core/MarkdownPM ':!*.test.*' | wc -l` reads 64, from 223.
 
 #### Task 1-2
 
@@ -352,12 +352,12 @@ Drive group 1 should prove each surface reads what it should.
 
 **VERIFY**
 
-- [ ] `node live-drive.mjs 1` reads 27/27 at this task's head.
+- [x] `node live-drive.mjs 1` reads 27/27 at this task's head.
 
 #### Review Checkpoint
 
-- [ ] Every reader that can ask the scan does, and no surface holds a block it doesn't read; both reviewers' findings folded or recorded.
-- [ ] *§When Drives Run*'s row for Phase 1 green. Four shots read and captioned.
+- [x] Every reader that can ask the scan does, and no surface holds a block it doesn't read; both reviewers' findings folded or recorded.
+- [x] *§When Drives Run*'s row for Phase 1 green. Four shots read and captioned.
 
 ---
 
@@ -926,3 +926,6 @@ Each row's detail sits in *Investigation · §The Reconciliation List*. Tests an
 None survives ratification. *Morning Report* lists the calls taken for Nathan's eye.
 
 #### Deviations
+
+- **Phase 1's Fold (`1c4888010`, `da068b25d`):** the checkpoint found three readers of cell and Text strings still reading fence-shaped lines through `codeMask` after their surfaces stopped, so a resting cell and a focused cell disagreed on a `§` run, and a Text value drew a link the index and sort couldn't see. `inlineCodeMask` joined `markdownCode.ts` and serves `sectionRunsIn`, `shownProse`, `valueLinks`, and a rename's reach into a Text value, which threads `inCode` through `rewriteConnections`, `rewriteHeadingConnections`, and `fileRewrites`. `listReach`'s `blank` returned to `splitPrefix`'s body, since Phase 1 had changed a pick on an empty callout head. Smaller folds took `cellScan`, `docScan.after(tr)`, and a required `tokenizeChunk` scope, and `citationRowMenu` became a constant. Later rows read about 17 lines, 7 tests, and 2 `scope` sites above their estimates, and every later Measured carries that offset. Phase 2a's `blank` lands as `splitPrefix`'s body rather than the patch's slice.
+
