@@ -190,6 +190,29 @@ describe('checkbox canonicalization', () => {
     const doc = '```\n- [ ] \n```'
     expect(smartBackspace(scanDoc(doc), 10, 10)).toBeNull()
   })
+  it('-[] writes a box at a line’s start in a Markdown code block, past the block’s lead', () => {
+    for (const [doc, written] of [
+      ['```md\n-[]\n```', '```md\n- [ ] \n```'],
+      ['  ```md\n  -[]\n  ```', '  ```md\n  - [ ] \n  ```'],
+      ['> ```md\n> -[]\n> ```', '> ```md\n> - [ ] \n> ```'],
+    ]) {
+      const end = doc.lastIndexOf('\n')
+      expect(apply(doc, canonicalizeCheckbox(scanDoc(doc), end, end, ' ')!)).toBe(written)
+    }
+  })
+  it('stays literal everywhere else in code', () => {
+    for (const doc of [
+      '```md\nx -[]\n```',
+      '```md\n- -[]\n```',
+      '```md diff\n-[]\n```',
+      '```js\n-[]\n```',
+      '```js\n-[x]\n```',
+      '```\n-[]\n```',
+    ]) {
+      const end = doc.lastIndexOf('\n')
+      expect(canonicalizeCheckbox(scanDoc(doc), end, end, ' ')).toBeNull()
+    }
+  })
 })
 
 describe('auto-pair + auto-delete', () => {
@@ -640,6 +663,25 @@ describe('dash + arrow auto-format', () => {
     expect(apply('\t-', dashArrow(scanDoc('\t-'), 2, 2, '>', off)!)).toBe('\t→')
     expect(apply('> -', dashArrow(scanDoc('> -'), 3, 3, '>', off)!)).toBe('> →')
   })
+  it('-> writes an arrow at a line’s start in a Markdown code block, and nowhere else in code', () => {
+    for (const [doc, written] of [
+      ['```md\n-\n```', '```md\n→\n```'],
+      ['  ```md\n  -\n  ```', '  ```md\n  →\n  ```'],
+    ]) {
+      const end = doc.lastIndexOf('\n')
+      expect(apply(doc, dashArrow(scanDoc(doc), end, end, '>')!)).toBe(written)
+    }
+    for (const doc of [
+      '```md\nx -\n```',
+      '```md\n- -\n```',
+      '```md diff\n-\n```',
+      '```js\n-\n```',
+      '```\n-\n```',
+    ]) {
+      const end = doc.lastIndexOf('\n')
+      expect(dashArrow(scanDoc(doc), end, end, '>')).toBeNull()
+    }
+  })
 })
 
 describe('ellipsis', () => {
@@ -710,6 +752,12 @@ describe('punctuation', () => {
     expect(punctuation(scanDoc('`a!`'), 3, 3, '!', on)).toBeNull()
     expect(punctuation(scanDoc('$$\na |\n$$'), 6, 6, '|', on)).toBeNull()
     expect(punctuation(scanDoc('a!'), 2, 2, '!')).toBeNull()
+  })
+  it('a third mark stays literal in code', () => {
+    for (const doc of ['```js\na‼\n```', '```md\na‼\n```']) {
+      const end = doc.lastIndexOf('\n')
+      expect(punctuation(scanDoc(doc), end, end, '!', on)).toBeNull()
+    }
   })
   it('a pipe pair opening a line or following a pipe stays literal', () => {
     expect(punctuation(scanDoc('|'), 1, 1, '|', on)).toBeNull()
@@ -917,6 +965,12 @@ describe('callout shorthand (||)', () => {
   it('only fires on a bare `|` alone on the line (never mid-line / inside a table)', () => {
     expect(calloutShorthand(scanDoc('a |'), 3, 3, '|')).toBeNull()
     expect(calloutShorthand(scanDoc('| x '), 4, 4, '|')).toBeNull()
+  })
+  it('stays literal in code', () => {
+    for (const doc of ['```js\n|\n```', '```md\n|\n```']) {
+      const end = doc.lastIndexOf('\n')
+      expect(calloutShorthand(scanDoc(doc), end, end, '|')).toBeNull()
+    }
   })
   it('preserves content already on the line (||ab → callout with "ab" body, no trailing line)', () => {
     const doc = '|ab'

@@ -340,6 +340,70 @@ describe('setList over a whole block', () => {
   })
 })
 
+describe('the rows in a code block', () => {
+  const row = (doc: string, action: string, from: number, to = from): string =>
+    apply(doc, editFor(action, scanDoc(doc), from, to, {}))
+  const word = '```js\nword\n```'
+  const [wordFrom, wordTo] = [word.indexOf('word'), word.indexOf('word') + 4]
+
+  it('Bold writes its marks around the selection', () => {
+    expect(row(word, 'format:bold', wordFrom, wordTo)).toBe('```js\n**word**\n```')
+  })
+  it('Heading writes past the line’s own indent and strips nothing', () => {
+    expect(row(word, 'heading:2', wordFrom)).toBe('```js\n## word\n```')
+    expect(row('```js\n- foo\n```', 'heading:2', 6)).toBe('```js\n## - foo\n```')
+    expect(row('```js\n    foo\n```', 'heading:2', 6)).toBe('```js\n    ## foo\n```')
+  })
+  it('a list pick counts nothing, and reaches no line past the ones it touches', () => {
+    const doc = '```js\nfoo\nbar\n7. baz\n```'
+    expect(row(doc, 'list:ordered', 6, 13)).toBe('```js\n1. foo\n1. bar\n7. baz\n```')
+    expect(row('```js\n- a\n- b\n```', 'list:ordered', 8)).toBe('```js\n1. - a\n- b\n```')
+  })
+  it('a row picked twice writes again', () => {
+    const lists = (scan: DocScan, f: number, t: number) => setList(scan, f, t, 'ordered', {})
+    const heads = (scan: DocScan, f: number, t: number) => setHeading(scan, f, t, 2)
+    const foo = '```js\n- foo\n```'
+    expect(picked(foo, 8, 8, lists, lists)).toBe('```js\n1. 1. - foo\n```')
+    expect(picked(foo, 8, 8, heads, heads)).toBe('```js\n## ## - foo\n```')
+    const bold = '```js\n**word**\n```'
+    expect(row(bold, 'format:bold', 6, 14)).toBe('```js\n****word****\n```')
+  })
+  it('refuses on a delimiter line', () => {
+    const scan = scanDoc(word)
+    for (const action of [
+      'format:bold',
+      'heading:2',
+      'list:ordered',
+      'block:quote',
+      'block:callout',
+    ])
+      for (const at of [word.indexOf('js'), word.lastIndexOf('```')])
+        expect(editFor(action, scan, at, at + 2, {})?.changes ?? []).toEqual([])
+  })
+  it('writes after a diff line’s sign, whatever the language, so the sign survives', () => {
+    for (const fence of ['```diff', '```md diff']) {
+      const doc = `${fence}\n- removed\n+added\n\`\`\``
+      const removed = doc.indexOf('- removed')
+      const added = doc.indexOf('+added')
+      const on = (at: number, line: string, written: string) =>
+        doc.slice(0, at) + written + doc.slice(at + line.length)
+      expect(row(doc, 'list:ordered', removed)).toBe(on(removed, '- removed', '- 1. removed'))
+      expect(row(doc, 'heading:2', removed)).toBe(on(removed, '- removed', '- ## removed'))
+      expect(row(doc, 'block:quote', added)).toBe(on(added, '+added', '+> added'))
+      expect(row(doc, 'block:callout', added)).toBe(on(added, '+added', '+> [!callout] added'))
+      expect(row(doc, 'format:bold', added, added + 6)).toBe(on(added, '+added', '+**added**'))
+    }
+  })
+  it('a selection from prose through the block: list picks leave the code, Heading and Bold write', () => {
+    const doc = 'para\n```js\n- code\n```\nmore'
+    expect(row(doc, 'list:bullet', 0, doc.length)).toBe('- para\n```js\n- code\n```\n- more')
+    expect(row(doc, 'heading:2', 0, doc.length)).toBe('## para\n```js\n## - code\n```\n## more')
+    const scan = scanDoc(doc)
+    for (const to of [doc.indexOf('code') + 4, doc.length])
+      expect(editFor('format:bold', scan, 0, to, {})).not.toBeNull()
+  })
+})
+
 describe('setBlock', () => {
   it('toggles a blockquote on and off', () => {
     expect(apply('text', setBlock(scanDoc('text'), 0, 4, 'quote'))).toBe('> text')

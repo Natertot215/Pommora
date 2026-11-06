@@ -443,6 +443,8 @@ export function setBlock(scan: DocScan, from: number, to: number, fmt: BlockForm
         ...l,
         ls: signSeatAt(scan, l.ls) ?? l.ls,
       }))
+      if (lines.length === 1 && fenceDelimiter(scan, lineIndexAt(scan, from)))
+        return { changes: [] }
       const strip = lines.every(({ ls: s, le: e }) => isQuoteToggleable(doc.slice(s, e)))
       const changes: FormatEdit['changes'] = []
       let lastEnd = 0
@@ -459,7 +461,8 @@ export function setBlock(scan: DocScan, from: number, to: number, fmt: BlockForm
       return lines.length === 1 ? { changes, selection: lastEnd } : { changes }
     }
     case 'callout': {
-      if (isCalloutHead(line)) return { changes: [] }
+      if (isCalloutHead(line) || fenceDelimiter(scan, lineIndexAt(scan, from)))
+        return { changes: [] }
       const at = signSeatAt(scan, ls) ?? ls
       const own = doc.slice(at, le)
       const body = stripInnerMarkers(own)
