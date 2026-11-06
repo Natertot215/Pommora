@@ -28,7 +28,7 @@
 | 5 · One Marker Grammar | -173 (+1040 / -1213), -49 its own | 9,184 | -166 (+1100 / -1266), 9,211 tests |
 | 6 · One Set of List Keys, and the Scope's Name | -201 (+1108 / -1309), -28 its own | 9,185 | -199 (+1164 / -1363), 9,215 tests |
 | 7 · One Definition Per Type | -260 (+1153 / -1413), -59 its own | 9,191 | -259 (+1223 / -1482), 9,222 tests |
-| 8 · The Word Rule | -307 (+1172 / -1479), -47 its own | 9,196 | |
+| 8 · The Word Rule | -307 (+1172 / -1479), -47 its own | 9,196 | -294 (+1254 / -1548), 9,228 tests |
 | 9 · Right-Click | -308 (+1386 / -1694), -1 its own | 9,204 | |
 | 10 · Text Properties | -286 (+1465 / -1751), +22 its own | 9,219 | |
 | 11 · Docs and Issues | -286, ±0 its own | 9,219 | |
@@ -266,10 +266,10 @@ The order is what makes each step land once. The scan goes first, since every la
   - [x] Task 7-4 · Rails read the scan
   - [x] Task 7-5 · Drive group 7
   - [x] Review Checkpoint
-- [ ] **Phase 8** — The Word Rule
-  - [ ] Task 8-1 · The word rule
-  - [ ] Task 8-2 · Drive group 8
-  - [ ] Review Checkpoint
+- [x] **Phase 8** — The Word Rule
+  - [x] Task 8-1 · The word rule
+  - [x] Task 8-2 · Drive group 8
+  - [x] Review Checkpoint
 - [ ] **Phase 9** — Right-Click
   - [ ] Task 9-1 · Removal that stands alone
   - [ ] Task 9-2 · One range
@@ -681,8 +681,8 @@ Every word gesture should read a contraction whole, through `contractions`' answ
 
 **VERIFY**
 
-- [ ] The pins' reds as *Phase 8 — Notes* names them, including *answers ahead of a fence's language* without the `Prec`.
-- [ ] Run the gates; the count reads the Net Ledger's row.
+- [x] The pins' reds as *Phase 8 — Notes* names them, including *answers ahead of a fence's language* without the `Prec`.
+- [x] Run the gates; the count reads the Net Ledger's row.
 
 #### Task 8-2
 
@@ -692,12 +692,12 @@ Every word gesture should read a contraction whole, through `contractions`' answ
 
 **VERIFY**
 
-- [ ] `node live-drive.mjs 8` reads every item passing at this task's head.
+- [x] `node live-drive.mjs 8` reads every item passing at this task's head.
 
 #### Review Checkpoint
 
-- [ ] Every word gesture reads the one answer, and each accepted departure holds a pin; both reviewers' findings folded or recorded.
-- [ ] *§When Drives Run*'s row for Phase 8 green. Four shots read and captioned.
+- [x] Every word gesture reads the one answer, and each accepted departure holds a pin; both reviewers' findings folded or recorded.
+- [x] *§When Drives Run*'s row for Phase 8 green. Four shots read and captioned.
 
 ---
 
@@ -937,6 +937,7 @@ None survives ratification. *Morning Report* lists the calls taken for Nathan's 
 - **Phase 5's Fold (`4ca3472d2`):** `parseListMarker` dropped a capture group nothing read, and five pins joined lines nothing checked, among them a box's toggle past a document's first line. Phase 5's patch took `cellScan(text)` where it wrote `scanDoc(text, 'cell')`, so Phase 6a renames the scope once, at `cellScan`'s definition. Phase 7a keeps `const b = m.indices?.[3]` above `if (b)`. The running offset after Phase 5 is +7 lines and +27 tests.
 - **Phase 6's Fold (`db74ec96a`):** a cell's Shift-Enter took `insertNewline`, since Enter's move to it left the two keys disagreeing over a selection across items, and Enter's recount there is a third difference beyond Task 6-2's two, one that matches a page. Shift-Backspace joined `editorBase` for every surface, since a cell's eroded a marker. `seatPastMarkerNow` left: a cell's mount dispatches `select.pointer`, and `seated` inlines its seat. Phase 9a's `CellEditor` hunk keeps that event and the reworded comment, and Drive Groups 7 and 8 keep `MATRIX.md`'s new quote line. The running offset after Phase 6 is +2 lines and +30 tests.
 - **Phase 7's Fold (`896ed6e9d`):** `readLine` read a marker the scan says isn't there, so Heading or Paragraph on a head like `> [!note] - foo` deleted its visible `- `, and on `$$\n- b\n$$` a formula's dash. `readLine` and `setBlock`'s callout now read `scan.markers[k]`, and `stripInnerMarkers` left. A depth-two `> > - foo` picked Callout now writes `> [!callout] foo`, which goes further than *§Behavior Changes* row 64 states, and a plain code block's `- foo` keeps its dash under Callout. `seatPastMarker`'s fold moved to Task 9-5. The running offset after Phase 7 is +1 line and +31 tests.
+- **Phase 8's Fold (`96cd023e4`):** both reviewers found Option-arrow crossing a line break stopping inside a contraction, since CodeMirror takes one categorizer at a gesture's start and `contractions` read only that line, a regression from the joined atoms that planning's single-line differential missed. `contractions` now answers over a window from the previous text line to the next, at +12 lines, so *§Behavior Changes* row 51's quote riding crosses a break too, and row 63 reaches a neighbor word beside a contraction in a language fence. `MATRIX.md`'s two word-rule lines read true, so Drive Groups 9 and 10 keep the new wording, and Task 11-1's sentence on a fence's word characters takes that clause if it stays. The running offset after Phase 8 is +13 lines and +32 tests.
 - **For the Morning:** Blockquote and Callout inside a plain code block don't write unaware as C-5's other rows do, and a partial selection reaching a delimiter can still dissolve a block. That matches the baseline, and C-7 keeps Insert ▸ as it was, so it stands until Nathan rules.
 - **For the Morning:** dropping an item just under another takes that item's wrapped text or carried block with it, as it does at the baseline, since the bottom boundary reads the item's own line. Reading its sub-block's end is about two lines, but it moves where a parent's drop lands, which is a drag-feel decision.
 - **For the Morning:** a code block an item carries draws flush with the page, so the rail crosses its box and text, and a flush line in a cell does the same. Both shots are in `$SHOTS/p3-list-types`. No decision names it.
