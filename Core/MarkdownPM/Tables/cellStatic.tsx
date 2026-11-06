@@ -421,10 +421,14 @@ function pointAt(cell: HTMLElement, offset: number, side: 'start' | 'end'): [Nod
   return side === 'end' ? before : null
 }
 
-function showSource(cell: HTMLElement, from: number, to: number): void {
+function paintSeat(cell: HTMLElement, from: number, to: number): void {
   const a = pointAt(cell, from, 'start')
   const b = pointAt(cell, to, 'end')
-  if (a && b) window.getSelection()?.setBaseAndExtent(a[0], a[1], b[0], b[1])
+  if (!a || !b) return
+  const range = new Range()
+  range.setStart(...a)
+  range.setEnd(...b)
+  CSS.highlights.set('mdpm-seat', new Highlight(range))
 }
 
 interface RestingHit {
@@ -543,7 +547,7 @@ function StaticCellImpl({
       : caret
         ? cellOffsetAt(cell, caret.offsetNode, caret.offset)
         : text.length
-    routeRightClick(
+    void routeRightClick(
       host,
       cellScan(text),
       e,
@@ -560,7 +564,7 @@ function StaticCellImpl({
       },
       {
         seat: (range) => {
-          showSource(cell, range.from, range.to)
+          paintSeat(cell, range.from, range.to)
           return range
         },
         request: (from, to) => ({
@@ -575,7 +579,7 @@ function StaticCellImpl({
           else void restingAction(action, from, to)
         },
       },
-    )
+    ).then(() => CSS.highlights.delete('mdpm-seat'))
   }
 
   const claimCite = (e: React.MouseEvent): (() => void) | null => {

@@ -5,7 +5,7 @@ import { createRoot, type Root } from 'react-dom/client'
 import { EditorView } from '@codemirror/view'
 import { MarkdownTable } from './MarkdownTable'
 import { cellToSource } from '../Engine/Tables/codec'
-import { tableStubs, testHost } from '../../Testing/editorHarness'
+import { seatedText, tableStubs, testHost } from '../../Testing/editorHarness'
 import type { EditorMenuRequest } from '../../Actions/editorMenu'
 import type { GripMenuAction } from '../../Actions/gripMenu'
 import type { TablePayload } from '../Engine/Tables/clipboard'
@@ -206,6 +206,19 @@ describe('a right-click on a resting cell', () => {
     expect(format).toHaveBeenCalledWith(expect.objectContaining({ selection: 'a' }))
   })
 
+  it('seats its word apart from the document’s selection, and clears it on every reply', async () => {
+    await mount('ab cd')
+    for (const reply of [null, 'edit:copy', 'list:bullet', 'edit:paste']) {
+      await rightClick('ab cd', 3)
+      expect(seatedText()).toBe('cd')
+      expect(window.getSelection()?.rangeCount).toBe(0)
+      await choose(reply)
+      expect(seatedText()).toBe('')
+      cellText = 'ab cd'
+      await draw()
+    }
+  })
+
   it('claims the right press, so the selection and the page caret stay undisturbed', async () => {
     await mount('plain words')
     const press = new MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 2 })
@@ -285,7 +298,7 @@ describe('a row chosen at rest', () => {
       cellText = text
       await draw()
       await rightClick(text, at)
-      expect(window.getSelection()?.toString()).toBe(shown)
+      expect(seatedText()).toBe(shown)
       await choose('format:bold')
       expect(committed).toHaveBeenLastCalledWith(1, 0, want)
       expect(entered()).toBe(false)
@@ -293,7 +306,7 @@ describe('a row chosen at rest', () => {
     cellText = '_ital_ x'
     await draw()
     await rightClick('ital', 1)
-    expect(window.getSelection()?.toString()).toBe('ital')
+    expect(seatedText()).toBe('ital')
     await choose(null)
   })
 

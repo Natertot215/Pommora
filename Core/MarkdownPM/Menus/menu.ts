@@ -7,7 +7,7 @@ import { citationSeatAt, insertCitation } from '../Citations/citationActions'
 import { embedInsertAtCaret, embedSeatAt, webpageInsertAtCaret } from '../Embeds/embedInsert'
 import { pasteFromClipboard } from '../Links/pasteLink'
 import { readFormatState } from '../Input/formatState'
-import type { BlockSpan, MarkdownScope } from '../Engine/detect'
+import type { BlockSpan } from '../Engine/detect'
 import type { DocScan } from '../Engine/docScan'
 import { type EditorHost, editorHost } from '../api'
 import { applyEdit } from '../Input/applyEdit'
@@ -61,7 +61,7 @@ export function routeRightClick(
     ) => Pick<EditorMenuRequest, 'menu' | 'selection' | 'embedSeat' | 'citeSeat'>
     apply: (action: string, from: number, to: number) => void
   },
-): void {
+): Promise<void> {
   const { at, glyph, sel, word } = click
   const point = { from: at, to: at }
   const inside = !glyph && clickInside(scan.text, at, sel.from, sel.to)
@@ -72,61 +72,61 @@ export function routeRightClick(
   const pick = glyph
     ? host.menus.grip({ kind: 'glyph', current: state.list })
     : host.menus.format({ ...state, scope: scan.scope, ...surface.request(from, to) })
-  void pick.then((action) => {
+  return pick.then((action) => {
     if (action) surface.apply(action, from, to)
   })
 }
 
 /** Asks at the click and answers to the reply: the native menu holds focus, so nothing read later could say which view was clicked. Lowest precedence, so a grip, a link, or a footnote row that claimed the press keeps its own menu. */
-export const editorMenu = (scope: MarkdownScope): Extension =>
-  Prec.lowest(
-    EditorView.domEventHandlers({
-      contextmenu(event, view) {
-        const { readOnly } = view.state
-        const glyph = readOnly ? null : glyphAt(event)
-        const opened = view.state.doc
-        const hit = view.posAndSideAtCoords(event, false)
-        const wordUnder = (): BlockSpan | null => {
-          const edge = view.coordsAtPos(hit.pos, hit.assoc)
-          const onText =
-            !!edge &&
-            (hit.assoc < 0 ? event.clientX <= edge.right : event.clientX >= edge.left) &&
-            event.clientY >= edge.top &&
-            event.clientY <= edge.bottom
-          return onText ? wordAt(view.state, hit.pos, hit.assoc) : null
-        }
-        const page = scope === 'page'
-        routeRightClick(
-          view.state.facet(editorHost),
-          docScan(view.state),
-          event,
-          {
-            at: glyph ? view.posAtDOM(glyph) : hit.pos,
-            glyph: glyph !== null,
-            sel: view.state.selection.main,
-            word: wordUnder,
+export const editorMenu: Extension = Prec.lowest(
+  EditorView.domEventHandlers({
+    contextmenu(event, view) {
+      const { readOnly } = view.state
+      const glyph = readOnly ? null : glyphAt(event)
+      const opened = view.state.doc
+      const hit = view.posAndSideAtCoords(event, false)
+      const wordUnder = (): BlockSpan | null => {
+        const edge = view.coordsAtPos(hit.pos, hit.assoc)
+        const onText =
+          !!edge &&
+          (hit.assoc < 0 ? event.clientX <= edge.right : event.clientX >= edge.left) &&
+          event.clientY >= edge.top &&
+          event.clientY <= edge.bottom
+        return onText ? wordAt(view.state, hit.pos, hit.assoc) : null
+      }
+      const scan = docScan(view.state)
+      const page = scan.scope === 'page'
+      void routeRightClick(
+        view.state.facet(editorHost),
+        scan,
+        event,
+        {
+          at: glyph ? view.posAtDOM(glyph) : hit.pos,
+          glyph: glyph !== null,
+          sel: view.state.selection.main,
+          word: wordUnder,
+        },
+        {
+          seat: ({ from, to }) => {
+            view.dispatch({
+              selection: EditorSelection.range(from, to),
+              userEvent: 'select.pointer',
+            })
+            return view.state.selection.main
           },
-          {
-            seat: ({ from, to }) => {
-              view.dispatch({
-                selection: EditorSelection.range(from, to),
-                userEvent: 'select.pointer',
-              })
-              return view.state.selection.main
-            },
-            request: (from, to) => ({
-              menu: readOnly ? 'short' : 'live',
-              selection: readOnly ? view.state.sliceDoc(from, to) : null,
-              embedSeat: page && embedSeatAt(view.state),
-              citeSeat: page && citationSeatAt(view.state),
-            }),
-            apply: (action, from, to) => {
-              if (!glyph) applyEditorAction(view, action)
-              else if (view.state.doc === opened) applyEditorAction(view, action, { from, to })
-            },
+          request: (from, to) => ({
+            menu: readOnly ? 'short' : 'live',
+            selection: readOnly ? view.state.sliceDoc(from, to) : null,
+            embedSeat: page && embedSeatAt(view.state),
+            citeSeat: page && citationSeatAt(view.state),
+          }),
+          apply: (action, from, to) => {
+            if (!glyph) applyEditorAction(view, action)
+            else if (view.state.doc === opened) applyEditorAction(view, action, { from, to })
           },
-        )
-        return false
-      },
-    }),
-  )
+        },
+      )
+      return false
+    },
+  }),
+)

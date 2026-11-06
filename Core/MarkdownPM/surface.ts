@@ -59,7 +59,7 @@ const sharedSurface = (
   Prec.high(keymap.of(wrapChords)),
   typedInput,
   Prec.high(contractions),
-  editorMenu(scope),
+  editorMenu,
 ]
 
 /** What every editor holds beside its surface: its panes, with Enter and Tab picking the open one's row, the marker- and pair-aware Backspace, the list keys, and the format chords, ahead of the default keymap, which also binds Mod-i and Mod-[. Each mount adds only what it alone holds. */

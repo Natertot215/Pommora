@@ -16,6 +16,10 @@ import { stubDialer } from '../vitest.setup'
 
 type EditorProps = Parameters<typeof MarkdownEditor>[0]
 
+Object.assign(globalThis, { CSS: { ...globalThis.CSS, highlights: new Map() }, Highlight: Array })
+
+export const seatedText = (): string => [...(CSS.highlights.get('mdpm-seat') ?? [])].join('')
+
 interface HarnessHost {
   settings?: Partial<EditorSettings>
   aliases?: Record<string, string[]>

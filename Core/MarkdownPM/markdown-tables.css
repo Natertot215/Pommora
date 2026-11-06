@@ -139,6 +139,9 @@
   background: var(--text-selection);
   border-radius: var(--text-selection-radius);
 }
+::highlight(mdpm-seat) {
+  background-color: var(--text-selection);
+}
 
 .mdpm-tbl-align-center {
   text-align: center;
