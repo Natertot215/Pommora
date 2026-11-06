@@ -9,7 +9,6 @@ import {
 import {
   isBlank,
   headingParts,
-  calloutHeadPrefixLen,
   isCalloutHead,
   ordinalText,
   indentWidth,
@@ -114,6 +113,10 @@ export function underSelection(scan: DocScan, selFrom: number, selTo: number) {
   return { fenced, from, to, ls, line, tokens, f, t, covering }
 }
 
+const onDelimiter = (scan: DocScan, from: number, to: number): boolean =>
+  fenceDelimiter(scan, lineIndexAt(scan, from)) ||
+  fenceDelimiter(scan, lineIndexAt(scan, reachEnd(scan.text, from, to)))
+
 /** A paint's `color` is the highlight chord's when null, which writes the accent and removes any paint it lands in; `'accent'` is the uncolored highlight. A span wears one color, so a color picked anywhere in it recolors it, turns it into the other paint, or, in its own paint and color, removes it. A paint is written only where it reads back as itself. */
 export function toggleInline(
   scan: DocScan,
@@ -124,7 +127,7 @@ export function toggleInline(
 ): FormatEdit | null {
   const { from, to, ls, line, tokens, f, t, covering } = underSelection(scan, selFrom, selTo)
   const spanned = (at: number): boolean => !inFenceAt(scan, at) && inCodeAt(scan, at)
-  if (fenceDelimiter(scan, lineIndexAt(scan, from))) return null
+  if (onDelimiter(scan, from, to)) return null
   if (fmt !== 'inlineCode' && (spanned(from) || spanned(to))) return null
   const doc = scan.text
   if (fmt in LINKS) return toggleWrap(doc, tokens, ls, from, to, LINKS[fmt as LinkWrapKind])
@@ -174,6 +177,9 @@ export function toggleInline(
   }
 }
 
+// A diff line's sign is its change, so a row writes past it.
+const pastSign = (scan: DocScan, pos: number): number => Math.max(pos, signSeatAt(scan, pos) ?? pos)
+
 export function editFor(
   action: string,
   scan: DocScan,
@@ -182,12 +188,13 @@ export function editFor(
   settings: Personalization,
 ): FormatEdit | null {
   const [group, value] = action.split(':')
-  // A diff line's sign is its change, so a row writes past it.
-  const from = Math.max(selFrom, signSeatAt(scan, selFrom) ?? selFrom)
+  const from = pastSign(scan, selFrom)
   const to = Math.max(selTo, from)
   switch (group) {
     case 'link':
-      return value === 'insert' ? insertLinkEdit(scan.text, from, to) : null
+      return value === 'insert' && !onDelimiter(scan, from, to)
+        ? insertLinkEdit(scan.text, from, to)
+        : null
     case 'format':
       return toggleInline(scan, from, to, value as InlineFormat)
     case 'highlight':
@@ -261,8 +268,8 @@ function listMarkerText(kind: ListKind): string {
 /** For a callout HEAD the chrome includes the hidden `[!type] ` tag. Block transforms edit from AFTER the chrome, which preserves the box and keeps the change out of the callout guard's window. */
 export function splitPrefix(scan: DocScan, k: number): { prefix: string; body: string } {
   const line = scan.lines[k]
-  const quote = leadOf(scan, k)
-  const len = quote === '' ? 0 : (calloutHeadPrefixLen(line) ?? quote.length)
+  const callout = scan.callouts[k]
+  const len = callout?.first ? callout.prefixEnd : leadOf(scan, k).length
   return { prefix: line.slice(0, len), body: line.slice(len) }
 }
 
@@ -299,7 +306,7 @@ function readLine(scan: DocScan, k: number): SelectedLine {
   const ls = scan.lineStarts[k]
   const le = lineEndOf(scan, k)
   if (scan.fences[k] !== undefined) {
-    // A code line reads as written: a row's lead joins it past its own indent, and nothing there is stripped.
+    // A code line reads as written: a row's lead joins it past its own indent, nothing there is stripped, and a bare `>` takes a space, or the row's write stops the line reading as quoted and the fence dissolves.
     const lead = leadOf(scan, k).length
     const text = scan.lines[k].slice(lead)
     const prefix = scan.lines[k].slice(0, lead + indentWidth(text))
@@ -370,9 +377,7 @@ function listReach(
   }
   const outOfReach = (k: number): boolean =>
     scan.callouts[k]?.first ||
-    (region === undefined
-      ? inSealedLine(scan, k)
-      : scan.fences[k]?.from !== region || fenceDelimiter(scan, k))
+    (region === undefined ? inSealedLine(scan, k) : fenceDelimiter(scan, k))
   return [...reached]
     .sort((a, b) => a - b)
     .filter((k) => !outOfReach(k))
@@ -431,9 +436,10 @@ function spannedLines(doc: string, from: number, to: number): { ls: number; le: 
 
 export function setBlock(scan: DocScan, from: number, to: number, fmt: BlockFormat): FormatEdit {
   const doc = scan.text
-  const ls = lineStartAt(doc, from)
-  const le = lineEndAt(doc, from)
-  const line = doc.slice(ls, le)
+  const k = lineIndexAt(scan, from)
+  const ls = scan.lineStarts[k]
+  const le = lineEndOf(scan, k)
+  const line = scan.lines[k]
   const lead = line.length > 0 ? '\n\n' : ls === 0 || doc.endsWith('\n\n', ls) ? '' : '\n'
   const trail = doc.startsWith('\n\n', le) ? '' : '\n'
   switch (fmt) {
@@ -441,10 +447,9 @@ export function setBlock(scan: DocScan, from: number, to: number, fmt: BlockForm
       // Off only where every selected line is already a quote. Toggling a callout head wraps rather than demoting it.
       const lines = spannedLines(doc, from, to).map((l) => ({
         ...l,
-        ls: signSeatAt(scan, l.ls) ?? l.ls,
+        ls: pastSign(scan, l.ls),
       }))
-      if (lines.length === 1 && fenceDelimiter(scan, lineIndexAt(scan, from)))
-        return { changes: [] }
+      if (lines.length === 1 && fenceDelimiter(scan, k)) return { changes: [] }
       const strip = lines.every(({ ls: s, le: e }) => isQuoteToggleable(doc.slice(s, e)))
       const changes: FormatEdit['changes'] = []
       let lastEnd = 0
@@ -461,9 +466,8 @@ export function setBlock(scan: DocScan, from: number, to: number, fmt: BlockForm
       return lines.length === 1 ? { changes, selection: lastEnd } : { changes }
     }
     case 'callout': {
-      if (isCalloutHead(line) || fenceDelimiter(scan, lineIndexAt(scan, from)))
-        return { changes: [] }
-      const at = signSeatAt(scan, ls) ?? ls
+      if (isCalloutHead(line) || fenceDelimiter(scan, k)) return { changes: [] }
+      const at = pastSign(scan, ls)
       const own = doc.slice(at, le)
       const body = stripInnerMarkers(own)
       const next = `> [!callout] ${parseListMarker(own) ? body : stripQuotePrefix(body)}`
@@ -471,7 +475,7 @@ export function setBlock(scan: DocScan, from: number, to: number, fmt: BlockForm
     }
     case 'code': {
       // Inside a fence, the pick takes its two fence lines off; elsewhere, one fence goes around the whole selection, the gesture for a block of code pasted in.
-      const fence = scan.fences[lineIndexAt(scan, from)]
+      const fence = scan.fences[k]
       if (fence) {
         const body = scan.lineStarts[lineIndexAt(scan, fence.from) + 1]
         const close = scan.lineStarts[lineIndexAt(scan, fence.to)]

@@ -45,7 +45,7 @@ export function rolesAgainst(scan: DocScan, i: number): (k: number) => ListRole 
   const level = scan.markers[i]!.level
   const block = scan.fences[i]
   return (line) => {
-    if (block !== undefined && scan.fences[line]?.from !== block.from) return 'ends'
+    if (block !== undefined && scan.fences[line]?.role !== 'content') return 'ends'
     const k = block === undefined ? openerOf(scan, line) : line
     const own = quoteDepthOf(scan.lines[k])
     const lm = scan.markers[k]

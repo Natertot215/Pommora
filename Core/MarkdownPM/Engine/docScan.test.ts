@@ -333,6 +333,12 @@ describe('chunksOver — a chunk tokenizes as it does inside the whole document'
   })
 })
 
+describe('a line’s marker', () => {
+  it('a table’s header holds none, whatever its first cell reads as', () => {
+    expect(scanDoc('A. a | b\n|---|---|').markers[0]).toBeNull()
+  })
+})
+
 describe('a fence under a quoted list item', () => {
   it('opens code for the scan exactly where the parser reads code', () => {
     const text = '> [!note] Callout\n> - item\n>   ```\n>   npm i --save -[[Old]]\n>   ```\n> after'

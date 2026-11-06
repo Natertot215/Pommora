@@ -380,6 +380,51 @@ describe('the rows in a code block', () => {
       for (const at of [word.indexOf('js'), word.lastIndexOf('```')])
         expect(editFor(action, scan, at, at + 2, {})?.changes ?? []).toEqual([])
   })
+  it('refuses a selection ending on a delimiter line', () => {
+    const closed = 'prose\n```js\nx\n```\n'
+    const opening = 'prose\n```js\nx\n```'
+    const bold = (doc: string, to: number) => editFor('format:bold', scanDoc(doc), 0, to, {})
+    expect(bold(closed, closed.length)).toBeNull()
+    expect(bold(opening, opening.indexOf('js') + 2)).toBeNull()
+  })
+  it('Insert Link refuses on an opener', () => {
+    const doc = '```notes.md\nx\n```'
+    expect(editFor('link:insert', scanDoc(doc), 3, 11, {})).toBeNull()
+  })
+  it('a selection across a whole block still quotes it', () => {
+    expect(row(word, 'block:quote', 0, word.length)).toBe('> ```js\n> word\n> ```')
+  })
+  it('a callout-shaped line in a quoted Markdown block is code, so a range pick takes it', () => {
+    const doc = '> ```md\n> - a\n> [!note]\n> - b\n> ```'
+    expect(row(doc, 'list:ordered', doc.indexOf('- a'), doc.indexOf('- b') + 3)).toBe(
+      '> ```md\n> 1. a\n> 2. [!note]\n> 3. b\n> ```',
+    )
+  })
+  it('a closer indented past its opener holds no list', () => {
+    for (const indent of [' ', '  ', '   ']) {
+      const doc = `\`\`\`md\n- a\n${indent}\`\`\``
+      const scan = scanDoc(doc)
+      expect(listKindOf(scan, doc.length, doc.length, {})).toBeNull()
+      expect(setList(scan, doc.length, doc.length, 'ordered', {}).changes).toEqual([])
+    }
+  })
+  it('a bare `>` line takes a space from a row, so the fence still reads', () => {
+    const doc = '> ```js\n>\n> ```'
+    for (const [action, lead] of [
+      ['heading:2', '> ## '],
+      ['list:bullet', '> - '],
+    ]) {
+      const out = row(doc, action, 9)
+      expect(out).toBe(`> \`\`\`js\n${lead}\n> \`\`\``)
+      expect(scanDoc(out).fences[1]?.role).toBe('content')
+    }
+  })
+  it('a pick on a plain line in a carried block reaches no list around the block', () => {
+    const doc = '1. a\n   ```md\n   plain\n   ```\n2. b'
+    expect(row(doc, 'list:bullet', doc.indexOf('plain'))).toBe(
+      '1. a\n   ```md\n   - plain\n   ```\n2. b',
+    )
+  })
   it('writes after a diff line’s sign, whatever the language, so the sign survives', () => {
     for (const fence of ['```diff', '```md diff']) {
       const doc = `${fence}\n- removed\n+added\n\`\`\``

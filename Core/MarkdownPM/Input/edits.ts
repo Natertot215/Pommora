@@ -8,14 +8,7 @@ import {
   mapSpans,
   mayHoldLink,
 } from '../../Connections/connections'
-import {
-  inCalloutAt,
-  inCodeAt,
-  inCodeNear,
-  inFenceAt,
-  spanAt,
-  type DocScan,
-} from '../Engine/docScan'
+import { inCalloutAt, inCodeAt, inCodeNear, spanAt, type DocScan } from '../Engine/docScan'
 import {
   fenceAt,
   isBlockquoteLine,
@@ -109,7 +102,7 @@ export function continueBlockquoteOnEnter(
   const pfx = quotePrefix(line)
   if (selStart < ls + pfx.length) return null
   // Callouts keep continuing — their documented exit is caret placement below the box, and stripping a body `> ` would split it.
-  if (isBlank(line.slice(pfx.length)) && !inCalloutAt(scan, selStart))
+  if (isBlank(line.slice(pfx.length)) && !inCalloutAt(scan, selStart) && !scan.fences[k])
     return { from: ls, to: ls + line.length, insert: '', selection: ls }
   const insert = `\n${pfx.replace(/[ \t]+$/, '')} `
   return { from: selStart, to: selStart, insert, selection: selStart + insert.length }
@@ -124,7 +117,7 @@ export function calloutShorthand(
 ): Edit | null {
   if (inserted !== '|' || selStart !== selEnd || !settingOf(settings, 'transformCallouts'))
     return null
-  if (inFenceAt(scan, selStart)) return null
+  if (isLiteralAt(scan, selStart)) return null
   const doc = scan.text
   const c = selStart
   const ls = lineStartAt(doc, c)
@@ -185,18 +178,18 @@ export function outdentListOnShiftTab(
   }
 }
 
-/** Where a Backspace takes the list marker of the line at `ls`, behind its `pfx`-long prefix: the marker is one unit, so a caret anywhere past its first character takes all of it rather than leaving a stray space or half a box, and the line keeps its indent only where an item above owns it, as that item's continuation. */
+/** Where a Backspace takes the list marker of line `k`, behind its `pfx`-long prefix: the marker is one unit, so a caret anywhere past its first character takes all of it rather than leaving a stray space or half a box, and the line keeps its indent only where an item above owns it, as that item's continuation. */
 function takeMarker(
   scan: DocScan,
-  ls: number,
+  k: number,
   pfx: number,
   lm: ListMarker,
   selStart: number,
 ): Edit | null {
+  const ls = scan.lineStarts[k]
   const from = ls + lm.markerStart
   const to = ls + lm.contentStart
   if (selStart <= from || selStart > to) return null
-  const k = lineIndexAt(scan, ls)
   const cut = ownersOf(scan, k, scan.fences[k]?.from).some((o) => o.k !== k) ? from : ls + pfx
   return { from: cut, to, insert: '', selection: cut }
 }
@@ -227,7 +220,7 @@ export function smartBackspace(scan: DocScan, selStart: number, selEnd: number):
 
   const pfx = leadOf(scan, k)
   const lm = scan.markers[k]
-  const taken = lm && takeMarker(scan, ls, pfx.length, lm, selStart)
+  const taken = lm && takeMarker(scan, k, pfx.length, lm, selStart)
   if (taken) return taken
   // A fence holds literal text past its own list, so collapsing a prefix there would eat characters the author typed as content.
   if (scan.scope !== 'page' || inCodeAt(scan, selStart)) return null
@@ -257,20 +250,14 @@ export function canonicalizeCheckbox(
   if (inserted !== ' ' || selStart !== selEnd || !readsLists(scan.scope)) return null
   const k = lineIndexAt(scan, selStart)
   const f = scan.fences[k]
-  if (f !== undefined && !readsListsIn(f)) return null
-  const ls = scan.lineStarts[k]
-  const pfx = leadOf(scan, k)
-  const m = shorthandCheckboxRe.exec(scan.text.slice(ls + pfx.length, selStart))
+  if (isLiteralAt(scan, selStart) && (f === undefined || !readsListsIn(f))) return null
+  const from = scan.lineStarts[k] + leadOf(scan, k).length
+  const m = shorthandCheckboxRe.exec(scan.text.slice(from, selStart))
   if (m === null) return null
   const [, ws, marker, inner] = m
   // The trailing space is the task-list grammar's own requirement, not decoration: without it the line parses as plain text.
   const gfm = `${ws}${marker} [${inner.toLowerCase() === 'x' ? 'x' : ' '}] `
-  return {
-    from: ls + pfx.length,
-    to: selStart,
-    insert: gfm,
-    selection: ls + pfx.length + gfm.length,
-  }
+  return { from, to: selStart, insert: gfm, selection: from + gfm.length }
 }
 
 interface PairSpec {

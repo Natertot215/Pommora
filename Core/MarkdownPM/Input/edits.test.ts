@@ -947,6 +947,12 @@ describe('blockquote continuation (Enter)', () => {
     expect(continueBlockquoteOnEnter(scanDoc('> q'), 1, 1)).toBeNull()
     expect(continueBlockquoteOnEnter(scanDoc('plain'), 5, 5)).toBeNull()
   })
+  it('keeps a blank line in a quoted code block, so the fence still reads', () => {
+    const doc = '> ```md\n> \n> ```'
+    const out = apply(doc, continueBlockquoteOnEnter(scanDoc(doc), 10, 10)!)
+    expect(out).toBe('> ```md\n> \n> \n> ```')
+    expect(scanDoc(out).fences[2]?.role).toBe('content')
+  })
   it('leaves a `>` glued to its text as prose, in its own paragraph or a quote’s', () => {
     for (const doc of ['>run this', 'para\n>x', '> [!note] head\n>body', '> quote\n>lazy'])
       expect(continueBlockquoteOnEnter(scanDoc(doc), doc.length, doc.length)).toBeNull()
@@ -971,6 +977,16 @@ describe('callout shorthand (||)', () => {
       const end = doc.lastIndexOf('\n')
       expect(calloutShorthand(scanDoc(doc), end, end, '|')).toBeNull()
     }
+  })
+  it('stays literal in display math, as `-[] ` does, and both transform in an HTML block', () => {
+    const typed = (doc: string, at = doc.lastIndexOf('\n')) => ({
+      callout: calloutShorthand(scanDoc(doc), at, at, '|'),
+      box: canonicalizeCheckbox(scanDoc(doc), at, at, ' '),
+    })
+    expect(typed('$$\n|\n$$').callout).toBeNull()
+    expect(typed('$$\n-[]\n$$').box).toBeNull()
+    expect(typed('<div>\n|\n</div>').callout).not.toBeNull()
+    expect(typed('<div>\n-[]\n</div>').box).not.toBeNull()
   })
   it('preserves content already on the line (||ab → callout with "ab" body, no trailing line)', () => {
     const doc = '|ab'

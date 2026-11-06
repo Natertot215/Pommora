@@ -50,7 +50,7 @@ function collectBoundaries(view: EditorView, block: BlockSpan): Boundary<Drop>[]
           left: (cMarker ?? cTop).left,
           right: lineRightEdge(view, line.from, gutterRight),
           indent: line.text.slice(0, lm.markerStart),
-          line: line.number - 1,
+          line: k,
         }
         out.push({ at: line.from, y: cTop.top, slot })
         out.push({ at: line.to < doc.length ? line.to + 1 : doc.length, y: cEnd.bottom, slot })
