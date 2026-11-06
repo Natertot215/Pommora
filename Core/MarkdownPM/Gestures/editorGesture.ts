@@ -49,6 +49,7 @@ export function beginRelocateDrag<T>(
   spec: RelocateDragSpec<T>,
 ): void {
   const host = view.scrollDOM
+  const doc = view.state.doc
   const overlay = new Overlay()
   let activated = false
   let cands: Boundary<T>[] = []
@@ -61,7 +62,7 @@ export function beginRelocateDrag<T>(
     if (line) overlay.show(line.left, line.top, Math.max(line.width, MIN_LINE_WIDTH))
     else overlay.hide()
   }
-  // Candidates are viewport-relative, so a scroll invalidates them.
+  // Candidates are viewport-relative, so a scroll invalidates them, and offsets into the document pressed, so another pane's mirrored edit voids the drop.
   const remeasure = (): void => {
     cands = spec.measure()
     repick()
@@ -87,7 +88,7 @@ export function beginRelocateDrag<T>(
     scrollTarget: () => host,
     onWindowScroll: remeasure,
     onDrop: () => {
-      if (slot === null) return
+      if (slot === null || view.state.doc !== doc) return
       const changes = spec.commit(slot)
       if (changes?.length) view.dispatch({ changes, userEvent: 'input' })
     },

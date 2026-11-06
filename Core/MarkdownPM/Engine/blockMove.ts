@@ -37,12 +37,10 @@ export function rebuildMove(
   const blankAt = (i: number): boolean => i >= 0 && i < lines.length && isBlank(lines[i])
 
   const bStart = starts.indexOf(range.from)
-  if (bStart < 0) return null
   let bEnd = bStart
   while (bEnd + 1 < lines.length && starts[bEnd + 1] <= range.to) bEnd++
 
   let tLine = slot.at >= doc.length ? lines.length : starts.indexOf(slot.at)
-  if (tLine < 0) return null
   while (looseSlot && blankAt(tLine)) tLine++
   if (tLine >= bStart && tLine <= bEnd + 1) return null
 

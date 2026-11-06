@@ -775,19 +775,22 @@ const caretSeat: Extension = [
   dropMargin,
   EditorState.transactionFilter.of((tr) => {
     if (!tr.selection && !tr.docChanged) return tr
-    const { anchor, head, empty, assoc } = tr.newSelection.main
+    const main = tr.newSelection.main
+    // A replace swallowing a range maps its two ends past each other, which only a caret can stand for.
+    const range = main.from > main.to ? EditorSelection.cursor(main.to) : main
+    const { anchor, head, empty, assoc } = range
     const intents = docLineIntentsOf.after(tr)
     const scan = docScan.after(tr)
     const visible = prefixEndAt(intents, scan, head)
     const seat =
-      (head < visible
+      (head < visible && head <= anchor
         ? visible
         : empty && tr.isUserEvent('select.pointer')
           ? seatPastMarker(intents, scan, head)
           : null) ?? head
     let side = assoc
     if (signSeatAt(scan, seat) === seat) side = empty && inMargin(tr, seat) ? -1 : 1
-    if (seat === head && side === assoc) return tr
+    if (range === main && seat === head && side === assoc) return tr
     const selection = tr.newSelection.replaceRange(
       empty
         ? EditorSelection.cursor(seat, side)

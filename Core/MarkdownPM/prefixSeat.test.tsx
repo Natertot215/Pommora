@@ -4,6 +4,9 @@ import { act } from 'react'
 import { type EditorView, runScopeHandlers } from '@codemirror/view'
 import type { TransactionSpec } from '@codemirror/state'
 import { cleanupEditor, mountEditor, stubEditorBridge, typeInto } from '../Testing/editorHarness'
+import { docScan } from './docCache'
+import { dropChanges, subBlockAt } from './Engine/listModel'
+import { applyEditorAction } from './Menus/menu'
 
 stubEditorBridge()
 afterEach(async () => {
@@ -119,6 +122,55 @@ describe('the rule holds where a widget draws over the prefix, and for every way
     })
     await press(view, 'Home', { shiftKey: true })
     expect(view.state.selection.main.head).toBe(doc.indexOf('world'))
+  })
+})
+
+describe('a selection a change or a keystroke has to answer for', () => {
+  it('a drop past a selection leaves a caret at the change, and typing lands there', async () => {
+    const doc = '- alpha\n- beta word\n- gamma\n- delta'
+    const word = doc.indexOf('word')
+    const view = await mountEditor({ initialBody: doc })
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: word, head: word + 4 } })
+      const scan = docScan(view.state)
+      const changes = dropChanges(scan, subBlockAt(scan, 0)!, {
+        at: doc.indexOf('- delta'),
+        indent: '',
+        line: 3,
+      })!
+      view.dispatch({ changes, userEvent: 'input' })
+    })
+    expect(view.state.selection.main).toMatchObject({ from: 2, to: 2 })
+    await typeInto(view, 'Z')
+    expect(view.state.doc.toString()).toBe('- Zbeta word\n- gamma\n- alpha\n- delta')
+  })
+
+  it('a pick replacing the marker a selection sits in leaves a caret, and typing lands there', async () => {
+    const doc = '```md\n- [x] a\n```'
+    const box = doc.indexOf('x')
+    const view = await mountEditor({ initialBody: doc })
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: box, head: box + 1 } })
+      applyEditorAction(view, 'list:ordered')
+    })
+    expect(view.state.selection.main).toMatchObject({ from: 6, to: 6 })
+    await typeInto(view, 'Z')
+    expect(view.state.doc.toString()).toBe('```md\nZ1. a\n```')
+  })
+
+  it('a line selected through the start of a carried block keeps the block’s lead', async () => {
+    const doc = '- a\n- b\n  ```js\n  x\n  ```\n- c'
+    const from = doc.indexOf('- b')
+    const view = await mountEditor({ initialBody: doc })
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: from, head: doc.indexOf('  ```js') } })
+    })
+    expect(view.state.selection.main.head).toBe(doc.indexOf('  ```js'))
+    await press(view, 'Backspace')
+    expect(view.state.doc.toString()).toBe('- a\n  ```js\n  x\n  ```\n- c')
   })
 })
 

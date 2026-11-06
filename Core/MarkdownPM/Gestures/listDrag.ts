@@ -9,7 +9,6 @@ import { glyphAt, lineElementAt, textColumn } from '../lineDom'
 import { isSecondaryClick } from '@pommora/uix/Interactions/chords'
 import { subBlockAt, dropChanges, checkboxToggleChange } from '../Engine/listModel'
 
-// Measured at drag start and re-measured only on scroll: the doc is static during a drag, so re-measuring per pointermove would be layout thrash.
 interface Drop {
   left: number
   right: number
