@@ -1,4 +1,4 @@
-import { type Command, Decoration, EditorView, type KeyBinding, keymap } from '@codemirror/view'
+import { type Command, EditorView, type KeyBinding, keymap } from '@codemirror/view'
 import {
   EditorSelection,
   EditorState,
@@ -10,17 +10,11 @@ import {
   type Transaction,
 } from '@codemirror/state'
 import {
-  cursorGroupLeft,
-  cursorGroupRight,
   defaultKeymap,
   deleteCharForward,
-  deleteGroupBackward,
-  deleteGroupForward,
   insertBlankLine,
   insertNewline,
   insertNewlineAndIndent,
-  selectGroupLeft,
-  selectGroupRight,
   toggleBlockComment,
   toggleComment,
 } from '@codemirror/commands'
@@ -51,7 +45,7 @@ import {
   type Edit,
 } from './edits'
 import { applyEdit } from './applyEdit'
-import { fenceAt, isWordChar, lineEndOf, lineIndexAt, lineOffsetsOf } from '../Engine/markdownCode'
+import { fenceAt, lineEndOf, lineIndexAt, lineOffsetsOf } from '../Engine/markdownCode'
 import { shownEnd } from '../Links/linkEdit'
 import { embedTileRanges } from '../Embeds/embedWidget'
 import { caretInMargin, type DocScan, signSeatAt } from '../Engine/docScan'
@@ -331,64 +325,21 @@ export const markdownInput = [
   ),
 ]
 
-const joins = (state: EditorState, at: number): boolean =>
-  /['’]/.test(state.sliceDoc(at, at + 1)) &&
-  isWordChar(state.sliceDoc(at - 1, at)) &&
-  isWordChar(state.sliceDoc(at + 1, at + 2))
+/** A position reads an apostrophe as a word character when a walk from it, either way across any space and over letters, digits, and `_`, reaches one with a letter or digit on both sides. CodeMirror asks once per gesture and takes the first answer, so a quote touching that gesture's run rides with it, as `'don't'` reads whole, and a surface mounts this ahead of a fence's language. */
+const CONTRACTION_REACH =
+  /(?=\s*[\p{L}\p{N}_]*(?<=[\p{L}\p{N}])['’][\p{L}\p{N}])|(?<=[\p{L}\p{N}]['’](?=[\p{L}\p{N}])[\p{L}\p{N}_]*\s*)/uy
 
-/** Every word gesture reads `wordAt`'s word, the one holding the character on `side` of `pos`: CodeMirror's word, carried across an apostrophe with a letter or digit on both sides, so `don't` reads whole and `'quoted'` reads `quoted`; a code fence's language adds its own word characters. A right-click's word on every surface is it, and while a double-click or a group motion or selection runs in a view, or a group deletion from a caret, each joined word in view is one atom to it, so every other motion still steps through one, and a deletion over a selection takes exactly the selection. A double-click's atoms last only its press, since CodeMirror reads atomic ranges once, when it creates the mouse selection, which the press's microtask outlives. */
+export const contractions = EditorState.languageData.of((state, pos) => {
+  const { from, text } = state.doc.lineAt(pos)
+  CONTRACTION_REACH.lastIndex = pos - from
+  return CONTRACTION_REACH.test(text) ? [{ wordChars: "'’" }] : []
+})
+
 export function wordAt(state: EditorState, pos: number, side: -1 | 1): SelectionRange | null {
   const word = state.wordAt(pos)
-  if (!word) return null
-  let { from, to } = word
-  while (joins(state, to)) to = state.wordAt(to + 1)!.to
-  while (joins(state, from - 1)) from = state.wordAt(from - 1)!.from
-  return (side < 0 ? from < pos : to > pos) ? EditorSelection.range(from, to) : null
+  return word && (side < 0 ? word.from < pos : word.to > pos) ? word : null
 }
 
-const grouping = new WeakSet<EditorView>()
-const JOINED = Decoration.mark({})
-const wordPress = EditorView.mouseSelectionStyle.of((view, press) => {
-  if (press.button === 0 && press.detail === 2) {
-    grouping.add(view)
-    queueMicrotask(() => grouping.delete(view))
-  }
-  return null
-})
-const joinedWords = EditorView.atomicRanges.of((view) => {
-  if (!grouping.has(view)) return Decoration.none
-  const { state } = view
-  const { from, to } = view.viewport
-  const words = [...state.sliceDoc(from, to).matchAll(/['’]/g)].flatMap(({ index }) => {
-    const word = joins(state, from + index) && wordAt(state, from + index, -1)
-    return word ? [JOINED.range(word.from, word.to)] : []
-  })
-  return Decoration.set(words, true)
-})
-export const wordGestures = [wordPress, joinedWords]
-const DELETES: readonly Command[] = [deleteGroupBackward, deleteGroupForward]
-const GROUPS: readonly Command[] = [
-  cursorGroupLeft,
-  cursorGroupRight,
-  selectGroupLeft,
-  selectGroupRight,
-  ...DELETES,
-]
-const byWords = (command: Command | undefined): Command | undefined =>
-  command && GROUPS.includes(command)
-    ? (view) => {
-        if (DELETES.includes(command) && view.state.selection.ranges.some((r) => !r.empty))
-          return command(view)
-        grouping.add(view)
-        try {
-          return command(view)
-        } finally {
-          grouping.delete(view)
-        }
-      }
-    : command
-export const editorKeymap = defaultKeymap.flatMap((b) =>
-  b.run === toggleComment || b.run === toggleBlockComment
-    ? []
-    : [{ ...b, run: byWords(b.run), shift: byWords(b.shift) }],
+export const editorKeymap = defaultKeymap.filter(
+  (b) => b.run !== toggleComment && b.run !== toggleBlockComment,
 )

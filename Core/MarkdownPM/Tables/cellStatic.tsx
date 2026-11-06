@@ -46,7 +46,7 @@ import {
 } from '../../Connections/linkValue'
 import { CITE_GLYPH, followCitation } from '../Citations/citationPointer'
 import type { EditorHost } from '../api'
-import { wordAt } from '../Input/markdownInput'
+import { contractions, wordAt } from '../Input/markdownInput'
 import { glyphAt } from '../lineDom'
 import { routeRightClick } from '../Menus/menu'
 import type { Seat } from './CellEditor'
@@ -555,7 +555,9 @@ function StaticCellImpl({
           sel: { from, to },
           word: () => {
             const side = caret && sideOf(caret, e.clientX, e.clientY)
-            return side ? wordAt(EditorState.create({ doc: text }), at, side) : null
+            return side
+              ? wordAt(EditorState.create({ doc: text, extensions: contractions }), at, side)
+              : null
           },
         }
       },

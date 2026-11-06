@@ -8,11 +8,11 @@ import { linkRest } from './Links/linkReveal'
 import { linkSettle, linkWriting, type Remembers } from './Links/linkSettle'
 import { listRenumber } from './Input/listRenumber'
 import {
+  contractions,
   editorKeymap,
   listKeys,
   smartDelete,
   typedInput,
-  wordGestures,
   wrapChords,
 } from './Input/markdownInput'
 import { blockHandles, pointerReveal } from './Menus/blockHandles'
@@ -58,7 +58,7 @@ const sharedSurface = (
   }),
   Prec.high(keymap.of(wrapChords)),
   typedInput,
-  wordGestures,
+  Prec.high(contractions),
   editorMenu(scope),
 ]
 
