@@ -15,6 +15,7 @@ import {
   railClass,
   railIntents,
   railStyle,
+  seatPastMarker,
   textMarkerClass,
 } from '../Engine/intents'
 import { perText } from '../Engine/perText'
@@ -547,9 +548,10 @@ function StaticCellImpl({
       : caret
         ? cellOffsetAt(cell, caret.offsetNode, caret.offset)
         : text.length
+    const scan = cellScan(text)
     void routeRightClick(
       host,
-      cellScan(text),
+      scan,
       e,
       {
         at,
@@ -563,13 +565,14 @@ function StaticCellImpl({
         },
       },
       {
-        seat: (range) => {
+        seat: ({ from, to }) => {
+          const seat = seatPastMarker(scan, from)
+          const range = from === to ? { from: seat, to: seat } : { from, to }
           paintSeat(cell, range.from, range.to)
           return range
         },
-        request: (from, to) => ({
+        request: () => ({
           menu: readOnly() ? 'short' : 'resting',
-          selection: text.slice(from, to),
           embedSeat: false,
           citeSeat: false,
         }),

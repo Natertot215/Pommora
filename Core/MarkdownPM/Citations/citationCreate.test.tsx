@@ -190,6 +190,17 @@ describe('a marker is refused where it could not bind', () => {
     expect(await insert(view)).toBe(false)
   })
 
+  it('under a selection ending where a fence opens', async () => {
+    const body = 'para\n```\ncode\n```'
+    const view = await mountEditor({ initialBody: body })
+    await act(async () => {
+      view.dispatch({ selection: { anchor: 0, head: 5 } })
+    })
+    expect(citationSeatAt(view.state)).toBe(false)
+    expect(await insert(view)).toBe(false)
+    expect(doc(view)).toBe(body)
+  })
+
   it('inside an inline code span', async () => {
     const body = 'text `span` more'
     const view = await mountEditor({ initialBody: body })

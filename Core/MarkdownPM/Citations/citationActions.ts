@@ -8,7 +8,7 @@ import {
 } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
 import type { CitationMenuAction } from './citationMenu'
-import { inCodeAt } from '../Engine/docScan'
+import { inCodeNear } from '../Engine/docScan'
 import { citationFor, markerEndingAt, markersFor, type CitationScan } from '../Engine/detect'
 import { focusRange } from '../caretPlacement'
 import {
@@ -32,12 +32,11 @@ export function travelToCitation(view: EditorView, label: string): void {
   travelTo(view, entry.contentStart)
 }
 
-/** A footnote annotates the words it follows, so the selection's end is where every creation puts the marker — outside the section and outside code, read at a range's last character. Both halves come off the cached scan. */
+/** A footnote annotates the words it follows, so the selection's end is where every creation puts the marker — outside the section and outside code. Both halves come off the cached scan. */
 export function citationSeatAt(state: EditorState): boolean {
-  const { to, empty } = state.selection.main
-  const at = empty ? to : to - 1
+  const { to } = state.selection.main
   const scan = docScan(state)
-  return state.doc.lineAt(at).number - 1 < scan.citations.firstLine && !inCodeAt(scan, at)
+  return state.doc.lineAt(to).number - 1 < scan.citations.firstLine && !inCodeNear(scan, to)
 }
 
 /** One transaction, so one undo takes the whole act, and `citationOrder`'s renumbering rides it. Returns what landed in the original document's coordinates, or null where a guard refused it. */

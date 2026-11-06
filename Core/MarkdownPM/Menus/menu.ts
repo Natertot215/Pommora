@@ -55,23 +55,29 @@ export function routeRightClick(
   click: { at: number; glyph: boolean; sel: BlockSpan; word: () => BlockSpan | null },
   surface: {
     seat: (range: BlockSpan) => BlockSpan
-    request: (
-      from: number,
-      to: number,
-    ) => Pick<EditorMenuRequest, 'menu' | 'selection' | 'embedSeat' | 'citeSeat'>
+    request: () => Pick<EditorMenuRequest, 'menu' | 'embedSeat' | 'citeSeat'>
     apply: (action: string, from: number, to: number) => void
   },
 ): Promise<void> {
   const { at, glyph, sel, word } = click
   const point = { from: at, to: at }
-  const inside = !glyph && clickInside(scan.text, at, sel.from, sel.to)
-  const { from, to } = glyph ? point : inside ? sel : surface.seat(word() ?? point)
-  if (!inside && !glyph) keepSeatedSelection()
+  const seated = (): BlockSpan => {
+    if (clickInside(scan.text, at, sel.from, sel.to)) return sel
+    keepSeatedSelection()
+    return surface.seat(word() ?? point)
+  }
+  const { from, to } = glyph ? point : seated()
   const state = readFormatState(scan, from, to, host.settings())
   if (glyph) event.preventDefault()
+  const ask = surface.request()
   const pick = glyph
     ? host.menus.grip({ kind: 'glyph', current: state.list })
-    : host.menus.format({ ...state, scope: scan.scope, ...surface.request(from, to) })
+    : host.menus.format({
+        ...state,
+        ...ask,
+        scope: scan.scope,
+        selection: ask.menu === 'live' ? null : scan.text.slice(from, to),
+      })
   return pick.then((action) => {
     if (action) surface.apply(action, from, to)
   })
@@ -114,9 +120,8 @@ export const editorMenu: Extension = Prec.lowest(
             })
             return view.state.selection.main
           },
-          request: (from, to) => ({
+          request: () => ({
             menu: readOnly ? 'short' : 'live',
-            selection: readOnly ? view.state.sliceDoc(from, to) : null,
             embedSeat: page && embedSeatAt(view.state),
             citeSeat: page && citationSeatAt(view.state),
           }),

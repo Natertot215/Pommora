@@ -339,7 +339,10 @@ function listReach(
   const item = owners[0]?.k ?? null
   const reached = new Set<number>()
   const ls = scan.lineStarts[anchor]
-  const holdsLine = from < to && from === ls && to >= ls + scan.lines[anchor].length
+  const holdsLine =
+    from < to &&
+    from <= ls + (markerIn(scan, anchor, region)?.markerStart ?? 0) &&
+    to >= ls + scan.lines[anchor].length
   if (anchor === upTo && !holdsLine) {
     if (item === null || blank(anchor)) reached.add(anchor)
     else {

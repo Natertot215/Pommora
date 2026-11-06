@@ -347,6 +347,10 @@ describe('setList over a whole block', () => {
     expect(listed(doc, 'ordered', 2, 6)).toBe('1. a\n2. b\n- c')
   })
 
+  it('narrows a nested item held from its marker, where ⌘⇧← leaves the selection', () => {
+    expect(listed('- aa\n\t- bb\n\t- cc', 'ordered', 6, 10)).toBe('- aa\n\t1. bb\n\t- cc')
+  })
+
   it('finds a quoted marker behind its prefix rather than missing it', () => {
     expect(listed('> - a\n> - b', 'checkbox')).toBe('> - [ ] a\n> - [ ] b')
   })

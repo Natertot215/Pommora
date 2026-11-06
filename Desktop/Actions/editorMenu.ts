@@ -120,7 +120,7 @@ export function installEditorContextMenu(win: BrowserWindow): void {
     const selection = editor?.req.selection ?? params.selectionText
     const items =
       editor?.req.menu === 'short'
-        ? editorRows(editor, shortRows(selection !== ''))
+        ? editorRows(editor, shortRows(!!selection))
         : [
             ...systemItems(win.webContents, params, editor),
             ...(editor

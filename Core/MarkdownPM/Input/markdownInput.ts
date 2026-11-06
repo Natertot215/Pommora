@@ -225,8 +225,8 @@ const seated =
   (view) => {
     if (!command(view)) return false
     const { head } = view.state.selection.main
-    const seat = seatPastMarker(docLineIntentsOf(view.state), docScan(view.state), head)
-    if (seat !== null && seat !== head) view.dispatch({ selection: EditorSelection.cursor(seat) })
+    const seat = seatPastMarker(docScan(view.state), head)
+    if (seat !== head) view.dispatch({ selection: EditorSelection.cursor(seat) })
     return true
   }
 

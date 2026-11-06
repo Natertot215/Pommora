@@ -279,6 +279,20 @@ describe('a row chosen at rest', () => {
     expect(liveCell()?.state.selection.main.head).toBe(4)
   })
 
+  it('writes past a box from a press left of it', async () => {
+    await mount('- [ ] box')
+    const box = cell().querySelector('.md-list-checkbox-seat')
+    ;(document as { caretPositionFromPoint?: unknown }).caretPositionFromPoint = () => ({
+      offsetNode: box,
+      offset: 0,
+    })
+    await act(async () => {
+      cell().dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }))
+    })
+    await choose('format:bold')
+    expect(committed).toHaveBeenLastCalledWith(1, 0, '- [ ] ****box')
+  })
+
   it('enters the cell with the caret in the slot Text Color writes at a point', async () => {
     await mount('ab ')
     await rightClick('ab ', 3)
