@@ -29,7 +29,7 @@
 | 6 · One Set of List Keys, and the Scope's Name | -201 (+1108 / -1309), -28 its own | 9,185 | -199 (+1164 / -1363), 9,215 tests |
 | 7 · One Definition Per Type | -260 (+1153 / -1413), -59 its own | 9,191 | -259 (+1223 / -1482), 9,222 tests |
 | 8 · The Word Rule | -307 (+1172 / -1479), -47 its own | 9,196 | -294 (+1254 / -1548), 9,228 tests |
-| 9 · Right-Click | -308 (+1386 / -1694), -1 its own | 9,204 | |
+| 9 · Right-Click | -308 (+1386 / -1694), -1 its own | 9,204 | -313 (+1461 / -1774), 9,239 tests |
 | 10 · Text Properties | -286 (+1465 / -1751), +22 its own | 9,219 | |
 | 11 · Docs and Issues | -286, ±0 its own | 9,219 | |
 | **Total** | **-286 (+1465 / -1751); one production file added, none removed** | | |
@@ -270,15 +270,15 @@ The order is what makes each step land once. The scan goes first, since every la
   - [x] Task 8-1 · The word rule
   - [x] Task 8-2 · Drive group 8
   - [x] Review Checkpoint
-- [ ] **Phase 9** — Right-Click
-  - [ ] Task 9-1 · Removal that stands alone
-  - [ ] Task 9-2 · One range
-  - [ ] Task 9-3 · The short menu
-  - [ ] Task 9-4 · The resting seat
-  - [ ] Task 9-5 · The marker seat
-  - [ ] Task 9-6 · Drive group 9
-  - [ ] Review Checkpoint
-  - [ ] Compaction Checkpoint
+- [x] **Phase 9** — Right-Click
+  - [x] Task 9-1 · Removal that stands alone
+  - [x] Task 9-2 · One range
+  - [x] Task 9-3 · The short menu
+  - [x] Task 9-4 · The resting seat
+  - [x] Task 9-5 · The marker seat
+  - [x] Task 9-6 · Drive group 9
+  - [x] Review Checkpoint
+  - [x] Compaction Checkpoint
 - [ ] **Phase 10** — Text Properties
   - [ ] Task 10-1 · The pane
   - [ ] Task 10-2 · At rest
@@ -715,7 +715,7 @@ Guards against states nothing reaches should leave, and a glyph should act on it
 
 **VERIFY**
 
-- [ ] Run the gates. *keeps the page caret and a resting cell’s seated word when the table redraws under its menu* left with the event.
+- [x] Run the gates. *keeps the page caret and a resting cell’s seated word when the table redraws under its menu* left with the event.
 
 #### Task 9-2
 
@@ -727,7 +727,7 @@ One range should reach every row, and `listReach` should take D-5's rule: a sele
 
 **VERIFY**
 
-- [ ] Run the gates.
+- [x] Run the gates.
 
 #### Task 9-3
 
@@ -739,8 +739,8 @@ Every read-only surface should answer one short menu, and `menu`'s finite state 
 
 **VERIFY**
 
-- [ ] Each pin's revert as *Phase 9 — Notes* names it, watched red and restored, with *selects and focuses the page from a read-only table’s Select All, so ⌘C reads it* reading red on its focus assertion with `view.focus()` removed, and *hands focus back after a right press, whose row can ask for focus* reading red with `if (e.button !== 0) return` back.
-- [ ] Run the gates. `Desktop/Actions/editorMenu.test.ts`' *matching an editor’s ask to the click* left with `atClick`.
+- [x] Each pin's revert as *Phase 9 — Notes* names it, watched red and restored, with *selects and focuses the page from a read-only table’s Select All, so ⌘C reads it* reading red on its focus assertion with `view.focus()` removed, and *hands focus back after a right press, whose row can ask for focus* reading red with `if (e.button !== 0) return` back.
+- [x] Run the gates. `Desktop/Actions/editorMenu.test.ts`' *matching an editor’s ask to the click* left with `atClick`.
 
 #### Task 9-4
 
@@ -752,8 +752,8 @@ A resting cell's seated word should paint as the `mdpm-seat` highlight rather th
 
 **VERIFY**
 
-- [ ] The new pin reads red without the `.then`.
-- [ ] Run the gates.
+- [x] The new pin reads red without the `.then`.
+- [x] Run the gates.
 
 #### Task 9-5
 
@@ -761,11 +761,11 @@ A press left of a glyph should seat at the content in all five shapes, on a righ
 
 **AFTER**
 
-`Scouts/Planning/Phases/Phase 9e — The Marker Seat.patch`. Phase 7's checkpoint settled `seatPastMarker`: its class read leaves here for `const lm = markerIn(scan, k, undefined)` and `return lm && pos >= ls + lm.markerStart && pos <= ls + lm.markerEnd ? ls + lm.contentStart : null`, with `ls` hoisted above 9e's `lead` line, proven at zero differences over 10.8M positions, and `GLYPH_CLASS` stays for its drawing readers. This phase's checkpoint weighs two seats in 9e's shape: a press in a text marker's hidden wide gap stays in the gap (`→   foo`), and a press left of the marker on `- [ ] [^1] y` seats past the footnote.
+`Scouts/Planning/Phases/Phase 9e — The Marker Seat.patch`. Phase 7's checkpoint settled `seatPastMarker`: its class read leaves here for `const lm = markerIn(scan, k, undefined)` and `return lm && pos >= ls + lm.markerStart && pos <= ls + lm.markerEnd ? ls + lm.contentStart : null`, with `ls` hoisted above 9e's `lead` line, proven at zero differences over 10.8M positions, and `GLYPH_CLASS` stays for its drawing readers. This phase's checkpoint weighs two seats in 9e's shape: a press in a text marker's hidden wide gap stays in the gap (`→   foo`), and a press left of the marker on `- [x] [^1] y` seats past the footnote.
 
 **VERIFY**
 
-- [ ] Run the gates; the count reads the Net Ledger's row.
+- [x] Run the gates; the count reads the Net Ledger's row.
 
 #### Task 9-6
 
@@ -775,12 +775,12 @@ A press left of a glyph should seat at the content in all five shapes, on a righ
 
 **VERIFY**
 
-- [ ] `node live-drive.mjs 9` reads every item passing at this task's head, and the orchestrator reads the paint shots itself.
+- [x] `node live-drive.mjs 9` reads every item passing at this task's head, and the orchestrator reads the paint shots itself.
 
 #### Review Checkpoint
 
-- [ ] One range reaches every row, every surface asks, and a resting cell leaves no caret and no document selection behind; both reviewers' findings folded or recorded.
-- [ ] *§When Drives Run*'s row for Phase 9 green. Four shots read and captioned.
+- [x] One range reaches every row, every surface asks, and a resting cell leaves no caret and no document selection behind; both reviewers' findings folded or recorded.
+- [x] *§When Drives Run*'s row for Phase 9 green. Four shots read and captioned.
 
 ---
 
@@ -938,6 +938,7 @@ None survives ratification. *Morning Report* lists the calls taken for Nathan's 
 - **Phase 6's Fold (`db74ec96a`):** a cell's Shift-Enter took `insertNewline`, since Enter's move to it left the two keys disagreeing over a selection across items, and Enter's recount there is a third difference beyond Task 6-2's two, one that matches a page. Shift-Backspace joined `editorBase` for every surface, since a cell's eroded a marker. `seatPastMarkerNow` left: a cell's mount dispatches `select.pointer`, and `seated` inlines its seat. Phase 9a's `CellEditor` hunk keeps that event and the reworded comment, and Drive Groups 7 and 8 keep `MATRIX.md`'s new quote line. The running offset after Phase 6 is +2 lines and +30 tests.
 - **Phase 7's Fold (`896ed6e9d`):** `readLine` read a marker the scan says isn't there, so Heading or Paragraph on a head like `> [!note] - foo` deleted its visible `- `, and on `$$\n- b\n$$` a formula's dash. `readLine` and `setBlock`'s callout now read `scan.markers[k]`, and `stripInnerMarkers` left. A depth-two `> > - foo` picked Callout now writes `> [!callout] foo`, which goes further than *§Behavior Changes* row 64 states, and a plain code block's `- foo` keeps its dash under Callout. `seatPastMarker`'s fold moved to Task 9-5. The running offset after Phase 7 is +1 line and +31 tests.
 - **Phase 8's Fold (`96cd023e4`):** both reviewers found Option-arrow crossing a line break stopping inside a contraction, since CodeMirror takes one categorizer at a gesture's start and `contractions` read only that line, a regression from the joined atoms that planning's single-line differential missed. `contractions` now answers over a window from the previous text line to the next, at +12 lines, so *§Behavior Changes* row 51's quote riding crosses a break too, and row 63 reaches a neighbor word beside a contraction in a language fence. `MATRIX.md`'s two word-rule lines read true, so Drive Groups 9 and 10 keep the new wording, and Task 11-1's sentence on a fence's word characters takes that clause if it stays. The running offset after Phase 8 is +13 lines and +32 tests.
+- **Phase 9's Fold (`aa00d48b5`):** `seatPastMarker` took one rule, `Math.max(pos, content)` through `markerIn`, so `leadEnd`, its `atomics` flag, and `cached` left, and the two seats Task 9-5 flagged both seat at the content. A resting cell's point now passes through it, since a press left of a box, number, or arrow wrote Bold ahead of the marker. A footnote's gate reads `to` through `inCodeNear`, since a selection ending at a line break wrote `[^1]` in front of a fence, and `holdsLine` reads the marker's start, so ⌘⇧← on a nested or quoted item narrows as a top-level one does. Comments read 3,506, one under the ledger's row from here on. Drive Group 10 keeps `MATRIX.md`'s new word-rule lines. The running offset after Phase 9 is -5 lines and +35 tests.
 - **For the Morning:** Blockquote and Callout inside a plain code block don't write unaware as C-5's other rows do, and a partial selection reaching a delimiter can still dissolve a block. That matches the baseline, and C-7 keeps Insert ▸ as it was, so it stands until Nathan rules.
 - **For the Morning:** dropping an item just under another takes that item's wrapped text or carried block with it, as it does at the baseline, since the bottom boundary reads the item's own line. Reading its sub-block's end is about two lines, but it moves where a parent's drop lands, which is a drag-feel decision.
 - **For the Morning:** a code block an item carries draws flush with the page, so the rail crosses its box and text, and a flush line in a cell does the same. Both shots are in `$SHOTS/p3-list-types`. No decision names it.
