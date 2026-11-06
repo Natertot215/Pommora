@@ -336,7 +336,7 @@ describe('a row chosen at rest', () => {
     select('b', 0, 'c', 1)
     await rightClick('2.', 1)
     await choose('list:bullet')
-    expect(committed).toHaveBeenLastCalledWith(1, 0, '1. a\n- b\n- c\n4. d')
+    expect(committed).toHaveBeenLastCalledWith(1, 0, '- a\n- b\n- c\n- d')
   })
 
   it('enters with the caret inside the empty address External Link writes over a selection', async () => {

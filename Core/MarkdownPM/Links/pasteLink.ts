@@ -125,8 +125,7 @@ export function paste(view: EditorView, text: string, how: PasteMode): boolean {
 
 export async function pasteFromClipboard(view: EditorView, how: PasteMode): Promise<void> {
   const text = await view.state.facet(editorHost).clipboard.read()
-  // The clipboard read is a round trip through main, so the view this was aimed at may be gone.
-  if (text && view.dom.isConnected) paste(view, text, how)
+  if (text) paste(view, text, how)
 }
 
 export async function pastedCellText(

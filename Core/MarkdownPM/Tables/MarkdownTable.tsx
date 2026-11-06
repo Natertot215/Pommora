@@ -482,6 +482,7 @@ export function MarkdownTable({
   const tableHeight = lastRow ? lastRow.top + lastRow.height - tableTop : 0
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: a right-click's glance close, not a control
     <div
       className={cx(
         'mdpm-tbl-wrap',
@@ -491,8 +492,7 @@ export function MarkdownTable({
       )}
       data-reveal-host={addsHidden ? 'off' : ''}
       ref={wrapRef}
-      // Captured, because a cell's own menu handler claims the event before it could bubble here.
-      onContextMenuCapture={(e) => {
+      onContextMenu={(e) => {
         if (!host.glance?.contains(e.currentTarget)) host.glance?.close()
       }}
       onPointerOver={trackHover}

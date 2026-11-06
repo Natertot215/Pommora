@@ -45,7 +45,7 @@ export function pointerHandlers<H extends PointerTarget>(spec: PointerSpec<H>): 
       editingOnPress = hit ? caretInside(view, hit.range) : false
       if (!hit) return false
       const go = spec.follow(hit, view, event)
-      // LOAD-BEARING: `contextmenu` reads the live caret to decide it is inside the syntax and should stand down, so a fallthrough seats one on every right-press and the menu never appears.
+      // LOAD-BEARING: a fallthrough seats a caret on every right-press, which would leave it inside the link once the menu closes.
       if (event.button === 2) return go != null
       if (event.button !== 0 || event.shiftKey || event.detail > 1) return false
       // Strictly inside, unlike `caretInside`: a caret resting at the link's edge isn't editing it, so the seat still applies there.

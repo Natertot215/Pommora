@@ -589,7 +589,6 @@ function StaticCellImpl({
       className="mdpm-tbl-cell-static"
       onContextMenu={(e) => {
         if (onContextMenu(e) || readOnly()) return
-        e.stopPropagation()
         restingMenu(e)
       }}
       onPointerOver={onPointerOver}

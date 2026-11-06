@@ -162,17 +162,9 @@ export function CellEditor({
     })
     viewRef.current = view
     view.focus()
-    const posAt = (p: { x: number; y: number }): number | null => {
-      // posAtCoords can throw before the view has measured.
-      try {
-        return view.posAtCoords(p)
-      } catch {
-        return null
-      }
-    }
     // The press that promoted this cell never reached CM, so the seat lands as that press.
     view.dispatch({
-      selection: seatSelection(seat, view.state.doc.length, posAt),
+      selection: seatSelection(seat, view.state.doc.length, (p) => view.posAtCoords(p)),
       userEvent: 'select.pointer',
     })
     return () => {

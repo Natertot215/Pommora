@@ -11,7 +11,7 @@ import type { DocScan } from '../Engine/docScan'
 import { type EditorHost, editorHost } from '../api'
 import { applyEdit } from '../Input/applyEdit'
 import { docScan } from '../docCache'
-import { lineStartAt, reachEnd } from '../Engine/markdownCode'
+import { reachEnd } from '../Engine/markdownCode'
 import { glyphAt } from '../lineDom'
 import { wordAt } from '../Input/markdownInput'
 import { editFor } from '../Input/format'
@@ -31,26 +31,23 @@ export function applyEditorAction(
   else if (applyEdit(view, editFor(action, docScan(view.state), from, to, settings))) view.focus()
 }
 
-const clickInside = (doc: string, at: number, from: number, to: number, glyph: boolean): boolean =>
-  (glyph || from < to) &&
-  at >= (glyph ? lineStartAt(doc, from) : from) &&
-  at <= reachEnd(doc, from, to)
+const clickInside = (doc: string, at: number, from: number, to: number): boolean =>
+  from < to && at >= from && at <= reachEnd(doc, from, to)
 
-/** A surface that seated the selection itself keeps it for the press. Chromium seats its own word after a right-click's handler wherever the selection doesn't hold the click, so the browser's is refused; and an editor reads the DOM selection on any mutation inside it, where only a `selectionchange` honors a widget's `ignoreEvent`, so the seat is announced at once, before a redraw inside a resting cell's table could hand its word to the page as the page's caret. */
+/** Chromium seats its own word after a right-click's handler wherever the selection doesn't hold the click, so a surface that seated its own range refuses it. */
 function keepSeatedSelection(): void {
-  document.dispatchEvent(new Event('selectionchange'))
   const refuse = (e: Event): void => e.preventDefault()
   document.addEventListener('selectstart', refuse, true)
   setTimeout(() => document.removeEventListener('selectstart', refuse, true))
 }
 
-/** Every surface's right-click, routed from where its own hit test lands, run only once the host can ask, `at` null where the pointer resolves no position: a list glyph asks for its type menu, anything else for the format menu. A click on text inside a selection's reach, or on a glyph on any line it touches, acts on the selection; anywhere else, and at a caret, the list rows and the format flags read the click's point, since a click points at an item, and every other row acts on the word under the pointer, or at the point where it sits on none, which the surface seats as its selection. */
+/** Every surface's right-click, routed from where its own hit test lands, run only once the host can ask: a list glyph asks for its type menu, anything else for the format menu. A click on text inside a selection's reach acts on the selection; anywhere else, and at a caret, the list rows and the format flags read the click's point, since a click points at an item, and every other row acts on the word under the pointer, or at the point where it sits on none, which the surface seats as its selection. */
 export function routeRightClick(
   host: EditorHost,
   scan: DocScan,
   event: { clientX: number; clientY: number; preventDefault(): void },
   click: () => {
-    at: number | null
+    at: number
     glyph: boolean
     sel: { from: number; to: number }
     word: () => { from: number; to: number } | null
@@ -69,7 +66,7 @@ export function routeRightClick(
   const ask = host.menus.format
   if (!ask) return
   const { at, glyph, sel, word: wordOf } = click()
-  const inside = at === null || clickInside(scan.text, at, sel.from, sel.to, glyph)
+  const inside = !glyph && clickInside(scan.text, at, sel.from, sel.to)
   const [from, to] = inside ? [sel.from, sel.to] : [at, at]
   const word = inside || glyph ? null : wordOf()
   const [start, end] = word ? [word.from, word.to] : [from, to]
@@ -103,9 +100,8 @@ export const editorMenu = (scope: MarkdownScope): Extension =>
         if (view.state.readOnly) return false
         const glyph = glyphAt(event)
         const opened = view.state.doc
-        const hit = glyph ? null : view.posAndSideAtCoords(event)
+        const hit = view.posAndSideAtCoords(event, false)
         const wordUnder = (): { from: number; to: number } | null => {
-          if (!hit) return null
           const edge = view.coordsAtPos(hit.pos, hit.assoc)
           const onText =
             !!edge &&
@@ -120,7 +116,7 @@ export const editorMenu = (scope: MarkdownScope): Extension =>
           docScan(view.state),
           event,
           () => ({
-            at: glyph ? view.posAtDOM(glyph) : (hit?.pos ?? null),
+            at: glyph ? view.posAtDOM(glyph) : hit.pos,
             glyph: glyph !== null,
             sel: view.state.selection.main,
             word: wordUnder,
@@ -133,8 +129,7 @@ export const editorMenu = (scope: MarkdownScope): Extension =>
               resting: null,
             }),
             apply: (action, from, to) => {
-              if (view.dom.isConnected && view.state.doc === opened)
-                applyEditorAction(view, action, { from, to })
+              if (view.state.doc === opened) applyEditorAction(view, action, { from, to })
             },
           },
         )

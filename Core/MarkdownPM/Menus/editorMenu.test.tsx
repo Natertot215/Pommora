@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { EditorView } from '@codemirror/view'
 import { ok } from '../../Contract/result'
@@ -113,7 +113,7 @@ describe('the editor’s native menu', () => {
     expect(format).toHaveBeenCalledWith(expect.objectContaining({ embedSeat: true }))
   })
 
-  it('acts on the selection from a glyph on a line it touches, and on the glyph’s group past it', async () => {
+  it('acts on the glyph’s group, whatever the selection touches', async () => {
     grip.mockResolvedValue('list:checkbox')
     const view = await mountEditor({ initialBody: '- a\n1. b\n2. c', host: host() })
     view.dispatch({ selection: { anchor: 0, head: 4 } })
@@ -124,13 +124,13 @@ describe('the editor’s native menu', () => {
     const drag = await mountEditor({ initialBody: '- a\n- b\n- c\n- d', host: host() })
     drag.dispatch({ selection: { anchor: 6, head: 11 } })
     await rightClick(drag, 4, drag.dom.querySelectorAll('.md-list-glyph')[1])
-    expect(drag.state.doc.toString()).toBe('- a\n1. b\n2. c\n- d')
+    expect(drag.state.doc.toString()).toBe('1. a\n2. b\n3. c\n4. d')
     let pick: (action: GripMenuAction) => void = () => {}
     grip.mockReturnValue(new Promise((r) => (pick = r)))
     await rightClick(drag, 0, drag.dom.querySelector('.md-list-glyph')!)
     drag.dispatch({ changes: { from: 0, insert: 'x' } })
     await act(async () => pick('list:checkbox'))
-    expect(drag.state.doc.toString()).toBe('x- a\n1. b\n2. c\n- d')
+    expect(drag.state.doc.toString()).toBe('x1. a\n2. b\n3. c\n4. d')
   })
 
   it('never asks from a read-only editor', async () => {
@@ -230,33 +230,5 @@ describe('the editor’s native menu', () => {
     await act(async () => {})
     await act(async () => {})
     expect(page.state.doc.toString()).toBe('| A | B |\n| --- | --- |\n| a | b |\n| c | d |')
-  })
-
-  it('keeps the page caret and a resting cell’s seated word when the table redraws under its menu', async () => {
-    const page = await mountEditor({ initialBody: `before\n\n${TABLE}`, host: host() })
-    let table: Element | null = null
-    for (let i = 0; !table && i < 50; i++) {
-      await act(() => new Promise((r) => setTimeout(r, 20)))
-      table = editorContainer().querySelector('table.mdpm-tbl')
-    }
-    page.focus()
-    page.dispatch({ selection: { anchor: 3 } })
-    const cell = table?.querySelector('tbody .mdpm-tbl-cell-static') as HTMLElement
-    const node = cell.firstChild as Text
-    const doc = document as { caretPositionFromPoint?: unknown }
-    doc.caretPositionFromPoint = () => ({ offsetNode: node, offset: 0 })
-    const box = vi.spyOn(Range.prototype, 'getBoundingClientRect')
-    box.mockReturnValue(new DOMRect(0, 0, 100, 100))
-    onTestFinished(() => {
-      delete doc.caretPositionFromPoint
-      box.mockRestore()
-    })
-    const click = { bubbles: true, cancelable: true, button: 2, clientX: 12, clientY: 34 }
-    await act(async () => {
-      cell.dispatchEvent(new MouseEvent('contextmenu', click))
-      cell.dispatchEvent(new MouseEvent('pointerover', { bubbles: true }))
-    })
-    expect(window.getSelection()?.toString()).toBe('x')
-    expect(page.state.selection.main.head).toBe(3)
   })
 })
