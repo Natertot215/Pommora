@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { EditorView } from '@codemirror/view'
 import { act, createElement } from 'react'
 import { createRoot } from 'react-dom/client'
+import { listRenumber } from '../MarkdownPM/Input/listRenumber'
 import { moveHeadingSection, registerPageEditor, usePageOutline } from './pageEditor'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -32,6 +33,15 @@ describe('moveHeadingSection', () => {
     const view = mount(doc)
     moveHeadingSection('A', 'Gone')
     expect(view.state.doc.toString()).toBe(doc)
+  })
+
+  it('a section moved with lines selected elsewhere keeps a list’s numbers', () => {
+    const doc = '# S\n1. a\n1. b\n\n# S\n1. a\n1. c\n\n# T\nnotes\nmore'
+    const view = new EditorView({ doc, extensions: listRenumber })
+    registerPageEditor(view)
+    view.dispatch({ selection: { anchor: doc.indexOf('notes'), head: doc.length } })
+    moveHeadingSection('S\u00002', 'S')
+    expect(view.state.doc.toString()).toBe('# S\n1. a\n1. c\n\n# S\n1. a\n1. b\n\n# T\nnotes\nmore')
   })
 })
 

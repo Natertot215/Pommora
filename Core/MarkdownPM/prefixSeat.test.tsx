@@ -139,7 +139,7 @@ describe('a selection a change or a keystroke has to answer for', () => {
         indent: '',
         line: 3,
       })!
-      view.dispatch({ changes, userEvent: 'input' })
+      view.dispatch({ changes, userEvent: 'move.drop' })
     })
     expect(view.state.selection.main).toMatchObject({ from: 2, to: 2 })
     await typeInto(view, 'Z')
