@@ -14,6 +14,8 @@
 
 **Run Start:** comments 3,511; `~/Test` hash `e5a32a5d30d6a11310cd559ee2b1b84b261c3265`.
 
+**Run State:** resume from what's ticked. The run's helpers sit in the session scratchpad's `run/`: `env.sh`, `row.sh <label> <sha> <spec…>` for a drive row, `executor-rules.md`, and `reviewer-rules.md`. The drive worktree is the scratchpad's `wt`, holding Editor Parity's `results/base`, and shots sit in its `shots/`. Each phase takes one `execution-agent` continued task by task, its checkpoint two reviewers and the row run side by side, one fold commit by the same executor, then the row again at the folded head.
+
 **Net Ledger** (production lines from the Actionable cell of `view-delta --exclude .claude`, cumulative from the BASELINE head. Estimate is what the phase patches measured at build; Measured is filled during the run):
 
 | Phase | Estimate | Tests at the Phase's Head | Measured |
@@ -21,7 +23,7 @@
 | 0 · Drives and Baseline | 0 | 9,121 | 0 |
 | 1 · One Scan Per Surface | -108 (+687 / -795) | 9,127 | -91 (+740 / -831), 9,134 tests |
 | 2 · Markdown Code Blocks and Masked Markers | -39 (+838 / -877), +69 its own | 9,140 | -31 (+894 / -925), 9,157 tests |
-| 3 · Blank Lines and Numbering | -126 (+1000 / -1126), -87 its own | 9,170 | |
+| 3 · Blank Lines and Numbering | -126 (+1000 / -1126), -87 its own | 9,170 | -117 (+1059 / -1176), 9,192 tests |
 | 4 · Paste | -124 (+1002 / -1126), +2 its own | 9,177 | |
 | 5 · One Marker Grammar | -173 (+1040 / -1213), -49 its own | 9,184 | |
 | 6 · One Set of List Keys, and the Scope's Name | -201 (+1108 / -1309), -28 its own | 9,185 | |
@@ -237,13 +239,13 @@ The order is what makes each step land once. The scan goes first, since every la
   - [x] Task 2-2 · Pins and delimiters
   - [x] Task 2-3 · Drive group 2
   - [x] Review Checkpoint
-- [ ] **Phase 3** — Blank Lines and Numbering
-  - [ ] Task 3-1 · Block move's home
-  - [ ] Task 3-2 · The stale drop
-  - [ ] Task 3-3 · Blank lines and numbering
-  - [ ] Task 3-4 · Drive group 3
-  - [ ] Review Checkpoint
-  - [ ] Compaction Checkpoint
+- [x] **Phase 3** — Blank Lines and Numbering
+  - [x] Task 3-1 · Block move's home
+  - [x] Task 3-2 · The stale drop
+  - [x] Task 3-3 · Blank lines and numbering
+  - [x] Task 3-4 · Drive group 3
+  - [x] Review Checkpoint
+  - [x] Compaction Checkpoint
 - [ ] **Phase 4** — Paste
   - [ ] Task 4-1 · Paste
   - [ ] Task 4-2 · Drive group 4
@@ -424,8 +426,8 @@ Block moves should leave the list model for a file of their own, unchanged.
 
 **VERIFY**
 
-- [ ] Run the gates. Actionable moves by 0.
-- [ ] `git grep -n "moveRange" -- Core/MarkdownPM/Engine/listModel.ts` prints nothing.
+- [x] Run the gates. Actionable moves by 0.
+- [x] `git grep -n "moveRange" -- Core/MarkdownPM/Engine/listModel.ts` prints nothing.
 
 #### Task 3-2
 
@@ -439,8 +441,8 @@ CodeMirror's `SelectionRange.map` maps `from` forward and `to` backward, so a re
 
 **VERIFY**
 
-- [ ] Each pin's revert as *Phase 3 — Notes* names it, watched red and restored: *a drop past a selection leaves a caret at the change, and typing lands there* and *a pick replacing the marker a selection sits in leaves a caret, and typing lands there* read red with `range` reading `main`, and *a line selected through the start of a carried block keeps the block’s lead* reads red with `head <= anchor` removed.
-- [ ] Run the gates.
+- [x] Each pin's revert as *Phase 3 — Notes* names it, watched red and restored: *a drop past a selection leaves a caret at the change, and typing lands there* and *a pick replacing the marker a selection sits in leaves a caret, and typing lands there* read red with `range` reading `main`, and *a line selected through the start of a carried block keeps the block’s lead* reads red with `head <= anchor` removed.
+- [x] Run the gates.
 
 #### Task 3-3
 
@@ -452,9 +454,9 @@ A blank line should end a list, and an edit that reshapes a numbered list should
 
 **VERIFY**
 
-- [ ] Each pin's revert as *Phase 3 — Notes* names it, watched red and restored: in `listRenumber.test.ts`, *removing the blank below the block merges the two lists and recounts them* and *taking the item above the block counts past it from its opener* read red with the `while` removed, *taking the item between two blocks counts past both* and *removing the blank below two blocks merges the lists and recounts them* read red with the `while` as an `if`, and *typing or Enter recounts the run it joins* reads red with `overLines` out of the gate.
-- [ ] Run the gates; the count reads the Net Ledger's row.
-- [ ] `git grep -n -E "mapAscending|repicked|arrived|runsBelow|runAt|firstItemOf" -- Core/MarkdownPM ':!*.test.*'` prints nothing.
+- [x] Each pin's revert as *Phase 3 — Notes* names it, watched red and restored: in `listRenumber.test.ts`, *removing the blank below the block merges the two lists and recounts them* and *taking the item above the block counts past it from its opener* read red with the `while` removed, *taking the item between two blocks counts past both* and *removing the blank below two blocks merges the lists and recounts them* read red with the `while` as an `if`, and *typing or Enter recounts the run it joins* reads red with `overLines` out of the gate.
+- [x] Run the gates; the count reads the Net Ledger's row.
+- [x] `git grep -n -E "mapAscending|repicked|arrived|runsBelow|runAt|firstItemOf" -- Core/MarkdownPM ':!*.test.*'` prints nothing.
 
 #### Task 3-4
 
@@ -466,12 +468,12 @@ Drive group 3 should prove the walks live, since drop geometry and the rail's dr
 
 **VERIFY**
 
-- [ ] `node live-drive.mjs 3` reads every item passing at this task's head.
+- [x] `node live-drive.mjs 3` reads every item passing at this task's head.
 
 #### Review Checkpoint
 
-- [ ] The walks, the block model, the rails, and the grip end a list at one place, and numbering holds one rule with the drag's stated exception; both reviewers' findings folded or recorded.
-- [ ] *§When Drives Run*'s row for Phase 3 green. Four shots read and captioned.
+- [x] The walks, the block model, the rails, and the grip end a list at one place, and numbering holds one rule with the drag's stated exception; both reviewers' findings folded or recorded.
+- [x] *§When Drives Run*'s row for Phase 3 green. Four shots read and captioned.
 
 ---
 
@@ -929,5 +931,8 @@ None survives ratification. *Morning Report* lists the calls taken for Nathan's 
 
 - **Phase 1's Fold (`1c4888010`, `da068b25d`):** the checkpoint found three readers of cell and Text strings still reading fence-shaped lines through `codeMask` after their surfaces stopped, so a resting cell and a focused cell disagreed on a `§` run, and a Text value drew a link the index and sort couldn't see. `inlineCodeMask` joined `markdownCode.ts` and serves `sectionRunsIn`, `shownProse`, `valueLinks`, and a rename's reach into a Text value, which threads `inCode` through `rewriteConnections`, `rewriteHeadingConnections`, and `fileRewrites`. `listReach`'s `blank` returned to `splitPrefix`'s body, since Phase 1 had changed a pick on an empty callout head. Smaller folds took `cellScan`, `docScan.after(tr)`, and a required `tokenizeChunk` scope, and `citationRowMenu` became a constant. Later rows read about 17 lines, 7 tests, and 2 `scope` sites above their estimates, and every later Measured carries that offset. Phase 2a's `blank` lands as `splitPrefix`'s body rather than the patch's slice.
 - **Phase 2's Fold (`842f21193`):** the checkpoint found a row ending on a delimiter writing onto it, so ⌘A then ⌘B on a page ending in a block dissolved the block, and the refusal took one shape in `onDelimiter`. Enter on a blank line in a quoted block stopped ejecting it, `splitPrefix` reads the scan so a callout-shaped line inside a fence is code, a closer indented past its opener holds no list, and `||` and `-[] ` stay literal in display math. `pastSign` states the sign clamp once, and `setBlock`, `canonicalizeCheckbox`, and `takeMarker` read from `k`. Phases 3c, 5, 6b, 7a, and 7c land with `--3way`, keeping `role !== 'content'`, the single `from`, `fenceDelimiter(scan, k)`, `pastSign`, and the `splitPrefix` body. The running offset after Phase 2 is +8 lines and +17 tests.
+- **Phase 3's Fold (`7a34e9f8b`):** the checkpoint found a list or block drag recounting whenever lines stood selected elsewhere, since `overLines` read the selection and a drag dispatched bare `input`. Both drags now dispatch `move.drop`, CodeMirror's event for moved content, and no reader needs a move counted as typing. `rolesAgainst` reads `ridesList`, `numbered` hoisted, `runsAround`'s `seen` takes a default, and `blankBody` reads a quote's blank line as blank when a move heals its hole. Phase 4 lands with `--3way`. The running offset after Phase 3 is +9 lines and +22 tests.
 - **For the Morning:** Blockquote and Callout inside a plain code block don't write unaware as C-5's other rows do, and a partial selection reaching a delimiter can still dissolve a block. That matches the baseline, and C-7 keeps Insert ▸ as it was, so it stands until Nathan rules.
+- **For the Morning:** dropping an item just under another takes that item's wrapped text or carried block with it, as it does at the baseline, since the bottom boundary reads the item's own line. Reading its sub-block's end is about two lines, but it moves where a parent's drop lands, which is a drag-feel decision.
+- **For the Morning:** a code block an item carries draws flush with the page, so the rail crosses its box and text, and a flush line in a cell does the same. Both shots are in `$SHOTS/p3-list-types`. No decision names it.
 
