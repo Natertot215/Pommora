@@ -266,6 +266,7 @@ export async function pressKey(cdp, name, modifiers = 0) {
     await cdp.send('Input.dispatchKeyEvent', { type, key: name, code: name === ' ' ? 'Space' : name.length === 1 ? `Key${name.toUpperCase()}` : name, windowsVirtualKeyCode: VK[name], modifiers })
   await sleep(300)
 }
+export const ALT = 1
 export const SHIFT = 8
 export const META = 4
 export const typeText = (cdp, text) => cdp.send('Input.insertText', { text })

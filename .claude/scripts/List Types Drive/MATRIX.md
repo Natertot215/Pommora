@@ -44,6 +44,8 @@ The drive's cases, derived from *List Consolidation — Decisions & Intention*, 
 - **⌘Z after every cell key:** a cell forwards undo to the page's history, one path whatever the key, so one recount proves it.
 - **Each key in a quote or a callout:** a page's Enter, Backspace, and Delete come from its own chain while `listKeys` holds its Tab and Shift-Tab, and groups 3 and 7 hold what's particular to those blocks.
 - **A callout head's type menu:** a head draws no glyph (F-1), so nothing opens one, and `format.test.ts` pins what a pick writes there.
+- **Word gestures in a Text value:** group 10's, since the pane's surface changes there; `textScope.test.tsx` holds the one-line field.
+- **The word rule's character classes past those a user types:** `𝒶'b` and the 3,992-reading differential stay with `textScope.test.tsx`; a press can't land one half of an astral letter reliably.
 
 #### Group 1 — One Scan Per Surface
 
@@ -221,3 +223,20 @@ Every row runs for all five types on a page and in a focused cell, asserted agai
 | A head over a body item | A callout | read | the body keeps its glyph | F-1 |
 | A caret past a head's `- ` | A callout | seat, type | it stands at the text, and typing lands there | F-1 |
 | A press on a head's text | A callout | click | the caret seats in that text | F-1 |
+
+#### Group 8 — The Word Rule
+
+| Case | Surface | Operation | Expected | Decisions |
+| --- | --- | --- | --- | --- |
+| `don't`, `don’t`, `rock'n'roll`, `8'9` | A page | double-click | the whole word | E-5 |
+| `students'.`, `'quoted',`, `a'_b` | A page | double-click | the word, its quote or tail left out | E-5 |
+| `'don't'`, `'I don't'` | A page | double-click | the quote rides, the accepted departure | E-6 |
+| `don't stop` | A page | Option-Right, Option-Left | crosses it whole both ways | E-5 |
+| `students' don't`, `don't 'quoted'` | A page | Option-arrow across the gap | runs on, the accepted departure | E-6 |
+| `'don't'` from 0 | A page | Option-Right | stops past the quote | E-6 |
+| `don't` | A page | Option-Backspace, Format ▸ Bold | takes and wraps it whole | E-5 |
+| `don't` | A focused cell | double-click, Option-arrow | the whole word, both ways | E-5 |
+| `don't`, `'quoted'` | A resting cell | right-click, Bold | wraps the word, a quote left out | E-5 |
+| `'don't'` | A resting cell | right-click, Bold | the quotes ride, the accepted departure | E-6 |
+| `// don't stop` | ` ```js ` | double-click, Option-arrow | the whole word, both ways | E-5 |
+| `// $a's` | ` ```js ` | double-click | `a's`, the language's `$` dropped for that gesture | E-6 |
