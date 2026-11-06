@@ -64,7 +64,7 @@ function headerKeyOf(region: TableRegion): string {
 function tableSuccessors(tr: Transaction): number[] {
   const oldTables = docScan(tr.startState).tables
   if (!tr.docChanged) return oldTables.map((_, i) => i)
-  const newTables = docScan(tr.state).tables
+  const newTables = docScan.after(tr).tables
   const newKeys = newTables.map(headerKeyOf)
   const taken = new Set<number>()
   const claim = (j: number): number => {
@@ -529,7 +529,7 @@ const widgetField = StateField.define<DecorationSet>({
       const idx = eff.value
       const on = tr.state.field(headingColField).has(idx)
       toggledSet = swapTableWidget(toggledSet, idx, (w) => {
-        const region = docScan(tr.state).tables[idx]
+        const region = docScan.after(tr).tables[idx]
         const text = region ? tr.state.doc.sliceString(region.from, region.to) : w.text
         const model = region ? modelFromRegion(region) : w.model
         return new TableWidget(text, model, idx, on, w.around, w.linkStyle, w.height)

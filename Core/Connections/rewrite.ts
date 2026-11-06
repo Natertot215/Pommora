@@ -11,7 +11,7 @@ import {
 import { normalizeTitle } from '../Paths/caseFold'
 import { stripMarkdownExt, titleFromPath } from '../Paths/posix'
 import { encodeLinkTarget, escapeLabel, fitsSlot, unescapeLabel } from './links'
-import { applyEdits, type TextEdit } from '../MarkdownPM/Engine/markdownCode'
+import { applyEdits, type CodeMask, type TextEdit } from '../MarkdownPM/Engine/markdownCode'
 import { escapeCell } from '../MarkdownPM/Engine/Tables/codec'
 import type { TableRegion } from '../MarkdownPM/Engine/Tables/regions'
 import { scanDoc, spanAt } from '../MarkdownPM/Engine/docScan'
@@ -48,10 +48,14 @@ export function respellings(
 }
 
 /** Code stays untouched: a page documenting `[[Old Title]]` in a fenced block is showing a sample. Only the written name changes, to what `names` maps its key to, and one differing from that by its `.md` alone is left as written, since the extension is read and never written; shown text that only named it follows it, and shown text that comes to repeat the new target goes, as the writer drops one. */
-export function rewriteConnections(body: string, names: ReadonlyMap<string, string>): string {
+export function rewriteConnections(
+  body: string,
+  names: ReadonlyMap<string, string>,
+  inCode?: CodeMask,
+): string {
   const rewrite = follower(body)
   const edits: TextEdit[] = []
-  for (const hit of linksIn(body)) {
+  for (const hit of linksIn(body, [], inCode)) {
     const next = names.get(hit.target)
     if (next !== undefined && next !== stripMarkdownExt(hit.named.title))
       edits.push(...rewrite(hit, 'title', next))
@@ -117,12 +121,13 @@ export function rewriteHeadingConnections(
   newHeading: string,
   own: boolean,
   outline?: readonly string[],
+  inCode?: CodeMask,
 ): string {
   if (!mayNameHeading(body)) return body
   const oldKey = normalizeTitle(oldHeading)
   const rewrite = follower(body)
   const edits: TextEdit[] = []
-  for (const hit of linksIn(body, outline && [...outline, oldHeading]))
+  for (const hit of linksIn(body, outline && [...outline, oldHeading], inCode))
     if ((hit.target === '' ? own : keys.has(hit.target)) && hit.qualifier === oldKey && hit.heading)
       edits.push(...rewrite(hit, 'heading', newHeading))
   return applyEdits(body, edits)

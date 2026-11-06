@@ -34,7 +34,6 @@ import {
   docSectionHeadings,
   drawnLast,
   perScopedDoc,
-  surfaceScope,
 } from './docCache'
 import type { BlockSpan, DiffTally } from './Engine/detect'
 import { sectionRunsIn } from '../Connections/scan'
@@ -362,7 +361,7 @@ const hideMarker = Decoration.replace({})
 const atomicSpan = Decoration.mark({})
 const NO_ACTIVE = new Set<number>()
 
-const chunkTokens = drawnLast((text, view) => tokenizeChunk(text, view.state.facet(surfaceScope)))
+const chunkTokens = drawnLast((text, view) => tokenizeChunk(text, docScan(view.state).scope))
 const drawnTokens = new WeakMap<EditorView, readonly Token[]>()
 
 /** The link token the last draw tokenized at `pos`; code, and an HTML block drawn raw, hold none. */

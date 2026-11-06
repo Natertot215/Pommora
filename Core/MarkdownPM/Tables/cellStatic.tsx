@@ -30,7 +30,7 @@ import { decodePayload, type TablePayload } from '../Engine/Tables/clipboard'
 import { pastedCellText } from '../Links/pasteLink'
 import { RESTING_EDITS } from '../../Actions/editorMenu'
 import { pasteModeOf, type PasteMode } from '../../Actions/pasteAsMenu'
-import { codeMask, quoteDepthOf, type TextEdit } from '../Engine/markdownCode'
+import { inlineCodeMask, quoteDepthOf, type TextEdit } from '../Engine/markdownCode'
 import { sectionRunsIn } from '../../Connections/scan'
 import { mayNameOwnHeading } from '../../Connections/connections'
 import { labelEscapes } from '../../Connections/links'
@@ -63,6 +63,7 @@ export type CellPage = Pick<PageHeadings, 'keys' | 'texts'> & {
 
 // KNOB — distinct cell texts remembered; a table scrolling back in re-reads its cells from here.
 const cellTokens = perText((text) => tokenize(text, 'cell'), 4096)
+const cellScan = perText((text) => scanDoc(text, 'cell'), 4096)
 
 type Drawn = Token | { kind: 'section'; range: [number, number]; contentRange: [number, number] }
 
@@ -77,7 +78,7 @@ export function renderCellContent(
 ): React.ReactNode {
   const runs =
     around && around.texts.length > 0 && text.includes('§')
-      ? sectionRunsIn(text, around.texts, codeMask(text))
+      ? sectionRunsIn(text, around.texts, inlineCodeMask(text))
       : []
   // No markdown-significant char → no token possible, so skip the mdast parse; this is the per-cell cost of a table scrolling in.
   const held = holdsTokens(text) ? cellTokens(text) : []
@@ -281,7 +282,7 @@ function renderCellBody(
   around: CellPage,
   headingLinkStyle: HeadingLinkStyle,
 ): React.ReactNode {
-  const { lines, lineStarts: starts, markers } = scanDoc(text, 'cell')
+  const { lines, lineStarts: starts, markers } = cellScan(text)
   // A marker nothing draws is prose here exactly as it is in the editor, so the two surfaces accept the same lines.
   const items = markers.map((lm) => {
     const glyph = lm && listGlyphOf(lm)
@@ -538,7 +539,7 @@ function StaticCellImpl({
     }
     const how = pasteModeOf(action)
     if (how) return pasteAtRest(from, to, how)
-    const edit = editFor(action, scanDoc(text, 'cell'), from, to, host.settings())
+    const edit = editFor(action, cellScan(text), from, to, host.settings())
     if (!edit || !commitAtRest(edit.changes, editEvent(edit))) return
     const [group] = action.split(':')
     const slot = (group === 'format' || isPaint(group)) && (from === to || action === 'format:link')
@@ -551,7 +552,7 @@ function StaticCellImpl({
     const glyph = glyphAt(e)
     routeRightClick(
       host,
-      scanDoc(text, 'cell'),
+      cellScan(text),
       e,
       () => {
         const found = glyph ? null : document.caretPositionFromPoint(e.clientX, e.clientY)

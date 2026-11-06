@@ -6,6 +6,7 @@ import { linkEntry, namedPage, readOccurrence } from './linkValue'
 import { pageKey } from './pageIndex'
 import {
   codeMask,
+  inlineCodeMask,
   type CodeMask,
   inUrlRun,
   isWordChar,
@@ -119,6 +120,6 @@ export function* valueLinks(
   for (const [key, value] of Object.entries(values)) {
     const text = linkEntry(value, 2)
     if (text === null) continue
-    for (const hit of linksIn(text, outline)) yield { ...hit, key }
+    for (const hit of linksIn(text, outline, inlineCodeMask(text))) yield { ...hit, key }
   }
 }

@@ -229,6 +229,12 @@ export function codeMask(text: string): CodeMask {
   return (offset) => codeAt(d, (i) => fenced[i] === 1, offset)
 }
 
+export function inlineCodeMask(text: string): CodeMask {
+  const lines = text.split('\n')
+  const d = { lines, lineStarts: lineOffsetsOf(lines) }
+  return (offset) => codeAt(d, () => false, offset)
+}
+
 function isInsideInlineCode(line: string, offset: number): boolean {
   return inlineSpans(line).some(([a, b]) => offset >= a && offset < b)
 }

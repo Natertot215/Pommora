@@ -108,26 +108,22 @@ export function citationRowPointer(): Extension {
   })
 }
 
-export function citationRowMenu(): Extension {
-  return EditorView.domEventHandlers({
-    contextmenu(event, view) {
-      const line = (event.target as HTMLElement).closest?.(
-        '.cm-line.md-citation, .cm-line.md-citation-continued',
-      )
-      if (!line) return false
-      const scan = docScan(view.state)
-      const entry = scan.citations.entryAt.get(
-        view.state.doc.lineAt(view.posAtDOM(line)).number - 1,
-      )
-      if (!entry) return false
-      event.preventDefault()
-      void view.state
-        .facet(editorHost)
-        .menus.citation({ subject: 'citation', editable: !view.state.readOnly })
-        .then((action) => {
-          if (action) applyCitationAction(view, action, { kind: 'citation', label: entry.label })
-        })
-      return true
-    },
-  })
-}
+export const citationRowMenu: Extension = EditorView.domEventHandlers({
+  contextmenu(event, view) {
+    const line = (event.target as HTMLElement).closest?.(
+      '.cm-line.md-citation, .cm-line.md-citation-continued',
+    )
+    if (!line) return false
+    const scan = docScan(view.state)
+    const entry = scan.citations.entryAt.get(view.state.doc.lineAt(view.posAtDOM(line)).number - 1)
+    if (!entry) return false
+    event.preventDefault()
+    void view.state
+      .facet(editorHost)
+      .menus.citation({ subject: 'citation', editable: !view.state.readOnly })
+      .then((action) => {
+        if (action) applyCitationAction(view, action, { kind: 'citation', label: entry.label })
+      })
+    return true
+  },
+})

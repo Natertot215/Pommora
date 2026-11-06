@@ -161,7 +161,7 @@ export function MarkdownEditor({
       htmlExt,
       keymap.of(historyKeymap),
       citationRowPointer(),
-      citationRowMenu(),
+      citationRowMenu,
       tableWidgetExtension(),
       embedTiles({
         ancestors: embedAncestorsRef.current,

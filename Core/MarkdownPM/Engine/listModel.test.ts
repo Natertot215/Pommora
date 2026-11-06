@@ -46,6 +46,17 @@ function drop(doc: string, grab: number, at: number): string {
 
 const lineStart = (doc: string, needle: string): number => doc.indexOf(needle)
 
+describe('a drop in a cell', () => {
+  it('recounts a run between `$$` lines, which a cell reads as lines', () => {
+    const doc = '$$\n1. a\n2. b\n3. c\n$$'
+    const scan = scanDoc(doc, 'cell')
+    const at = lineStart(doc, '1. a')
+    const block = subBlockAt(scan, lineStart(doc, '3. c'))!
+    const changes = dropChanges(scan, block, { at, line: lineIndexAt(scan, at) })!
+    expect(applyEdits(doc, changes)).toBe('$$\n1. c\n2. a\n3. b\n$$')
+  })
+})
+
 describe('subBlockAt', () => {
   it('returns just the line for a flat item', () => {
     const doc = '- a\n- b\n- c'

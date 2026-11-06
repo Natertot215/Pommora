@@ -261,7 +261,7 @@ export const holdsTokens = (text: string): boolean => /[*_~`=$[<]/.test(text)
 
 export function tokenizeChunk(
   text: string,
-  scope: MarkdownScope = 'page',
+  scope: MarkdownScope,
 ): { tokens: Token[]; html: BlockSpan[] } {
   const scan = scanDoc(text, scope)
   const ast = parse(text, scan)

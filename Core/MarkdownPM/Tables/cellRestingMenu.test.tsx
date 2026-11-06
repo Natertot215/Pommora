@@ -300,6 +300,13 @@ describe('a row chosen at rest', () => {
     expect(entered()).toBe(false)
   })
 
+  it('reads a `>` as text, so a pick on `> foo` leads with its marker', async () => {
+    await mount('> foo')
+    await rightClick('> foo', 1)
+    await choose('list:ordered')
+    expect(committed).toHaveBeenLastCalledWith(1, 0, '1. > foo')
+  })
+
   it('counts Lists ▸ Numbered over a selection as a live cell does', async () => {
     await mount('a\nb\nc')
     select('a\nb\nc', 0, 'a\nb\nc', 5)

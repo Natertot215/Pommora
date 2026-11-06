@@ -294,6 +294,7 @@ describe('internal links', () => {
     expect(shownProse('[[P#H]] and [x](https://a.com)')).toBe('P § H and x')
     expect(shownProse('plain text')).toBe('plain text')
     expect(shownProse('`[[Alpha]]` stays')).toBe('`[[Alpha]]` stays')
+    expect(shownProse('```\n[[Alpha|nice]]\n```')).toBe('```\nnice\n```')
   })
   it('a page rename rewrites a Link value naming the page in either syntax, and nothing else', () => {
     const rename = (value: string) =>

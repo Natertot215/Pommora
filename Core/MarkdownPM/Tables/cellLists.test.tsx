@@ -15,6 +15,8 @@ import { GRIP_LINE } from '../Engine/intents'
 import { blockStarts } from '../Engine/blockModel'
 import { scanDoc } from '../Engine/docScan'
 import { editFor } from '../Input/format'
+import { renderToStaticMarkup } from 'react-dom/server'
+import { renderCellContent } from './cellStatic'
 
 stubEditorBridge()
 afterEach(cleanupEditor)
@@ -408,6 +410,12 @@ describe('a block construct spelled in a cell, which reads as its text', () => {
   it('draws `$$` lines as text in a live cell, as a resting cell does', () => {
     expect(tokenize('$$\nx\n$$').some((t) => t.kind === 'blockLatex')).toBe(true)
     expect(tokenize('$$\nx\n$$', 'cell').some((t) => t.kind === 'blockLatex')).toBe(false)
+  })
+
+  it('draws a `§` run between fence-shaped lines at rest, as a live cell reads it', () => {
+    const around = { ordinalOf: () => null, keys: [], texts: ['Setup'] }
+    const drawn = renderCellContent('```\n§Setup\n```', () => undefined, { around })
+    expect(renderToStaticMarkup(drawn)).toContain('md-section-run')
   })
 
   it('binds no `[^1]:` note, since a cell has no citation tail', () => {

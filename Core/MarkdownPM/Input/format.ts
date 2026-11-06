@@ -312,7 +312,7 @@ function listReach(
   const markerAt = (k: number): ListMarker | null => itemAt(scan, k, reader)
   const endOf = (k: number): number => subBlockAt(scan, scan.lineStarts[k])!.to
   const blank = (k: number): boolean =>
-    isBlank(scan.lines[k].slice(blockPrefix(scan, scan.lines[k]).length))
+    isBlank(splitPrefix(scan.lines[k], blockPrefix(scan, scan.lines[k])).body)
   const owners = ownersOf(scan, anchor, reader)
   const item = owners[0]?.k ?? null
   const reached = new Set<number>()

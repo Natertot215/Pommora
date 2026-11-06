@@ -1,7 +1,7 @@
 // Content-anchored like the fold chevron so a grip can't drift below callouts or folds. Headings use the chevron, callouts keep their own, and the table widget supplies its own.
 import { Decoration, EditorView, ViewPlugin, type ViewUpdate } from '@codemirror/view'
 import { GlyphWidget } from '../decorations'
-import { docScan, surfaceScope } from '../docCache'
+import { docScan } from '../docCache'
 import type { Extension, Range } from '@codemirror/state'
 import { type Block, blockAt, blockStarts } from '../Engine/blockModel'
 import { GRIP_HOST, GRIP_LINE } from '../Engine/intents'
@@ -179,7 +179,7 @@ export function pointerReveal(): Extension {
       pointermove(e, view) {
         // A cell's grip lives inside the text column rather than left of it, so hovering the list at all is what reveals it — but the gate stays, as a DOM walk rather than a measurement, because posAtCoords below reads layout.
         const cheapMiss =
-          view.state.facet(surfaceScope) === 'cell'
+          docScan(view.state).scope === 'cell'
             ? !(e.target as HTMLElement).closest?.('.cm-line.md-list-item')
             : e.clientX >= columnLeft(view)
         if (cheapMiss) {

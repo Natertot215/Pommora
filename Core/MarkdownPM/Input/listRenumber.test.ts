@@ -65,6 +65,16 @@ const land = (doc: string, e: Edit | null): string =>
 const at = (doc: string, pos: number, t: typeof indentListOnTab): string =>
   land(doc, t(scanDoc(doc), pos, pos))
 
+describe('an edit landed in a cell', () => {
+  it('recounts a run between fence-shaped lines, which a cell reads as lines', () => {
+    const doc = '```\n1. a\n2. b\n3. c\n```'
+    const from = doc.indexOf('2. b')
+    expect(landEdit(doc, [{ from, to: from + 5, insert: '' }], 'delete', 'cell')).toBe(
+      '```\n1. a\n2. c\n```',
+    )
+  })
+})
+
 describe('a level change recounts the run it joined and the run it left', () => {
   it('an indented item starts its nested run over, and the run it left closes up', () => {
     expect(at('A. a\nB. b\nC. c', 5, indentListOnTab)).toBe('A. a\n\tA. b\nB. c')

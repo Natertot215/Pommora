@@ -259,6 +259,16 @@ describe('a list-type pick from an item', () => {
   })
 })
 
+describe('a list pick on an empty callout head nested in an item', () => {
+  it('reads no list and changes nothing, since the head holds its own line', () => {
+    const doc = '- a\n  > [!note]\n  > body\n- b'
+    const head = doc.indexOf('[!note]')
+    const scan = scanDoc(doc)
+    expect(listKindOf(scan, head, head, {})).toBeNull()
+    expect(setList(scan, head, head, 'ordered', {}).changes).toEqual([])
+  })
+})
+
 describe('listKindOf', () => {
   const kindOf = (doc: string): ReturnType<typeof listKindOf> =>
     listKindOf(scanDoc(doc), 0, doc.length, {})

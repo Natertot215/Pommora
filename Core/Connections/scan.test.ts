@@ -209,6 +209,10 @@ describe('valueLinks', () => {
     ])
   })
 
+  it('reads a link between fence-shaped lines, since a value holds no code block', () => {
+    expect(read({ a: '```\n[[Zeta]]\n```' })).toEqual([{ key: 'a', target: 'zeta', qualifier: '' }])
+  })
+
   it('reads a sentence’s links each under the key', () => {
     expect(read({ a: 'see [[Zeta]] and [[#Part]]' })).toEqual([
       { key: 'a', target: 'zeta', qualifier: '' },

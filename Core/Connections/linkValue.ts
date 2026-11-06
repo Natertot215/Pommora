@@ -10,7 +10,7 @@ import {
   targetSpan,
   wholeLink,
 } from './connections'
-import { codeMask } from '../MarkdownPM/Engine/markdownCode'
+import { inlineCodeMask } from '../MarkdownPM/Engine/markdownCode'
 import {
   defaultLabel,
   markdownLink,
@@ -242,7 +242,7 @@ export function shownProse(text: string): string {
   if (!mayHoldLink(text)) return text
   let out = ''
   let at = 0
-  for (const o of linkOccurrences(text, codeMask(text))) {
+  for (const o of linkOccurrences(text, inlineCodeMask(text))) {
     out += text.slice(at, o.full[0]) + linkDisplayText(text.slice(o.full[0], o.full[1]))
     at = o.full[1]
   }

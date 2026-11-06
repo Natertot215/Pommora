@@ -466,7 +466,7 @@ function editAffectsEmbeds(value: EmbedTiles, tr: Transaction): boolean {
     if (tr.changes.touchesRange(from, to) !== false) return true
   }
   const before = docScan(tr.startState)
-  const after = docScan(tr.state)
+  const after = docScan.after(tr)
   return (
     scanMoved(before.embeds, after.embeds, tr, (a, b) => a.title === b.title) ||
     scanMoved(before.webpages, after.webpages, tr, (a, b) => a.url === b.url && a.label === b.label)

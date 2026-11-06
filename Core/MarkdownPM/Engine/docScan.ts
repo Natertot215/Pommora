@@ -68,7 +68,7 @@ type LineScan = Omit<DocScan, 'citations'>
 
 // ── Construction ────────────────────────────────────────────────────────
 
-/** A surface reading only inline marks and, in a cell, lists: every block its text could spell is literal there. */
+/** A surface reading only inline marks and, in a cell, lists: every block its text could spell is literal there, with `html` and `fenceLines` kept for its chunks and its parse. */
 function literalLines(d: DocLines, scope: MarkdownScope): LineScan {
   const { lines, lineStarts } = d
   const n = lines.length
