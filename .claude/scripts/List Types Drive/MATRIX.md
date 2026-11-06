@@ -42,7 +42,7 @@ The drive's cases, derived from *List Consolidation — Decisions & Intention*, 
 - **A table pasted into a list:** a table's clipboard payload reaches `tableGuard`, not the recount, and no decision names it.
 - **Enter, Tab, and Shift-Tab off an item in a cell:** they're the cell's navigation rather than a list's key, which `cellLists.test.tsx` pins; group 6 reads the keys a list claims.
 - **⌘Z after every cell key:** a cell forwards undo to the page's history, one path whatever the key, so one recount proves it.
-- **Each key in a quote or a callout:** they read the same `listKeys`, and groups 3 and 7 hold what's particular to those blocks.
+- **Each key in a quote or a callout:** a page's Enter, Backspace, and Delete come from its own chain while `listKeys` holds its Tab and Shift-Tab, and groups 3 and 7 hold what's particular to those blocks.
 
 #### Group 1 — One Scan Per Surface
 

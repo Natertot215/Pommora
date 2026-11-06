@@ -226,18 +226,13 @@ const onItemEnter = (view: EditorView): boolean => {
 }
 
 // A marker the caret lands INSIDE after an edit reads as a caret that went nowhere, so it takes the seat the marker hands it — the one a pointer press already gets.
-export const seatPastMarkerNow = (view: EditorView): void => {
-  const s = view.state.selection.main
-  if (!s.empty) return
-  const seat = seatPastMarker(docLineIntentsOf(view.state), docScan(view.state), s.head)
-  if (seat !== null && seat !== s.head) view.dispatch({ selection: EditorSelection.cursor(seat) })
-}
-
 const seated =
   (command: Command): Command =>
   (view) => {
     if (!command(view)) return false
-    seatPastMarkerNow(view)
+    const { head } = view.state.selection.main
+    const seat = seatPastMarker(docLineIntentsOf(view.state), docScan(view.state), head)
+    if (seat !== null && seat !== head) view.dispatch({ selection: EditorSelection.cursor(seat) })
     return true
   }
 
@@ -250,7 +245,7 @@ const joinEmptyHead = (view: EditorView): boolean => {
   return true
 }
 
-/** What a list claims on every surface, ahead of what each surface binds for a key no list claims. A page's Enter and deletes hold closers, citations, and quotes a list doesn't, so its own chain keeps them. */
+/** What a list holds on every surface, ahead of what each surface binds for a key no list claims, and off a page the seated deletes that keep a caret out of a marker. A page's Enter and deletes hold closers, citations, and quotes a list doesn't, so its own chain keeps them. */
 export const listKeys = (scope: MarkdownScope): KeyBinding[] => [
   { key: 'Tab', run: nest(indentListOnTab) },
   { key: 'Shift-Tab', run: nest(outdentListOnShiftTab) },
@@ -332,8 +327,6 @@ export const markdownInput = [
       { key: 'Tab', run: () => true },
       { key: 'Shift-Tab', run: () => true },
       { key: 'Delete', run: onForwardDelete },
-      // Shift+Backspace joins like Backspace inside a callout instead of falling to the default delete, which would erode the body prefix.
-      { key: 'Shift-Backspace', run: smartDelete },
     ]),
   ),
 ]

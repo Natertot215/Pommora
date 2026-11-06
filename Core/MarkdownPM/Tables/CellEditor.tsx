@@ -1,13 +1,12 @@
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import { EditorView, keymap } from '@codemirror/view'
 import { EditorState, Prec } from '@codemirror/state'
-import { historyKeymap, redo, undo } from '@codemirror/commands'
+import { historyKeymap, insertNewline, redo, undo } from '@codemirror/commands'
 import { useReconfigured } from '../Input/useReconfigured'
 import { formatKeymap } from '../Input/formatKeymap'
 import { cellCitations } from './cellCitations'
 import { cellToSource } from '../Engine/Tables/codec'
 import { decodePayload, type TablePayload } from '../Engine/Tables/clipboard'
-import { seatPastMarkerNow } from '../Input/markdownInput'
 import { docScan } from '../docCache'
 import { lineIndexAt } from '../Engine/markdownCode'
 import { useConnectionAutocomplete } from '../Autocomplete/useConnectionAutocomplete'
@@ -129,7 +128,7 @@ export function CellEditor({
                 key: 'Shift-Enter',
                 run: consume((view) => {
                   if (atListEnd(view)) return onNavigateRef.current('down')
-                  view.dispatch(view.state.replaceSelection('\n'))
+                  insertNewline(view)
                 }),
               },
               // The main editor can't catch these itself (the widget's ignoreEvent), so the cell forwards them to the page history.
@@ -171,9 +170,11 @@ export function CellEditor({
         return null
       }
     }
-    view.dispatch({ selection: seatSelection(seat, view.state.doc.length, posAt) })
-    // The press that promoted this cell never reached CM, so the seat its own pointer filter would have given lands here.
-    seatPastMarkerNow(view)
+    // The press that promoted this cell never reached CM, so the seat lands as that press.
+    view.dispatch({
+      selection: seatSelection(seat, view.state.doc.length, posAt),
+      userEvent: 'select.pointer',
+    })
     return () => {
       view.plugin(linkSettle)?.flush()
       onCloseRef.current(view.state.field(pendingTitles))

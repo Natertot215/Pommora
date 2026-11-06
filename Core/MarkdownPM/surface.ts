@@ -84,7 +84,8 @@ export const editorBase = ({
     keymap.of([
       ...paneKeys(panes.map((p) => p.ctl)),
       { key: 'Enter', run: commitAliasOnEnter },
-      { key: 'Backspace', run: smartDelete },
+      // Shift+Backspace joins like Backspace instead of falling to the default delete, which would erode a marker or a callout's body prefix.
+      { key: 'Backspace', run: smartDelete, shift: smartDelete },
       ...listKeys(scope),
     ]),
   ),

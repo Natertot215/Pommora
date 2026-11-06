@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from 'vitest'
 import { act } from 'react'
-import { EditorView, runScopeHandlers } from '@codemirror/view'
+import { EditorView } from '@codemirror/view'
 import {
   cleanupEditor,
   editorContainer,
@@ -127,18 +127,6 @@ describe('the list vocabulary inside a table cell', () => {
     expect(liveColumn()).toBe(1)
   })
 
-  it('a page holds Tab off an item and over a range, where a cell moves on', async () => {
-    const view = await mountEditor({ initialBody: 'plain\n- a' })
-    for (const selection of [{ anchor: 2 }, { anchor: 8, head: 9 }]) {
-      await act(async () => view.dispatch({ selection }))
-      for (const shiftKey of [false, true]) {
-        const tab = new KeyboardEvent('keydown', { key: 'Tab', shiftKey })
-        expect(runScopeHandlers(view, tab, 'editor')).toBe(true)
-      }
-    }
-    expect(view.state.doc.toString()).toBe('plain\n- a')
-  })
-
   it('Tab holds the cell at the deepest level, as Shift-Tab holds it at the shallowest', async () => {
     await mountEditor({ initialBody: table('- a') })
     await enterCell()
@@ -167,6 +155,16 @@ describe('the list vocabulary inside a table cell', () => {
     expect(cellSource()).toBe('- a\n- ')
     await press('Backspace')
     expect(cellSource()).toBe('- a\n')
+  })
+
+  it('Shift-Backspace strips the whole marker, as Backspace does', async () => {
+    await mountEditor({ initialBody: table('1. a') })
+    await enterCell()
+    await act(async () => {
+      liveCell().view.dispatch({ selection: { anchor: 3 } })
+    })
+    await press('Backspace', true)
+    expect(cellSource()).toBe('a')
   })
 
   it('clears an empty head line and seats the caret on the item it pulls up', async () => {
@@ -398,6 +396,30 @@ describe('the list vocabulary inside a table cell', () => {
     await press('Enter', true)
     expect(cellSource()).toBe('- \n')
     expect(liveColumn()).toBe(0)
+  })
+
+  it('recounts a break over a selection across items, under Enter and Shift-Enter alike', async () => {
+    for (const shift of [false, true]) {
+      await mountEditor({ initialBody: table('1. a<br>2. b<br>3. c<br>4. d') })
+      await enterCell()
+      await act(async () => {
+        liveCell().view.dispatch({ selection: { anchor: 4, head: 10 } })
+      })
+      await press('Enter', shift)
+      expect(cellSource()).toBe('1. a\n2. c\n3. d')
+      await cleanupEditor()
+    }
+  })
+
+  it('Enter in an alias on an item commits the alias before the list continues', async () => {
+    await mountEditor({ initialBody: table('- [[Alpha\\|al]]') })
+    await enterCell()
+    const text = cellSource()
+    await act(async () => {
+      liveCell().view.dispatch({ selection: { anchor: text.indexOf('al]]') + 1 } })
+    })
+    await press('Enter')
+    expect(cellSource()).toBe(text)
   })
 
   it('styles a highlight at rest, which the token prefilter used to skip', async () => {

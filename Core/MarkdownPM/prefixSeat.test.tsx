@@ -198,6 +198,20 @@ describe('Delete at a line end joins the next line by its visible text', () => {
   })
 })
 
+describe('Tab on a page', () => {
+  it('holds off an item and over a range, where a cell moves on', async () => {
+    const view = await mountEditor({ initialBody: 'plain\n- a' })
+    for (const selection of [{ anchor: 2 }, { anchor: 8, head: 9 }]) {
+      await act(async () => view.dispatch({ selection }))
+      for (const shiftKey of [false, true]) {
+        const tab = new KeyboardEvent('keydown', { key: 'Tab', shiftKey })
+        expect(runScopeHandlers(view, tab, 'editor')).toBe(true)
+      }
+    }
+    expect(view.state.doc.toString()).toBe('plain\n- a')
+  })
+})
+
 describe('Backspace on a page', () => {
   it('a marker Backspace on a page lands as a delete', async () => {
     const view = await open('- ', 2)
