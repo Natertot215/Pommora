@@ -229,6 +229,11 @@ describe('a word', () => {
     expect(wordIn("'tis don't", 4, -1)).toBe("'tis")
   })
 
+  it('crosses a contraction past a line break', () => {
+    expect(groupFrom("foo\ndon't stop", 3, 'ArrowRight')).toBe(9)
+    expect(groupFrom("foo don't\nbar", 10, 'ArrowLeft')).toBe(4)
+  })
+
   it('leaves a quote no walk reaches a contraction from', () => {
     expect(groupFrom("'don't'", 0, 'ArrowRight')).toBe(1)
     expect(groupFrom("x 'don't", 1, 'ArrowRight')).toBe(3)

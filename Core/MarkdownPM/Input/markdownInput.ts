@@ -329,10 +329,22 @@ export const markdownInput = [
 const CONTRACTION_REACH =
   /(?=\s*[\p{L}\p{N}_]*(?<=[\p{L}\p{N}])['’][\p{L}\p{N}])|(?<=[\p{L}\p{N}]['’](?=[\p{L}\p{N}])[\p{L}\p{N}_]*\s*)/uy
 
+const inked = (state: EditorState, from: number, step: 1 | -1) => {
+  const { doc } = state
+  const line = doc.lineAt(from)
+  for (let n = line.number + step; n >= 1 && n <= doc.lines; n += step) {
+    const next = doc.line(n)
+    if (next.text.trim()) return next
+  }
+  return line
+}
+
 export const contractions = EditorState.languageData.of((state, pos) => {
-  const { from, text } = state.doc.lineAt(pos)
+  const { from } = inked(state, pos, -1)
   CONTRACTION_REACH.lastIndex = pos - from
-  return CONTRACTION_REACH.test(text) ? [{ wordChars: "'’" }] : []
+  return CONTRACTION_REACH.test(state.sliceDoc(from, inked(state, pos, 1).to))
+    ? [{ wordChars: "'’" }]
+    : []
 })
 
 export function wordAt(state: EditorState, pos: number, side: -1 | 1): SelectionRange | null {
