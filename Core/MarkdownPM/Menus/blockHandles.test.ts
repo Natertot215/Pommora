@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { EditorState } from '@codemirror/state'
 import { Decoration, EditorView, WidgetType } from '@codemirror/view'
-import { blockHandles, pointerReveal } from './blockHandles'
+import { blockHandles, pointerReveal, tagReveal } from './blockHandles'
 
 const BASE_PT = 15
 const views: EditorView[] = []
@@ -38,7 +38,7 @@ function mount(doc: string, extra: ReturnType<typeof tagAt>[] = []): EditorView 
   const view = new EditorView({
     state: EditorState.create({
       doc,
-      extensions: [blockHandles(), pointerReveal('page'), ...extra],
+      extensions: [blockHandles, pointerReveal(), tagReveal, ...extra],
     }),
     parent: document.body,
   })

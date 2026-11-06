@@ -36,7 +36,7 @@ export function followCitation(
 ): void {
   const { view } = pageEditorAt(event.target as Element)
   if (!view) return
-  const scan = docScan(view.state.doc)
+  const scan = docScan(view.state)
   const entry = citationFor(scan.citations, label)
   const lone =
     entry &&
@@ -52,7 +52,7 @@ function citeHitAt(view: EditorView, event: MouseEvent): CiteHit | null {
   const glyph = (event.target as HTMLElement).closest?.(CITE_GLYPH)
   if (!glyph) return null
   const pos = view.posAtDOM(glyph)
-  const marker = docScan(view.state.doc).citations.markers.find((m) => m.from === pos)
+  const marker = docScan(view.state).citations.markers.find((m) => m.from === pos)
   if (!marker) return null
   return { range: [marker.from, marker.to], onText: true, hidesSyntax: true, pos, marker }
 }
@@ -88,9 +88,7 @@ function rowHitAt(view: EditorView, event: MouseEvent): RowHit | null {
   const line = glyph?.closest('.cm-line')
   if (!line) return null
   const from = view.posAtDOM(line)
-  const entry = docScan(view.state.doc).citations.entryAt.get(
-    view.state.doc.lineAt(from).number - 1,
-  )
+  const entry = docScan(view.state).citations.entryAt.get(view.state.doc.lineAt(from).number - 1)
   if (!entry) return null
   return { range: [from, from], onText: true, hidesSyntax: true, pos: from, label: entry.label }
 }
@@ -101,7 +99,7 @@ export function citationRowPointer(): Extension {
     hoverGate: CITE_ROW_GLYPH,
     hitAt: rowHitAt,
     follow: (hit, view) => () => {
-      const marker = markersFor(docScan(view.state.doc).citations, hit.label)[0]
+      const marker = markersFor(docScan(view.state).citations, hit.label)[0]
       if (marker) travelTo(view, marker.from)
       else applyCitationAction(view, 'cite:copy', { kind: 'citation', label: hit.label })
     },
@@ -117,7 +115,7 @@ export function citationRowMenu(): Extension {
         '.cm-line.md-citation, .cm-line.md-citation-continued',
       )
       if (!line) return false
-      const scan = docScan(view.state.doc)
+      const scan = docScan(view.state)
       const entry = scan.citations.entryAt.get(
         view.state.doc.lineAt(view.posAtDOM(line)).number - 1,
       )

@@ -21,7 +21,9 @@ import {
   isHeadingLine,
   isThematicBreakLine,
   lineRefs,
+  parseListMarker,
   parseListMarkerPrefixed,
+  readsLists,
   scanFencedCode,
   signedLine,
   splitWithOffsets,
@@ -33,6 +35,7 @@ import {
   type FenceInfo,
   type LineRef,
   type ListMarker,
+  type MarkdownScope,
   type WebpageLine,
 } from './detect'
 import { tableRegions, type TableRegion } from './Tables/regions'
@@ -41,6 +44,7 @@ import { tableRegions, type TableRegion } from './Tables/regions'
 
 /** Every whole-document derivation the editor reads, one per document version. */
 export interface DocScan extends DocLines {
+  scope: MarkdownScope
   fences: (FenceInfo | undefined)[]
   callouts: (CalloutLine | undefined)[]
   headings: boolean[]
@@ -64,7 +68,36 @@ type LineScan = Omit<DocScan, 'citations'>
 
 // ── Construction ────────────────────────────────────────────────────────
 
-function scanLines(d: DocLines): LineScan {
+/** A surface reading only inline marks and, in a cell, lists: every block its text could spell is literal there. */
+function literalLines(d: DocLines, scope: MarkdownScope): LineScan {
+  const { lines, lineStarts } = d
+  const n = lines.length
+  const fences = new Array<undefined>(n).fill(undefined)
+  const inCode: CodeMask = (p) => inCodeAt({ lines, lineStarts, fences }, p)
+  const no = new Array<boolean>(n).fill(false)
+  return {
+    ...d,
+    scope,
+    fences,
+    callouts: fences,
+    headings: no,
+    quotes: no,
+    breaks: no,
+    markers: lines.map((l) => (readsLists(scope) ? parseListMarker(l) : null)),
+    refs: lines.map((l, i) => lineRefs(l, lineStarts[i], inCode)),
+    tables: [],
+    maths: [],
+    embeds: [],
+    webpages: [],
+    html: htmlBlocks(d, fences),
+    fenceLines: lines.flatMap((l, i) => (fenceAt(l) ? [i] : [])),
+    mathOpen: -1,
+    fresh: [0, n],
+  }
+}
+
+function scanLines(d: DocLines, scope: MarkdownScope): LineScan {
+  if (scope !== 'page') return literalLines(d, scope)
   const { lines, lineStarts } = d
   const fences = scanFencedCode(lines, lineStarts)
   const inCode: CodeMask = (p) => inCodeAt({ lines, lineStarts, fences }, p)
@@ -74,6 +107,7 @@ function scanLines(d: DocLines): LineScan {
   const excluded = [...base, ...math.ranges]
   return {
     ...d,
+    scope,
     fences,
     callouts: calloutLines(lines, fences),
     headings: lines.map(isHeadingLine),
@@ -93,11 +127,12 @@ function scanLines(d: DocLines): LineScan {
 }
 
 function withCitations(s: LineScan): DocScan {
-  return { ...s, citations: assembleCitations(s, (k) => inSealedLine(s, k), s.refs) }
+  const excluded = (k: number): boolean => s.scope !== 'page' || inSealedLine(s, k)
+  return { ...s, citations: assembleCitations(s, excluded, s.refs) }
 }
 
-export function scanDoc(text: string): DocScan {
-  return withCitations(scanLines(splitWithOffsets(text)))
+export function scanDoc(text: string, scope: MarkdownScope = 'page'): DocScan {
+  return withCitations(scanLines(splitWithOffsets(text), scope))
 }
 
 // ── Maintenance ─────────────────────────────────────────────────────────
@@ -128,7 +163,7 @@ export function rescan(prev: DocScan, from: number, to: number, text: string): D
     while (b < n && !quietAt(prev, b)) b++
     const start = prev.lineStarts[a]
     const end = b < n ? prev.lineStarts[b] - 1 + shift : text.length
-    const w = scanLines(splitWithOffsets(` ${text.slice(start, end)}`.slice(1)))
+    const w = scanLines(splitWithOffsets(` ${text.slice(start, end)}`.slice(1)), prev.scope)
     const above = loneAbove(prev, w, a)
     if (above < a) a = above
     else if (b === n || (quietAt(w, w.lines.length) && !pairsBelow(prev, w, b)))
@@ -196,6 +231,7 @@ function splice(
   lineStarts.push(text.length)
   return {
     text,
+    scope: prev.scope,
     lines: perLine(prev.lines, w.lines),
     lineStarts,
     fences: perLine(prev.fences, w.fences, (f, d) => f && shiftSpan(f, d)),

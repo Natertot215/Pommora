@@ -37,7 +37,7 @@ export const blockQuery = StateField.define<OpenBlockQuery | null>({
     if (value === null && !tr.annotation(Transaction.userEvent)) return null
     const sel = tr.newSelection.main
     if (!sel.empty || tr.startState.readOnly) return null
-    const q = blockQueryAt(docScan(tr.newDoc), sel.head)
+    const q = blockQueryAt(docScan.after(tr), sel.head)
     if (!q) return null
     const matches = filterBlockMenu(q.query)
     return matches.length > 0 ? { ...q, matches } : null

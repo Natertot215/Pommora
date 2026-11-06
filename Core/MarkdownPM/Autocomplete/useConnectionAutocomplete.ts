@@ -13,7 +13,6 @@ import {
 } from './autocomplete'
 import { toggled } from '@pommora/uix/Utilities/checkSet'
 import { docOutline } from '../docCache'
-import type { MarkdownScope } from '../Engine/detect'
 import { normalizeTitle } from '../../Paths/caseFold'
 import { restedOnLink } from '../Links/linkReveal'
 import { keptShown } from '../Links/linkSettle'
@@ -43,22 +42,20 @@ interface ConnectionAutocomplete extends EditorPane {
 export function useConnectionAutocomplete(
   viewRef: RefObject<EditorView | null>,
   host: EditorHost,
-  scope: MarkdownScope,
 ): ConnectionAutocomplete {
   const [ac, setAc] = useState<AcState | null>(null)
   const [held, setHeld] = useState(false)
-  const [field] = useState(() => acQuery(scope))
   const closePicker = (view: EditorView | null, why: 'dismiss' | 'blur'): void => {
-    if (view?.state.field(field).query) view.dispatch({ effects: closeAcQuery.of(why) })
+    if (view?.state.field(acQuery).query) view.dispatch({ effects: closeAcQuery.of(why) })
   }
   const [extension] = useState<Extension>(() => [
-    field,
+    acQuery,
     paneHeld,
     EditorView.updateListener.of((u) => {
       const holds = u.state.field(paneHeld)
       if (holds !== u.startState.field(paneHeld)) setHeld(holds)
-      const q = u.state.field(field).query
-      if (q === u.startState.field(field).query) return
+      const q = u.state.field(acQuery).query
+      if (q === u.startState.field(acQuery).query) return
       const g = q && caretGeometry(u.view, u.state.selection.main.head)
       setAc(q && g ? { ...q, ...g } : null)
     }),

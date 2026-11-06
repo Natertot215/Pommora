@@ -15,7 +15,6 @@ import {
   type Line,
   Prec,
   type Range,
-  type Text,
   type Transaction,
 } from '@codemirror/state'
 import {
@@ -35,8 +34,9 @@ import {
   docSectionHeadings,
   drawnLast,
   perScopedDoc,
+  surfaceScope,
 } from './docCache'
-import type { BlockSpan, DiffTally, MarkdownScope } from './Engine/detect'
+import type { BlockSpan, DiffTally } from './Engine/detect'
 import { sectionRunsIn } from '../Connections/scan'
 import { labelEscapes } from '../Connections/links'
 import { CHECK_GLYPH, CODE_TAGS, COPY_GLYPH, pathGlyph } from './codeGlyphs'
@@ -292,7 +292,7 @@ class CodeTagWidget extends WidgetType {
     let timer: number | undefined
     const copy = (e: MouseEvent): void => {
       e.preventDefault()
-      const text = codeBlockTextAt(docScan(view.state.doc), view.posAtDOM(el))
+      const text = codeBlockTextAt(docScan(view.state), view.posAtDOM(el))
       if (!text) return
       void view.state.facet(editorHost).clipboard.write(text)
       showCopied(true)
@@ -362,7 +362,7 @@ const hideMarker = Decoration.replace({})
 const atomicSpan = Decoration.mark({})
 const NO_ACTIVE = new Set<number>()
 
-const chunkTokens = drawnLast(tokenizeChunk)
+const chunkTokens = drawnLast((text, view) => tokenizeChunk(text, view.state.facet(surfaceScope)))
 const drawnTokens = new WeakMap<EditorView, readonly Token[]>()
 
 /** The link token the last draw tokenized at `pos`; code, and an HTML block drawn raw, hold none. */
@@ -414,11 +414,11 @@ function atomicsOn(
 // NOT viewport-scoped: a motion resolved against an unreached slot would seat the caret inside an invisible marker.
 export const docAtomics = perScopedDoc(
   (doc, scope) => {
-    const { perLine } = docLineIntentsOf(doc, scope)
+    const { perLine } = docLineIntentsOf.of(doc, scope)
     return Decoration.set(atomicsOn(perLine, 0, perLine.length), true)
   },
-  (prev, tr, scope) => {
-    const { perLine, fresh } = docLineIntentsOf.after(tr, scope)
+  (prev, tr) => {
+    const { perLine, fresh } = docLineIntentsOf.after(tr)
     const scan = docScan.after(tr)
     let set = prev.map(tr.changes)
     for (const [a, e] of fresh)
@@ -434,12 +434,11 @@ export const docAtomics = perScopedDoc(
 )
 
 function atomicFor(
-  doc: Text,
+  state: EditorState,
   caretLine: Line | null,
   caretAtomics: Range<Decoration>[],
-  scope: MarkdownScope,
 ): DecorationSet {
-  const all = docAtomics(doc, scope)
+  const all = docAtomics(state)
   if (!caretLine) return all
   return all.update({
     add: caretAtomics,
@@ -460,11 +459,11 @@ function ownHeadings(
   return { keys: docHeadingKeys(doc), texts: docSectionHeadings(doc) }
 }
 
-function build(view: EditorView, scope: MarkdownScope): Built {
+function build(view: EditorView): Built {
   const host = view.state.facet(editorHost)
   const conn = host.connections()
   // One derivation per doc VERSION (docCache) — a caret move re-derives only its own lines, never an O(doc) walk.
-  const scan = docScan(view.state.doc)
+  const scan = docScan(view.state)
   const { text } = scan
   const focused = view.hasFocus || view.state.field(paneHeld, false) === true
   const sel = view.state.selection.main
@@ -472,7 +471,7 @@ function build(view: EditorView, scope: MarkdownScope): Built {
   const { headingLinkStyle } = settings
   const inline = visibleInline(view, scan)
   // A cell's text parses alone, where a leading tag reads as a block the table never holds.
-  const raw = drawsRawHtml(scope, settings) ? inline.html : []
+  const raw = drawsRawHtml(scan.scope, settings) ? inline.html : []
   const tokens = raw.length > 0 ? inline.tokens.filter((tk) => !tk.inHtml) : inline.tokens
   drawnTokens.set(view, tokens)
   const active = focused
@@ -484,10 +483,9 @@ function build(view: EditorView, scope: MarkdownScope): Built {
   // Loop, never spread — a spread into push throws past V8's argument ceiling, and CM deactivates a crashed plugin for good.
   for (const it of assembleLineIntents(
     scan,
-    docLineIntentsOf(view.state.doc, scope),
+    docLineIntentsOf(view.state),
     head,
     view.viewport,
-    scope,
     !sel.empty,
   ))
     intents.push(it)
@@ -675,175 +673,168 @@ function build(view: EditorView, scope: MarkdownScope): Built {
     for (let i = visible.indexOf('↔'); i >= 0; i = visible.indexOf('↔', i + 1))
       ranges.push(bidir.range(a + i, a + i + 1))
   }
-  const atomic = atomicFor(view.state.doc, caretLine, caretAtomics, scope)
+  const atomic = atomicFor(view.state, caretLine, caretAtomics)
   return { deco: Decoration.set(ranges, true), atomic }
 }
 
-const caretSeat = (scope: MarkdownScope): Extension => {
-  const leaveLine = (view: EditorView, extend: boolean): boolean => {
-    const { anchor, head } = view.state.selection.main
-    const lineStart = view.state.doc.lineAt(head).from
-    if ((!extend && anchor !== head) || lineStart === 0 || head === lineStart) return false
-    const visible = prefixEndAt(
-      docLineIntentsOf(view.state.doc, scope),
-      docScan(view.state.doc),
-      head,
-    )
-    if (head !== visible) return false
-    const to = view.moveByChar(EditorSelection.cursor(lineStart), false).head
-    view.dispatch({
-      selection: EditorSelection.range(extend ? anchor : to, to),
-      scrollIntoView: true,
-      userEvent: 'select',
-    })
-    return true
-  }
-  const page = scope === 'page'
-  // A diff line's seat draws on the code's side unless a caret was brought into the margin: a step left from the code, or a press left of it. It keeps the margin through an edit that stays on its line, and a selection's head always draws on the code's side.
-  const toSide = (view: EditorView, side: -1 | 1): boolean => {
-    const { head, empty, assoc } = view.state.selection.main
-    const there = side < 0 ? assoc < 0 : assoc >= 0
-    if (!page || !empty || there || signSeatAt(docScan(view.state.doc), head) !== head) return false
-    view.dispatch({
-      selection: EditorSelection.create([EditorSelection.cursor(head, side)]),
-      userEvent: side < 0 ? 'select.margin' : 'select',
-    })
-    return true
-  }
-  const seatUnder = (view: EditorView, x: number, y: number) => {
-    const pos = view.posAtCoords({ x, y })
-    const seat = pos === null ? null : signSeatAt(docScan(view.state.doc), pos)
-    const code = seat === null ? null : view.coordsAtPos(seat, 1)
-    return seat === null || !code ? null : { seat, margin: x < code.left }
-  }
-  const pressMargin = EditorView.mouseSelectionStyle.of((view, start) => {
-    if (
-      !page ||
-      start.button !== 0 ||
-      start.detail > 2 ||
-      start.shiftKey ||
-      start.altKey ||
-      start.metaKey ||
-      start.ctrlKey
-    )
-      return null
-    const under = seatUnder(view, start.clientX, start.clientY)
-    // A press past the end of a line with no code resolves to its seat on the margin's side, so this style seats that one too, on the code's.
-    if (!under || (!under.margin && under.seat !== view.state.doc.lineAt(under.seat).to))
-      return null
-    const side = under.margin ? -1 : 1
-    let { seat } = under
-    return {
-      get: (e) => {
-        const head = view.posAtCoords({ x: e.clientX, y: e.clientY }, false)
-        const back = head <= seat && head >= view.state.doc.lineAt(seat).from
-        return EditorSelection.create([
-          back ? EditorSelection.cursor(seat, side) : EditorSelection.range(seat, head),
-        ])
-      },
-      update: (u) => {
-        seat = u.changes.mapPos(seat)
-      },
-    }
+const leaveLine = (view: EditorView, extend: boolean): boolean => {
+  const { anchor, head } = view.state.selection.main
+  const lineStart = view.state.doc.lineAt(head).from
+  if ((!extend && anchor !== head) || lineStart === 0 || head === lineStart) return false
+  const visible = prefixEndAt(docLineIntentsOf(view.state), docScan(view.state), head)
+  if (head !== visible) return false
+  const to = view.moveByChar(EditorSelection.cursor(lineStart), false).head
+  view.dispatch({
+    selection: EditorSelection.range(extend ? anchor : to, to),
+    scrollIntoView: true,
+    userEvent: 'select',
   })
-  // The margin takes only a typed sign, and a paste or a drop never reaches the input handler that admits one, so both land nothing there: a paste from a caret in the margin, a drop from a pointer over it. Every paste path tags itself `input.paste`.
-  const pasteMargin = EditorState.transactionFilter.of((tr) =>
-    page &&
-    tr.isUserEvent('input.paste') &&
-    caretInMargin(docScan(tr.startState.doc), tr.startState.selection.main)
-      ? []
-      : tr,
-  )
-  const dropMargin = EditorView.domEventHandlers({
-    drop(e, view) {
-      if (!page || !seatUnder(view, e.clientX, e.clientY)?.margin) return false
-      e.preventDefault()
-      return true
-    },
-  })
-  const inMargin = (tr: Transaction, seat: number): boolean => {
-    if (tr.isUserEvent('select.margin')) return true
-    if (tr.isUserEvent('select.pointer')) return tr.newSelection.main.assoc < 0
-    const was = tr.startState.selection.main
-    return (
-      tr.docChanged &&
-      caretInMargin(docScan(tr.startState.doc), was) &&
-      tr.newDoc.lineAt(tr.changes.mapPos(was.head, -1)).from === tr.newDoc.lineAt(seat).from
-    )
-  }
-  const run = (view: EditorView) => leaveLine(view, false)
-  const shift = (view: EditorView) => leaveLine(view, true)
-  return [
-    pressMargin,
-    pasteMargin,
-    dropMargin,
-    EditorState.transactionFilter.of((tr) => {
-      if (!tr.selection && !tr.docChanged) return tr
-      const { anchor, head, empty, assoc } = tr.newSelection.main
-      const intents = docLineIntentsOf.after(tr, scope)
-      const scan = docScan.after(tr)
-      const visible = prefixEndAt(intents, scan, head)
-      const seat =
-        (head < visible
-          ? visible
-          : empty && tr.isUserEvent('select.pointer')
-            ? seatPastMarker(intents, scan, head, scope)
-            : null) ?? head
-      let side = assoc
-      if (page && signSeatAt(scan, seat) === seat) side = empty && inMargin(tr, seat) ? -1 : 1
-      if (seat === head && side === assoc) return tr
-      const selection = tr.newSelection.replaceRange(
-        empty
-          ? EditorSelection.cursor(seat, side)
-          : EditorSelection.range(anchor, seat, undefined, undefined, side),
-      )
-      return [tr, { selection, sequential: true }]
-    }),
-    Prec.high(
-      keymap.of([
-        { key: 'ArrowLeft', run: (view) => toSide(view, -1) || run(view), shift },
-        { key: 'ArrowRight', run: (view) => toSide(view, 1) },
-        { key: 'Mod-ArrowLeft', mac: 'Alt-ArrowLeft', run, shift },
-      ]),
-    ),
-  ]
+  return true
 }
 
-const stepDocs = (scope: MarkdownScope): Extension =>
-  EditorState.transactionExtender.of((tr) => {
-    if (tr.docChanged) docAtomics.after(tr, scope)
+// A diff line's seat draws on the code's side unless a caret was brought into the margin: a step left from the code, or a press left of it. It keeps the margin through an edit that stays on its line, and a selection's head always draws on the code's side.
+const toSide = (view: EditorView, side: -1 | 1): boolean => {
+  const { head, empty, assoc } = view.state.selection.main
+  const there = side < 0 ? assoc < 0 : assoc >= 0
+  if (!empty || there || signSeatAt(docScan(view.state), head) !== head) return false
+  view.dispatch({
+    selection: EditorSelection.create([EditorSelection.cursor(head, side)]),
+    userEvent: side < 0 ? 'select.margin' : 'select',
+  })
+  return true
+}
+
+const seatUnder = (view: EditorView, x: number, y: number) => {
+  const pos = view.posAtCoords({ x, y })
+  const seat = pos === null ? null : signSeatAt(docScan(view.state), pos)
+  const code = seat === null ? null : view.coordsAtPos(seat, 1)
+  return seat === null || !code ? null : { seat, margin: x < code.left }
+}
+
+const pressMargin = EditorView.mouseSelectionStyle.of((view, start) => {
+  if (
+    start.button !== 0 ||
+    start.detail > 2 ||
+    start.shiftKey ||
+    start.altKey ||
+    start.metaKey ||
+    start.ctrlKey
+  )
     return null
-  })
-
-export function markdownDecorations(scope: MarkdownScope = 'page'): Extension {
-  return [stepDocs(scope), decorationPlugin(scope), caretSeat(scope)]
-}
-
-function decorationPlugin(scope: MarkdownScope): Extension {
-  return ViewPlugin.fromClass(
-    class {
-      built: Built
-      constructor(view: EditorView) {
-        this.built = build(view, scope)
-      }
-      update(u: ViewUpdate): void {
-        // Inline tokens are viewport-scoped, so scroll must rebuild too; line-level chrome spans the whole doc.
-        if (
-          u.docChanged ||
-          u.selectionSet ||
-          u.focusChanged ||
-          u.startState.field(paneHeld, false) !== u.state.field(paneHeld, false) ||
-          u.startState.field(linkWriting, false) !== u.state.field(linkWriting, false) ||
-          u.viewportChanged ||
-          u.transactions.some((tr) => tr.effects.some((e) => e.is(redrawNudge)))
-        )
-          this.built = build(u.view, scope)
-      }
+  const under = seatUnder(view, start.clientX, start.clientY)
+  // A press past the end of a line with no code resolves to its seat on the margin's side, so this style seats that one too, on the code's.
+  if (!under || (!under.margin && under.seat !== view.state.doc.lineAt(under.seat).to)) return null
+  const side = under.margin ? -1 : 1
+  let { seat } = under
+  return {
+    get: (e) => {
+      const head = view.posAtCoords({ x: e.clientX, y: e.clientY }, false)
+      const back = head <= seat && head >= view.state.doc.lineAt(seat).from
+      return EditorSelection.create([
+        back ? EditorSelection.cursor(seat, side) : EditorSelection.range(seat, head),
+      ])
     },
-    {
-      decorations: (v) => v.built.deco,
-      provide: (plugin) =>
-        EditorView.atomicRanges.of((view) => view.plugin(plugin)?.built.atomic ?? Decoration.none),
+    update: (u) => {
+      seat = u.changes.mapPos(seat)
     },
+  }
+})
+
+// The margin takes only a typed sign, and a paste or a drop never reaches the input handler that admits one, so both land nothing there: a paste from a caret in the margin, a drop from a pointer over it. Every paste path tags itself `input.paste`.
+const pasteMargin = EditorState.transactionFilter.of((tr) =>
+  tr.isUserEvent('input.paste') &&
+  caretInMargin(docScan(tr.startState), tr.startState.selection.main)
+    ? []
+    : tr,
+)
+
+const dropMargin = EditorView.domEventHandlers({
+  drop(e, view) {
+    if (!seatUnder(view, e.clientX, e.clientY)?.margin) return false
+    e.preventDefault()
+    return true
+  },
+})
+
+const inMargin = (tr: Transaction, seat: number): boolean => {
+  if (tr.isUserEvent('select.margin')) return true
+  if (tr.isUserEvent('select.pointer')) return tr.newSelection.main.assoc < 0
+  const was = tr.startState.selection.main
+  return (
+    tr.docChanged &&
+    caretInMargin(docScan(tr.startState), was) &&
+    tr.newDoc.lineAt(tr.changes.mapPos(was.head, -1)).from === tr.newDoc.lineAt(seat).from
   )
 }
+
+const stepOut = (view: EditorView) => leaveLine(view, false)
+const extendOut = (view: EditorView) => leaveLine(view, true)
+
+const caretSeat: Extension = [
+  pressMargin,
+  pasteMargin,
+  dropMargin,
+  EditorState.transactionFilter.of((tr) => {
+    if (!tr.selection && !tr.docChanged) return tr
+    const { anchor, head, empty, assoc } = tr.newSelection.main
+    const intents = docLineIntentsOf.after(tr)
+    const scan = docScan.after(tr)
+    const visible = prefixEndAt(intents, scan, head)
+    const seat =
+      (head < visible
+        ? visible
+        : empty && tr.isUserEvent('select.pointer')
+          ? seatPastMarker(intents, scan, head)
+          : null) ?? head
+    let side = assoc
+    if (signSeatAt(scan, seat) === seat) side = empty && inMargin(tr, seat) ? -1 : 1
+    if (seat === head && side === assoc) return tr
+    const selection = tr.newSelection.replaceRange(
+      empty
+        ? EditorSelection.cursor(seat, side)
+        : EditorSelection.range(anchor, seat, undefined, undefined, side),
+    )
+    return [tr, { selection, sequential: true }]
+  }),
+  Prec.high(
+    keymap.of([
+      { key: 'ArrowLeft', run: (view) => toSide(view, -1) || stepOut(view), shift: extendOut },
+      { key: 'ArrowRight', run: (view) => toSide(view, 1) },
+      { key: 'Mod-ArrowLeft', mac: 'Alt-ArrowLeft', run: stepOut, shift: extendOut },
+    ]),
+  ),
+]
+
+const stepDocs: Extension = EditorState.transactionExtender.of((tr) => {
+  if (tr.docChanged) docAtomics.after(tr)
+  return null
+})
+
+const decorationPlugin = ViewPlugin.fromClass(
+  class {
+    built: Built
+    constructor(view: EditorView) {
+      this.built = build(view)
+    }
+    update(u: ViewUpdate): void {
+      // Inline tokens are viewport-scoped, so scroll must rebuild too; line-level chrome spans the whole doc.
+      if (
+        u.docChanged ||
+        u.selectionSet ||
+        u.focusChanged ||
+        u.startState.field(paneHeld, false) !== u.state.field(paneHeld, false) ||
+        u.startState.field(linkWriting, false) !== u.state.field(linkWriting, false) ||
+        u.viewportChanged ||
+        u.transactions.some((tr) => tr.effects.some((e) => e.is(redrawNudge)))
+      )
+        this.built = build(u.view)
+    }
+  },
+  {
+    decorations: (v) => v.built.deco,
+    provide: (plugin) =>
+      EditorView.atomicRanges.of((view) => view.plugin(plugin)?.built.atomic ?? Decoration.none),
+  },
+)
+
+export const markdownDecorations: Extension = [stepDocs, decorationPlugin, caretSeat]

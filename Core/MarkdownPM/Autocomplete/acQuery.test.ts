@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { Compartment, EditorState } from '@codemirror/state'
 import { editorHost, type EditorSettings } from '../api'
 import { testHost } from '../../Testing/editorHarness'
+import { surfaceScope } from '../docCache'
 import { acQuery, closeAcQuery } from './acQuery'
 
 const stateOf = (
@@ -9,15 +10,12 @@ const stateOf = (
   caret: number,
   settings: Partial<EditorSettings> = {},
   scope: 'page' | 'cell' = 'page',
-) => {
-  const field = acQuery(scope)
-  const state = EditorState.create({
+) =>
+  EditorState.create({
     doc,
     selection: { anchor: caret },
-    extensions: [field, editorHost.of(testHost({ settings }))],
+    extensions: [surfaceScope.of(scope), acQuery, editorHost.of(testHost({ settings }))],
   })
-  return { field, state }
-}
 
 const typed = (state: EditorState, at: number, text: string) =>
   state.update({
@@ -28,56 +26,55 @@ const typed = (state: EditorState, at: number, text: string) =>
 
 describe('the picker’s query as editor state', () => {
   it('answers a typed query and keeps its object across a selection that changes nothing', () => {
-    const { field, state } = stateOf('[[Pr', 4)
+    const state = stateOf('[[Pr', 4)
     const next = typed(state, 4, 'o')
-    const q = next.field(field).query
+    const q = next.field(acQuery).query
     expect(q).toMatchObject({ query: 'Pro', syntax: 'wiki', part: 'title', closed: false })
-    expect(next.update({ selection: { anchor: 5 } }).state.field(field).query).toBe(q)
+    expect(next.update({ selection: { anchor: 5 } }).state.field(acQuery).query).toBe(q)
   })
 
   it('keeps its query object as the caret moves within the link', () => {
-    const { field, state } = stateOf('[[Alpha]] x', 0)
+    const state = stateOf('[[Alpha]] x', 0)
     let moved = state.update({ selection: { anchor: 4 } }).state
-    const q = moved.field(field).query
+    const q = moved.field(acQuery).query
     expect(q).toMatchObject({ query: 'Alpha' })
     for (const anchor of [5, 6, 5]) {
       moved = moved.update({ selection: { anchor } }).state
-      expect(moved.field(field).query).toBe(q)
+      expect(moved.field(acQuery).query).toBe(q)
     }
   })
 
   it('stays dismissed under the query it closed on until the query changes', () => {
-    const { field, state } = stateOf('[[Pro]] x', 4)
+    const state = stateOf('[[Pro]] x', 4)
     const opened = state.update({ selection: { anchor: 5 } }).state
-    expect(opened.field(field).query).not.toBeNull()
+    expect(opened.field(acQuery).query).not.toBeNull()
     const closed = opened.update({ effects: closeAcQuery.of('dismiss') }).state
-    expect(closed.field(field).query).toBeNull()
+    expect(closed.field(acQuery).query).toBeNull()
     const again = closed.update({ selection: { anchor: 4 } }).state
-    expect(again.field(field).query).toBeNull()
+    expect(again.field(acQuery).query).toBeNull()
     const moved = typed(again, 5, 'j')
-    expect(moved.field(field).query).toMatchObject({ query: 'Proj' })
+    expect(moved.field(acQuery).query).toMatchObject({ query: 'Proj' })
   })
 
   it('arms on a caret already seated when a tile flips out of read-only, and clears flipping back', () => {
-    const field = acQuery('page')
     const gate = new Compartment()
     const seated = EditorState.create({
       doc: '[[Zeta]] x',
-      extensions: [field, editorHost.of(testHost()), gate.of(EditorState.readOnly.of(true))],
+      extensions: [acQuery, editorHost.of(testHost()), gate.of(EditorState.readOnly.of(true))],
     }).update({ selection: { anchor: 6 } }).state
-    expect(seated.field(field).query).toBeNull()
+    expect(seated.field(acQuery).query).toBeNull()
     const live = seated.update({ effects: gate.reconfigure(EditorState.readOnly.of(false)) }).state
-    expect(live.field(field).query).toMatchObject({ query: 'Zeta' })
+    expect(live.field(acQuery).query).toMatchObject({ query: 'Zeta' })
     const back = live.update({ effects: gate.reconfigure(EditorState.readOnly.of(true)) }).state
-    expect(back.field(field).query).toBeNull()
+    expect(back.field(acQuery).query).toBeNull()
   })
 
   it('a blur closes without remembering the query', () => {
-    const { field, state } = stateOf('[[Pro]] x', 4)
+    const state = stateOf('[[Pro]] x', 4)
     const opened = state.update({ selection: { anchor: 5 } }).state
     const blurred = opened.update({ effects: closeAcQuery.of('blur') }).state
-    expect(blurred.field(field).query).toBeNull()
-    expect(blurred.update({ selection: { anchor: 5 } }).state.field(field).query).not.toBeNull()
+    expect(blurred.field(acQuery).query).toBeNull()
+    expect(blurred.update({ selection: { anchor: 5 } }).state.field(acQuery).query).not.toBeNull()
   })
 })
 
@@ -85,18 +82,18 @@ describe('the § arm', () => {
   const automatic = { inPageHeadingResolution: 'automatic' as const }
 
   it('a typed § arms at its position, maps through an insert before it, and lapses off its line', () => {
-    const { field, state } = stateOf('see \nnext', 4, automatic)
+    const state = stateOf('see \nnext', 4, automatic)
     const armed = typed(state, 4, '§')
-    expect(armed.field(field).armed).toBe(4)
+    expect(armed.field(acQuery).armed).toBe(4)
     const shifted = typed(armed, 0, 'I ')
-    expect(shifted.field(field).armed).toBe(6)
+    expect(shifted.field(acQuery).armed).toBe(6)
     expect(
-      shifted.update({ selection: { anchor: shifted.doc.length } }).state.field(field).armed,
+      shifted.update({ selection: { anchor: shifted.doc.length } }).state.field(acQuery).armed,
     ).toBeNull()
   })
 
   it('a deleted § disarms, so the text typed after it opens nothing', () => {
-    const { field, state } = stateOf('see ', 4, automatic)
+    const state = stateOf('see ', 4, automatic)
     const armed = typed(state, 4, '§')
     const deleted = armed.update({
       changes: { from: 4, to: 5 },
@@ -104,19 +101,19 @@ describe('the § arm', () => {
       userEvent: 'delete.backward',
     }).state
     const after = typed(deleted, 4, 'x')
-    expect(after.field(field).armed).toBeNull()
-    expect(after.field(field).query).toBeNull()
+    expect(after.field(acQuery).armed).toBeNull()
+    expect(after.field(acQuery).query).toBeNull()
   })
 
   it('a ## converted to § arms the heading list', () => {
-    const { field, state } = stateOf('see #', 5, automatic)
+    const state = stateOf('see #', 5, automatic)
     const converted = state.update({
       changes: { from: 4, to: 5, insert: '§' },
       selection: { anchor: 5 },
       userEvent: 'input',
     }).state
-    expect(converted.field(field).armed).toBe(4)
-    expect(converted.field(field).query).toMatchObject({
+    expect(converted.field(acQuery).armed).toBe(4)
+    expect(converted.field(acQuery).query).toMatchObject({
       syntax: 'prose',
       part: 'heading',
       query: '',
@@ -128,8 +125,8 @@ describe('the raw-HTML stand-down', () => {
   it('answers nothing inside a raw HTML block on a page that draws one', () => {
     const doc = '<div>\n[[Pr\n</div>'
     const typedIn = (settings: Partial<EditorSettings>) => {
-      const { field, state } = stateOf(doc, 10, settings)
-      return typed(state, 10, 'o').field(field).query
+      const state = stateOf(doc, 10, settings)
+      return typed(state, 10, 'o').field(acQuery).query
     }
     expect(typedIn({ htmlFormatting: true })).toBeNull()
     expect(typedIn({ htmlFormatting: false })).toMatchObject({ query: 'Pro' })

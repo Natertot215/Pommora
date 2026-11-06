@@ -1,6 +1,7 @@
 import type { TokenOf } from '../Engine/tokens'
 import { isPaint, type Paint } from '../Engine/paints'
-import { headingParts, type MarkdownScope } from '../Engine/detect'
+import { headingParts } from '../Engine/detect'
+import { blockPrefix } from './edits'
 import { isQuoteToggleable, listKindOf, splitPrefix, underSelection } from './format'
 import type { EditorMenuRequest } from '../../Actions/editorMenu'
 import type { DocScan } from '../Engine/docScan'
@@ -12,7 +13,6 @@ export function readFormatState(
   selFrom: number,
   selTo: number,
   settings: Personalization,
-  scope: MarkdownScope,
 ): Omit<EditorMenuRequest, 'scope' | 'x' | 'y' | 'embedSeat' | 'citeSeat' | 'resting'> {
   const { from, to, ls, line, tokens, covering } = underSelection(scan, selFrom, selTo)
   const lineFrom = from - ls
@@ -22,7 +22,7 @@ export function readFormatState(
   const fenced = scan.fences[lineIndexAt(scan, selFrom)] !== undefined
 
   // Heading state reads the line's INNER body so a `> # item` reports as a heading — the render layer draws it behind the `>`, and the menu must agree with what the user sees.
-  const hm = headingParts(splitPrefix(line, scope).body)
+  const hm = headingParts(splitPrefix(line, blockPrefix(scan, line)).body)
 
   return {
     bold: wraps('bold'),
@@ -37,7 +37,7 @@ export function readFormatState(
       (tk) => tk.kind === 'wikiLink' && tk.range[0] <= lineFrom && lineTo <= tk.range[1],
     ),
     heading: hm ? hm.hashes.length : 0,
-    list: listKindOf(scan, selFrom, selTo, settings, scope),
+    list: listKindOf(scan, selFrom, selTo, settings),
     block: fenced ? 'code' : isQuoteToggleable(line) ? 'quote' : null,
   }
 }

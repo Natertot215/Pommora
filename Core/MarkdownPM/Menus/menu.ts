@@ -20,7 +20,6 @@ import { editFor } from '../Input/format'
 export function applyEditorAction(
   view: EditorView,
   action: string,
-  scope: MarkdownScope = 'page',
   { from, to }: { from: number; to: number } = view.state.selection.main,
 ): void {
   const how = pasteModeOf(action)
@@ -29,8 +28,7 @@ export function applyEditorAction(
   else if (action === 'block:webpage') webpageInsertAtCaret(view)
   else if (action === 'block:citation') insertCitation(view)
   else if (how) void pasteFromClipboard(view, how)
-  else if (applyEdit(view, editFor(action, docScan(view.state.doc), from, to, settings, scope)))
-    view.focus()
+  else if (applyEdit(view, editFor(action, docScan(view.state), from, to, settings))) view.focus()
 }
 
 const clickInside = (doc: string, at: number, from: number, to: number, glyph: boolean): boolean =>
@@ -50,7 +48,6 @@ function keepSeatedSelection(): void {
 export function routeRightClick(
   host: EditorHost,
   scan: DocScan,
-  scope: MarkdownScope,
   event: { clientX: number; clientY: number; preventDefault(): void },
   click: () => {
     at: number | null
@@ -80,13 +77,13 @@ export function routeRightClick(
     surface.seat(start, end)
     keepSeatedSelection()
   }
-  const state = readFormatState(scan, from, to, host.settings(), scope)
+  const state = readFormatState(scan, from, to, host.settings())
   if (glyph) event.preventDefault()
   const pick = glyph
     ? host.menus.grip({ kind: 'glyph', current: state.list })
     : ask({
         ...state,
-        scope,
+        scope: scan.scope,
         x: event.clientX,
         y: event.clientY,
         ...surface.request(from, to, start, end),
@@ -120,8 +117,7 @@ export const editorMenu = (scope: MarkdownScope): Extension =>
         const page = scope === 'page'
         routeRightClick(
           view.state.facet(editorHost),
-          docScan(opened),
-          scope,
+          docScan(view.state),
           event,
           () => ({
             at: glyph ? view.posAtDOM(glyph) : (hit?.pos ?? null),
@@ -138,7 +134,7 @@ export const editorMenu = (scope: MarkdownScope): Extension =>
             }),
             apply: (action, from, to) => {
               if (view.dom.isConnected && view.state.doc === opened)
-                applyEditorAction(view, action, scope, { from, to })
+                applyEditorAction(view, action, { from, to })
             },
           },
         )

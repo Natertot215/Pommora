@@ -2,7 +2,7 @@ import type { EditorState } from '@codemirror/state'
 import { parse } from '../MarkdownPM/Engine/parser'
 import { parseDelimiter, splitRow } from '../MarkdownPM/Engine/Tables/codec'
 import { normalize, type TableModel } from '../MarkdownPM/Engine/Tables/model'
-import { isBlank, type MarkdownScope } from '../MarkdownPM/Engine/detect'
+import { isBlank } from '../MarkdownPM/Engine/detect'
 import { type DocScan, scanDoc } from '../MarkdownPM/Engine/docScan'
 import {
   type DecoIntent,
@@ -51,13 +51,11 @@ export function decorationsFor(
   tokens: Token[],
   active: Set<number>,
   selStart: number,
-  scan?: DocScan,
-  scope: MarkdownScope = 'page',
+  scan: DocScan = scanDoc(text),
 ): DecoIntent[] {
-  const s = scan ?? scanDoc(text)
   const intents: DecoIntent[] = tokenIntents(tokens, active)
-  for (let i = 0; i < s.lines.length; i++) lineIntentsInto(s, i, selStart, intents, scope)
-  for (const rails of docLineIntents(s, scope).rails)
+  for (let i = 0; i < scan.lines.length; i++) lineIntentsInto(scan, i, selStart, intents)
+  for (const rails of docLineIntents(scan).rails)
     if (rails) for (const it of rails) intents.push(it)
   return intents
 }

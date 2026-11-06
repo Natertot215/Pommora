@@ -1,7 +1,6 @@
 import { StateEffect, StateField, type Transaction } from '@codemirror/state'
 import { docScan } from '../docCache'
 import { editorHost, inRawHtml } from '../api'
-import type { MarkdownScope } from '../Engine/detect'
 import { type AutocompleteQuery, autocompleteQuery } from './autocomplete'
 
 interface AcField {
@@ -44,31 +43,30 @@ function armedBy(tr: Transaction): number | null {
   return seen === 1 ? at : null
 }
 
-export const acQuery = (scope: MarkdownScope) =>
-  StateField.define<AcField>({
-    create: () => IDLE,
-    update(value, tr) {
-      const close = tr.effects.find((e) => e.is(closeAcQuery))
-      if (close) return { ...IDLE, dismissed: close.value === 'dismiss' ? value.query : null }
-      // A tile flipping out of read-only arms a query with neither a doc nor a selection change: its press already seated the caret.
-      if (!tr.docChanged && !tr.selection && tr.startState.readOnly === tr.state.readOnly)
-        return value
-      let armed = armedBy(tr) ?? (value.armed === null ? null : tr.changes.mapPos(value.armed))
-      const head = tr.newSelection.main.head
-      if (
-        armed !== null &&
-        (tr.newDoc.sliceString(armed, armed + 1) !== '§' ||
-          tr.newDoc.lineAt(armed).number !== tr.newDoc.lineAt(head).number)
-      )
-        armed = null
-      const q =
-        tr.newSelection.main.empty && !tr.state.readOnly && !inRawHtml(tr.state, head, scope)
-          ? autocompleteQuery(docScan(tr.newDoc), head, armed ?? undefined, scope)
-          : null
-      const dismissed = q && sameQuery(q, value.dismissed) ? value.dismissed : null
-      const query = dismissed ? null : q && sameQuery(q, value.query) ? value.query : q
-      return query === value.query && armed === value.armed && dismissed === value.dismissed
-        ? value
-        : { query, armed, dismissed }
-    },
-  })
+export const acQuery = StateField.define<AcField>({
+  create: () => IDLE,
+  update(value, tr) {
+    const close = tr.effects.find((e) => e.is(closeAcQuery))
+    if (close) return { ...IDLE, dismissed: close.value === 'dismiss' ? value.query : null }
+    // A tile flipping out of read-only arms a query with neither a doc nor a selection change: its press already seated the caret.
+    if (!tr.docChanged && !tr.selection && tr.startState.readOnly === tr.state.readOnly)
+      return value
+    let armed = armedBy(tr) ?? (value.armed === null ? null : tr.changes.mapPos(value.armed))
+    const head = tr.newSelection.main.head
+    if (
+      armed !== null &&
+      (tr.newDoc.sliceString(armed, armed + 1) !== '§' ||
+        tr.newDoc.lineAt(armed).number !== tr.newDoc.lineAt(head).number)
+    )
+      armed = null
+    const q =
+      tr.newSelection.main.empty && !tr.state.readOnly && !inRawHtml(tr.state, head)
+        ? autocompleteQuery(docScan.after(tr), head, armed ?? undefined)
+        : null
+    const dismissed = q && sameQuery(q, value.dismissed) ? value.dismissed : null
+    const query = dismissed ? null : q && sameQuery(q, value.query) ? value.query : q
+    return query === value.query && armed === value.armed && dismissed === value.dismissed
+      ? value
+      : { query, armed, dismissed }
+  },
+})

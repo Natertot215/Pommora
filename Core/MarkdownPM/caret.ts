@@ -57,7 +57,7 @@ function caretMarkers(view: EditorView): RectangleMarker[] {
     }
     // A caret scrolled out of its code block's run draws nowhere; one in a diff margin stands beside the run, not in it.
     const clip = codeClip(view, r.head)
-    const kept = !clip || caretInMargin(docScan(view.state.doc), r)
+    const kept = !clip || caretInMargin(docScan(view.state), r)
     for (const m of cursorMarkers(view, 'caret-bar', r.head, r.assoc))
       if (kept || (m.left >= clip.left && m.left <= clip.right))
         out.push(clampToLine(view, 'caret-bar', m))

@@ -5,7 +5,7 @@ import { undo } from '@codemirror/commands'
 import type { EditorView } from '@codemirror/view'
 import { EditorState, type RangeSet, type RangeValue } from '@codemirror/state'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '../Testing/editorHarness'
-import { docLineIntentsOf, docScan } from './docCache'
+import { docLineIntentsOf, docScan, surfaceScope } from './docCache'
 import { docAtomics, markdownDecorations } from './decorations'
 import { type DecoIntent, docLineIntents } from './Engine/intents'
 import { scanDoc } from './Engine/docScan'
@@ -109,13 +109,13 @@ describe('docCache — every version steps from the last', () => {
     const agrees = (): void => {
       const doc = view.state.doc
       const whole = scanDoc(doc.toString())
-      const { fresh: _a, ...stepped } = docScan(doc)
+      const { fresh: _a, ...stepped } = docScan(view.state)
       const { fresh: _b, ...derived } = whole
       expect(isDeepStrictEqual(stepped, derived)).toBe(true)
-      const { fresh: _c, ...intents } = docLineIntentsOf(doc, 'page')
+      const { fresh: _c, ...intents } = docLineIntentsOf(view.state)
       const { fresh: _d, ...wholeIntents } = docLineIntents(whole)
       expect(isDeepStrictEqual(intents, wholeIntents)).toBe(true)
-      expect(ranges(docAtomics(doc, 'page'))).toEqual(atomicsOf(wholeIntents.perLine))
+      expect(ranges(docAtomics(view.state))).toEqual(atomicsOf(wholeIntents.perLine))
     }
     for (const edit of EDITS) {
       type(view, edit(view.state.doc.toString()))
@@ -152,9 +152,9 @@ describe('docCache — every version steps from the last', () => {
       }
       let state = EditorState.create({
         doc: BODY,
-        extensions: markdownDecorations(scope),
+        extensions: [surfaceScope.of(scope), markdownDecorations],
       })
-      docAtomics(state.doc, scope)
+      docAtomics(state)
       for (let step = 0; step < 600; step++) {
         const len = state.doc.length
         const from = next(len + 1)
@@ -166,10 +166,8 @@ describe('docCache — every version steps from the last', () => {
             insert: to > from && next(2) === 0 ? '' : PIECES[next(PIECES.length)],
           },
         }).state
-        const whole = docLineIntents(scanDoc(state.doc.toString()), scope)
-        expect(ranges(docAtomics(state.doc, scope)), `${scope} step ${step}`).toEqual(
-          atomicsOf(whole.perLine),
-        )
+        const whole = docLineIntents(scanDoc(state.doc.toString(), scope))
+        expect(ranges(docAtomics(state)), `${scope} step ${step}`).toEqual(atomicsOf(whole.perLine))
       }
     }
   })

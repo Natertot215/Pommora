@@ -20,7 +20,6 @@ import {
   shownAlias,
 } from '../../Connections/linkValue'
 import type { PageIndex } from '../../Connections/pageIndex'
-import type { MarkdownScope } from '../Engine/detect'
 import type { Span } from '../Engine/markdownCode'
 import { docScan } from '../docCache'
 import { linkAt, linkWithin } from '../Input/edits'
@@ -86,7 +85,7 @@ function changedLink(tr: Transaction, kept: Writing | null): Writing | null {
         ? kept
         : {
             start: after.start,
-            was: linkWithin(docScan(tr.startState.doc), fromA, toA)?.text ?? '',
+            was: linkWithin(docScan(tr.startState), fromA, toA)?.text ?? '',
           }
   })
   return found
@@ -98,7 +97,7 @@ function linkStartingAt(
   start: number,
 ): { line: Line; o: LinkOccurrence } | null {
   const line = state.doc.lineAt(start)
-  const o = linkAt(docScan(state.doc), start + 1)
+  const o = linkAt(docScan(state), start + 1)
   return o && line.from + o.full[0] === start ? { line, o } : null
 }
 
@@ -128,12 +127,12 @@ export type Remembers = 'leave' | 'flush' | 'never'
 
 /** A body reaches the memory only where a link is written, typed into or picked, either syntax, and it remembers once the caret leaves that link, against how the link read before, since a scan of bodies can't honor a real forget; under `flush` what the leave would write queues until the host's `flush`, and an unmount without one drops it. Its emptied parts collapse at the leave too, so reading a note never rewrites it and clearing a slot to retype never pulls the pipe from under the caret: the collapse is deferred and stands down if the caret is back in the link when it runs. The field clears only when the collapse lands, so `settling` holds the link already being settled and a second leave of it before then settles nothing. Blur settles on the event and unmount through `flush`, since the editor's own teardown outruns a deferred dispatch. */
 export const linkSettle = ViewPlugin.define(
-  (view: EditorView, { scope, remembers }: { scope: MarkdownScope; remembers: Remembers }) => {
+  (view: EditorView, remembers: Remembers) => {
     let settling: number | null = null
     const queued: Remembered[] = []
     const holds = (start: number): boolean =>
       view.hasFocus &&
-      linkWithin(docScan(view.state.doc), view.state.selection.main.head)?.start === start
+      linkWithin(docScan(view.state), view.state.selection.main.head)?.start === start
     const write = ({ page, alias }: Remembered): void =>
       void view.state.facet(editorHost).aliases.edit(page.id, { op: 'add', alias })
     const remember = (w: Writing): void => {
@@ -147,7 +146,7 @@ export const linkSettle = ViewPlugin.define(
     }
     const settle = (w: Writing, defer: boolean): void => {
       if (settling === w.start && defer) return
-      const html = inRawHtml(view.state, w.start, scope)
+      const html = inRawHtml(view.state, w.start)
       if (settling !== w.start && !html && remembers !== 'never') remember(w)
       settling = w.start
       const collapse = (): void => {

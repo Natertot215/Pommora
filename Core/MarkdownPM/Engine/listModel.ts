@@ -5,12 +5,9 @@ import {
   isSequenced,
   ordinalOf,
   ordinalText,
-  parseListMarker,
   parseListMarkerPrefixed,
-  readsLists,
   type BlockSpan,
   type ListMarker,
-  type MarkdownScope,
   type SequencedMarker,
 } from './detect'
 import {
@@ -37,9 +34,8 @@ export function checkboxToggleChange(doc: string, pos: number): TextEdit | null 
 
 type Reader = number | 'outside'
 
-/** Whether line `k` is open text to a `reader` on another line, or to one outside every block: on a page a code block is read only from inside it, so a list written there switches and counts on its own and nothing outside reaches in, while math and tables are never read; a cell reads every line. A reader outside a code or math block reads it as its opening line, `openerOf`, so a block whose opener joins a list rides it whole and one whose opener sits outside is never pulled in. */
-export function readsFrom(scan: DocScan, k: number, reader: Reader, scope: MarkdownScope): boolean {
-  if (scope !== 'page') return true
+/** Whether line `k` is open text to a `reader` on another line, or to one outside every block: a code block is read only from inside it, so a list written there switches and counts on its own and nothing outside reaches in, while math and tables are never read. A reader outside a code or math block reads it as its opening line, `openerOf`, so a block whose opener joins a list rides it whole and one whose opener sits outside is never pulled in. */
+export function readsFrom(scan: DocScan, k: number, reader: Reader): boolean {
   const code = scan.fences[k]
   const own = reader === 'outside' ? undefined : scan.fences[reader]
   return code?.from === own?.from && (code !== undefined || !inSealedLine(scan, k))
@@ -50,34 +46,22 @@ export function openerOf(scan: DocScan, k: number): number {
   return block === undefined ? k : lineIndexAt(scan, block.from)
 }
 
-export function itemAt(
-  scan: DocScan,
-  k: number,
-  reader: Reader,
-  scope: MarkdownScope,
-): ListMarker | null {
-  if (!readsLists(scope)) return null
-  if (scope !== 'page') return parseListMarker(scan.lines[k])
-  return readsFrom(scan, k, reader, scope) ? scan.markers[k] : null
-}
+export const itemAt = (scan: DocScan, k: number, reader: Reader): ListMarker | null =>
+  readsFrom(scan, k, reader) ? scan.markers[k] : null
 
 type ListRole = 'sibling' | 'nested' | 'blank' | 'ends'
 
-export function rolesAgainst(
-  scan: DocScan,
-  i: number,
-  scope: MarkdownScope,
-): (k: number) => ListRole {
+export function rolesAgainst(scan: DocScan, i: number): (k: number) => ListRole {
   const depth = quoteDepthOf(scan.lines[i])
-  const level = itemAt(scan, i, i, scope)!.level
+  const level = itemAt(scan, i, i)!.level
   return (line) => {
     let k = line
-    if (!readsFrom(scan, k, i, scope)) {
+    if (!readsFrom(scan, k, i)) {
       if (scan.fences[i] !== undefined) return 'ends'
       k = openerOf(scan, k)
     }
     const own = quoteDepthOf(scan.lines[k])
-    const lm = itemAt(scan, k, i, scope)
+    const lm = itemAt(scan, k, i)
     if (own < depth) return 'ends'
     if (own === depth && lm !== null)
       return lm.level === level ? 'sibling' : lm.level > level ? 'nested' : 'ends'
@@ -89,10 +73,9 @@ export function rolesAgainst(
 export function siblingsAt(
   scan: DocScan,
   i: number,
-  scope: MarkdownScope,
   joins: (k: number) => boolean = () => true,
 ): { items: number[]; last: number } {
-  const role = rolesAgainst(scan, i, scope)
+  const role = rolesAgainst(scan, i)
   const above: number[] = []
   for (let k = i - 1; k >= 0; k--) {
     const r = role(k)
@@ -111,10 +94,10 @@ export function siblingsAt(
 }
 
 /** `to` is the last line's end, EXCLUSIVE of the trailing newline. The move logic reads only these two offsets, so it is block-type-blind. */
-export function subBlockAt(scan: DocScan, pos: number, scope: MarkdownScope): BlockSpan | null {
+export function subBlockAt(scan: DocScan, pos: number): BlockSpan | null {
   const first = lineIndexAt(scan, pos)
-  if (itemAt(scan, first, first, scope) === null) return null
-  const role = rolesAgainst(scan, first, scope)
+  if (itemAt(scan, first, first) === null) return null
+  const role = rolesAgainst(scan, first)
   let last = first
   for (let k = first + 1; k < scan.lines.length; k++) {
     const r = role(k)
@@ -124,17 +107,12 @@ export function subBlockAt(scan: DocScan, pos: number, scope: MarkdownScope): Bl
   return { from: scan.lineStarts[first], to: lineEndOf(scan, last) }
 }
 
-export function ownersOf(
-  scan: DocScan,
-  k: number,
-  reader: Reader,
-  scope: MarkdownScope,
-): { k: number; end: number }[] {
+export function ownersOf(scan: DocScan, k: number, reader: Reader): { k: number; end: number }[] {
   const owners: { k: number; end: number }[] = []
   for (let j = k; j >= 0; j--) {
-    const lm = itemAt(scan, j, reader, scope)
+    const lm = itemAt(scan, j, reader)
     if (lm === null) continue
-    const end = subBlockAt(scan, scan.lineStarts[j], scope)!.to
+    const end = subBlockAt(scan, scan.lineStarts[j])!.to
     if (end >= scan.lineStarts[k]) owners.push({ k: j, end })
     if (lm.level === 0 && quoteDepthOf(scan.lines[j]) === 0) break
   }
@@ -235,7 +213,6 @@ function rebuildMove(
 export function renumberRuns(
   scan: DocScan,
   at: readonly number[],
-  scope: MarkdownScope,
   arrived: ReadonlySet<number> = new Set(),
   repicked: ReadonlySet<number> = new Set(),
 ): TextEdit[] {
@@ -244,7 +221,7 @@ export function renumberRuns(
     let i = lineIndexAt(scan, p)
     while (i + 1 < scan.lines.length && isBlank(scan.lines[i])) i++
     if (counted.has(i)) return []
-    const rows = runAt(scan, i, scope)
+    const rows = runAt(scan, i)
     for (const { k } of rows) counted.add(k)
     return renumberRun(scan, rows, arrived, repicked)
   })
@@ -252,15 +229,15 @@ export function renumberRuns(
 
 type Row = { k: number; lm: SequencedMarker }
 
-function runAt(scan: DocScan, i: number, scope: MarkdownScope): Row[] {
-  const head = itemAt(scan, i, i, scope)
+function runAt(scan: DocScan, i: number): Row[] {
+  const head = itemAt(scan, i, i)
   if (head === null || !isSequenced(head)) return []
-  const markerOf = (k: number): ListMarker => itemAt(scan, k, i, scope)!
+  const markerOf = (k: number): ListMarker => itemAt(scan, k, i)!
   const joins = (k: number): boolean => {
     const lm = markerOf(k)
     return isSequenced(lm) && lm.kind === head.kind
   }
-  return siblingsAt(scan, i, scope, joins).items.map((k) => ({
+  return siblingsAt(scan, i, joins).items.map((k) => ({
     k,
     lm: markerOf(k) as SequencedMarker,
   }))
@@ -294,17 +271,16 @@ export function dropChanges(
   scan: DocScan,
   block: BlockSpan,
   slot: Slot & { line: number },
-  scope: MarkdownScope,
 ): TextEdit[] | null {
   const doc = scan.text
   const gapBefore = (items: readonly number[], n: number): boolean =>
     n > 0 && n < items.length && isBlank(scan.lines[items[n] - 1])
   const first = lineIndexAt(scan, block.from)
-  const own = siblingsAt(scan, first, scope).items
+  const own = siblingsAt(scan, first).items
   const at = own.indexOf(first)
   const looseSource = gapBefore(own, at) || gapBefore(own, at + 1)
   const t = lineIndexAt(scan, slot.at)
-  const group = siblingsAt(scan, slot.line, scope).items
+  const group = siblingsAt(scan, slot.line).items
   const n = group.findIndex((k) => k >= t)
   const looseSlot = gapBefore(group, n < 0 ? group.length - 1 : Math.max(n, 1))
   const moved = rebuildMove(doc, block, slot, { looseSource, looseSlot })
@@ -312,7 +288,7 @@ export function dropChanges(
 
   const finalDoc = applyEdits(
     moved.doc,
-    renumberRuns(scanDoc(moved.doc), [moved.sourceAt, moved.destAt], scope),
+    renumberRuns(scanDoc(moved.doc, scan.scope), [moved.sourceAt, moved.destAt]),
   )
   return diffAsSingleReplace(doc, finalDoc)
 }

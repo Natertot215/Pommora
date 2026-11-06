@@ -18,7 +18,7 @@ import type { TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { type DocScan, inCodeAt } from '../Engine/docScan'
 import { linkAt, literalOrBracketAt, openLinkAt, partOf } from '../Input/edits'
 import { lineIndexAt, type TextEdit } from '../Engine/markdownCode'
-import { headingParts, loneEmbedTitle, type MarkdownScope } from '../Engine/detect'
+import { headingParts, loneEmbedTitle } from '../Engine/detect'
 import type { ConnPage } from '../../Connections/pageIndex'
 import type { PageHeading } from '../../Platform/stores'
 import type { EditorHost } from '../api'
@@ -53,7 +53,6 @@ export function autocompleteQuery(
   scan: DocScan,
   caret: number,
   armed?: number,
-  scope: MarkdownScope = 'page',
 ): AutocompleteQuery | null {
   if (inCodeAt(scan, caret)) return null
   const i = lineIndexAt(scan, caret)
@@ -102,7 +101,7 @@ export function autocompleteQuery(
     query,
     closed: closedLink !== null || o.full[1] > rel,
     embed:
-      scope !== 'cell' &&
+      scan.scope !== 'cell' &&
       o.syntax === 'wiki' &&
       loneEmbedTitle(`${line.slice(0, o.full[0])}[[]]${line.slice(o.full[1])}`) !== null,
     ...(part === 'title' ? {} : { title: named?.title ?? '' }),

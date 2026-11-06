@@ -11,7 +11,7 @@ function tailHolds(after: string, at: number): boolean {
 }
 
 /** Three repairs, nothing else: an insertion of part of a line at a citation line's first offset is clamped past its `[^label]:`, a change from the body that joins the section's first standing head onto its line ends with a newline, and any other change leaving the tail no longer reading as a run has its text relocated to the body above the section. */
-export function citationTailVerdict(
+function citationTailVerdict(
   doc: string,
   fromA: number,
   toA: number,
@@ -63,5 +63,5 @@ export function citationTailVerdict(
 }
 
 export const citationGuard = verdictFilter((doc, fromA, toA, inserted, state) =>
-  citationTailVerdict(doc, fromA, toA, inserted, docScan(state.doc)),
+  citationTailVerdict(doc, fromA, toA, inserted, docScan(state)),
 )

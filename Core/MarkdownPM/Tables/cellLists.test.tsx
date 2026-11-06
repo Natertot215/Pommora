@@ -7,10 +7,14 @@ import {
   editorContainer,
   mountEditor,
   stubEditorBridge,
+  typeInto,
 } from '../../Testing/editorHarness'
 import { linkTokenAt, tokenize } from '../Engine/tokens'
 import { decorationsFor } from '../../Testing/markdownEngine'
 import { GRIP_LINE } from '../Engine/intents'
+import { blockStarts } from '../Engine/blockModel'
+import { scanDoc } from '../Engine/docScan'
+import { editFor } from '../Input/format'
 
 stubEditorBridge()
 afterEach(cleanupEditor)
@@ -71,7 +75,7 @@ const anyCellLive = (): boolean =>
 
 describe('the list vocabulary inside a table cell', () => {
   it('draws a bullet and its level, and leaves a heading, a rule and a quote as prose', () => {
-    const list = decorationsFor('- a\n\t- b', [], new Set(), -1, undefined, 'cell')
+    const list = decorationsFor('- a\n\t- b', [], new Set(), -1, scanDoc('- a\n\t- b', 'cell'))
     expect(
       list.filter((i) => i.kind === 'line' && i.className.includes('md-list-item')),
     ).toHaveLength(2)
@@ -79,7 +83,7 @@ describe('the list vocabulary inside a table cell', () => {
     expect(list.find((i) => i.kind === 'line' && i.level === 1)).toBeTruthy()
 
     const prose = '# h\n---\n> q\n```\nx\n```'
-    expect(decorationsFor(prose, [], new Set(), -1, undefined, 'cell')).toHaveLength(0)
+    expect(decorationsFor(prose, [], new Set(), -1, scanDoc(prose, 'cell'))).toHaveLength(0)
     expect(decorationsFor(prose, [], new Set(), -1).length).toBeGreaterThan(0)
   })
 
@@ -285,7 +289,7 @@ describe('the list vocabulary inside a table cell', () => {
   })
 
   it('calls a bullet carrying an empty box prose, at rest exactly as when live', async () => {
-    expect(decorationsFor('- [] x', [], new Set(), -1, undefined, 'cell')).toHaveLength(0)
+    expect(decorationsFor('- [] x', [], new Set(), -1, scanDoc('- [] x', 'cell'))).toHaveLength(0)
     await mountEditor({ initialBody: table('- [] x') })
     const cell = (await tableEl()).querySelector('tbody')!.children[0].children[0]
     expect(cell.querySelector('.md-list-item')).toBeNull()
@@ -368,5 +372,47 @@ describe('the list vocabulary inside a table cell', () => {
     await mountEditor({ initialBody: table('==hi==') })
     const cell = (await tableEl()).querySelector('tbody')!.children[0].children[0]
     expect(cell.querySelector('.md-highlight')?.textContent).toBe('hi')
+  })
+})
+
+describe('a block construct spelled in a cell, which reads as its text', () => {
+  const kinds = (text: string): string[] =>
+    blockStarts(scanDoc(text, 'cell')).map((block) => block.kind)
+
+  it('pairs a bracket and paints a mark between fence-shaped lines', async () => {
+    await mountEditor({ initialBody: table('```<br>*a*<br>```') })
+    await enterCell()
+    expect(liveCell().td.querySelector('.md-italic')?.textContent).toBe('a')
+    await act(async () => {
+      const { view } = liveCell()
+      view.dispatch({ selection: { anchor: view.state.doc.line(2).to } })
+    })
+    await typeInto(liveCell().view, '(')
+    expect(cellSource()).toBe('```\n*a*()\n```')
+  })
+
+  it('writes a format row between fence-shaped lines', () => {
+    const text = '```\nword\n```'
+    const edit = editFor('format:bold', scanDoc(text, 'cell'), 4, 8, {})
+    expect(edit?.changes.map((c) => c.insert)).toEqual(['**', '**'])
+  })
+
+  it('gives a list between fence-shaped or `$$` lines a block, and so a grip, of its own', async () => {
+    expect(kinds('```\n- a\n```')).toEqual(['paragraph', 'list', 'paragraph'])
+    expect(kinds('$$\n- a\n$$')).toEqual(['paragraph', 'list', 'paragraph'])
+    await mountEditor({ initialBody: table('```<br>- a<br>```') })
+    await enterCell()
+    expect(editorContainer().querySelectorAll(`.mdpm-tbl-cell-editor ${GRIP_LINE}`)).toHaveLength(1)
+  })
+
+  it('draws `$$` lines as text in a live cell, as a resting cell does', () => {
+    expect(tokenize('$$\nx\n$$').some((t) => t.kind === 'blockLatex')).toBe(true)
+    expect(tokenize('$$\nx\n$$', 'cell').some((t) => t.kind === 'blockLatex')).toBe(false)
+  })
+
+  it('binds no `[^1]:` note, since a cell has no citation tail', () => {
+    const text = '[^1] x\n[^1]: note'
+    expect(scanDoc(text).citations.entries).toHaveLength(1)
+    expect(scanDoc(text, 'cell').citations.entries).toHaveLength(0)
   })
 })

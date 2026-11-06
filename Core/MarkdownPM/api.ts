@@ -220,11 +220,9 @@ export const drawsRawHtml = (scope: MarkdownScope, settings: EditorSettings): bo
   scope === 'page' && settings.htmlFormatting
 
 /** Inside an HTML block the editor draws raw, where link syntax is source text and no link rule applies. */
-export function inRawHtml(state: EditorState, at: number, scope: MarkdownScope): boolean {
-  return (
-    drawsRawHtml(scope, state.facet(editorHost).settings()) &&
-    spanAt(docScan(state.doc).html, at) !== undefined
-  )
+export function inRawHtml(state: EditorState, at: number): boolean {
+  const { html, scope } = docScan(state)
+  return drawsRawHtml(scope, state.facet(editorHost).settings()) && spanAt(html, at) !== undefined
 }
 
 // Remembered chrome writes itself back whenever its state changes, except on the load that seeded it, so a gesture changes the state and never saves it.

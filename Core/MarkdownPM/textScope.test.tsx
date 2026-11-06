@@ -55,7 +55,7 @@ const mount = (doc: string, ...extensions: Extension[]): EditorView => {
 describe('the text scope', () => {
   it('reads a list marker, a task, and a heading as prose', () => {
     for (const line of ['- item', '1. item', '- [ ] item', '# heading'])
-      expect(decorationsFor(line, [], new Set(), -1, undefined, 'text')).toEqual([])
+      expect(decorationsFor(line, [], new Set(), -1, scanDoc(line, 'text'))).toEqual([])
   })
 
   it('reads the inline marks and links as a page does', () => {
@@ -68,22 +68,22 @@ describe('the text scope', () => {
     }
     for (const [line, className] of Object.entries(marks)) {
       const text = `- a ${line} b`
-      const read = decorationsFor(text, tokenize(text), new Set(), -1, undefined, 'text')
+      const read = decorationsFor(text, tokenize(text), new Set(), -1, scanDoc(text, 'text'))
       expect(read.some((i) => i.kind === 'class' && i.className === className)).toBe(true)
       expect(read.some((i) => i.kind === 'class' && i.className.includes('md-list'))).toBe(false)
     }
     const link = 'see [[Page]]'
-    expect(decorationsFor(link, tokenize(link), new Set(), -1, undefined, 'text')).toEqual(
+    expect(decorationsFor(link, tokenize(link), new Set(), -1, scanDoc(link, 'text'))).toEqual(
       decorationsFor(link, tokenize(link), new Set(), -1),
     )
   })
 
   it('collapses no marker on Backspace and canonicalizes no task box', () => {
     const doc = '- a'
-    expect(smartBackspace(scanDoc(doc), 2, 2, 'text')).toBeNull()
-    expect(smartBackspace(scanDoc(doc), 2, 2, 'cell')).not.toBeNull()
-    expect(canonicalizeCheckbox('-[]', 3, 3, ' ', 'text')).toBeNull()
-    expect(canonicalizeCheckbox('-[]', 3, 3, ' ', 'cell')).not.toBeNull()
+    expect(smartBackspace(scanDoc(doc, 'text'), 2, 2)).toBeNull()
+    expect(smartBackspace(scanDoc(doc, 'cell'), 2, 2)).not.toBeNull()
+    expect(canonicalizeCheckbox(scanDoc('-[]', 'text'), 3, 3, ' ')).toBeNull()
+    expect(canonicalizeCheckbox(scanDoc('-[]', 'cell'), 3, 3, ' ')).not.toBeNull()
   })
 
   it('draws no grip, glyph, or renumber on its surface', () => {

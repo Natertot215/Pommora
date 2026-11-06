@@ -49,7 +49,7 @@ interface FoldRegion {
 
 /** Not the line it renders against: that line is prose, and one Enter there would orphan the entry. */
 function citationsRegion(doc: Text): FoldRegion | null {
-  const { citations, lineStarts, lines } = docScan(doc)
+  const { citations, lineStarts, lines } = docScan.of(doc, 'page')
   const a = citations.anchorLine
   if (a < 0) return null
   const last = lines.length - 1
@@ -64,7 +64,7 @@ function citationsRegion(doc: Text): FoldRegion | null {
 }
 
 export const regionsOf = perDoc((doc): FoldRegion[] => {
-  const heads = headingSections(docScan(doc)).map(
+  const heads = headingSections(docScan.of(doc, 'page')).map(
     (s): FoldRegion => ({
       kind: 'heading',
       anchor: s.from,

@@ -11,6 +11,7 @@ import {
   inlineLatexRegex,
   markerRegex,
   type BlockSpan,
+  type MarkdownScope,
 } from './detect'
 import { type LinkOccurrence, linkOccurrences, mapSpans } from '../../Connections/connections'
 import { markAfter, type Paint, type PaintColor } from './paints'
@@ -258,8 +259,11 @@ function linkToken(text: string, o: LinkOccurrence): Token {
 /** Every token opens on one of these, so text holding none of them tokenizes to nothing. */
 export const holdsTokens = (text: string): boolean => /[*_~`=$[<]/.test(text)
 
-export function tokenizeChunk(text: string): { tokens: Token[]; html: BlockSpan[] } {
-  const scan = scanDoc(text)
+export function tokenizeChunk(
+  text: string,
+  scope: MarkdownScope = 'page',
+): { tokens: Token[]; html: BlockSpan[] } {
+  const scan = scanDoc(text, scope)
   const ast = parse(text, scan)
   const tokens: Token[] = []
   walkEmphasis(ast, tokens)
@@ -308,7 +312,8 @@ export function tokenizeChunk(text: string): { tokens: Token[]; html: BlockSpan[
   return { tokens, html: blocks }
 }
 
-export const tokenize = (text: string): Token[] => tokenizeChunk(text).tokens
+export const tokenize = (text: string, scope: MarkdownScope = 'page'): Token[] =>
+  tokenizeChunk(text, scope).tokens
 
 /** The link or connection token an offset sits in, markers included, among tokens in start order: an editor's drawn set or a resting cell's. At a boundary two abutting tokens both contain the offset; the later-starting one wins, so a span captured at a token's own start resolves to that token and not its neighbor. */
 export function linkTokenAt<K extends LinkKind = LinkKind>(

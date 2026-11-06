@@ -139,7 +139,7 @@ describe('Enter finishes an alias or label without writing anything', () => {
       view.dispatch({ selection: { anchor: 13 } })
     })
     await act(async () => {
-      commitAliasOnEnter('page')(view)
+      commitAliasOnEnter(view)
     })
     expect(view.state.doc.toString()).toBe('a [[Alpha|the one]] b')
     expect(view.state.selection.main.head).toBe(19)
@@ -156,7 +156,7 @@ describe('Enter finishes an alias or label without writing anything', () => {
         view.dispatch({ selection: { anchor: 3 } })
       })
       await act(async () => {
-        commitAliasOnEnter('page')(view)
+        commitAliasOnEnter(view)
         await new Promise((r) => setTimeout(r, 0))
       })
       expect(view.state.doc.toString()).toBe(written)
@@ -174,7 +174,7 @@ describe('Enter finishes an alias or label without writing anything', () => {
       view.focus()
       view.dispatch({ selection: { anchor: 19 } })
     })
-    expect(commitAliasOnEnter('page')(view)).toBe(false)
+    expect(commitAliasOnEnter(view)).toBe(false)
   })
 
   it('declines in a markdown label left as written in an HTML block, where a ] lands plainly', async () => {
@@ -186,7 +186,7 @@ describe('Enter finishes an alias or label without writing anything', () => {
       view.focus()
       view.dispatch({ selection: { anchor: 11 } })
     })
-    expect(commitAliasOnEnter('page')(view)).toBe(false)
+    expect(commitAliasOnEnter(view)).toBe(false)
     const typed = view.state
       .facet(EditorView.inputHandler)
       .some((h) => h(view, 11, 11, ']', () => view.state.update()))
@@ -219,7 +219,7 @@ describe('Enter finishes an alias or label without writing anything', () => {
         view.focus()
         view.dispatch({ selection: { anchor } })
       })
-      expect(commitAliasOnEnter('page')(view)).toBe(false)
+      expect(commitAliasOnEnter(view)).toBe(false)
       await cleanupEditor()
     }
   })
@@ -233,7 +233,7 @@ describe('Enter finishes an alias or label without writing anything', () => {
         view.dispatch({ selection: { anchor: 6 } })
       })
       await act(async () => {
-        expect(commitAliasOnEnter('page')(view)).toBe(true)
+        expect(commitAliasOnEnter(view)).toBe(true)
       })
       expect(view.state.doc.toString()).toBe(initialBody)
       expect(view.state.selection.main.head).toBe(2)
@@ -252,7 +252,7 @@ describe('Enter finishes an alias or label without writing anything', () => {
       view.focus()
       view.dispatch({ selection: { anchor: 6 } })
     })
-    expect(commitAliasOnEnter('page')(view)).toBe(false)
+    expect(commitAliasOnEnter(view)).toBe(false)
   })
 
   it('declines outside an alias, so Enter still breaks the line', async () => {
@@ -261,7 +261,7 @@ describe('Enter finishes an alias or label without writing anything', () => {
       view.focus()
       view.dispatch({ selection: { anchor: 6 } })
     })
-    expect(commitAliasOnEnter('page')(view)).toBe(false)
+    expect(commitAliasOnEnter(view)).toBe(false)
   })
 })
 

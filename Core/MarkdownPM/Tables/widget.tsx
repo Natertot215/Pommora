@@ -62,9 +62,9 @@ function headerKeyOf(region: TableRegion): string {
 
 // Each table's ordinal after the transaction, or -1 once it's gone: every piece of per-table memory follows its table through this one rule. Header keys match in order, a tie going to the table nearest where the old one maps, and a table left unmatched keeps its ordinal when the count holds, since an in-place edit never moves tables.
 function tableSuccessors(tr: Transaction): number[] {
-  const oldTables = docScan(tr.startState.doc).tables
+  const oldTables = docScan(tr.startState).tables
   if (!tr.docChanged) return oldTables.map((_, i) => i)
-  const newTables = docScan(tr.state.doc).tables
+  const newTables = docScan(tr.state).tables
   const newKeys = newTables.map(headerKeyOf)
   const taken = new Set<number>()
   const claim = (j: number): number => {
@@ -232,16 +232,16 @@ class TableWidget extends ReactWidget {
     if (!TV) return
     const host = view.state.facet(editorHost)
     const commit = (row: number, col: number, text: string): void => {
-      const change = cellCommitChange(docScan(view.state.doc), this.tableIndex, row, col, text)
+      const change = cellCommitChange(docScan(view.state), this.tableIndex, row, col, text)
       if (change) view.dispatch({ changes: change, annotations: tableSelfEdit.of(true) })
     }
     const cellAt = (row: number, col: number): string | null => {
-      const cells = docScan(view.state.doc).tables[this.tableIndex]?.rows[row]?.cells
+      const cells = docScan(view.state).tables[this.tableIndex]?.rows[row]?.cells
       return cells ? (cells[col] ?? '') : null
     }
     // The widget replaces exactly the table's lines, so its own edges draw the caret in the gutter; the exit lands one line past the edge, making that line when the table bounds the document.
     const exit = (dir: 'before' | 'after'): void => {
-      const region = docScan(view.state.doc).tables[this.tableIndex]
+      const region = docScan(view.state).tables[this.tableIndex]
       if (!region) return
       const after = dir === 'after'
       const at = after ? region.to : region.from
@@ -253,7 +253,7 @@ class TableWidget extends ReactWidget {
       focusAt(view, after ? at + 1 : Math.max(at - 1, 0))
     }
     const structural = (transform: (m: TableModel) => TableModel): boolean => {
-      const change = structuralEditChange(docScan(view.state.doc), this.tableIndex, transform)
+      const change = structuralEditChange(docScan(view.state), this.tableIndex, transform)
       if (!change) return false
       view.dispatch({ changes: change })
       return true
@@ -281,18 +281,18 @@ class TableWidget extends ReactWidget {
       )
     }
     const tableDrag = (e: PointerEvent): void => {
-      const region = docScan(view.state.doc).tables[this.tableIndex]
+      const region = docScan(view.state).tables[this.tableIndex]
       if (region) startBlockDrag(view, e, { from: region.from, to: region.to })
     }
     const onMenu = (ctx: TableMenuContext): void => {
-      const at = docScan(view.state.doc)
+      const at = docScan(view.state)
       const opened = at.tables[this.tableIndex]
       if (!opened) return
       // The menu can stand open while an undo or a sync moves the document, so the action re-finds its table and stands down if it changed.
       const source = at.text.slice(opened.from, opened.to)
       void host.menus.table(ctx).then((action) => {
         if (!action) return
-        const scan = docScan(view.state.doc)
+        const scan = docScan(view.state)
         const region = scan.tables[this.tableIndex]
         if (!region || scan.text.slice(region.from, region.to) !== source) return
         if (action === 'col:toggle-heading') {
@@ -404,7 +404,7 @@ export function buildWidgetDecorations(
     })
   }
   const ranges: Range<Decoration>[] = []
-  const scan = docScan(doc)
+  const scan = docScan(state)
   const linkStyle = state.facet(editorHost).settings().headingLinkStyle
   const automatic = automaticIn(state)
   scan.tables.forEach((region, i) => {
@@ -465,7 +465,7 @@ function swapTableWidget(
 }
 
 function rebuiltTable(deco: DecorationSet, state: EditorState, index: number): DecorationSet {
-  const region = docScan(state.doc).tables[index]
+  const region = docScan(state).tables[index]
   if (!region) return deco
   const text = state.doc.sliceString(region.from, region.to)
   const around = cellPage(state.doc, text, automaticIn(state))
@@ -486,7 +486,9 @@ function rebuiltTable(deco: DecorationSet, state: EditorState, index: number): D
 
 const numbered = (e: CitationEntry): [string, number][] =>
   e.ordinal === null ? [] : [[foldLabel(e.label), e.ordinal]]
-const ordinals = perDoc((doc) => new Map(docScan(doc).citations.entries.flatMap(numbered)))
+const ordinals = perDoc(
+  (doc) => new Map(docScan.of(doc, 'page').citations.entries.flatMap(numbered)),
+)
 // Each pair joins as `label,n`, and a label holds no whitespace, so no two numberings share a key.
 const citeKey = perDoc((doc) => [...ordinals(doc)].join(' '))
 const headingKey = perDoc((doc) => docHeadingKeys(doc).join('\n'))
@@ -527,7 +529,7 @@ const widgetField = StateField.define<DecorationSet>({
       const idx = eff.value
       const on = tr.state.field(headingColField).has(idx)
       toggledSet = swapTableWidget(toggledSet, idx, (w) => {
-        const region = docScan(tr.state.doc).tables[idx]
+        const region = docScan(tr.state).tables[idx]
         const text = region ? tr.state.doc.sliceString(region.from, region.to) : w.text
         const model = region ? modelFromRegion(region) : w.model
         return new TableWidget(text, model, idx, on, w.around, w.linkStyle, w.height)

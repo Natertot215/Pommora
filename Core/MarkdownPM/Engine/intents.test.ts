@@ -63,7 +63,7 @@ describe('list marker reveal', () => {
   const doc = 'intro\n- [ ] task'
   const widgets = (ranged: boolean): number => {
     const scan = scanDoc(doc)
-    return assembleLineIntents(scan, docLineIntents(scan), 6, undefined, 'page', ranged).filter(
+    return assembleLineIntents(scan, docLineIntents(scan), 6, undefined, ranged).filter(
       (x) => x.kind === 'widget',
     ).length
   }

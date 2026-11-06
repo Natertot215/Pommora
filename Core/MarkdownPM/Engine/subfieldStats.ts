@@ -57,7 +57,7 @@ const NOTHING_HIDDEN: Hidden[] = []
 const tokenHidden = (scope: MarkdownScope) =>
   perText(
     (text: string) =>
-      tokenize(text)
+      tokenize(text, scope)
         .flatMap((tk) => hiddenOf(tk, scope))
         .sort((a, b) => a[0] - b[0]),
     8192,

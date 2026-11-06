@@ -78,7 +78,7 @@ describe('heading-column toggle survives tables shifting around it', () => {
     applySavedHeadingCols(v, [1])
 
     // A column insert rewrites the header row without the cell-commit self-edit annotation, so the remap runs; the table count is unchanged, so the toggle holds.
-    const change = structuralEditChange(docScan(v.state.doc), 1, (m) => insertColumn(m, 0, 'left'))
+    const change = structuralEditChange(docScan(v.state), 1, (m) => insertColumn(m, 0, 'left'))
     expect(change).not.toBeNull()
     v.dispatch({ changes: change ?? undefined })
 

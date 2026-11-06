@@ -25,7 +25,7 @@ export function fusedTableCount(scan: DocScan, fromLine: number, toLine: number)
 export const tablePasteGuard = Prec.low(
   EditorState.transactionFilter.of((tr) => {
     if (!tr.docChanged || !tr.isUserEvent('input.paste')) return tr
-    const scan = docScan(tr.startState.doc)
+    const scan = docScan(tr.startState)
     const tailStart =
       scan.citations.firstLine < scan.lines.length
         ? scan.lineStarts[scan.citations.firstLine]
@@ -52,7 +52,7 @@ export const tableMergeGuard = EditorState.transactionFilter.of((tr) => {
     if (toA > fromA || inserted.toString().includes('\n')) guarded = true
   })
   if (!guarded) return tr
-  const before = docScan(tr.startState.doc)
+  const before = docScan(tr.startState)
   const after = docScan.after(tr)
   const [a, e] = after.fresh
   return fusedTableCount(before, a, carriedFrom(before, after)) < fusedTableCount(after, a, e)

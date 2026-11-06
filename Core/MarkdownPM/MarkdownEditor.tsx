@@ -27,6 +27,7 @@ import { editorBase } from './surface'
 import { useConnectionAutocomplete } from './Autocomplete/useConnectionAutocomplete'
 import { AutocompletePane } from './Autocomplete/AutocompletePane'
 import { BlockMenuPane } from './Menus/BlockMenuPane'
+import { tagReveal } from './Menus/blockHandles'
 import { useBlockMenu } from './Menus/useBlockMenu'
 import type { WarmSeam } from './warmSeam'
 import { type EditorHost, mirrored, redrawNudge } from './api'
@@ -124,7 +125,7 @@ export function MarkdownEditor({
     if (view) applyCitationsVisibility(view, citesShown)
   }, [citesShown])
 
-  const ac = useConnectionAutocomplete(viewRef, host, 'page')
+  const ac = useConnectionAutocomplete(viewRef, host)
   const formatExt = useReconfigured(viewRef, settings.commands, formatKeymap)
   const htmlExt = useReconfigured(viewRef, settings.htmlShortcuts, htmlShortcuts)
   const block = useBlockMenu(viewRef)
@@ -150,6 +151,7 @@ export function MarkdownEditor({
       }),
       codeHighlight,
       codeScroll,
+      tagReveal,
       editorBase({
         host: hostRef.current,
         scope: 'page',
@@ -185,7 +187,7 @@ export function MarkdownEditor({
           if ((u.docChanged && range) || range?.from !== last?.from || range?.to !== last?.to) {
             lastRangeRef.current = range
             onSelectionRef.current(
-              range ? rangeStats(docScan(u.state.doc), range.from, range.to) : null,
+              range ? rangeStats(docScan(u.state), range.from, range.to) : null,
             )
           }
         }

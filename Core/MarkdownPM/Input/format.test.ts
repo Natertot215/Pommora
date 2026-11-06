@@ -23,7 +23,7 @@ const listed = (
   from = 0,
   to = doc.length,
   settings = {},
-): string => apply(doc, setList(scanDoc(doc), from, to, kind, settings, 'page'))
+): string => apply(doc, setList(scanDoc(doc), from, to, kind, settings))
 const picked = (
   doc: string,
   from: number,
@@ -33,7 +33,7 @@ const picked = (
   let state = EditorState.create({
     doc,
     selection: { anchor: from, head: to },
-    extensions: listRenumber('page'),
+    extensions: listRenumber,
   })
   for (const pick of picks) {
     const { from: f, to: t } = state.selection.main
@@ -96,10 +96,10 @@ describe('toggleInline', () => {
     expect(apply('site', toggleInline(scanDoc('site'), 0, 4, 'link'))).toBe('[site]()')
   })
   it('Insert Link stands down on a fenced line, as the wraps do', () => {
-    expect(editFor('link:insert', scanDoc('```\nexample.com\n```'), 4, 15, {}, 'page')).toBeNull()
-    expect(
-      apply('example.com', editFor('link:insert', scanDoc('example.com'), 0, 11, {}, 'page')),
-    ).toBe('[example.com](https://example.com)')
+    expect(editFor('link:insert', scanDoc('```\nexample.com\n```'), 4, 15, {})).toBeNull()
+    expect(apply('example.com', editFor('link:insert', scanDoc('example.com'), 0, 11, {}))).toBe(
+      '[example.com](https://example.com)',
+    )
   })
   it('seats an empty link at its url, and an alias-first one at its text', () => {
     const url = toggleInline(scanDoc(''), 0, 0, 'link')
@@ -148,13 +148,11 @@ describe('toggleInline', () => {
     expect(toggleInline(scanDoc('```\n**b**\n```'), 6, 6, 'bold')).toBeNull()
     const code = scanDoc('a `code` b')
     for (const action of ['format:bold', 'format:link', 'highlight:accent', 'textColor:red'])
-      expect(editFor(action, code, 3, 7, {}, 'page')).toBeNull()
-    expect(apply('a `code` b', editFor('format:inlineCode', code, 3, 7, {}, 'page'))).toBe(
-      'a code b',
-    )
+      expect(editFor(action, code, 3, 7, {})).toBeNull()
+    expect(apply('a `code` b', editFor('format:inlineCode', code, 3, 7, {}))).toBe('a code b')
     const into = scanDoc('plain `code` end')
-    expect(editFor('format:bold', into, 0, 9, {}, 'page')).toBeNull()
-    expect(apply('plain `code` end', editFor('format:bold', into, 0, 5, {}, 'page'))).toBe(
+    expect(editFor('format:bold', into, 0, 9, {})).toBeNull()
+    expect(apply('plain `code` end', editFor('format:bold', into, 0, 5, {}))).toBe(
       '**plain** `code` end',
     )
   })
@@ -215,7 +213,7 @@ describe('setList', () => {
     expect(listed(three, 'bullet')).toBe('- one\n- two\n- three')
     expect(listed(three, 'bullet', 0, 4)).toBe('- one\ntwo\nthree')
     const lists = (kind: 'bullet' | 'ordered') => (scan: DocScan, f: number, t: number) =>
-      setList(scan, f, t, kind, {}, 'page')
+      setList(scan, f, t, kind, {})
     expect(picked('one\ntwo', 1, 5, lists('bullet'), lists('ordered'))).toBe('1. one\n2. two')
   })
   it('numbers an ordered run down the selection', () => {
@@ -229,14 +227,14 @@ describe('setList', () => {
     expect(listed(all, 'bullet')).toBe(all)
     const mixed = '- one\ntwo'
     expect(listed(mixed, 'bullet')).toBe('- one\n- two')
-    expect(setList(scanDoc(mixed), 0, mixed.length, 'bullet', {}, 'page').selection).toBeUndefined()
+    expect(setList(scanDoc(mixed), 0, mixed.length, 'bullet', {}).selection).toBeUndefined()
   })
   it('leaves a blank line unmarked', () => {
     const gapped = 'one\n\ntwo'
     expect(listed(gapped, 'bullet')).toBe('- one\n\n- two')
   })
   it('marks a blank line the caret sits on', () => {
-    const edit = setList(scanDoc(''), 0, 0, 'bullet', {}, 'page')
+    const edit = setList(scanDoc(''), 0, 0, 'bullet', {})
     expect(apply('', edit)).toBe('- ')
     expect(edit.selection).toBe(2)
     expect(listed('> ', 'ordered', 2, 2)).toBe('> 1. ')
@@ -263,7 +261,7 @@ describe('a list-type pick from an item', () => {
 
 describe('listKindOf', () => {
   const kindOf = (doc: string): ReturnType<typeof listKindOf> =>
-    listKindOf(scanDoc(doc), 0, doc.length, {}, 'page')
+    listKindOf(scanDoc(doc), 0, doc.length, {})
 
   it('reads the kind a whole block’s items agree on, through every level', () => {
     expect(kindOf('- a\n\t- b')).toBe('bullet')
@@ -329,7 +327,7 @@ describe('setList over a whole block', () => {
   })
 
   it('emits nothing when the markers already read as they should', () => {
-    expect(setList(scanDoc('- a\n- b'), 0, 7, 'bullet', {}, 'page').changes).toEqual([])
+    expect(setList(scanDoc('- a\n- b'), 0, 7, 'bullet', {}).changes).toEqual([])
   })
 
   it('repairs a broken ordered sequence', () => {
@@ -563,12 +561,12 @@ describe('text colors', () => {
     )
   })
   it('routes each paint’s menu action', () => {
-    expect(apply('hi', editFor('textColor:red', scanDoc('hi'), 0, 2, {}, 'page'))).toBe('=🔴hi=')
-    expect(apply('hi', editFor('highlight:red', scanDoc('hi'), 0, 2, {}, 'page'))).toBe('==🔴hi==')
+    expect(apply('hi', editFor('textColor:red', scanDoc('hi'), 0, 2, {}))).toBe('=🔴hi=')
+    expect(apply('hi', editFor('highlight:red', scanDoc('hi'), 0, 2, {}))).toBe('==🔴hi==')
   })
   it('removes any paint under the highlight chord, where the Accent row recolors', () => {
     const act = (doc: string, at: number, action: string) =>
-      apply(doc, editFor(action, scanDoc(doc), at, at, {}, 'page'))
+      apply(doc, editFor(action, scanDoc(doc), at, at, {}))
     expect(act('==🔴hi==', 5, 'format:highlight')).toBe('hi')
     expect(act('=🔴hi=', 4, 'format:highlight')).toBe('hi')
     expect(act('=🔴hi=', 4, 'highlight:accent')).toBe('==hi==')

@@ -4,7 +4,6 @@ import type { LinkAction } from '../../Actions/connectionMenu'
 import { targetSpan } from '../../Connections/connections'
 import { type LinkDisplay, linkDisplayText, linkPaste } from '../../Connections/linkValue'
 import { normalizeLinkUrl } from '../../Paths/urlPath'
-import type { MarkdownScope } from '../Engine/detect'
 import { aliasedToken, type LinkKind, type TokenOf } from '../Engine/tokens'
 import type { Span } from '../Engine/markdownCode'
 import { docScan, docString } from '../docCache'
@@ -96,31 +95,29 @@ export function applyLinkAction(view: EditorView, action: SlotAction, range: Spa
 }
 
 /** The slot holding `at`, where it sits in live Markdown rather than raw HTML. */
-const liveSlotAt = (state: EditorState, at: number, scope: MarkdownScope) =>
-  inRawHtml(state, at, scope) ? null : slotAt(docScan(state.doc), at)
+const liveSlotAt = (state: EditorState, at: number) =>
+  inRawHtml(state, at) ? null : slotAt(docScan(state), at)
 
 /** Past the closer of the live link whose alias or label holds `at`: the one question Return, a typed `]`, and a typed `[` ask. */
-export function shownEnd(state: EditorState, at: number, scope: MarkdownScope): number | null {
-  const s = liveSlotAt(state, at, scope)
+export function shownEnd(state: EditorState, at: number): number | null {
+  const s = liveSlotAt(state, at)
   return s?.part === 'shown' ? s.from + s.link.full[1] : null
 }
 
 /** Return in an alias or label lands the caret on the closer with no separating space, since the closer is the one caret position that doesn't reveal the syntax; in a written markdown destination, the moment an address is assigned, it moves on to the label, where the picker lists the page's aliases. */
-export const commitAliasOnEnter =
-  (scope: MarkdownScope) =>
-  (view: EditorView): boolean => {
-    const { state } = view
-    const sel = state.selection.main
-    if (!sel.empty) return false
-    const end = shownEnd(state, sel.head, scope)
-    if (end !== null) {
-      view.dispatch({ selection: EditorSelection.cursor(end, 1), effects: restedOnLink.of(end) })
-    } else {
-      const s = liveSlotAt(state, sel.head, scope)
-      if (s?.link.syntax !== 'markdown' || !state.facet(editorHost).settings().aliasPickerOnCommit)
-        return false
-      view.dispatch({ selection: EditorSelection.cursor(s.from + s.link.shown[1], 1) })
-    }
-    view.focus()
-    return true
+export const commitAliasOnEnter = (view: EditorView): boolean => {
+  const { state } = view
+  const sel = state.selection.main
+  if (!sel.empty) return false
+  const end = shownEnd(state, sel.head)
+  if (end !== null) {
+    view.dispatch({ selection: EditorSelection.cursor(end, 1), effects: restedOnLink.of(end) })
+  } else {
+    const s = liveSlotAt(state, sel.head)
+    if (s?.link.syntax !== 'markdown' || !state.facet(editorHost).settings().aliasPickerOnCommit)
+      return false
+    view.dispatch({ selection: EditorSelection.cursor(s.from + s.link.shown[1], 1) })
   }
+  view.focus()
+  return true
+}

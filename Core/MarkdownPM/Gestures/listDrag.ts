@@ -1,6 +1,6 @@
 import type { Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
-import type { BlockSpan, MarkdownScope } from '../Engine/detect'
+import type { BlockSpan } from '../Engine/detect'
 import { docScan, docString } from '../docCache'
 import { forEachLine, shadeField, type Boundary } from './dragChrome'
 import { beginRelocateDrag, editorGestureCleanup } from './editorGesture'
@@ -30,19 +30,15 @@ function lineRightEdge(view: EditorView, from: number, fallback: number): number
 }
 
 // Each list line offers two insertion boundaries, so a paragraph between two bullets splits to the nearer edge.
-function collectBoundaries(
-  view: EditorView,
-  block: BlockSpan,
-  scope: MarkdownScope,
-): Boundary<Drop>[] {
+function collectBoundaries(view: EditorView, block: BlockSpan): Boundary<Drop>[] {
   const doc = view.state.doc
   const gutterRight = textColumn(view).right
-  const scan = docScan(doc)
+  const scan = docScan(view.state)
   const out: Boundary<Drop>[] = []
   const first = doc.lineAt(block.from).number - 1
   for (const { from, to } of view.visibleRanges) {
     forEachLine(doc, from, to, (line) => {
-      const lm = itemAt(scan, line.number - 1, first, scope)
+      const lm = itemAt(scan, line.number - 1, first)
       if (lm === null || (line.from >= block.from && line.from <= block.to)) return
       const cTop = view.coordsAtPos(line.from)
       const cEnd = view.coordsAtPos(line.to)
@@ -72,7 +68,7 @@ function clickAction(view: EditorView, pos: number): void {
   view.focus()
 }
 
-export const listDragExtension = (scope: MarkdownScope): Extension => [
+export const listDragExtension: Extension = [
   shadeField,
   editorGestureCleanup,
   EditorView.domEventHandlers({
@@ -87,25 +83,20 @@ export const listDragExtension = (scope: MarkdownScope): Extension => [
       const glyph = glyphAt(e)
       if (!glyph) return false
       const pos = view.posAtDOM(glyph)
-      const scan = docScan(view.state.doc)
-      const block = subBlockAt(scan, pos, scope)
+      const scan = docScan(view.state)
+      const block = subBlockAt(scan, pos)
       if (!block) return false
 
       e.preventDefault()
 
       beginRelocateDrag(view, e, block, {
-        measure: () => collectBoundaries(view, block, scope),
+        measure: () => collectBoundaries(view, block),
         lineFor: ({ at, y, slot }) =>
           at >= block.from && at <= block.to + 1
             ? null
             : { left: slot.left, top: y, width: slot.right - slot.left },
         commit: ({ at, slot }) =>
-          dropChanges(
-            docScan(view.state.doc),
-            block,
-            { at, indent: slot.indent, line: slot.line },
-            scope,
-          ),
+          dropChanges(docScan(view.state), block, { at, indent: slot.indent, line: slot.line }),
         onTap: () => clickAction(view, pos),
       })
       return true

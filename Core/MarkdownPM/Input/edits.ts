@@ -35,7 +35,6 @@ import {
   signedLine,
   signKind,
   type ListMarker,
-  type MarkdownScope,
   readsLists,
 } from '../Engine/detect'
 import { itemAt, ownersOf } from '../Engine/listModel'
@@ -54,30 +53,23 @@ export interface Edit extends TextEdit {
 const shorthandCheckboxRe = /^([ \t]*)([-+])\[([ xX]?)\]$/
 
 // A cell draws no quote, so a `>` there is prose and carries no prefix — otherwise the keys would nest inside a box the surface never shows.
-export const blockPrefix = (line: string, scope: MarkdownScope = 'page'): string =>
-  scope === 'page' ? quotePrefix(line) : ''
+export const blockPrefix = (scan: DocScan, line: string): string =>
+  scan.scope === 'page' ? quotePrefix(line) : ''
 
 function listLineAt(
   scan: DocScan,
   selStart: number,
   selEnd: number,
-  scope: MarkdownScope,
 ): { ls: number; line: string; pfx: string; lm: ListMarker } | null {
   if (selStart !== selEnd) return null
   const k = lineIndexAt(scan, selStart)
-  const lm = itemAt(scan, k, 'outside', scope)
+  const lm = itemAt(scan, k, 'outside')
   if (lm === null) return null
-  const line = scan.lines[k]
-  return { ls: scan.lineStarts[k], line, pfx: blockPrefix(line, scope), lm }
+  return { ls: scan.lineStarts[k], line: scan.lines[k], pfx: blockPrefix(scan, scan.lines[k]), lm }
 }
 
-export function continueListOnEnter(
-  scan: DocScan,
-  selStart: number,
-  selEnd: number,
-  scope: MarkdownScope = 'page',
-): Edit | null {
-  const at = listLineAt(scan, selStart, selEnd, scope)
+export function continueListOnEnter(scan: DocScan, selStart: number, selEnd: number): Edit | null {
+  const at = listLineAt(scan, selStart, selEnd)
   if (at === null) return null
   const { ls, line, pfx, lm } = at
   if (selStart < ls + lm.contentStart) return null
@@ -102,7 +94,7 @@ export function continueBlockquoteOnEnter(
   const doc = scan.text
   const ls = lineStartAt(doc, selStart)
   const lineEnd = lineEndAt(doc, selStart)
-  const pfx = blockPrefix(doc.slice(ls, lineEnd))
+  const pfx = quotePrefix(doc.slice(ls, lineEnd))
   if (pfx === '' || selStart < ls + pfx.length) return null
   // Callouts keep continuing — their documented exit is caret placement below the box, and stripping a body `> ` would split it.
   if (isBlank(doc.slice(ls + pfx.length, lineEnd)) && !inCalloutAt(scan, selStart))
@@ -141,7 +133,7 @@ export function shiftEnterEdit(scan: DocScan, selStart: number, selEnd: number):
   // A plain `\n` would drop an un-prefixed line into the run and split the callout. A selection straddling the box edge falls back to it.
   if (inCalloutAt(scan, selStart) && inCalloutAt(scan, selEnd)) {
     const ls = lineStartAt(doc, selStart)
-    const pfx = blockPrefix(doc.slice(ls, lineEndAt(doc, selStart))).replace(/[ \t]+$/, '')
+    const pfx = quotePrefix(doc.slice(ls, lineEndAt(doc, selStart))).replace(/[ \t]+$/, '')
     const insert = `\n${pfx} `
     return { from: selStart, to: selEnd, insert, selection: selStart + insert.length }
   }
@@ -153,13 +145,8 @@ export function shiftEnterEdit(scan: DocScan, selStart: number, selEnd: number):
   return { from: selStart, to: selEnd, insert, selection: selStart + insert.length }
 }
 
-export function indentListOnTab(
-  scan: DocScan,
-  selStart: number,
-  selEnd: number,
-  scope: MarkdownScope = 'page',
-): Edit | null {
-  const at = listLineAt(scan, selStart, selEnd, scope)
+export function indentListOnTab(scan: DocScan, selStart: number, selEnd: number): Edit | null {
+  const at = listLineAt(scan, selStart, selEnd)
   if (at === null || at.lm.level >= MAX_NESTING_LEVEL) return null
   const from = at.ls + at.pfx.length
   return { from, to: from, insert: '\t', selection: selStart + 1, relist: true }
@@ -169,9 +156,8 @@ export function outdentListOnShiftTab(
   scan: DocScan,
   selStart: number,
   selEnd: number,
-  scope: MarkdownScope = 'page',
 ): Edit | null {
-  const at = listLineAt(scan, selStart, selEnd, scope)
+  const at = listLineAt(scan, selStart, selEnd)
   if (at === null) return null
   const width = /^(?:\t| {1,2})/.exec(at.line.slice(at.pfx.length))?.[0].length
   if (width === undefined) return null
@@ -192,13 +178,12 @@ function takeMarker(
   pfx: number,
   lm: ListMarker,
   selStart: number,
-  scope: MarkdownScope,
 ): Edit | null {
   const from = ls + lm.markerStart
   const to = ls + lm.contentStart
   if (selStart <= from || selStart > to) return null
   const k = lineIndexAt(scan, ls)
-  const cut = ownersOf(scan, k, k, scope).some((o) => o.k !== k) ? from : ls + pfx
+  const cut = ownersOf(scan, k, k).some((o) => o.k !== k) ? from : ls + pfx
   return { from: cut, to, insert: '', selection: cut }
 }
 
@@ -215,32 +200,25 @@ export function marginSign(scan: DocScan, seat: number, text: string): Edit | nu
   }
 }
 
-export function smartBackspace(
-  scan: DocScan,
-  selStart: number,
-  selEnd: number,
-  scope: MarkdownScope = 'page',
-): Edit | null {
+export function smartBackspace(scan: DocScan, selStart: number, selEnd: number): Edit | null {
   if (selStart !== selEnd) return null
   const doc = scan.text
   const ls = lineStartAt(doc, selStart)
   const line = doc.slice(ls, lineEndAt(doc, selStart))
+  const k = lineIndexAt(scan, selStart)
 
-  // A cell draws neither, so neither question applies there — and the scan, which is always page-shaped, would answer both wrongly.
-  if (scope === 'page') {
-    const fence = scan.fences[lineIndexAt(scan, selStart)]
-    const body = fence ? ls + fenceBodyStart(line, fence) : ls
-    if (body > ls && selStart === body && ls > 0)
-      return { from: ls - 1, to: body, insert: '', selection: ls - 1 }
-    // A fence holds literal text, so collapsing a marker there would eat characters the author typed as content.
-    if (inCodeAt(scan, selStart)) return null
-  }
+  const fence = scan.fences[k]
+  const body = fence ? ls + fenceBodyStart(line, fence) : ls
+  if (body > ls && selStart === body && ls > 0)
+    return { from: ls - 1, to: body, insert: '', selection: ls - 1 }
+  // A fence holds literal text, so collapsing a marker there would eat characters the author typed as content.
+  if (inCodeAt(scan, selStart)) return null
 
-  const pfx = blockPrefix(line, scope)
-  const lm = itemAt(scan, lineIndexAt(scan, selStart), 'outside', scope)
-  const taken = lm && takeMarker(scan, ls, pfx.length, lm, selStart, scope)
+  const pfx = blockPrefix(scan, line)
+  const lm = itemAt(scan, k, 'outside')
+  const taken = lm && takeMarker(scan, ls, pfx.length, lm, selStart)
   if (taken) return taken
-  if (scope !== 'page') return null
+  if (scan.scope !== 'page') return null
   // Inside a callout, never strip a lone `>` — that would drop the line out of the box, splitting it into a stray quote.
   if (inCalloutAt(scan, selStart)) {
     const headLen = calloutHeadPrefixLen(line)
@@ -259,16 +237,16 @@ export function smartBackspace(
 }
 
 export function canonicalizeCheckbox(
-  doc: string,
+  scan: DocScan,
   selStart: number,
   selEnd: number,
   inserted: string,
-  scope: MarkdownScope = 'page',
 ): Edit | null {
-  if (inserted !== ' ' || selStart !== selEnd || !readsLists(scope)) return null
+  if (inserted !== ' ' || selStart !== selEnd || !readsLists(scan.scope)) return null
+  const doc = scan.text
   const ls = lineStartAt(doc, selStart)
   const before = doc.slice(ls, selStart)
-  const pfx = blockPrefix(before, scope)
+  const pfx = blockPrefix(scan, before)
   const m = shorthandCheckboxRe.exec(before.slice(pfx.length))
   if (m === null) return null
   const [, ws, marker, inner] = m
@@ -689,12 +667,12 @@ export const literalOrBracketAt = (scan: DocScan, c: number): boolean =>
 
 const lineBodyBefore = (doc: string, pos: number): string => {
   const ls = lineStartAt(doc, pos)
-  return doc.slice(ls + blockPrefix(doc.slice(ls, lineEndAt(doc, pos))).length, pos)
+  return doc.slice(ls + quotePrefix(doc.slice(ls, lineEndAt(doc, pos))).length, pos)
 }
 
 const opensLine = (doc: string, pos: number): boolean => {
   const before = doc.slice(lineStartAt(doc, pos), pos)
-  return isBlank(before.slice(blockPrefix(before).length))
+  return isBlank(before.slice(quotePrefix(before).length))
 }
 
 export function ellipsis(

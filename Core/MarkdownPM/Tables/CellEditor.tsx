@@ -11,11 +11,12 @@ import {
   outdentListOnShiftTab,
   type Edit,
 } from '../Input/edits'
-import { parseListMarker, type ListMarker, type MarkdownScope } from '../Engine/detect'
+import type { ListMarker } from '../Engine/detect'
 import { cellToSource } from '../Engine/Tables/codec'
 import { decodePayload, type TablePayload } from '../Engine/Tables/clipboard'
 import { applyEdit } from '../Input/applyEdit'
 import { docLineIntentsOf, docScan } from '../docCache'
+import { lineIndexAt } from '../Engine/markdownCode'
 import type { DocScan } from '../Engine/docScan'
 import { listGlyphOf, seatPastMarker } from '../Engine/intents'
 import { useConnectionAutocomplete } from '../Autocomplete/useConnectionAutocomplete'
@@ -39,17 +40,10 @@ const consume =
 
 /** The list transforms are pure over the cell's own document; a null hands the key back to the table's navigation. */
 const listEdit =
-  (
-    transform: (
-      scan: DocScan,
-      selStart: number,
-      selEnd: number,
-      scope: MarkdownScope,
-    ) => Edit | null,
-  ) =>
+  (transform: (scan: DocScan, selStart: number, selEnd: number) => Edit | null) =>
   (view: EditorView): boolean => {
     const s = view.state.selection.main
-    return applyEdit(view, transform(docScan(view.state.doc), s.from, s.to, 'cell'))
+    return applyEdit(view, transform(docScan(view.state), s.from, s.to))
   }
 
 const continueList = listEdit(continueListOnEnter)
@@ -58,7 +52,8 @@ const unnestList = listEdit(outdentListOnShiftTab)
 
 // The glyph, not the parse: a marker nothing draws is prose on both surfaces, so a key that read the raw parse would act on a line showing no list at all.
 const listLineAt = (view: EditorView): ListMarker | null => {
-  const lm = parseListMarker(view.state.doc.lineAt(view.state.selection.main.from).text)
+  const scan = docScan(view.state)
+  const lm = scan.markers[lineIndexAt(scan, view.state.selection.main.from)]
   return lm && listGlyphOf(lm) ? lm : null
 }
 
@@ -70,12 +65,7 @@ const listClaims = (view: EditorView): boolean =>
 const seatPastMarkerNow = (view: EditorView): void => {
   const s = view.state.selection.main
   if (!s.empty) return
-  const seat = seatPastMarker(
-    docLineIntentsOf(view.state.doc, 'cell'),
-    docScan(view.state.doc),
-    s.head,
-    'cell',
-  )
+  const seat = seatPastMarker(docLineIntentsOf(view.state), docScan(view.state), s.head)
   if (seat !== null && seat !== s.head) view.dispatch({ selection: EditorSelection.cursor(seat) })
 }
 
@@ -90,9 +80,9 @@ const joinEmptyHead = (view: EditorView): boolean => {
 
 /** The item nothing further down the cell belongs to — a nested item below still carries the list on. */
 const atListEnd = (view: EditorView): boolean => {
-  const doc = view.state.doc
-  for (let i = doc.lineAt(view.state.selection.main.from).number + 1; i <= doc.lines; i++) {
-    const lm = parseListMarker(doc.line(i).text)
+  const scan = docScan(view.state)
+  for (let i = lineIndexAt(scan, view.state.selection.main.from) + 1; i < scan.lines.length; i++) {
+    const lm = scan.markers[i]
     if (lm && listGlyphOf(lm)) return false
   }
   return true
@@ -152,7 +142,7 @@ export function CellEditor({
   const ordinalOfRef = useLatest(ordinalOf)
   const onFillRef = useLatest(onFill)
   const onCloseRef = useLatest(onClose)
-  const ac = useConnectionAutocomplete(viewRef, host, 'cell')
+  const ac = useConnectionAutocomplete(viewRef, host)
   const formatExt = useReconfigured(viewRef, host.settings().commands, formatKeymap)
 
   useEffect(() => {

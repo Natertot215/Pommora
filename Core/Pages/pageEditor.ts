@@ -41,7 +41,7 @@ export function renameHeadingAtOffset(from: number, next: string): void {
 export function moveHeadingSection(dragKey: string, beforeKey: string | null): void {
   const view = pageView.get()
   if (!view) return
-  const scan = docScan(view.state.doc)
+  const scan = docScan(view.state)
   const heads = docOutline(view.state.doc)
   const drag = heads.find((x) => x.key === dragKey)
   const at =

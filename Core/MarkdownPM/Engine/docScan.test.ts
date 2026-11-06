@@ -45,6 +45,9 @@ const LINES = [
   '>   ```',
   '```',
   '```js',
+  '```md',
+  '```markdown diff',
+  '  ```md',
   '```diff',
   '```ts|diff',
   '-removed',
@@ -177,17 +180,23 @@ describe('rescan — the incremental scan is the full scan', () => {
       const r = stream(seed)
       let text = soup(r, 5 + Math.floor(r() * 40))
       let scan = scanDoc(text)
-      let page = docLineIntents(scan, 'page')
-      let cell = docLineIntents(scan, 'cell')
+      let page = docLineIntents(scan)
+      let cellScan = scanDoc(text, 'cell')
+      let cell = docLineIntents(cellScan)
       for (let step = 0; step < 30; step++) {
         const e = edit(r, text)
         const next = applied(text, e)
         const stepped = rescan(scan, e.from, e.to, next)
-        const nextPage = stepLineIntents(page, scan, stepped, 'page')
-        const nextCell = stepLineIntents(cell, scan, stepped, 'cell')
+        const nextPage = stepLineIntents(page, scan, stepped)
+        const steppedCell = rescan(cellScan, e.from, e.to, next)
+        if (
+          !isDeepStrictEqual({ ...steppedCell, fresh: 0 }, { ...scanDoc(next, 'cell'), fresh: 0 })
+        )
+          expect.fail(`cell rescan seed ${seed}\n${JSON.stringify([text, next, e.from, e.to])}`)
+        const nextCell = stepLineIntents(cell, cellScan, steppedCell)
         for (const [got, want] of [
-          [nextPage, docLineIntents(stepped, 'page')],
-          [nextCell, docLineIntents(stepped, 'cell')],
+          [nextPage, docLineIntents(stepped)],
+          [nextCell, docLineIntents(steppedCell)],
         ] as const) {
           const { fresh: _a, ...g } = got
           const { fresh: _b, ...w } = want
@@ -198,6 +207,7 @@ describe('rescan — the incremental scan is the full scan', () => {
         scan = stepped
         page = nextPage
         cell = nextCell
+        cellScan = steppedCell
       }
     }
   }, 600_000)

@@ -219,7 +219,7 @@ function paint(
 }
 
 function colors(view: EditorView): DecorationSet {
-  const scan = docScan(view.state.doc)
+  const scan = docScan(view.state)
   const out: Range<Decoration>[] = []
   let next = 0
   blockTrees(view, (read) => {

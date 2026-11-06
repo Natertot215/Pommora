@@ -41,7 +41,7 @@ async function rightClickGrip(axis: 'row' | 'col', i: number): Promise<void> {
   })
 }
 
-const modelOf = (view: EditorView) => modelFromRegion(docScan(view.state.doc).tables[0])
+const modelOf = (view: EditorView) => modelFromRegion(docScan(view.state).tables[0])
 
 async function pick(action: TableMenuAction, axis: 'row' | 'col', i: number, body = TABLE) {
   table.mockResolvedValue(action)

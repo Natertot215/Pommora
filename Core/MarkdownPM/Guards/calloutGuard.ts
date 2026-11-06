@@ -39,5 +39,5 @@ function joinVerdict(s: CalloutScan, from: number, to: number, insert: string): 
 }
 
 export const calloutGuard: Extension = verdictFilter((doc, fromA, toA, inserted, state) =>
-  calloutDeleteVerdict(doc, fromA, toA, inserted, docScan(state.doc)),
+  calloutDeleteVerdict(doc, fromA, toA, inserted, docScan(state)),
 )

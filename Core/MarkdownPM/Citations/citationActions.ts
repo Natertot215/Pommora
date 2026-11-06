@@ -26,7 +26,7 @@ import { editorHost } from '../api'
 const citationsOf = (view: EditorView) => view.state.facet(editorHost).citations
 
 export function travelToCitation(view: EditorView, label: string): void {
-  const entry = citationFor(docScan(view.state.doc).citations, label)
+  const entry = citationFor(docScan(view.state).citations, label)
   if (!entry) return
   citationsOf(view).set(true)
   travelTo(view, entry.contentStart)
@@ -34,7 +34,7 @@ export function travelToCitation(view: EditorView, label: string): void {
 
 /** A footnote annotates the words it follows, so the selection's end is where every creation puts the marker — outside the section and outside code. Both halves come off the cached scan. */
 export function citationSeatAt(state: EditorState, at = state.selection.main.to): boolean {
-  const scan = docScan(state.doc)
+  const scan = docScan(state)
   return state.doc.lineAt(at).number - 1 < scan.citations.firstLine && !inCodeAt(scan, at)
 }
 
@@ -58,7 +58,7 @@ export function commitCitation(
 function writeCitation(view: EditorView, markerFrom: number, changes: ChangeSpec[]): boolean {
   const set = commitCitation(view, changes, 'input')
   if (!set) return false
-  const scan = docScan(view.state.doc)
+  const scan = docScan(view.state)
   const marker = scan.citations.markers.find((m) => m.from === set.mapPos(markerFrom, -1))
   const entry = marker && citationFor(scan.citations, marker.label)
   if (!entry || !view.state.facet(editorHost).settings().jumpToCitation) {
@@ -78,7 +78,7 @@ function editCitation(view: EditorView, at: number): void {
 
 export function insertCitation(view: EditorView, text = ''): boolean {
   if (view.state.readOnly || !citationSeatAt(view.state)) return false
-  const scan = docScan(view.state.doc)
+  const scan = docScan(view.state)
   const at = view.state.selection.main.to
   const label = mintLabel(scan.citations)
   return writeCitation(view, at, [
@@ -90,7 +90,7 @@ export function insertCitation(view: EditorView, text = ''): boolean {
 /** It cannot be a link in the typing chain: every transform there returns one range, and adopting an existing label writes at two disjoint sites. */
 export function seedTypedCitation(view: EditorView, at: number): boolean {
   if (view.state.readOnly || !citationSeatAt(view.state)) return false
-  const scan = docScan(view.state.doc)
+  const scan = docScan(view.state)
   const label = markerEndingAt(`${scan.text.slice(view.state.doc.lineAt(at).from, at)}]`)
   if (label === null || citationFor(scan.citations, label)) return false
   return writeCitation(view, at - label.length - 2, [
@@ -112,7 +112,7 @@ export const citationOrder: Extension = Prec.highest(
   EditorState.transactionFilter.of((tr) => {
     if (!tr.docChanged) return tr
     const after = docScan.after(tr)
-    if (!bindingMoved(docScan(tr.startState.doc).citations, after.citations)) return tr
+    if (!bindingMoved(docScan(tr.startState).citations, after.citations)) return tr
     const changes = normalizeCitations(after)
     return changes.length === 0 ? tr : [tr, { changes, sequential: true }]
   }),
@@ -128,7 +128,7 @@ export function applyCitationAction(
   action: CitationMenuAction,
   subject: CitationSubject,
 ): void {
-  const scan = docScan(view.state.doc)
+  const scan = docScan(view.state)
   const label = subject.kind === 'marker' ? subject.marker.label : subject.label
   const entry = citationFor(scan.citations, label)
   const marker =

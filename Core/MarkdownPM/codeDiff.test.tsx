@@ -6,6 +6,7 @@ import { EditorSelection, EditorState } from '@codemirror/state'
 import { EditorView, runScopeHandlers } from '@codemirror/view'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '../Testing/editorHarness'
 import { codeLanguage } from './codeHighlight'
+import { surfaceScope } from './docCache'
 import { markdownDecorations } from './decorations'
 
 stubEditorBridge()
@@ -182,7 +183,10 @@ describe('a diff fence’s caret', () => {
 
   it('belongs to the page alone, so a cell keeps the side it was given', () => {
     const side = (scope: 'page' | 'cell') =>
-      EditorState.create({ doc, extensions: markdownDecorations(scope) }).update({
+      EditorState.create({
+        doc,
+        extensions: [surfaceScope.of(scope), markdownDecorations],
+      }).update({
         selection: EditorSelection.create([EditorSelection.cursor(seat, -1)]),
         userEvent: 'select',
       }).state.selection.main.assoc

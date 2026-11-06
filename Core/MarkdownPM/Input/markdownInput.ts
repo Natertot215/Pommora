@@ -53,7 +53,7 @@ import { fenceAt, isWordChar, lineEndOf, lineIndexAt, lineOffsetsOf } from '../E
 import { shownEnd } from '../Links/linkEdit'
 import { embedTileRanges } from '../Embeds/embedWidget'
 import { caretInMargin, type DocScan, signSeatAt } from '../Engine/docScan'
-import { type MarkdownScope, signedLine } from '../Engine/detect'
+import { signedLine } from '../Engine/detect'
 import { blockLanguage, blockLines } from '../codeHighlight'
 import { commitCitation, seedTypedCitation } from '../Citations/citationActions'
 import { citationDeleteIntent } from '../Citations/citationEdits'
@@ -70,7 +70,7 @@ const nest =
   (transform: (scan: DocScan, selStart: number, selEnd: number) => Edit | null) =>
   (view: EditorView): boolean => {
     const s = view.state.selection.main
-    apply(view, transform(docScan(view.state.doc), s.from, s.to))
+    apply(view, transform(docScan(view.state), s.from, s.to))
     return true
   }
 
@@ -95,7 +95,7 @@ const typedLine = StateField.define<number>({
 
 const onEnter = (view: EditorView): boolean => {
   const s = view.state.selection.main
-  const scan = docScan(view.state.doc)
+  const scan = docScan(view.state)
   const settings = settingsOf(view)
   return apply(
     view,
@@ -112,7 +112,7 @@ const diffBreak =
   (command: StateCommand, sign?: ' ') =>
   (view: EditorView): boolean => {
     const { from, to } = view.state.selection.main
-    const scan = docScan(view.state.doc)
+    const scan = docScan(view.state)
     const i = lineIndexAt(scan, from)
     const f = scan.fences[i]
     const seat = signSeatAt(scan, from)
@@ -159,7 +159,7 @@ const diffBreak =
 // Forward-delete at the end of the line above a table would join prose into the header row, so it mirrors the backspace atomic behavior instead.
 /** Dispatched rather than returned into the transform chain: removing a footnote is two disjoint sites, and the edit that chain carries is a single range. */
 const citationCascade = (view: EditorView, from: number, to: number): boolean => {
-  const changes = citationDeleteIntent(docScan(view.state.doc), from, to)
+  const changes = citationDeleteIntent(docScan(view.state), from, to)
   if (!changes) return false
   commitCitation(view, changes, 'delete')
   return true
@@ -167,7 +167,7 @@ const citationCascade = (view: EditorView, from: number, to: number): boolean =>
 
 const onForwardDelete = (view: EditorView): boolean => {
   const s = view.state.selection.main
-  const scan = docScan(view.state.doc)
+  const scan = docScan(view.state)
   const marker = s.empty ? scan.citations.markers.find((m) => m.from === s.from) : undefined
   const from = marker?.from ?? s.from
   const to = marker?.to ?? s.to
@@ -184,7 +184,7 @@ const onForwardDelete = (view: EditorView): boolean => {
   }
   const next = s.from + 1
   if (lineIndexAt(scan, next) >= scan.citations.firstLine) return false
-  const visible = prefixEndAt(docLineIntentsOf(view.state.doc, 'page'), scan, next)
+  const visible = prefixEndAt(docLineIntentsOf(view.state), scan, next)
   if (visible === next) return false
   view.dispatch({
     changes: { from: s.from, to: visible },
@@ -195,30 +195,25 @@ const onForwardDelete = (view: EditorView): boolean => {
 }
 
 /** Every surface's Backspace: a page first holds an embedded tile and cascades a footnote's removal, then a marker or an empty pair goes as a delete of its own. */
-export const smartDelete =
-  (scope: MarkdownScope) =>
-  (view: EditorView): boolean => {
-    const s = view.state.selection.main
-    if (scope === 'page') {
-      if (
-        s.empty &&
-        embedTileRanges(view.state).some((r) => s.from === r.to + 1 || s.from === r.to)
-      )
-        return true
-      if (citationCascade(view, s.from, s.to)) return true
-    }
-    const scan = docScan(view.state.doc)
-    return applyEdit(
-      view,
-      smartBackspace(scan, s.from, s.to, scope) ?? autoDelete(scan, s.from, s.to, settingsOf(view)),
-      { scrollIntoView: true, userEvent: 'delete' },
-    )
+export const smartDelete = (view: EditorView): boolean => {
+  const s = view.state.selection.main
+  const scan = docScan(view.state)
+  if (scan.scope === 'page') {
+    if (s.empty && embedTileRanges(view.state).some((r) => s.from === r.to + 1 || s.from === r.to))
+      return true
+    if (citationCascade(view, s.from, s.to)) return true
   }
+  return applyEdit(
+    view,
+    smartBackspace(scan, s.from, s.to) ?? autoDelete(scan, s.from, s.to, settingsOf(view)),
+    { scrollIntoView: true, userEvent: 'delete' },
+  )
+}
 
 // Except inside a callout, where it stays in the box. An unclosed pair is closed first so the break never lands inside it.
 const onShiftEnter = (view: EditorView): boolean => {
   const s = view.state.selection.main
-  const scan = docScan(view.state.doc)
+  const scan = docScan(view.state)
   return apply(
     view,
     closeConstructOnShiftEnter(scan, s.from, s.to, settingsOf(view)) ??
@@ -233,47 +228,45 @@ export const wrapChords: KeyBinding[] = Object.entries({ "'": '"', 8: '*', 9: '(
     run: (view) => {
       const { from, to } = view.state.selection.main
       if (view.state.sliceDoc(from, to).includes('\n')) return false
-      return apply(view, wrapSelection(docScan(view.state.doc), from, to, ch, settingsOf(view)))
+      return apply(view, wrapSelection(docScan(view.state), from, to, ch, settingsOf(view)))
     },
   }),
 )
 
 /** Every typed character on both surfaces: a cell skips the callout shorthand and the citation seed, which write page constructs. */
-export const typedInput = (scope: MarkdownScope): Extension =>
-  EditorView.inputHandler.of((view, from, to, text) => {
-    // Never dispatch mid-composition: a transaction there aborts or garbles the IME session.
-    if (view.composing || view.compositionStarted) return false
-    const scan = docScan(view.state.doc)
-    const page = scope === 'page'
-    if (page && caretInMargin(scan, view.state.selection.main)) {
-      apply(view, marginSign(scan, from, text))
-      return true
-    }
-    if (text.length !== 1) return false
-    const settings = settingsOf(view)
-    if (from !== to)
-      return apply(
-        view,
-        wrapSelection(scan, from, to, text, settings) ?? headingHash(scan, from, to, text),
-      )
-    // In a live link's shown slot a `]` would truncate the link and a `[` would pair into one, so the first is swallowed and the second lands plainly.
-    if ((text === ']' || text === '[') && shownEnd(view.state, from, scope) !== null)
-      return text === ']'
-    if (page && text === ']' && seedTypedCitation(view, from)) return true
+export const typedInput: Extension = EditorView.inputHandler.of((view, from, to, text) => {
+  // Never dispatch mid-composition: a transaction there aborts or garbles the IME session.
+  if (view.composing || view.compositionStarted) return false
+  const scan = docScan(view.state)
+  const page = scan.scope === 'page'
+  if (caretInMargin(scan, view.state.selection.main)) {
+    apply(view, marginSign(scan, from, text))
+    return true
+  }
+  if (text.length !== 1) return false
+  const settings = settingsOf(view)
+  if (from !== to)
     return apply(
       view,
-      headingHash(scan, from, from, text) ??
-        (page ? calloutShorthand(scan.text, from, from, text, settings) : null) ??
-        canonicalizeCheckbox(scan.text, from, from, text, scope) ??
-        autoPair(scan, from, from, text, settings) ??
-        dashArrow(scan, from, from, text, settings) ??
-        ellipsis(scan, from, from, text, settings) ??
-        punctuation(scan, from, from, text, settings) ??
-        equations(scan, from, from, text, settings) ??
-        sectionSign(scan, from, from, text, settings) ??
-        bullet(scan, from, from, text, settings),
+      wrapSelection(scan, from, to, text, settings) ?? headingHash(scan, from, to, text),
     )
-  })
+  // In a live link's shown slot a `]` would truncate the link and a `[` would pair into one, so the first is swallowed and the second lands plainly.
+  if ((text === ']' || text === '[') && shownEnd(view.state, from) !== null) return text === ']'
+  if (page && text === ']' && seedTypedCitation(view, from)) return true
+  return apply(
+    view,
+    headingHash(scan, from, from, text) ??
+      (page ? calloutShorthand(scan.text, from, from, text, settings) : null) ??
+      canonicalizeCheckbox(scan, from, from, text) ??
+      autoPair(scan, from, from, text, settings) ??
+      dashArrow(scan, from, from, text, settings) ??
+      ellipsis(scan, from, from, text, settings) ??
+      punctuation(scan, from, from, text, settings) ??
+      equations(scan, from, from, text, settings) ??
+      sectionSign(scan, from, from, text, settings) ??
+      bullet(scan, from, from, text, settings),
+  )
+})
 
 export const markdownInput = [
   typedLine,
@@ -287,7 +280,7 @@ export const markdownInput = [
       { key: 'Shift-Tab', run: nest(outdentListOnShiftTab) },
       { key: 'Delete', run: onForwardDelete },
       // Shift+Backspace joins like Backspace inside a callout instead of falling to the default delete, which would erode the body prefix.
-      { key: 'Shift-Backspace', run: smartDelete('page') },
+      { key: 'Shift-Backspace', run: smartDelete },
     ]),
   ),
 ]

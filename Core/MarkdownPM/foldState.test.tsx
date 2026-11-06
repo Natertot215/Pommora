@@ -522,7 +522,7 @@ describe('a gesture leaves the section in the visible state it found it', () => 
   it('a deletion under a hidden fold renumbers what is left and leaves it hidden', async () => {
     const view = await mountEditor({ initialBody: PAIR })
     await act(async () => {
-      const scan = docScan(view.state.doc)
+      const scan = docScan(view.state)
       commitCitation(view, deleteMarkerChanges(scan, scan.citations.markers[0]), 'delete')
     })
     expect(view.state.doc.toString()).toBe('x y[^1]\n\n[^1]: two')

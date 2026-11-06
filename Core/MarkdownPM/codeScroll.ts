@@ -88,9 +88,7 @@ export const codeScrolls = StateField.define<CodeScrolls>({
 const on = (view: EditorView): boolean => view.state.facet(editorHost).settings().codeblockScroll
 
 const liveBlock = (view: EditorView): number | null =>
-  on(view) && view.hasFocus
-    ? openerAt(docScan(view.state.doc), view.state.selection.main.head)
-    : null
+  on(view) && view.hasFocus ? openerAt(docScan(view.state), view.state.selection.main.head) : null
 
 // Inclusive, so a tab stop at either edge of the code draws inside its run.
 const run = Decoration.mark({ class: `codeblock-run ${overScrollFace}`, inclusive: true })
@@ -148,7 +146,7 @@ function decorate(
   cuts: ReadonlyMap<string, string>,
 ): [DecorationSet, DecorationSet] {
   if (!on(view)) return [Decoration.none, Decoration.none]
-  const scan = docScan(view.state.doc)
+  const scan = docScan(view.state)
   const { blocks, hovered } = view.state.field(codeScrolls)
   const ranges: Range<Decoration>[] = []
   const inks: Range<Decoration>[] = []
@@ -191,7 +189,7 @@ function shiftFrames(
   deco: DecorationSet,
   moved: readonly BlockScroll[],
 ): DecorationSet {
-  const scan = docScan(view.state.doc)
+  const scan = docScan(view.state)
   for (const b of moved) {
     const [first, last] = drawnSpan(view, scan, b.from)
     if (first > last) continue
@@ -236,7 +234,7 @@ function widestOf(view: EditorView, from: number, font: string, edit?: ViewUpdat
   const { doc, tabSize } = view.state
   const held = widestHeld.get(view)
   if (held?.doc === doc && held.from === from && held.font === font) return held.widest
-  const scan = docScan(doc)
+  const scan = docScan(view.state)
   const open = lineIndexAt(scan, from)
   const close = lineIndexAt(scan, scan.fences[open]!.to)
   const lineOf = (i: number, w: number): Widest => ({
@@ -289,7 +287,7 @@ function restOf(line: HTMLElement): Rest {
 
 /** How far a block's widest line runs past the width its lines rest at, in layout pixels; null while none of its lines is drawn to take the font and width from. */
 function overflowOf(view: EditorView, from: number, edit?: ViewUpdate): number | null {
-  const scan = docScan(view.state.doc)
+  const scan = docScan(view.state)
   const [first, last] = drawnSpan(view, scan, from)
   let sample: HTMLElement | null = null
   for (let i = first; i <= last && !sample; i++) sample = lineElementAt(view, scan.lineStarts[i])
@@ -325,7 +323,7 @@ function runBox(view: EditorView, pos: number): DOMRect | null {
     pos > view.viewport.to
   )
     return null
-  const scan = docScan(view.state.doc)
+  const scan = docScan(view.state)
   const i = lineIndexAt(scan, pos)
   const f = scan.fences[i]
   if (f?.role !== 'content' || pos < scan.lineStarts[i] + codeSeat(scan.lines[i], f)) return null
@@ -355,7 +353,7 @@ function caretShift(view: EditorView): number {
 function blockUnder(view: EditorView, target: EventTarget | null): number | null {
   const line = target instanceof Element ? target.closest<HTMLElement>('.cm-line.codeblock') : null
   if (!line || line.closest('.cm-content') !== view.contentDOM) return null
-  return openerAt(docScan(view.state.doc), view.posAtDOM(line))
+  return openerAt(docScan(view.state), view.posAtDOM(line))
 }
 
 class CodeScroll {
@@ -418,7 +416,7 @@ class CodeScroll {
 
   /** Reads what the drawn blocks other than the live one lack: each block's rest, which re-clamps an offset its width no longer allows, and each resting line's ellipsis color. */
   read(view: EditorView): StateEffect<unknown>[] {
-    const scan = docScan(view.state.doc)
+    const scan = docScan(view.state)
     const { blocks, hovered } = view.state.field(codeScrolls)
     const cuts = new Map<string, string>()
     const checked = new Set<number>()
@@ -467,7 +465,7 @@ class CodeScroll {
 
 /** Carries each block's rest through an edit to its new key, dropping a block the edit touched or whose opener it deleted. */
 function mapRests(rests: Map<number, Rest>, u: ViewUpdate): Map<number, Rest> {
-  const scan = docScan(u.startState.doc)
+  const scan = docScan(u.startState)
   const out = new Map<number, Rest>()
   for (const [from, rest] of rests) {
     const to = scan.fences[lineIndexAt(scan, from)]?.to ?? from
@@ -529,7 +527,7 @@ const codeScrollPlugin = ViewPlugin.fromClass(CodeScroll, {
 /** A code line clips rather than wraps, so its boundary is its logical end; CM's wrap probe at the editor's edge would land on a clipped glyph. Backward, it takes the code's indentation first, then the code's start, as CM's own Home does. */
 function lineBoundary(forward: boolean, extend: boolean) {
   return (view: EditorView): boolean => {
-    const scan = docScan(view.state.doc)
+    const scan = docScan(view.state)
     const r = view.state.selection.main
     const i = lineIndexAt(scan, r.head)
     const f = scan.fences[i]

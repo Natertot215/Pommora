@@ -34,14 +34,14 @@ export function embedInsertAfter(
 export function embedSeatAt(state: EditorState, at = state.selection.main.from): boolean {
   const line = state.doc.lineAt(at)
   if (!isBlank(line.text)) return false
-  return !inSealedLine(docScan(state.doc), line.number - 1)
+  return !inSealedLine(docScan(state), line.number - 1)
 }
 
 function insertEmbedToken(view: EditorView, token: string, caretBack: number): boolean {
   if (view.state.readOnly) return false
   const doc = docString(view.state.doc)
   const head = view.state.selection.main.head
-  const block = blockAt(docScan(view.state.doc), head)
+  const block = blockAt(docScan(view.state), head)
   const after = block ? block.to : view.state.doc.lineAt(head).to
   const c = embedInsertAfter(doc, after, token)
   view.dispatch({

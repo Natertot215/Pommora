@@ -12,7 +12,7 @@ import {
 import { setList } from './format'
 
 const del = (doc: string, from: number, to: number, userEvent = 'delete'): string =>
-  EditorState.create({ doc, extensions: [listRenumber('page')] })
+  EditorState.create({ doc, extensions: [listRenumber] })
     .update({
       changes: { from, to, insert: '' },
       userEvent,
@@ -83,7 +83,7 @@ describe('a level change recounts the run it joined and the run it left', () => 
   it('switching a numbered item out of its run recounts the run below', () => {
     const doc = '- p\n\t1. a\n\t2. b\n\t\t- kid\n\t3. c'
     const b = doc.indexOf('b')
-    const e = setList(scanDoc(doc), b, b + 1, 'bullet', {}, 'page')
+    const e = setList(scanDoc(doc), b, b + 1, 'bullet', {})
     expect(landEdit(doc, e.changes, editEvent(e), 'page')).toBe(
       '- p\n\t1. a\n\t- b\n\t\t- kid\n\t1. c',
     )
@@ -97,11 +97,11 @@ describe('a level change recounts the run it joined and the run it left', () => 
     )
     const loose = '- p\n\t1. a\n\n\t2. b\n\t3. c'
     const a = loose.indexOf('a')
-    const l = setList(scanDoc(loose), a, a + 1, 'bullet', {}, 'page')
+    const l = setList(scanDoc(loose), a, a + 1, 'bullet', {})
     expect(landEdit(loose, l.changes, editEvent(l), 'page')).toBe('- p\n\t- a\n\n\t1. b\n\t2. c')
     const parent = '3. p\n\t1. a\n5. q'
     const n = parent.indexOf('a')
-    const p = setList(scanDoc(parent), n, n + 1, 'bullet', {}, 'page')
+    const p = setList(scanDoc(parent), n, n + 1, 'bullet', {})
     expect(landEdit(parent, p.changes, editEvent(p), 'page')).toBe('3. p\n\t- a\n5. q')
   })
 })
@@ -127,7 +127,7 @@ describe('Enter recounts the run it splits', () => {
 
 describe('Lists ▸ continues the run a line joins', () => {
   const listed = (doc: string, from: number, to = from): string => {
-    const e = setList(scanDoc(doc), from, to, 'ordered', {}, 'page')
+    const e = setList(scanDoc(doc), from, to, 'ordered', {})
     return landEdit(doc, e.changes, editEvent(e), 'page')
   }
   it('a paragraph between two items takes its place, and the run below counts on', () => {

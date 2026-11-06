@@ -1,6 +1,6 @@
 import { EditorView, keymap } from '@codemirror/view'
 import { type Extension, Prec } from '@codemirror/state'
-import type { MarkdownScope } from './Engine/detect'
+import { type MarkdownScope, readsLists } from './Engine/detect'
 import { markdownDecorations } from './decorations'
 import { listDragExtension } from './Gestures/listDrag'
 import { blockDragExtension } from './Gestures/blockDrag'
@@ -24,40 +24,27 @@ import { citationPointer } from './Citations/citationPointer'
 import { pasteLink } from './Links/pasteLink'
 import { pendingTitles } from './Links/pendingTitle'
 import { commitAliasOnEnter } from './Links/linkEdit'
+import { surfaceScope } from './docCache'
 import { type EditorHost, editorHost } from './api'
 import { type EditorPane, paneKeys } from './Menus/caretPane'
-
-function blockGestures(scope: MarkdownScope): Extension {
-  switch (scope) {
-    case 'page':
-    case 'cell':
-      return [
-        listDragExtension(scope),
-        listRenumber(scope),
-        blockHandles(scope),
-        pointerReveal(scope),
-        blockDragExtension,
-        gripMenu(scope),
-      ]
-    case 'text':
-      return []
-  }
-}
 
 /** Everything a page body, a table cell, and a property value share: inline rendering, the block gestures their scope holds, link and footnote pointers, the paste and alias rules, typing, the word gestures, and the right-click menu. The surfaces differ only in what wraps this. `oneLine` is a value field's surface: it scrolls where a body wraps, and it spellchecks nothing, since a field often holds an address or a name; every surface states its spellcheck, since a cell's contentEditable=false widget host suppresses the inherited one, and the other content attributes are iOS keyboard hints. `remembers` is when its alias memory writes. */
 const inlineSurface = (
   scope: MarkdownScope,
   { oneLine = false, remembers = 'leave' }: { oneLine?: boolean; remembers?: Remembers } = {},
 ): Extension => [
-  markdownDecorations(scope),
-  blockGestures(scope),
+  surfaceScope.of(scope),
+  markdownDecorations,
+  readsLists(scope)
+    ? [listDragExtension, listRenumber, blockHandles, pointerReveal(), blockDragExtension, gripMenu]
+    : [],
   customCaret,
   customSelection,
   linkPointer(),
   citationPointer(),
   pasteLink,
   pendingTitles,
-  linkSettle.of({ scope, remembers }),
+  linkSettle.of(remembers),
   linkRest,
   linkWriting,
   oneLine ? [] : EditorView.lineWrapping,
@@ -69,7 +56,7 @@ const inlineSurface = (
     'data-drawn-caret': '',
   }),
   Prec.high(keymap.of(wrapChords)),
-  typedInput(scope),
+  typedInput,
   wordGestures,
   editorMenu(scope),
 ]
@@ -95,8 +82,8 @@ export const editorBase = ({
   Prec.highest(
     keymap.of([
       ...paneKeys(panes.map((p) => p.ctl)),
-      { key: 'Enter', run: commitAliasOnEnter(scope) },
-      { key: 'Backspace', run: smartDelete(scope) },
+      { key: 'Enter', run: commitAliasOnEnter },
+      { key: 'Backspace', run: smartDelete },
     ]),
   ),
   panes.map((p) => p.extension),

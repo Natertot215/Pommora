@@ -16,7 +16,6 @@ import {
   type FenceInfo,
   type ListKind,
   type ListMarker,
-  type MarkdownScope,
   readsLists,
 } from './detect'
 import { carriedFrom, type DocScan, spanAt } from './docScan'
@@ -187,8 +186,7 @@ export function tokenIntents(tokens: Token[], active: Set<number>): DecoIntent[]
 const barred = (f: FenceInfo | undefined): boolean => signedLine(f) && f?.diff !== 'same'
 
 // Null where the line is chrome of its own and never enters the list vocabulary; otherwise the offset the list grammar starts at.
-// A cell holds no box, no fence, no math and no citation row, and its own extension draws the footnote markers, so none of this is walked there.
-function pageChrome(
+function lineChrome(
   scan: DocScan,
   i: number,
   selStart: number,
@@ -362,20 +360,15 @@ export function lineIntentsInto(
   i: number,
   selStart: number,
   intents: DecoIntent[],
-  scope: MarkdownScope,
   ranged = false,
 ): ListMarker | null {
   const line = scan.lines[i]
   const ls = scan.lineStarts[i]
   const le = ls + line.length
-  let base = 0
-  if (scope === 'page') {
-    const chrome = pageChrome(scan, i, selStart, intents)
-    if (chrome === null) return null
-    base = chrome
-  }
+  const base = lineChrome(scan, i, selStart, intents)
+  if (base === null) return null
 
-  const li = pushConstruct(intents, line, ls, base, selStart, scope, ranged)
+  const li = pushConstruct(intents, scan, line, ls, base, selStart, ranged)
   if (li) {
     const contentFrom = ls + base + li.contentStart
     if (contentFrom < le)
@@ -472,16 +465,10 @@ export const NO_CARET = -1
 
 type LineFacts = Pick<CachedLineIntents, 'perLine' | 'listLevels' | 'listKinds' | 'quoteDepths'>
 
-function deriveLines(
-  facts: LineFacts,
-  scan: DocScan,
-  from: number,
-  to: number,
-  scope: MarkdownScope,
-): void {
+function deriveLines(facts: LineFacts, scan: DocScan, from: number, to: number): void {
   for (let i = from; i < to; i++) {
     const out: DecoIntent[] = []
-    const li = lineIntentsInto(scan, i, NO_CARET, out, scope)
+    const li = lineIntentsInto(scan, i, NO_CARET, out)
     facts.perLine[i] = out
     facts.listLevels[i] = li ? li.level : -1
     facts.listKinds[i] = li ? (railTypeClass(li) ?? '') : ''
@@ -503,10 +490,10 @@ function withRails(scan: DocScan, facts: LineFacts, fresh: [number, number][]): 
   }
 }
 
-export function docLineIntents(scan: DocScan, scope: MarkdownScope = 'page'): CachedLineIntents {
+export function docLineIntents(scan: DocScan): CachedLineIntents {
   const n = scan.lines.length
   const facts: LineFacts = { perLine: [], listLevels: [], listKinds: [], quoteDepths: [] }
-  deriveLines(facts, scan, 0, n, scope)
+  deriveLines(facts, scan, 0, n)
   return withRails(scan, facts, [[0, n]])
 }
 
@@ -517,7 +504,6 @@ export function stepLineIntents(
   prev: CachedLineIntents,
   was: DocScan,
   scan: DocScan,
-  scope: MarkdownScope,
 ): CachedLineIntents {
   const [a, e] = scan.fresh
   const b = carriedFrom(was, scan)
@@ -530,13 +516,12 @@ export function stepLineIntents(
     listKinds: carry(prev.listKinds),
     quoteDepths: carry(prev.quoteDepths),
   }
-  deriveLines(facts, scan, a, e, scope)
+  deriveLines(facts, scan, a, e)
   const fresh: [number, number][] = [[a, e]]
-  if (scope === 'page')
-    for (const [from, to] of citationLines(was, scan, a, e, b)) {
-      deriveLines(facts, scan, from, to, scope)
-      fresh.push([from, to])
-    }
+  for (const [from, to] of citationLines(was, scan, a, e, b)) {
+    deriveLines(facts, scan, from, to)
+    fresh.push([from, to])
+  }
   return withRails(scan, facts, fresh)
 }
 
@@ -581,7 +566,6 @@ export function assembleLineIntents(
   cached: CachedLineIntents,
   selStart: number,
   window?: { from: number; to: number },
-  scope: MarkdownScope = 'page',
   ranged = false,
 ): DecoIntent[] {
   const [top, bottom] = liveLines(scan, selStart)
@@ -589,7 +573,7 @@ export function assembleLineIntents(
   const last = window ? lineIndexAt(scan, window.to) : scan.lines.length - 1
   const intents: DecoIntent[] = []
   for (let i = first; i <= last; i++) {
-    if (i >= top && i <= bottom) lineIntentsInto(scan, i, selStart, intents, scope, ranged)
+    if (i >= top && i <= bottom) lineIntentsInto(scan, i, selStart, intents, ranged)
     else for (const it of cached.perLine[i]) intents.push(it)
   }
   for (let i = first; i <= last; i++) {
@@ -618,11 +602,10 @@ export function seatPastMarker(
   cached: CachedLineIntents,
   scan: DocScan,
   pos: number,
-  scope: MarkdownScope = 'page',
 ): number | null {
   const line = cached.perLine[lineIndexAt(scan, pos)]
   // A REPLACED marker — a bullet, a checkbox — draws nothing the caret can sit against, so a press at its start reveals the source instead of landing on the item.
-  if (scope === 'cell') {
+  if (scan.scope === 'cell') {
     let end = pos
     for (let moved = true; moved; ) {
       moved = false
@@ -649,18 +632,19 @@ export function seatPastMarker(
 
 function pushConstruct(
   intents: DecoIntent[],
+  scan: DocScan,
   line: string,
   ls: number,
   base: number,
   selStart: number,
-  scope: MarkdownScope,
   ranged: boolean,
 ): ListMarker | null {
   const inner = base === 0 ? line : line.slice(base)
   const innerStart = ls + base
   const le = ls + line.length
   const caretOnLine = selStart >= ls && selStart <= le
-  const lm = readsLists(scope) ? parseListMarker(inner) : null
+  const page = scan.scope === 'page'
+  const lm = readsLists(scan.scope) ? parseListMarker(inner) : null
   const glyph = lm && listGlyphOf(lm)
   // Only a resting caret reveals the marker: a drag's head snapping across the atomic marker would otherwise swap glyph and source under the pointer on every move.
   const onMarker =
@@ -674,7 +658,7 @@ function pushConstruct(
   // The prefix is hidden here so a leading widget can ABSORB it: CM drops a widget-replace that merely touches one.
   pushPrefix(intents, ls, innerStart, bulletAbsorbs || hrAbsorbs)
 
-  if (scope === 'page' && isHeadingLine(inner)) {
+  if (page && isHeadingLine(inner)) {
     const hm = headingParts(inner)
     if (hm) {
       const level = hm.hashes.length
@@ -750,7 +734,7 @@ function pushConstruct(
     })
     pushMarkerGap(intents, innerStart + lm.markerEnd, innerStart + lm.contentStart, le)
     return lm
-  } else if (scope === 'page' && isThematicBreakLine(inner) && !caretOnLine) {
+  } else if (page && isThematicBreakLine(inner) && !caretOnLine) {
     intents.push({
       kind: 'widget',
       from: hrAbsorbs ? ls : innerStart,

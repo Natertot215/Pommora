@@ -20,7 +20,7 @@ import {
   type ListGlyph,
 } from '../Engine/intents'
 import { perText } from '../Engine/perText'
-import { parseListMarker, type ListMarker } from '../Engine/detect'
+import type { ListMarker } from '../Engine/detect'
 import { checkboxToggleChange } from '../Engine/listModel'
 import { scanDoc } from '../Engine/docScan'
 import { isPaint } from '../Engine/paints'
@@ -30,7 +30,7 @@ import { decodePayload, type TablePayload } from '../Engine/Tables/clipboard'
 import { pastedCellText } from '../Links/pasteLink'
 import { RESTING_EDITS } from '../../Actions/editorMenu'
 import { pasteModeOf, type PasteMode } from '../../Actions/pasteAsMenu'
-import { codeMask, lineOffsetsOf, quoteDepthOf, type TextEdit } from '../Engine/markdownCode'
+import { codeMask, quoteDepthOf, type TextEdit } from '../Engine/markdownCode'
 import { sectionRunsIn } from '../../Connections/scan'
 import { mayNameOwnHeading } from '../../Connections/connections'
 import { labelEscapes } from '../../Connections/links'
@@ -62,7 +62,7 @@ export type CellPage = Pick<PageHeadings, 'keys' | 'texts'> & {
 }
 
 // KNOB — distinct cell texts remembered; a table scrolling back in re-reads its cells from here.
-export const cellTokens = perText(tokenize, 4096)
+const cellTokens = perText((text) => tokenize(text, 'cell'), 4096)
 
 type Drawn = Token | { kind: 'section'; range: [number, number]; contentRange: [number, number] }
 
@@ -281,16 +281,14 @@ function renderCellBody(
   around: CellPage,
   headingLinkStyle: HeadingLinkStyle,
 ): React.ReactNode {
-  const lines = text.split('\n')
+  const { lines, lineStarts: starts, markers } = scanDoc(text, 'cell')
   // A marker nothing draws is prose here exactly as it is in the editor, so the two surfaces accept the same lines.
-  const items = lines.map((l) => {
-    const lm = parseListMarker(l)
+  const items = markers.map((lm) => {
     const glyph = lm && listGlyphOf(lm)
     return lm && glyph ? { lm, glyph } : null
   })
   if (items.every((it) => it === null))
     return renderCellContent(text, connections, { around, headingLinkStyle })
-  const starts = lineOffsetsOf(lines)
   const rails = railIntents(
     lines,
     starts,
@@ -540,7 +538,7 @@ function StaticCellImpl({
     }
     const how = pasteModeOf(action)
     if (how) return pasteAtRest(from, to, how)
-    const edit = editFor(action, scanDoc(text), from, to, host.settings(), 'cell')
+    const edit = editFor(action, scanDoc(text, 'cell'), from, to, host.settings())
     if (!edit || !commitAtRest(edit.changes, editEvent(edit))) return
     const [group] = action.split(':')
     const slot = (group === 'format' || isPaint(group)) && (from === to || action === 'format:link')
@@ -553,8 +551,7 @@ function StaticCellImpl({
     const glyph = glyphAt(e)
     routeRightClick(
       host,
-      scanDoc(text),
-      'cell',
+      scanDoc(text, 'cell'),
       e,
       () => {
         const found = glyph ? null : document.caretPositionFromPoint(e.clientX, e.clientY)

@@ -87,7 +87,7 @@ describe('list continuation (Enter)', () => {
         const end = doc.indexOf(line) + line.length
         expect(continueListOnEnter(scan, end, end)).toBeNull()
         expect(indentListOnTab(scan, end, end)).toBeNull()
-        expect(continueListOnEnter(scan, end, end, 'cell')).not.toBeNull()
+        expect(continueListOnEnter(scanDoc(doc, 'cell'), end, end)).not.toBeNull()
       }
       const text = doc.indexOf('one')
       expect(smartBackspace(scan, text, text)).toBeNull()
@@ -161,13 +161,13 @@ describe('smart backspace (whole marker, all markers)', () => {
 describe('checkbox canonicalization', () => {
   it('-[] + space → "- [ ] " with caret after', () => {
     const doc = '-[]'
-    const e = canonicalizeCheckbox(doc, 3, 3, ' ')!
+    const e = canonicalizeCheckbox(scanDoc(doc), 3, 3, ' ')!
     expect(apply(doc, e)).toBe('- [ ] ')
     expect(e.selection).toBe(6)
   })
   it('-[x] + space → "- [x] "', () => {
     const doc = '-[x]'
-    expect(apply(doc, canonicalizeCheckbox(doc, 4, 4, ' ')!)).toBe('- [x] ')
+    expect(apply(doc, canonicalizeCheckbox(scanDoc(doc), 4, 4, ' ')!)).toBe('- [x] ')
   })
   it('a fence line keeps its marker on backspace', () => {
     const doc = '```\n- [ ] \n```'
@@ -1013,7 +1013,7 @@ describe('nested list behavior inside a callout', () => {
   })
   it('-[]+space canonicalizes to GFM behind the prefix', () => {
     const doc = '> [!callout] head\n> -[]'
-    const r = canonicalizeCheckbox(doc, doc.length, doc.length, ' ')!
+    const r = canonicalizeCheckbox(scanDoc(doc), doc.length, doc.length, ' ')!
     expect(apply(doc, r)).toBe('> [!callout] head\n> - [ ] ')
   })
 })

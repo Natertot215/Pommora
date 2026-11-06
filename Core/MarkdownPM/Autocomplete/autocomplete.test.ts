@@ -393,7 +393,7 @@ describe('a pick reads an embed as the scanner does', () => {
 
   it('a table cell draws no embed, so one alone in it keeps the title alias', () => {
     const doc = '![[Notes'
-    const ac = queryOf(scanDoc(doc), doc.length, undefined, 'cell')!
+    const ac = queryOf(scanDoc(doc, 'cell'), doc.length, undefined)!
     expect(landed(doc, commitEdit(ac, 'A/Notes', {}))).toBe('![[A/Notes|Notes]]')
   })
 })

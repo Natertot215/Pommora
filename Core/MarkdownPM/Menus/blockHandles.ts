@@ -1,16 +1,14 @@
 // Content-anchored like the fold chevron so a grip can't drift below callouts or folds. Headings use the chevron, callouts keep their own, and the table widget supplies its own.
 import { Decoration, EditorView, ViewPlugin, type ViewUpdate } from '@codemirror/view'
 import { GlyphWidget } from '../decorations'
-import { docScan } from '../docCache'
+import { docScan, surfaceScope } from '../docCache'
 import type { Extension, Range } from '@codemirror/state'
 import { type Block, blockAt, blockStarts } from '../Engine/blockModel'
 import { GRIP_HOST, GRIP_LINE } from '../Engine/intents'
 import { lineElementAt, ownElements, textColumn } from '../lineDom'
-import type { MarkdownScope } from '../Engine/detect'
 import { REVEAL_REACH, type Reach, withinReach } from '@pommora/uix/Interactions/hoverReveal'
 
 type Kind = Block['kind']
-type BlockScope = Exclude<MarkdownScope, 'text'>
 
 const GRIP_KINDS: ReadonlySet<Kind> = new Set([
   'paragraph',
@@ -21,9 +19,6 @@ const GRIP_KINDS: ReadonlySet<Kind> = new Set([
   'embed',
   'webpage',
 ])
-
-// A cell speaks the list vocabulary alone, so a list is the only block there with anything for a grip to move or a menu to offer.
-const CELL_KINDS: ReadonlySet<Kind> = new Set(['list'])
 
 // Blockquote can't use the rail `::before` grip (its bar and fill take both pseudos), so its grip is a real element.
 class GripWidget extends GlyphWidget {
@@ -40,18 +35,18 @@ class GripWidget extends GlyphWidget {
 const gripWidget = new GripWidget()
 const handleLine = Decoration.line({ class: 'md-block-handle', attributes: GRIP_HOST })
 
-export function blockHandles(scope: BlockScope = 'page'): Extension {
-  const kinds = scope === 'cell' ? CELL_KINDS : GRIP_KINDS
-  return EditorView.decorations.compute(['doc'], (state) => {
-    const ranges: Range<Decoration>[] = []
-    for (const b of blockStarts(docScan(state.doc))) {
-      if (kinds.has(b.kind)) ranges.push(handleLine.range(b.from))
-      else if (scope === 'page' && b.kind === 'blockquote')
-        ranges.push(Decoration.widget({ widget: gripWidget, side: -1 }).range(b.from))
-    }
-    return Decoration.set(ranges, true)
-  })
-}
+export const blockHandles: Extension = EditorView.decorations.compute(['doc'], (state) => {
+  const scan = docScan(state)
+  const page = scan.scope === 'page'
+  const ranges: Range<Decoration>[] = []
+  for (const b of blockStarts(scan)) {
+    // A cell speaks the list vocabulary alone, so a list is the only block there with anything for a grip to move or a menu to offer.
+    if (GRIP_KINDS.has(b.kind) && (page || b.kind === 'list')) ranges.push(handleLine.range(b.from))
+    else if (b.kind === 'blockquote')
+      ranges.push(Decoration.widget({ widget: gripWidget, side: -1 }).range(b.from))
+  }
+  return Decoration.set(ranges, true)
+})
 
 type Tag = { el: HTMLElement; box: DOMRect }
 type TagMeasure = { font: number; tags: Tag[] }
@@ -144,8 +139,17 @@ class TagReveal {
   }
 }
 
-// Grips can't self-hover, so a grippable block's first line is a script host, turned `on` whenever the pointer sits in the gutter strip of any of its lines. On a page each code tag reveals its copy mark while the pointer is within reach, scaled with the editor's font; that listener is the content's own, so a move over a table or an embed, which the editor's handlers skip, still counts.
-export function pointerReveal(scope: BlockScope = 'page'): Extension {
+// Each code tag reveals its copy mark while the pointer is within reach, scaled with the editor's font; that listener is the content's own, so a move over a table or an embed, which the editor's handlers skip, still counts.
+export const tagReveal: Extension = ViewPlugin.define((view) => new TagReveal(view), {
+  eventHandlers: {
+    scroll() {
+      this.moved()
+    },
+  },
+})
+
+// Grips can't self-hover, so a grippable block's first line is a script host, turned `on` whenever the pointer sits in the gutter strip of any of its lines.
+export function pointerReveal(): Extension {
   let hotLine: HTMLElement | null = null
   const setHot = (next: HTMLElement | null): void => {
     if (next === hotLine && next?.dataset.revealHost !== 'off') return
@@ -171,22 +175,11 @@ export function pointerReveal(scope: BlockScope = 'page'): Extension {
       if (hotLine?.isConnected && hotLine.dataset.revealHost === 'off')
         hotLine.dataset.revealHost = 'on'
     }),
-    ...(scope === 'cell'
-      ? []
-      : [
-          ViewPlugin.define((view) => new TagReveal(view), {
-            eventHandlers: {
-              scroll() {
-                this.moved()
-              },
-            },
-          }),
-        ]),
     EditorView.domEventHandlers({
       pointermove(e, view) {
         // A cell's grip lives inside the text column rather than left of it, so hovering the list at all is what reveals it — but the gate stays, as a DOM walk rather than a measurement, because posAtCoords below reads layout.
         const cheapMiss =
-          scope === 'cell'
+          view.state.facet(surfaceScope) === 'cell'
             ? !(e.target as HTMLElement).closest?.('.cm-line.md-list-item')
             : e.clientX >= columnLeft(view)
         if (cheapMiss) {
@@ -205,7 +198,7 @@ export function pointerReveal(scope: BlockScope = 'page'): Extension {
         }
         if (lineFrom !== cachedFrom) {
           cachedFrom = lineFrom
-          const block = blockAt(docScan(view.state.doc), pos)
+          const block = blockAt(docScan(view.state), pos)
           cachedFirstFrom = block ? view.state.doc.lineAt(block.from).from : -1
         }
         const first = cachedFirstFrom < 0 ? null : lineElementAt(view, cachedFirstFrom)

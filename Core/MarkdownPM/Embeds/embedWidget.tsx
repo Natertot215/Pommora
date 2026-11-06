@@ -385,7 +385,7 @@ function buildTiles(
 ): EmbedTiles {
   const host = state.facet(embedHost)
   const conn = state.facet(editorHost).connections()
-  const scan = docScan(state.doc)
+  const scan = docScan(state)
   const interactive = host.ancestors.length <= 1
   let unformed = 0
 
@@ -465,8 +465,8 @@ function editAffectsEmbeds(value: EmbedTiles, tr: Transaction): boolean {
     const to = doc.lineAt(Math.min(doc.length, r.to + 1)).to
     if (tr.changes.touchesRange(from, to) !== false) return true
   }
-  const before = docScan(tr.startState.doc)
-  const after = docScan(tr.state.doc)
+  const before = docScan(tr.startState)
+  const after = docScan(tr.state)
   return (
     scanMoved(before.embeds, after.embeds, tr, (a, b) => a.title === b.title) ||
     scanMoved(before.webpages, after.webpages, tr, (a, b) => a.url === b.url && a.label === b.label)

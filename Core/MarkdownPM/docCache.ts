@@ -1,5 +1,5 @@
 // CM's Text.toString() re-joins the rope on every call, and extensions re-scanning the result per keystroke was the lag source.
-import type { Text, Transaction } from '@codemirror/state'
+import { type EditorState, Facet, type Text, type Transaction } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
 import { docLineIntents, stepLineIntents } from './Engine/intents'
 import type { MarkdownScope } from './Engine/detect'
@@ -37,13 +37,13 @@ export function perDoc<T>(
 export const docString = perDoc((doc) => doc.toString())
 
 /** Each view keeps what its last pass drew, by text, so a pass derives only what changed and holds nothing it has moved past. */
-export function drawnLast<T>(derive: (text: string) => T) {
+export function drawnLast<T>(derive: (text: string, view: EditorView) => T) {
   const last = new WeakMap<EditorView, Map<string, T>>()
   return (view: EditorView, draw: (read: (text: string, keep?: boolean) => T) => void): void => {
     const was = last.get(view)
     const now = new Map<string, T>()
     draw((text, keep = true) => {
-      const v = now.get(text) ?? was?.get(text) ?? derive(text)
+      const v = now.get(text) ?? was?.get(text) ?? derive(text, view)
       if (keep) now.set(text, v)
       return v
     })
@@ -61,38 +61,41 @@ function changedSpan(tr: Transaction): [number, number] {
   return [from, to]
 }
 
-export const docScan = perDoc(
-  (doc) => scanDoc(docString(doc)),
-  (prev, tr) => rescan(prev, ...changedSpan(tr), docString(tr.newDoc)),
-)
+/** What a surface reads, stated once where the surface is built, so every derivation below answers for that vocabulary. */
+export const surfaceScope = Facet.define<MarkdownScope, MarkdownScope>({
+  combine: (values) => values[0] ?? 'page',
+})
 
 interface PerScopedDoc<T> {
-  (doc: Text, scope: MarkdownScope): T
-  after(tr: Transaction, scope: MarkdownScope): T
+  (state: EditorState): T
+  after(tr: Transaction): T
+  of(doc: Text, scope: MarkdownScope): T
 }
 
 /** One cache per vocabulary: `perDoc` keys on the text alone, and the same text read as a page and as a cell derives differently. */
 export function perScopedDoc<T>(
   derive: (doc: Text, scope: MarkdownScope) => T,
-  step: (prev: T, tr: Transaction, scope: MarkdownScope) => T,
+  step: (prev: T, tr: Transaction) => T,
 ): PerScopedDoc<T> {
-  const of = (scope: MarkdownScope): PerDoc<T> =>
-    perDoc(
-      (doc) => derive(doc, scope),
-      (prev, tr) => step(prev, tr, scope),
-    )
-  const scoped = { page: of('page'), cell: of('cell'), text: of('text') }
-  return Object.assign((doc: Text, scope: MarkdownScope) => scoped[scope](doc), {
-    after: (tr: Transaction, scope: MarkdownScope) => scoped[scope].after(tr),
+  const perScope = (scope: MarkdownScope): PerDoc<T> => perDoc((doc) => derive(doc, scope), step)
+  const scoped = { page: perScope('page'), cell: perScope('cell'), text: perScope('text') }
+  return Object.assign((state: EditorState) => scoped[state.facet(surfaceScope)](state.doc), {
+    after: (tr: Transaction) => scoped[tr.startState.facet(surfaceScope)].after(tr),
+    of: (doc: Text, scope: MarkdownScope) => scoped[scope](doc),
   })
 }
 
-export const docLineIntentsOf = perScopedDoc(
-  (doc, scope) => docLineIntents(docScan(doc), scope),
-  (prev, tr, scope) => stepLineIntents(prev, docScan(tr.startState.doc), docScan.after(tr), scope),
+export const docScan = perScopedDoc(
+  (doc, scope) => scanDoc(docString(doc), scope),
+  (prev, tr) => rescan(prev, ...changedSpan(tr), docString(tr.newDoc)),
 )
 
-export const docOutline = perDoc((doc) => headingOutlineOf(docScan(doc)))
+export const docLineIntentsOf = perScopedDoc(
+  (doc, scope) => docLineIntents(docScan.of(doc, scope)),
+  (prev, tr) => stepLineIntents(prev, docScan(tr.startState), docScan.after(tr)),
+)
+
+export const docOutline = perDoc((doc) => headingOutlineOf(docScan.of(doc, 'page')))
 
 export const docHeadingKeys = perDoc((doc) => docOutline(doc).map((h) => normalizeTitle(h.text)))
 

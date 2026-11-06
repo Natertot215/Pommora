@@ -28,7 +28,7 @@ interface BlockShape {
 }
 
 function blockShape(view: EditorView, block: BlockSpan): BlockShape {
-  const scan = docScan(view.state.doc)
+  const scan = docScan(view.state)
   const starts = blockStarts(scan).map((b) => b.from)
   const end = scan.lineStarts[scan.citations.firstLine]
   return { starts, end, afterBlock: starts.find((s) => s > block.to) ?? end }
@@ -106,7 +106,7 @@ export function createBlockDragGesture({ selector, onClick, onDragStart }: DragC
         if (e.button !== 0) return false
         const line = gutterLineAt(e, selector)
         if (!line) return false
-        const block = blockAt(docScan(view.state.doc), view.posAtDOM(line))
+        const block = blockAt(docScan(view.state), view.posAtDOM(line))
         if (!block) return false
         startBlockDrag(view, e, block, { onClick, onDragStart, line })
         return true

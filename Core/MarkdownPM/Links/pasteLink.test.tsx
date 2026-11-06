@@ -520,6 +520,12 @@ describe('pasting into a cell that holds no editor', () => {
       insert: A,
     })
   })
+
+  it('links an address between fence-shaped lines, which a cell reads as lines', async () => {
+    const seat = { from: 4, to: 4 }
+    const { insert } = await pastedCellText(testHost(), '```\n\n```', seat, A, 'auto')
+    expect(insert).toBe((await pastedCellText(testHost(), '', at0, A, 'auto')).insert)
+  })
 })
 
 describe('dropping into the editor', () => {

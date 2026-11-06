@@ -173,7 +173,7 @@ describe('format transforms — prefix-aware', () => {
   })
   it('setList on a quoted line lands the marker inside the quote', () => {
     const doc = '> item'
-    const { changes } = setList(scanDoc(doc), 4, 4, 'bullet', {}, 'page')
+    const { changes } = setList(scanDoc(doc), 4, 4, 'bullet', {})
     expect(changes).toEqual([{ from: 2, to: 2, insert: '- ' }])
   })
 })
@@ -181,14 +181,14 @@ describe('format transforms — prefix-aware', () => {
 describe('renumberRuns — nested lines are skipped, not terminators', () => {
   it('renumbers a run past its sublists', () => {
     const doc = '1. a\n\t1. x\n2. b\n2. c'
-    const changes = renumberRuns(scanDoc(doc), [0], 'page')
+    const changes = renumberRuns(scanDoc(doc), [0])
     expect(changes).toEqual([{ from: 16, to: 17, insert: '3' }])
   })
   it('counts past a quote indented under an item, which rides that item', () => {
     const doc = '1. a\n  > q\n1. b'
-    expect(renumberRuns(scanDoc(doc), [0], 'page')).toEqual([{ from: 11, to: 12, insert: '2' }])
+    expect(renumberRuns(scanDoc(doc), [0])).toEqual([{ from: 11, to: 12, insert: '2' }])
     const math = '1. a\n  $$\nx\n  $$\n1. b'
-    expect(renumberRuns(scanDoc(math), [0], 'page')).toEqual([{ from: 17, to: 18, insert: '2' }])
+    expect(renumberRuns(scanDoc(math), [0])).toEqual([{ from: 17, to: 18, insert: '2' }])
   })
 })
 
