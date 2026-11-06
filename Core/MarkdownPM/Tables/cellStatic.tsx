@@ -18,7 +18,7 @@ import {
   textMarkerClass,
 } from '../Engine/intents'
 import { perText } from '../Engine/perText'
-import { LIST_TYPES, type ListMarker } from '../Engine/detect'
+import type { ListMarker } from '../Engine/detect'
 import { checkboxToggleChange } from '../Engine/listModel'
 import { scanDoc } from '../Engine/docScan'
 import { isPaint } from '../Engine/paints'
@@ -282,12 +282,7 @@ function renderCellBody(
   const { lines, lineStarts: starts, markers } = scan
   if (markers.every((lm) => lm === null))
     return renderCellContent(text, connections, { around, headingLinkStyle })
-  const rails = railIntents(
-    scan,
-    markers.map((lm) => lm?.level ?? -1),
-    markers.map((lm) => (lm ? (LIST_TYPES[lm.kind].rail ?? '') : '')),
-    lines.map(quoteDepthOf),
-  )
+  const rails = railIntents(scan, lines.map(quoteDepthOf))
   return lines.map((line, i) => {
     const lm = markers[i]
     const content = lm ? line.slice(lm.contentStart) : line

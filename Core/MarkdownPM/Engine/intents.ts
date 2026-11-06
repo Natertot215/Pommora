@@ -15,7 +15,7 @@ import {
   type FenceInfo,
   type ListMarker,
 } from './detect'
-import { carriedFrom, type DocScan, spanAt } from './docScan'
+import { carriedFrom, type DocScan, markerIn, spanAt } from './docScan'
 import { ridesList } from './listModel'
 import {
   isBlockquoteLine,
@@ -338,44 +338,40 @@ export function lineIntentsInto(
   selStart: number,
   intents: DecoIntent[],
   ranged = false,
-): ListMarker | null {
+): void {
   const base = lineChrome(scan, i, selStart, intents)
-  if (base === null) return null
-  pushConstruct(intents, scan, i, base, selStart, ranged)
-  return scan.markers[i]
+  if (base !== null) pushConstruct(intents, scan, i, base, selStart, ranged)
 }
 
-export function railIntents(
-  scan: DocScan,
-  listLevels: number[],
-  listKinds: string[],
-  quoteDepths: number[],
-): RailIntent[][] {
-  const n = listLevels.length
+export function railIntents(scan: DocScan, quoteDepths: number[]): RailIntent[][] {
+  const n = scan.lines.length
+  const levelAt = (i: number): number => markerIn(scan, i, undefined)?.level ?? -1
   const rails: RailIntent[][] = new Array(n)
   const CARRIES = -2
   const LIST_ENDS = -1
   const shown: number[] = new Array(n)
-  for (let i = 0, depth = 0; i < n; i++) {
+  for (let i = 0, depth = 0, open = false; i < n; i++) {
     const own = quoteDepths[i]
-    if (listLevels[i] >= 0 && own === depth) shown[i] = listLevels[i]
-    else if (own >= depth && ridesList(scan, i, depth)) shown[i] = CARRIES
+    const level = levelAt(i)
+    if (level >= 0 && own === depth) shown[i] = level
+    else if (open && own >= depth && ridesList(scan, i, depth)) shown[i] = CARRIES
     else {
       shown[i] = LIST_ENDS
-      if (listLevels[i] >= 0) depth = own
+      if (level >= 0) depth = own
     }
+    open = level >= 0 || shown[i] === CARRIES
   }
   const ahead: number[] = new Array(n)
   for (let i = n - 1, next = LIST_ENDS; i >= 0; i--) {
     ahead[i] = next
     if (shown[i] !== CARRIES) next = shown[i]
   }
-  const railKind: string[] = []
+  const railKind: (string | undefined)[] = []
   let behind = -1
   let span = 0
   for (let i = 0; i < n; i++) {
     const carries = shown[i] === CARRIES
-    const level = carries ? -1 : listLevels[i]
+    const level = carries ? -1 : levelAt(i)
     const prevSpan = span
     if (shown[i] === LIST_ENDS) railKind.length = 0
     if (carries) span = Math.min(ahead[i], behind + 1)
@@ -384,7 +380,7 @@ export function railIntents(
       span = 0
       continue
     } else {
-      railKind[level] = listKinds[i]
+      railKind[level] = LIST_TYPES[scan.markers[i]!.kind].rail
       railKind.length = level + 1
       behind = level
       span = ahead[i] > level ? level + 1 : level
@@ -422,23 +418,19 @@ interface CachedLineIntents {
   perLine: DecoIntent[][]
   /** Held apart from `perLine` because the lines a caret move re-derives would take a rail folded in there with them. */
   rails: RailIntent[][]
-  listLevels: number[]
-  listKinds: string[]
   quoteDepths: number[]
   fresh: [number, number][]
 }
 
 export const NO_CARET = -1
 
-type LineFacts = Pick<CachedLineIntents, 'perLine' | 'listLevels' | 'listKinds' | 'quoteDepths'>
+type LineFacts = Pick<CachedLineIntents, 'perLine' | 'quoteDepths'>
 
 function deriveLines(facts: LineFacts, scan: DocScan, from: number, to: number): void {
   for (let i = from; i < to; i++) {
     const out: DecoIntent[] = []
-    const li = lineIntentsInto(scan, i, NO_CARET, out)
+    lineIntentsInto(scan, i, NO_CARET, out)
     facts.perLine[i] = out
-    facts.listLevels[i] = li ? li.level : -1
-    facts.listKinds[i] = li ? (LIST_TYPES[li.kind].rail ?? '') : ''
     facts.quoteDepths[i] = quoteDepthOf(scan.lines[i])
   }
 }
@@ -446,14 +438,14 @@ function deriveLines(facts: LineFacts, scan: DocScan, from: number, to: number):
 function withRails(scan: DocScan, facts: LineFacts, fresh: [number, number][]): CachedLineIntents {
   return {
     ...facts,
-    rails: railIntents(scan, facts.listLevels, facts.listKinds, facts.quoteDepths),
+    rails: railIntents(scan, facts.quoteDepths),
     fresh,
   }
 }
 
 export function docLineIntents(scan: DocScan): CachedLineIntents {
   const n = scan.lines.length
-  const facts: LineFacts = { perLine: [], listLevels: [], listKinds: [], quoteDepths: [] }
+  const facts: LineFacts = { perLine: [], quoteDepths: [] }
   deriveLines(facts, scan, 0, n)
   return withRails(scan, facts, [[0, n]])
 }
@@ -473,8 +465,6 @@ export function stepLineIntents(
     old.slice(0, a).concat(new Array<T>(e - a), move ? old.slice(b).map(move) : old.slice(b))
   const facts: LineFacts = {
     perLine: carry(prev.perLine, (line) => line.map((it) => moveIntent(it, shift))),
-    listLevels: carry(prev.listLevels),
-    listKinds: carry(prev.listKinds),
     quoteDepths: carry(prev.quoteDepths),
   }
   deriveLines(facts, scan, a, e)

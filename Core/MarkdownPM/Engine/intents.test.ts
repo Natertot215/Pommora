@@ -722,6 +722,10 @@ describe('outliner rails', () => {
   const rails = (t: string): Rail[] =>
     decorationsFor(t, tokenize(t), new Set(), 999).filter((d): d is Rail => d.kind === 'rail')
 
+  it('an item inside a Markdown code block takes no rail', () => {
+    expect(rails('```md\n- a\n\t- b\n```')).toEqual([])
+  })
+
   it('a top-level item has no ancestor rails', () => {
     expect(rails('- solo')).toHaveLength(0)
   })
@@ -810,6 +814,10 @@ describe('outliner rails', () => {
       [0, 0, null],
       [6, 0, null],
       [18, 0, 'elbow'],
+    ])
+    expect(rails('  > - u\n> \t- r').map((r) => [r.from, r.level, r.end])).toEqual([
+      [0, 0, null],
+      [8, 0, 'elbow'],
     ])
     expect(rails('- A\n\t- B\n> \t- C').map((r) => [r.from, r.level, r.end])).toEqual([
       [0, 0, null],
