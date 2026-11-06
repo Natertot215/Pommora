@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { EditorState } from '@codemirror/state'
+import { history, undo } from '@codemirror/commands'
+import { EditorState, type Transaction } from '@codemirror/state'
 import { editEvent, landEdit, listRenumber } from './listRenumber'
 import { scanDoc } from '../Engine/docScan'
 import {
@@ -288,5 +289,54 @@ describe('Lists ▸ continues the run a line joins', () => {
     expect(written('   2. y', '   9. n\n')).toBe(
       '1. a\n   ```md\n   1. x\n   2. n\n   3. y\n   ```\n2. b',
     )
+  })
+})
+
+describe('a paste into a numbered list', () => {
+  const pasted = (doc: string, from: number, to: number, insert: string): string =>
+    EditorState.create({ doc, extensions: listRenumber })
+      .update({ changes: { from, to, insert }, userEvent: 'input.paste' })
+      .state.doc.toString()
+
+  it('recounts around lines it brings, whatever numbers they hold', () => {
+    expect(pasted('1. a\n2. b\n3. c', 9, 9, '\n9. x\n9. y')).toBe('1. a\n2. b\n3. x\n4. y\n5. c')
+    expect(pasted('5. a\n6. b', 5, 5, '1. x\n2. y\n')).toBe('5. a\n6. x\n7. y\n8. b')
+    expect(pasted('5. a\n6. b', 0, 0, 'intro\n1. x\n')).toBe('intro\n1. x\n2. a\n3. b')
+  })
+  it('recounts a single item it writes into the gap between two lists', () => {
+    expect(pasted('1. a\n\n3. c\n4. d', 5, 5, '2. b')).toBe('1. a\n2. b\n3. c\n4. d')
+  })
+  it('over a selection closes the gap the items leave', () => {
+    const doc = '1. a\n2. b\n3. c\n4. d'
+    expect(pasted(doc, 5, 15, '2. x\n')).toBe('1. a\n2. x\n3. d')
+    expect(pasted(doc, 8, 14, 'x')).toBe('1. a\n2. x\n3. d')
+  })
+  it('splits nothing below a flush line it brings', () => {
+    expect(pasted('1. a\n2. b\n3. c', 9, 9, ' x\nplain')).toBe('1. a\n2. b x\nplain\n3. c')
+  })
+  it('leaves words pasted inside an item alone, a gapped run included', () => {
+    expect(pasted('1. a\n3. b', 4, 4, 'word')).toBe('1. aword\n3. b')
+  })
+  it('counts nothing inside a code block or display math', () => {
+    expect(pasted('```\n1. a\n```', 8, 8, '\n1. b')).toBe('```\n1. a\n1. b\n```')
+    expect(pasted('$$\n1. a\n$$', 7, 7, '\n1. b')).toBe('$$\n1. a\n1. b\n$$')
+  })
+  it('takes one undo, its numbers with it', () => {
+    const state = EditorState.create({
+      doc: '1. a\n2. b',
+      extensions: [history(), listRenumber],
+    })
+    const view = {
+      state,
+      dispatch: (tr: Transaction) => {
+        view.state = tr.state
+      },
+    }
+    view.dispatch(
+      state.update({ changes: { from: 4, insert: '\n1. x' }, userEvent: 'input.paste' }),
+    )
+    expect(view.state.doc.toString()).toBe('1. a\n2. x\n3. b')
+    undo(view)
+    expect(view.state.doc.toString()).toBe('1. a\n2. b')
   })
 })

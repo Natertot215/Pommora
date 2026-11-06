@@ -21,17 +21,19 @@ export const listRenumber: Extension = EditorState.transactionFilter.of((tr) => 
   const relist = tr.isUserEvent(RELIST)
   const { from, to } = tr.startState.selection.main
   const overLines = tr.isUserEvent('input') && tr.startState.sliceDoc(from, to).includes('\n')
-  if (!relist && !overLines && !tr.isUserEvent('delete')) return tr
+  if (!relist && !overLines && !tr.isUserEvent('delete') && !tr.isUserEvent('input.paste'))
+    return tr
   const was = docScan(tr.startState)
   const scan = docScan.after(tr)
   const at: number[] = []
-  tr.changes.iterChanges((fromA, toA, fromB) => {
+  tr.changes.iterChanges((fromA, toA, fromB, toB) => {
     const left = numbered(was, fromA)
     const stands = numbered(scan, fromB)
     const reshaped = relist
       ? left || stands
-      : left !== stands || was.text.slice(fromA, toA).includes('\n')
-    if (reshaped) at.push(fromB)
+      : left !== stands ||
+        `${was.text.slice(fromA, toA)}${scan.text.slice(fromB, toB)}`.includes('\n')
+    if (reshaped) at.push(fromB, toB)
   })
   const changes = renumberRuns(scan, at)
   return changes.length === 0 ? tr : [tr, { changes, sequential: true }]
