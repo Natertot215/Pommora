@@ -97,19 +97,12 @@ cases and the decision each proves. It takes the groups to run as arguments —
 `node live-drive.mjs 1 15` — puts back what each group seeds, on debug port 9403, and exits
 non-zero on any failed check.
 
-`List Types Drive/live-drive.mjs` drives the list-type switch against the real app, in five groups: the
-glyph menu on a page (its rows and check, both reaches of Preserve List-Level Formatting, undo, the
-re-pick that writes nothing, the right-press that leaves the caret, a revealed marker and an item drawing
-no glyph, quoted lists, a glyph inside, outside, and just below a selection, and a page tile at rest and
-while editing); a focused table cell, where the first glyph and the grip's inset each open their own
-menu and a pick undoes inside the cell and after Escape; a resting cell, which commits and undoes a pick
-without entering; Lists ▸ from an item's text, a selection, a triple-clicked line, a drag-selection, and
-a plain line, beside Format ▸, the grip's Type ▸, and the `/` menu; and the setting's row in Pages &
-Writing, turned off there and read by the open page. Each item names the decisions it proves and the plan
-phase that owns it, and an item owned by a phase later than `POMMORA_LGM_LANDED` (default 0) prints
-`AWAIT`, with what its press met and the menu it popped, and leaves the exit code alone. It takes the groups to run as arguments — `node live-drive.mjs 1 4`
-— seeds one `LT Lists` page in `Collection A`, sets `preserveListLevels` through `personalization:set`, on
-debug port 9413, and exits non-zero on any failed check a landed phase owns.
+`List Types Drive/live-drive.mjs` proves the *List Consolidation* decisions against the real app, one group
+per plan phase: group N lands with Phase N and holds at every later head, so an item asserts only what's true
+from its phase onward. `MATRIX.md` beside it holds the groups, the dimensions they cross, what they prune and why,
+and the decision each case pins. It takes the groups to run as arguments — `node live-drive.mjs 1 4` — seeds one
+`LT Lists` page in `Collection A`, sets `preserveListLevels` through `personalization:set`, on debug port 9413,
+and exits non-zero on any failed check.
 
 The drives share `drive-harness.mjs`, which builds the app, backs up `~/Test`, launches the build
 with its own userData and the drive's debug port, writes a screenshot of each state to
