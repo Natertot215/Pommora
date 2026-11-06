@@ -192,11 +192,6 @@
   overflow-wrap: anywhere;
   cursor: text;
 }
-/* A cell has no gutter, so the block grip sits in the inset the list already reserves, and the press band reaches that far into the line rather than staying left of it. */
-.mdpm-tbl-cell-editor .cm-line.md-block-handle {
-  --grip-strip: var(--list-indent);
-  --grip-left: calc((var(--list-indent) - var(--icon-body) * var(--glyph-scale)) / 2);
-}
 
 /* The checkbox is the one glyph a resting cell acts on; a resting cell has no drag, so the rest keep the cell's text cursor. */
 .mdpm-tbl-cell-static .md-list-checkbox-seat {

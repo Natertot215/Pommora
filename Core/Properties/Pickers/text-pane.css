@@ -14,7 +14,7 @@
   max-height: 320px; /* KNOB */
   overflow-y: auto;
 }
-/* A page's editor pads for a rail neither the pane nor the field has. */
+/* A page's editor pads for a gutter neither the pane nor the field has. */
 .text-pane .mdpm-editor .cm-content {
   /* KNOB — the pane's interior inset; the right edge clears the × (its 6px inset, 20px box, and 6px of air) */
   padding: 12px 32px 12px 14px;

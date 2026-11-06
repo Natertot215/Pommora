@@ -24,7 +24,8 @@ import './text-pane.css'
 
 const stopBubble = (e: { stopPropagation: () => void }): void => e.stopPropagation()
 
-const blanked = (doc: string): string => (doc.trim() === '' ? '' : doc)
+// CodeMirror reads `\r\n` as one break, so a value a tool wrote that way compares as the document holds it, and a pane closed untouched leaves it as it was.
+const docText = (text: string): string => (text.trim() === '' ? '' : text.replace(/\r\n?/g, '\n'))
 
 /** The one editor every property value is typed in: the Text pane's, and in `oneLine` mode a field's. Both save once on every way out; a field also ends its own edit, Return and blur committing unless the text is invalid, Escape cancelling, with the invalid state on the editor's own node. A commit settles the link under edit first, so what the leave would have written is what's read; a cancel ends the edit, so nothing after it, the unmount's save included, writes. */
 export function ValueEditor({
@@ -53,11 +54,12 @@ export function ValueEditor({
 }): React.JSX.Element {
   const mountRef = useRef<HTMLDivElement>(null)
   const viewRef = useRef<EditorView | null>(null)
-  const committed = useRef(blanked(initial))
+  const committed = useRef(docText(initial))
   const ended = useRef(false)
   const onCommitRef = useLatest(onCommit)
   const onCloseRef = useLatest(onClose)
   const invalidRef = useLatest(invalid)
+  const scope = oneLine ? 'inline' : 'lists'
   const ac = useConnectionAutocomplete(viewRef, host)
   const formatExt = useReconfigured(viewRef, host.settings().commands, formatKeymap)
 
@@ -65,7 +67,7 @@ export function ValueEditor({
     const view = viewRef.current
     if (!view || ended.current) return
     view.plugin(linkSettle)?.flush()
-    const text = blanked(view.state.doc.toString())
+    const text = docText(view.state.doc.toString())
     if (text === committed.current) return
     committed.current = text
     onCommitRef.current(text)
@@ -90,7 +92,7 @@ export function ValueEditor({
       state: EditorState.create({
         doc: initial,
         extensions: [
-          editorBase({ host, scope: 'inline', panes: [ac], formatExt, oneLine, remembers }),
+          editorBase({ host, scope, panes: [ac], formatExt, remembers }),
           heldPage.of(holder ?? null),
           history(),
           oneLine
@@ -122,20 +124,22 @@ export function ValueEditor({
               ]
             : placeholder('Begin typing.'),
           Prec.highest(
-            keymap.of([
-              { key: 'Enter', run: leave },
-              { key: 'Shift-Enter', run: oneLine ? () => true : insertNewline },
-              ...(oneLine
+            keymap.of(
+              oneLine
                 ? [
+                    { key: 'Enter', run: leave },
+                    { key: 'Shift-Enter', run: () => true },
                     { key: 'Mod-Enter', run: () => true },
                     { key: 'Escape', run: cancel },
                   ]
                 : [
+                    { key: 'Enter', run: insertNewline, shift: insertNewline },
+                    { key: 'Escape', run: leave },
                     // A field lets Tab move the focus as a plain field does; the pane keeps it, and Shift-Tab stops short of its focus trap, which would carry it to the ×.
                     { key: 'Tab', run: () => true },
                     { key: 'Shift-Tab', run: () => true, stopPropagation: true },
-                  ]),
-            ]),
+                  ],
+            ),
           ),
           keymap.of(historyKeymap),
         ],
@@ -179,13 +183,14 @@ export function ValueEditor({
   // An outside write lands only in an editor that holds nothing unsaved; the editor's own close then writes last, as a page body's merge does.
   useEffect(() => {
     const view = viewRef.current
+    const next = docText(initial)
     if (
       view &&
-      blanked(view.state.doc.toString()) === committed.current &&
-      initial !== committed.current
+      docText(view.state.doc.toString()) === committed.current &&
+      next !== committed.current
     ) {
-      committed.current = initial
-      mirrorBody(view, initial)
+      committed.current = next
+      mirrorBody(view, next)
     }
   }, [initial])
 

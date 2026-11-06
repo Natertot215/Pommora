@@ -175,6 +175,12 @@
   transition: opacity var(--reveal-fade) var(--ease-base);
 }
 
+/* A cell and a Text pane have no gutter, so the block grip sits in the inset the list already reserves, and the press band reaches that far into the line rather than staying left of it. */
+:is(.mdpm-tbl-cell-editor, .text-pane-body) .cm-line.md-block-handle {
+  --grip-strip: var(--list-indent);
+  --grip-left: calc((var(--list-indent) - var(--icon-body) * var(--glyph-scale)) / 2);
+}
+
 .mdpm-fold-reveal {
   display: grid;
   transition: grid-template-rows var(--duration-fast) var(--ease-base);

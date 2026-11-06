@@ -10,6 +10,7 @@ import { useSession } from '../../Session/store'
 import type { ConnPage } from '../../Connections/pageIndex'
 import type { PropertyValue } from '../propertyValue'
 import { TextPane } from './TextPane'
+import { blockQuery } from '../../MarkdownPM/Menus/blockQuery'
 import { writeLinkAt } from '../../MarkdownPM/Links/pendingTitle'
 import { useEditorHost } from '../../Pages/editorHost'
 import { previewConnections } from '../../Session/pageConnections'
@@ -114,7 +115,7 @@ const exited = (): Promise<void> =>
   act(() => new Promise<void>((r) => setTimeout(r, exitWait('menu') + 20)))
 
 describe('TextPane', () => {
-  it('Enter saves and closes; Shift-Enter writes a line break; Tab stays in the editor and inserts nothing', async () => {
+  it('Enter and Shift-Enter each write a line break; Tab stays in the editor and inserts nothing', async () => {
     render(text('x'))
     expect(view().state.selection.main.head).toBe(1)
     expect(document.activeElement).toBe(view().contentDOM)
@@ -128,13 +129,13 @@ describe('TextPane', () => {
     expect(doc()).toBe('x\na')
     expect(document.activeElement).toBe(view().contentDOM)
     press('Enter')
-    expect(onCommit).toHaveBeenCalledExactlyOnceWith(text('x\na'))
+    expect(doc()).toBe('x\na\n')
     await exited()
-    expect(pane()).toBeNull()
-    expect(onCommit).toHaveBeenCalledOnce()
+    expect(pane()).not.toBeNull()
+    expect(onCommit).not.toHaveBeenCalled()
   })
 
-  it('Enter in an alias rests past the link, and a second Enter closes the pane', async () => {
+  it('Enter in an alias rests past the link, and a second Enter breaks the line', async () => {
     render(text('see [[Alpha|al]] x'))
     act(() => view().dispatch({ selection: { anchor: 13 } }))
     press('Enter')
@@ -142,12 +143,13 @@ describe('TextPane', () => {
     await exited()
     expect(pane()).not.toBeNull()
     press('Enter')
+    expect(doc()).toBe('see [[Alpha|al]]\n x')
     await exited()
-    expect(pane()).toBeNull()
+    expect(pane()).not.toBeNull()
     expect(onCommit).not.toHaveBeenCalled()
   })
 
-  it('an alias typed into a link and closed by Return is remembered, and an emptied alias saves collapsed', () => {
+  it('an alias typed into a link and closed by Escape is remembered, and an emptied alias saves collapsed', () => {
     const mutate = vi.spyOn(useSession.getState(), 'mutate').mockResolvedValue(null)
     const edit = (from: number, to: number, insert: string): void =>
       act(() => {
@@ -160,7 +162,7 @@ describe('TextPane', () => {
     render(text('see [[Alpha|]] x'))
     edit(12, 12, 'new')
     act(() => view().dispatch({ selection: { anchor: 8 } }))
-    press('Enter')
+    press('Escape')
     expect(onCommit).toHaveBeenCalledExactlyOnceWith(text('see [[Alpha|new]] x'))
     expect(mutate).toHaveBeenCalledWith(
       expect.objectContaining({ op: 'editAliases', edit: { op: 'add', alias: 'new' } }),
@@ -171,7 +173,7 @@ describe('TextPane', () => {
     act(() => reopen())
     edit(12, 13, '')
     act(() => view().dispatch({ selection: { anchor: 8 } }))
-    press('Enter')
+    press('Escape')
     expect(onCommit).toHaveBeenCalledExactlyOnceWith(text('see [[Alpha]] x'))
     mutate.mockRestore()
   })
@@ -188,6 +190,16 @@ describe('TextPane', () => {
     press('Escape')
     await exited()
     expect(onCommit).toHaveBeenCalledOnce()
+  })
+
+  it('Escape over a selection saves and closes in one press', async () => {
+    render(text('xy'))
+    typeAtEnd('z')
+    act(() => view().dispatch({ selection: { anchor: 0, head: 2 } }))
+    press('Escape')
+    expect(onCommit).toHaveBeenCalledExactlyOnceWith(text('xyz'))
+    await exited()
+    expect(pane()).toBeNull()
   })
 
   it('the × commits and closes; an unchanged document commits nothing; a blanked document commits null', async () => {
@@ -211,6 +223,27 @@ describe('TextPane', () => {
     act(() => view().dispatch({ changes: { from: 0, to: view().state.doc.length, insert: '  ' } }))
     close()
     expect(onCommit).toHaveBeenLastCalledWith(null)
+  })
+
+  it('leaves a value a tool wrote with \\r\\n as it was when closed untouched, and saves it as written once edited', async () => {
+    render(text('- a\r\n- b'))
+    expect(doc()).toBe('- a\n- b')
+    press('Escape')
+    await exited()
+    expect(onCommit).not.toHaveBeenCalled()
+
+    act(() => reopen())
+    typeAtEnd('c')
+    press('Escape')
+    expect(onCommit).toHaveBeenCalledExactlyOnceWith(text('- a\n- bc'))
+  })
+
+  it('takes an outside write with \\r\\n as the document holds it, and closes with nothing to save', () => {
+    render(text('a\r\nb'))
+    render(text('c\r\nd'))
+    expect(doc()).toBe('c\nd')
+    press('Escape')
+    expect(onCommit).not.toHaveBeenCalled()
   })
 
   it('unmounting the pane while its seat unmounts still lands the typed text (the layout cleanup runs before the seat’s passive one)', () => {
@@ -300,5 +333,58 @@ describe('TextPane', () => {
     typeAtEnd('§')
     await act(() => new Promise<void>((r) => setTimeout(r, 50)))
     expect(document.querySelector('.mdpm-ac')?.textContent).toContain('Setup')
+  })
+})
+
+describe('a list in the pane', () => {
+  it('wraps and spellchecks as a body does', () => {
+    render(text('x'))
+    expect(view().contentDOM.classList.contains('cm-lineWrapping')).toBe(true)
+    expect(view().contentDOM.getAttribute('spellcheck')).toBe('true')
+  })
+
+  it('reads a first-line marker as a list, and draws its grip', () => {
+    render(text('- milk'))
+    expect(document.querySelector('.text-pane .cm-line.md-list-item')).not.toBeNull()
+    expect(document.querySelector('.text-pane .md-block-handle')).not.toBeNull()
+  })
+
+  it('Enter continues an item and breaks a plain line flush, Tab and Shift-Tab nest and outdent, and Shift-Enter stays a plain break', async () => {
+    render(text('- milk'))
+    expect(press('Enter')).toBe(true)
+    expect(doc()).toBe('- milk\n- ')
+    expect(press('Tab')).toBe(true)
+    expect(doc()).toBe('- milk\n\t- ')
+    expect(press('Tab', true)).toBe(true)
+    expect(doc()).toBe('- milk\n- ')
+    expect(document.activeElement).toBe(view().contentDOM)
+    typeAtEnd('eggs')
+    press('Enter', true)
+    expect(doc()).toBe('- milk\n- eggs\n')
+    typeAtEnd('  then')
+    press('Enter')
+    expect(doc()).toBe('- milk\n- eggs\n  then\n')
+    press('Escape')
+    expect(onCommit).toHaveBeenCalledExactlyOnceWith(text('- milk\n- eggs\n  then\n'))
+    await exited()
+    expect(pane()).toBeNull()
+  })
+
+  it('renumbers a run around a removed item', () => {
+    render(text('1. a\n2. b\n3. c'))
+    act(() => view().dispatch({ changes: { from: 4, to: 9 }, userEvent: 'delete' }))
+    expect(doc()).toBe('1. a\n2. c')
+  })
+
+  it('holds no `/` menu', () => {
+    render(text(''))
+    expect(view().state.field(blockQuery, false)).toBeUndefined()
+  })
+
+  it('leaves a heading, a quote, and a fence as literal text', () => {
+    render(text('# h\n> q\n```\nx\n```'))
+    expect(
+      document.querySelector('.text-pane .md-h1, .text-pane .md-blockquote, .text-pane .codeblock'),
+    ).toBeNull()
   })
 })
