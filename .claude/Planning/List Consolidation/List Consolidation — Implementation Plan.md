@@ -12,6 +12,8 @@
 |------|-------|-------|-----|
 | `7bfbdf5ab` (production as `b7f2f17a5`, where the phase patches were built) | 9,121 passed, 2 skipped (549 files); comments 3,511 | 11-06-2026 10:57 AM | |
 
+**Run Start:** comments 3,511; `~/Test` hash `e5a32a5d30d6a11310cd559ee2b1b84b261c3265`.
+
 **Net Ledger** (production lines from the Actionable cell of `view-delta --exclude .claude`, cumulative from the BASELINE head. Estimate is what the phase patches measured at build; Measured is filled during the run):
 
 | Phase | Estimate | Tests at the Phase's Head | Measured |
