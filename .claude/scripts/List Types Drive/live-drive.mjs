@@ -1,5 +1,5 @@
 import {
-  ask, boxOf, createPage, hover, item, launch, META, mouseAt, must, openCollection, openPage, PAGE_VIEW, pickNative, popNative, pressKey, restore, row, SHIFT, shot, sleep, tally, typeText, until,
+  ask, boxOf, clicks, createPage, hover, item, launch, META, mouseAt, must, openCollection, openPage, PAGE_VIEW, pickNative, popNative, pressKey, restore, row, SHIFT, shot, sleep, sweep, tally, typeText, until,
 } from '../drive-harness.mjs'
 
 const PORT = 9413
@@ -16,6 +16,7 @@ const S = {
   grip: '.cm-line.md-block-handle',
   codeOpener: '.cm-line.codeblock-first',
   blockMenu: '.mdpm-block-menu',
+  rail: '.md-outline-rail',
   italic: '.md-italic',
   math: '.md-latex',
   citationRow: '.cm-line.md-citation',
@@ -59,6 +60,7 @@ async function caretAt(cdp, pos) {
 const caretPast = async (cdp, text) => caretAt(cdp, (await docOf(cdp)).indexOf(text) + text.length)
 const selection = (cdp) => cdp.evaluate(`(() => { const s = ${PAGE_VIEW}.state.selection.main; return [s.from, s.to] })()`)
 const setting = (cdp, on) => ask(cdp, 'personalization:set', 'preserveListLevels', on)
+const outliner = (cdp, on) => ask(cdp, 'personalization:set', 'outlinerLines', on)
 const fenced = (lang, lines) => `\`\`\`${lang}\n${lines}\n\`\`\``
 
 // ── The table ───────────────────────────────────────────────────────────────
@@ -100,6 +102,9 @@ const listPath = (name) => (rows) => {
   const row = listsRows(rows)?.[TYPES.findIndex((t) => t.name === name)]
   return row ? ['Lists', row.label] : []
 }
+// The grip's type row, found by the rows it holds, since the submenu's label is group 7's.
+const gripTypes = (rows) => rows?.find((r) => r.submenu?.some((s) => s.label === 'Numbered'))
+const gripPath = (name) => (rows) => [gripTypes(rows)?.label, name]
 const listChecked = (rows) => TYPES.filter((_, i) => listsRows(rows)?.[i]?.checked).map((t) => t.name)
 
 // What a press met and the menu it popped, the detail a failed item prints.
@@ -116,10 +121,17 @@ async function pop(cdp, at, path) {
 }
 const glyphPick = async (cdp, text, label) => pop(cdp, await boxOf(cdp, glyphOf(text)), label ? [label] : [])
 const wordPick = async (cdp, word, path) => pop(cdp, await textAt(cdp, PAGE_TEXT, word), path)
-async function gripPick(cdp, line, path) {
+// A page line's grip hangs left of its box, and a cell's sits in the inset left of its glyph.
+async function gripAt(cdp, line) {
   await hover(cdp, line, 300)
-  const at = await cdp.evaluate(`(() => { const l = ${line}; const r = l.getBoundingClientRect(); const y = r.top + r.height / 2; for (let d = 4; d < 24; d++) if (document.elementFromPoint(r.left - d, y) === l) return { x: r.left - d - 2, y }; return null })()`)
-  return pop(cdp, at, path)
+  return cdp.evaluate(`(() => { const l = ${line}; const r = l.getBoundingClientRect(); const y = r.top + r.height / 2; for (let d = 4; d < 24; d++) if (document.elementFromPoint(r.left - d, y) === l) return { x: r.left - d - 2, y }; return { x: r.left + 10, y } })()`)
+}
+const gripPick = async (cdp, line, path) => pop(cdp, await gripAt(cdp, line), path)
+// A real press on `glyph` carried to `line`'s top or bottom edge, where a drop's boundaries sit.
+async function dragTo(cdp, glyph, line, edge, held) {
+  const from = await boxOf(cdp, glyph)
+  const to = await boxOf(cdp, line)
+  await sweep(cdp, from, { x: from.x, y: edge === 'above' ? to.top + 1 : to.bottom - 1 }, { steps: 8, held })
 }
 
 const ENTER = (cdp) => pressKey(cdp, 'Enter')
@@ -171,10 +183,7 @@ async function group1(cdp) {
     await shot(cdp, `g1-between-${edge === '$$' ? 'math' : 'fence'}`)
     const grip = `${LIVE_CELL}.querySelector(${show(S.grip)})`
     const held = await cdp.evaluate(`(${grip})?.textContent ?? null`)
-    const line = held === null ? null : await boxOf(cdp, grip)
-    // Found by the rows it holds, since the submenu's label is group 7's.
-    const numbered = (menu) => [menu.find((r) => r.submenu?.some((s) => s.label === 'Numbered'))?.label, 'Numbered']
-    const { rows } = await pop(cdp, line && { x: line.left + 10, y: line.y }, numbered)
+    const { rows } = held === null ? { rows: null } : await gripPick(cdp, grip, gripPath('Numbered'))
     await leaveCell(cdp)
     item(1, 'B-11', `the list between ${edge} lines takes a grip, and its Numbered numbers the list alone`, (await body(cdp)).endsWith(`| ${edge}<br>1. fa<br>2. fb<br>${edge} | x |`), `${show(held)} · ${show(flat(rows))} · ${show(await body(cdp))}`)
   }
@@ -386,11 +395,229 @@ async function group2(cdp) {
   item(2, 'F-1', "a table's header stays out of a list block, so the grip's Delete takes the list alone", (await body(cdp)) === '| H | I |\n| --- | --- |\n| 1 | 2 |', `${seen(taken)} · ${show(await body(cdp))}`)
 }
 
+// ── Group 3 — Blank Lines and Numbering ─────────────────────────────────────
+
+async function group3(cdp) {
+  await setting(cdp, true)
+  const dragged = async (decision, name, seed, from, to, edge, want) => {
+    await setBody(cdp, seed)
+    await dragTo(cdp, glyphOf(from), lineOf(to), edge)
+    const got = await body(cdp)
+    if (got !== seed) await pressKey(cdp, 'z', META)
+    const undone = await body(cdp)
+    item(3, decision, name, got === want && undone === seed, show([got, undone]))
+  }
+
+  await dragged('B-10', 'an item drags past its siblings, and one ⌘Z puts it back', '- a\n- b\n- c', 'a', 'c', 'below', '- b\n- c\n- a')
+  await dragged('B-10', 'an item drags up over its siblings', '- a\n- b\n- c', 'c', 'a', 'above', '- c\n- a\n- b')
+  await dragged('B-10', 'an item carries its children', '- a\n\t- a1\n- b\n- c', 'a', 'b', 'below', '- b\n- a\n\t- a1\n- c')
+  await dragged('B-10', 'an item re-nests at the level it lands on', '- a\n- b\n\t- c', 'a', 'c', 'below', '- b\n\t- c\n\t- a')
+  await dragged('B-10', 'a nested item rises to the level it lands on, with its children', '- a\n\t- b\n\t\t- c\n- d', 'b', 'd', 'below', '- a\n- d\n- b\n\t- c')
+  await dragged('B-10', 'a block directly under an item rides it', '- a\n\tride\n- b', 'a', 'b', 'below', '- b\n- a\n\tride')
+  await dragged('F-1 B-6', 'a carried block rides whole, a flush line inside it included', '- a\n\t```\nflush\n\t```\n- b', 'a', 'b', 'below', '- b\n- a\n\t```\nflush\n\t```')
+  await dragged('B-5 B-6', "an item's drag leaves an indented paragraph below a blank", '- a\n\n\tpara\n\n- b', 'a', 'b', 'below', '\tpara\n\n- b\n- a')
+  await dragged('B-5', 'an item drops into another list across a blank', '- a\n- b\n\n- c\n- d', 'a', 'c', 'below', '- b\n\n- c\n- a\n- d')
+  await dragged('B-5 B-10', "an item dropped into a numbered list takes its place in that list's count, and the run it leaves recounts", '1. a\n2. b\n3. c\n\n1. d\n2. e', 'b', 'd', 'below', '1. a\n2. c\n\n1. d\n2. b\n3. e')
+  await dragged('B-10', "a list's first item dragged out leaves the rest their numbers, as a deletion does", '1. a\n2. b\n\n1. c', 'a', 'c', 'below', '2. b\n\n1. c\n2. a')
+  await dragged('B-10', 'a quoted item drags inside its quote', '> - a\n> - b\n> - c', 'a', 'c', 'below', '> - b\n> - c\n> - a')
+  await dragged('B-10', "a callout's item drags inside its callout", '> [!note] head\n> - a\n> - b', 'a', 'b', 'below', '> [!note] head\n> - b\n> - a')
+  await dragged('B-10', 'a numbered drag recounts in the same stroke', '1. a\n2. b\n3. c', 'a', 'c', 'below', '1. b\n2. c\n3. a')
+  await dragged('B-10', 'a list at 5 keeps 5 through a drag', '5. a\n6. b\n7. c', 'c', 'a', 'above', '5. c\n6. a\n7. b')
+  await dragged('F-1', 'a lettered list past Z keeps its head through a drag', 'Y. a\nZ. b\nA. c', 'c', 'a', 'above', 'Y. c\nZ. a\nA. b')
+  await dragged('B-10', "a drop on an item's own edge moves nothing", '- a\n- b\n- c', 'a', 'b', 'above', '- a\n- b\n- c')
+
+  await setBody(cdp, '- [ ] a\n- [ ] b')
+  const box = await boxOf(cdp, glyphOf('a'))
+  await clicks(cdp, box, 1)
+  const tapped = await body(cdp)
+  await dragged('B-10', 'a press carried off a box drags it unchanged', '- [ ] a\n- [ ] b', 'a', 'b', 'below', '- [ ] b\n- [ ] a')
+  item(3, 'B-10', 'a tap on a box checks it', tapped === '- [x] a\n- [ ] b', show(tapped))
+
+  // The edit another pane's mirrored body would land, reaching the view while a press is held.
+  const editHeld = () => cdp.evaluate(`(() => { const v = ${PAGE_VIEW}; v.dispatch({ changes: { from: v.state.doc.length, insert: ' Mirrored.' } }) })()`)
+  await setBody(cdp, '- a\n- b\n- c')
+  await dragTo(cdp, glyphOf('a'), lineOf('c'), 'below', editHeld)
+  item(3, 'B-5', "a document edited under a held item's drag voids the drop", (await docOf(cdp)) === '- a\n- b\n- c\n\nTail. Mirrored.', show(await docOf(cdp)))
+  await setBody(cdp, '1. a\n\n1. b')
+  const staleTop = await boxOf(cdp, lineOf('a'))
+  await sweep(cdp, await gripAt(cdp, lineOf('b')), { x: staleTop.x, y: staleTop.top + 1 }, { steps: 8, held: editHeld })
+  item(3, 'B-5', "a document edited under a held block's drag voids the drop", (await docOf(cdp)) === '1. a\n\n1. b\n\nTail. Mirrored.', show(await docOf(cdp)))
+
+  await setBody(cdp, table('- ca<br>- cb<br>- cc'))
+  await enterCell(cdp, 'ca')
+  const cellLine = (text) => `[...${LIVE_CELL}.querySelectorAll(${show(`.cm-line${S.item}`)})].find((l) => l.textContent.includes(${show(text)}))`
+  await dragTo(cdp, `(${cellLine('ca')}).querySelector(${show(S.glyph)})`, cellLine('cc'), 'below')
+  await leaveCell(cdp)
+  item(3, 'B-10', 'an item drags in a live cell', (await body(cdp)).endsWith('| - cb<br>- cc<br>- ca | x |'), show(await body(cdp)))
+
+  await setBody(cdp, '1. a\n\n2. b\n\n3. c')
+  const atop = await boxOf(cdp, lineOf('a'))
+  await sweep(cdp, await gripAt(cdp, lineOf('c')), { x: atop.x, y: atop.top + 1 }, { steps: 8 })
+  item(3, 'B-5', "a block's grip drag leaves `3.`, `1.`, `2.` as drawn, three lists keeping their numbers", (await body(cdp)) === '3. c\n\n1. a\n\n2. b', show(await body(cdp)))
+
+  const keys = (decision, name, seed, past, key, want) => stroke(cdp, 3, decision, name, seed, past, key, want)
+  await keys('B-10', 'Enter recounts in the same stroke, and one ⌘Z takes both', '1. a\n2. b', '1. a', ENTER, '1. a\n2. \n3. b')
+  await keys('B-10', 'Tab recounts in the same stroke', '1. a\n2. b\n3. c', '2. b', TAB, '1. a\n\t1. b\n2. c')
+  await keys('B-10', 'Shift-Tab recounts in the same stroke', '1. a\n\t1. b\n2. c', '\t1. b', SHIFT_TAB, '1. a\n2. b\n3. c')
+  await keys('B-5', "Backspace clearing an item's marker splits the list, the lower list keeping its numbers", '1. a\n2. \n3. c', '2. ', BACKSPACE, '1. a\n\n3. c')
+  await keys('B-10', 'a list at 5 keeps 5 through Enter', '5. a\n6. b', '5. a', ENTER, '5. a\n6. \n7. b')
+  await keys('B-10', 'a list at 5 keeps 5 through Tab', '5. a\n6. b\n7. c', '6. b', TAB, '5. a\n\t1. b\n6. c')
+  await keys('F-1', 'a lettered list past Z keeps its head through Enter', 'Y. a\nZ. b\nA. c', 'A. c', ENTER, 'Y. a\nZ. b\nA. c\nB. ')
+  await keys('B-5', 'a blank line added inside a list splits it, the lower list keeping its numbers', '1. a\n2. b\n3. c', '1. a\n', ENTER, '1. a\n\n2. b\n3. c')
+  await keys('B-5', 'a blank line removed merges the two lists and recounts', '1. a\n\n1. b\n2. c', '1. a\n', BACKSPACE, '1. a\n2. b\n3. c')
+  await keys('B-5', "Enter in the upper half counts its own list alone", '1. a\n\n2. b', '1. a', ENTER, '1. a\n2. \n\n2. b')
+  await keys('B-5 B-6', 'a blank removed below a block an item carries merges the two lists and recounts', '1. a\n\t```js\n\tx\n\t```\n\n1. b\n2. c', '\t```\n', BACKSPACE, '1. a\n\t```js\n\tx\n\t```\n2. b\n3. c')
+
+  const removed = async (decision, name, seed, line, want, key = BACKSPACE) => {
+    await setBody(cdp, seed)
+    await select(cdp, line)
+    await key(cdp)
+    const got = await body(cdp)
+    await pressKey(cdp, 'z', META)
+    item(3, decision, name, got === want && (await body(cdp)) === seed, show([got, await body(cdp)]))
+  }
+  await removed('B-10', "a whole line's deletion recounts the run it leaves, and one ⌘Z takes both", '1. a\n2. b\n3. c', '2. b\n', '1. a\n2. c')
+  await removed('B-10', 'a list at 5 keeps 5 through a deletion', '5. a\n6. b\n7. c', '6. b\n', '5. a\n6. c')
+  await removed('B-10', "deleting a list's first item leaves the rest their numbers", '1. a\n2. b\n3. c', '1. a\n', '2. b\n3. c')
+  await removed('B-10', 'typing over a selection across items recounts the run it joins, and one ⌘Z takes both', '1. a\n2. b\n3. c', 'a\n2. ', '1. xb\n2. c', type('x'))
+
+  // A drop swallows the selection it moves past, so the next key acts on a caret and deletes nothing across lines.
+  for (const [name, key, want] of [['Enter', ENTER, '- \n- beta word\n- gamma\n- alpha\n- delta'], ['Backspace', BACKSPACE, 'beta word\n- gamma\n- alpha\n- delta']]) {
+    await setBody(cdp, '- alpha\n- beta word\n- gamma\n- delta')
+    await clicks(cdp, await textAt(cdp, PAGE_TEXT, 'word'), 2, { settle: 400 })
+    await dragTo(cdp, glyphOf('alpha'), lineOf('delta'), 'above')
+    const dropped = await selection(cdp)
+    await key(cdp)
+    item(3, 'B-10', `${name} after a glyph dragged past a selected word acts on a caret`, show(dropped) === show([2, 2]) && (await body(cdp)) === want, show([dropped, await body(cdp)]))
+  }
+
+  await setBody(cdp, '- a\n- b\n\t```js\n\tx\n\t```\n- c')
+  await clicks(cdp, await textAt(cdp, lineOf('b'), 'b'), 3, { settle: 400 })
+  await BACKSPACE(cdp)
+  item(3, 'B-6', "a triple-click and Backspace on the item above a carried block keeps the block's lead", (await body(cdp)) === '- a\n\t```js\n\tx\n\t```\n- c', show(await body(cdp)))
+
+  const picked = async (decision, name, seed, press, want) => {
+    await setBody(cdp, seed)
+    const menu = await press()
+    const got = await body(cdp)
+    if (got !== seed) await pressKey(cdp, 'z', META)
+    item(3, decision, name, got === want && (await body(cdp)) === seed, `${seen(menu)} · ${show([got, await body(cdp)])}`)
+  }
+  await picked('B-10', "a pick recounts in the same stroke, and one ⌘Z takes both", '- a\n- b', () => glyphPick(cdp, 'a', 'Numbered'), '1. a\n2. b')
+  await picked('B-5 B-10', 'a keystroke corrects a number elsewhere in its own list', '3. p\n\t1. a\n5. q', () => glyphPick(cdp, 'a', 'Bulleted'), '3. p\n\t- a\n4. q')
+  await picked('B-5', 'a pick stops at a blank line', '- a\n- b\n\n- c', () => glyphPick(cdp, 'a', 'Numbered'), '1. a\n2. b\n\n- c')
+  await picked('B-6', 'a pick leaves an indented paragraph below a blank', '- a\n\n\tpara', () => glyphPick(cdp, 'a', 'Numbered'), '1. a\n\n\tpara')
+  await picked('B-10', 'a line added above a list at 5 restarts it', 'b\n5. a', () => wordPick(cdp, 'b', listPath('Numbered')), '1. b\n2. a')
+  await picked('B-5', 'a pick over separated paragraphs lands one-item lists', 'a\n\nb\n\nc', async () => { await select(cdp, 'a', 'c'); return wordPick(cdp, 'c', listPath('Numbered')) }, '1. a\n\n1. b\n\n1. c')
+
+  for (const [name, seed, first] of [['Numbered', '1. a\n3. b', 'a'], ['Bulleted', '- a\n- b', 'a'], ['Alphabetical', 'A. a\nC. b', 'a'], ['Checklist', '- [x] a\n- [ ] b', 'a'], ['Arrowed', '→ a\n→ b', 'a']]) {
+    await setBody(cdp, seed)
+    const again = await glyphPick(cdp, first, name)
+    item(3, 'D-4', `a re-pick of ${name} leaves its items alone`, (await body(cdp)) === seed, `${seen(again)} · ${show(await body(cdp))}`)
+  }
+  await setBody(cdp, '1. a\n3. b')
+  await glyphPick(cdp, 'a', 'Bulleted')
+  await glyphPick(cdp, 'a', 'Numbered')
+  item(3, 'D-4', 'Bulleted then Numbered repairs a broken list', (await body(cdp)) === '1. a\n2. b', show(await body(cdp)))
+
+  const NESTED = '1. A\n\t1. B\n\t\t1. C\n\t\t2. D\n\t2. E\n2. F'
+  for (const on of [true, false]) {
+    await setting(cdp, on)
+    await setBody(cdp, EXAMPLE)
+    await gripPick(cdp, lineOf('A'), gripPath('Numbered'))
+    item(3, 'D-2', `the grip changes every item in its block, Preserve ${on ? 'on' : 'off'}`, (await body(cdp)) === NESTED, show(await body(cdp)))
+    await setBody(cdp, MIXED)
+    const { rows } = await gripPick(cdp, lineOf('A'), [])
+    item(3, 'D-2', `a mixed block checks no row in the grip, Preserve ${on ? 'on' : 'off'}`, gripTypes(rows) !== undefined && gripTypes(rows).submenu.every((r) => !r.checked), show(flat(gripTypes(rows)?.submenu)))
+  }
+  await setting(cdp, true)
+  await setBody(cdp, EXAMPLE)
+  const uniform = await gripPick(cdp, lineOf('A'), [])
+  item(3, 'D-2', "a block of one type checks that row in the grip", show(checked(gripTypes(uniform.rows)?.submenu)) === show(['Bulleted ✓']), show(flat(gripTypes(uniform.rows)?.submenu)))
+  await picked('D-2', 'Preserve on: a glyph acts on its group', EXAMPLE, () => glyphPick(cdp, 'B', 'Numbered'), '- A\n\t1. B\n\t\t- C\n\t\t- D\n\t2. E\n- F')
+  await picked('D-2', 'Preserve on: a caret acts as its glyph does', EXAMPLE, () => wordPick(cdp, 'E', listPath('Numbered')), '- A\n\t1. B\n\t\t- C\n\t\t- D\n\t2. E\n- F')
+  await setting(cdp, false)
+  await picked('D-2', 'Preserve off: a glyph also reaches what nests under its group', EXAMPLE, () => glyphPick(cdp, 'E', 'Numbered'), '- A\n\t1. B\n\t\t1. C\n\t\t2. D\n\t2. E\n- F')
+  await setting(cdp, true)
+
+  await picked('B-5 D-2', "a grip's pick stops at a blank line", '- a\n\n- b', () => gripPick(cdp, lineOf('a'), gripPath('Numbered')), '1. a\n\n- b')
+  await picked('B-5', "a grip's Delete stops at a blank line", '- a\n\n- b', () => gripPick(cdp, lineOf('a'), ['Delete']), '\n- b')
+  await picked('F-1', "a list block stops at a quote, so a grip's Delete leaves it", '- a\n> - b\n> - c', () => gripPick(cdp, lineOf('a'), ['Delete']), '> - b\n> - c')
+  await picked('B-6', "a paragraph indented above a list stays its own block under a grip's Delete", '\tpara\n- a', () => gripPick(cdp, lineOf('a'), ['Delete']), '\tpara')
+
+  await setBody(cdp, table('- ga<br>\t- gb<br>- gc'))
+  await enterCell(cdp, 'ga')
+  await gripPick(cdp, `${LIVE_CELL}.querySelector(${show(S.grip)})`, gripPath('Numbered'))
+  await leaveCell(cdp)
+  item(3, 'D-2', "a focused cell's grip changes every item in its block", (await body(cdp)).endsWith('| 1. ga<br>\t1. gb<br>2. gc | x |'), show(await body(cdp)))
+
+  const railsIn = (scope) => cdp.evaluate(`[...(${scope}).querySelectorAll(${show(S.rail)})].map((r) => { const b = r.getBoundingClientRect(); return { left: Math.round(b.left), top: Math.round(b.top), bottom: Math.round(b.bottom) } }).filter((b) => b.bottom > b.top)`)
+  const glyphX = (glyph) => boxOf(cdp, glyph).then((b) => b.x)
+  const lineBox = (scope, text) => boxOf(cdp, `[...(${scope}).querySelectorAll('.cm-line, [data-cell-line]')].find((l) => l.textContent.includes(${show(text)}))`)
+  // Whether the rails below `parent`'s glyph run unbroken from under its line into `last`, and no further.
+  const railRuns = async (scope, parent, last) => {
+    const rails = (await railsIn(scope)).sort((a, b) => a.top - b.top)
+    const head = await lineBox(scope, parent)
+    const foot = await lineBox(scope, last)
+    const whole = rails.length > 0 && rails.every((r, i) => i === 0 || r.top <= rails[i - 1].bottom + 2)
+    return { whole, top: rails[0]?.top, bottom: rails.at(-1)?.bottom, head: head.bottom, lastTop: foot.top, lastBottom: foot.bottom, rails: rails.length }
+  }
+  const fills = (r) => r.whole && Math.abs(r.top - r.head) <= 12 && r.bottom > r.lastTop && r.bottom <= r.lastBottom
+
+  await outliner(cdp, true)
+  const NESTINGS = [
+    ['Bulleted', '- ra\n\t- rb\n\t- rc', true],
+    ['Checklist', '- [ ] ra\n\t- [ ] rb\n\t- [ ] rc', true],
+    ['Alphabetical', 'A. ra\n\tA. rb\n\tB. rc', true],
+    ['Numbered', '1. ra\n\t1. rb\n\t2. rc', false],
+    ['Arrowed', '→ ra\n\t→ rb\n\t→ rc', false],
+  ]
+  for (const [name, seed, drawn] of NESTINGS) {
+    await setBody(cdp, seed)
+    const page = await railRuns(PAGE_TEXT, 'ra', 'rc')
+    const x = await glyphX(glyphOf('ra'))
+    const left = (await railsIn(PAGE_TEXT))[0]?.left
+    item(3, 'B-9', `a page ${drawn ? 'draws a rail under' : 'draws no rail under'} ${name}`, drawn ? fills(page) && Math.abs(left - x) <= 6 : page.rails === 0, show({ page, left, x }))
+    await setBody(cdp, table(inCell(seed)))
+    const cell = await railRuns(restingCell('rc'), 'ra', 'rc')
+    item(3, 'B-9', `a resting cell ${drawn ? 'draws a rail under' : 'draws no rail under'} ${name}`, drawn ? fills(cell) : cell.rails === 0, show(cell))
+  }
+  await setBody(cdp, NESTINGS[0][1])
+  await shot(cdp, 'g3-rails')
+
+  const scene = async (name, decision, seed, parent, last) => {
+    await setBody(cdp, seed)
+    const r = await railRuns(PAGE_TEXT, parent, last)
+    item(3, decision, name, fills(r), show(r))
+    return r
+  }
+  await scene('the rails end at a blank line', 'B-5', '- ra\n\t- rb\n\n\t- rc', 'ra', 'rb')
+  await shot(cdp, 'g3-rails-blank')
+  await scene('the rails carry through a block an item rides', 'B-5 B-6', '- ra\n\t- rb\n\t```js\n\tcode\n\t```\n\t- rc', 'ra', 'rc')
+  await shot(cdp, 'g3-rails-block')
+  await scene('the rails carry through a flush line inside a block an item rides', 'F-1', '- ra\n\t- rb\n\t```\nflush\n\t```\n\t- rc', 'ra', 'rc')
+  await setBody(cdp, table('- ra<br>\t- rb<br><br>\t- rc'))
+  const ended = await railRuns(restingCell('ra'), 'ra', 'rb')
+  item(3, 'B-5', 'the rails end at a blank line in a resting cell', fills(ended), show(ended))
+  await setBody(cdp, table('- ra<br>\t- rb<br>\tride<br>\t- rc'))
+  const carried = await railRuns(restingCell('ra'), 'ra', 'rc')
+  item(3, 'B-6', 'the rails carry through a line an item rides in a resting cell', fills(carried), show(carried))
+  await shot(cdp, 'g3-rails-cell')
+
+  await outliner(cdp, false)
+  await setBody(cdp, NESTINGS[0][1])
+  const offPage = await railsIn(PAGE_TEXT)
+  await setBody(cdp, table(inCell(NESTINGS[0][1])))
+  const offCell = await railsIn(restingCell('rc'))
+  item(3, 'B-9', 'Outliner Lines off draws no rail on a page or in a resting cell', offPage.length === 0 && offCell.length === 0, show([offPage, offCell]))
+}
+
 // ── The run ─────────────────────────────────────────────────────────────────
 
 const GROUPS = {
   1: ['One Scan Per Surface', group1],
   2: ['Markdown Code Blocks', group2],
+  3: ['Blank Lines and Numbering', group3],
 }
 const chosen = process.argv.slice(2).map(Number)
 if (chosen.length === 0 || chosen.some((g) => !GROUPS[g])) {

@@ -35,6 +35,9 @@ The drive's cases, derived from *List Consolidation — Decisions & Intention*, 
 - **Preserve List-Level Formatting inside a block in group 2:** a pick reaches through the one `listReach` a page uses (*Scouts/8*, 8-T26), and group 3 crosses the setting on a page.
 - **A paste in a Markdown block in group 2:** the recount arrives with paste, so group 4 holds it.
 - **A table pasted onto a code line:** it needs a table's clipboard payload, and `tableGuard`'s test reads the marker the block no longer holds.
+- **A cut at rest in group 3:** the resting menu's seat is Phase 9's rework, and a cut at rest lands through the `landEdit` a pick at rest takes; group 9 holds it.
+- **A paste in group 3:** the saved tree holds paste already, and group 4 owns the row.
+- **Rails through wraps and the nesting cap:** `railIntents` reads lines, so a wrap is one line, and the cap writes no deeper level to draw; the elbow and join ends are read as part of each rail's reach.
 
 #### Group 1 — One Scan Per Surface
 
@@ -88,3 +91,46 @@ Every key and typed row is one stroke at a caret, asserted against the text it w
 | Prose into ` ```js ` | A page | select into, Heading | both lines write, the delimiter stays | C-5 |
 | The block's grip | ` ```md `, ` ```js ` | press | the same rows | C-1 |
 | A list over a table | A page | the grip's Delete | the table stays whole | F-1 |
+
+#### Group 3 — Blank Lines and Numbering
+
+Every drag is a real press on a glyph, or a grip, carried to a line's edge, asserted against the text, with one ⌘Z back to the seed. Every key is one stroke, asserted the same way.
+
+| Case | Surface | Operation | Expected | Decisions |
+| --- | --- | --- | --- | --- |
+| Flat, up and down | A page | drag | the item moves | B-10 |
+| An item with children; a nested item with children | A page | drag | children travel; the item re-nests at the level it lands on | B-10 |
+| An item with a rider; a carried block with a flush line | A page | drag | both ride whole | B-10, B-6, F-1 |
+| An item over a blank and an indented paragraph | A page | drag | the paragraph stays | B-5, B-6 |
+| Into another list across a blank | A page | drag | it lands in that list, and that list counts it | B-5, B-10 |
+| A list's first item, dragged out | A page | drag | the rest keep their numbers | B-10 |
+| A quoted item, a callout's item, an item in a live cell | Each | drag | it moves inside its own surface | B-10 |
+| Numbered, at 5, past Z | A page | drag | the recount rides the stroke, and the head holds | B-10, F-1 |
+| An item's own edge | A page | drag | nothing moves | B-10 |
+| A box | A page | tap, then a carried press | the tap checks it; the carried press moves it unchecked | B-10 |
+| `1.`, `2.`, `3.` a blank apart | A page | the grip's drag | `3.`, `1.`, `2.` | B-5 |
+| An edit under a held drag, by a dispatch on the view | A page | a glyph's drag, a grip's drag | the drop lands nothing | B-5 |
+| Enter, Tab, Shift-Tab, a whole line, a pick | A page | stroke | the recount rides it, one ⌘Z takes both | B-10 |
+| A list at 5, a run past Z | A page | Enter, Tab, deletion | the head holds | B-10, F-1 |
+| A list's first item | A page | deletion | the rest keep their numbers | B-10 |
+| A blank added, removed, and a marker cleared | A page | Enter, Backspace | splits with the lower numbers kept; merges and recounts | B-5 |
+| Enter above a split | A page | Enter | its own list counts alone | B-5 |
+| A blank below a block an item carries | A page | Backspace | the lists merge, recounting past the block | B-5, B-6 |
+| A selection across items | A page | type over it | the run recounts, one ⌘Z takes both | B-10 |
+| A word selected, a glyph dragged past it | A page | double-click, drag, Enter or Backspace | a caret stands at the change, and the key acts there | B-10 |
+| The item above a carried block | A page | triple-click, Backspace | the block keeps its lead | B-6 |
+| `3. p`, nested `1. a`, `5. q` | A page | Bulleted at `a` | `4. q` | B-5, B-10 |
+| A pick above a blank, and on an item over an indented paragraph | A page | glyph | stops at the blank | B-5, B-6 |
+| `b` above `5. a` | A page | Numbered | `1.`, `2.` | B-10 |
+| Separated paragraphs | A page | select all, Numbered | `1.`, `1.`, `1.` | B-5 |
+| Each type | A page | re-pick | nothing writes | D-4 |
+| `1. a`, `3. b` | A page | Bulleted, then Numbered | the list repairs | D-4 |
+| The example | A page, a focused cell | the grip, Preserve on and off | every item in the block | D-2 |
+| A mixed block, a uniform one | A page | the grip | no row checked; its type's row checked | D-2 |
+| The example | A page | a glyph and a caret, Preserve on; a glyph, off | the group; the group and what nests under it | D-2 |
+| A blank, a quote, an indented paragraph above | A page | the grip's pick and Delete | each stops short of the other block | B-5, B-6, F-1 |
+| Bulleted, Checklist, Alphabetical | A page, a resting cell | Outliner Lines on, measured | one unbroken rail from under the parent into the last child, on its glyph's axis | B-9 |
+| Numbered, Arrowed | A page, a resting cell | Outliner Lines on, measured | no rail | B-9 |
+| Outliner Lines off | A page, a resting cell | measured | no rail draws | B-9 |
+| A blank under a nested list | A page, a resting cell | measured | the rail ends at the blank | B-5 |
+| A code block, a flush line in one, a rider | A page, a resting cell | measured | the rail carries through | B-5, B-6, F-1 |
