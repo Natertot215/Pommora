@@ -113,6 +113,10 @@ describe('the editor’s native menu', () => {
     const view = await mountEditor({ initialBody: '1. one', host: host() })
     await rightClick(view, 2, undefined, false)
     expect(view.state.doc.toString()).toBe('1. ****one')
+    await cleanupEditor()
+    const bullet = await mountEditor({ initialBody: '- one', host: host() })
+    await rightClick(bullet, 0, undefined, false)
+    expect(bullet.state.doc.toString()).toBe('- ****one')
   })
 
   it('follows the seated word through an edit under the menu', async () => {

@@ -781,13 +781,10 @@ const caretSeat: Extension = [
     const { anchor, head, empty, assoc } = range
     const intents = docLineIntentsOf.after(tr)
     const scan = docScan.after(tr)
-    const visible = prefixEndAt(intents, scan, head)
+    const visible = head > anchor ? head : Math.max(head, prefixEndAt(intents, scan, head))
     const seat =
-      (head < visible && head <= anchor
-        ? visible
-        : empty && tr.isUserEvent('select.pointer')
-          ? seatPastMarker(intents, scan, head)
-          : null) ?? head
+      (empty && tr.isUserEvent('select.pointer') ? seatPastMarker(intents, scan, visible) : null) ??
+      visible
     let side = assoc
     if (signSeatAt(scan, seat) === seat) side = empty && inMargin(tr, seat) ? -1 : 1
     if (range === main && seat === head && side === assoc) return tr

@@ -56,6 +56,18 @@ describe('a list marker holds no seats the reader cannot see', () => {
     expect(view.state.selection.main.head).toBe(2)
   })
 
+  it('a pointer seat left of a replaced marker lands past it, and short of a footnote leading a line', async () => {
+    const view = await mount('- foo\n\t- [ ] bar\n[^1] baz\n\n[^1]: note')
+    const seatAt = (at: number): number => {
+      view.dispatch({ selection: EditorSelection.cursor(at), userEvent: 'select.pointer' })
+      return view.state.selection.main.head
+    }
+    expect(seatAt(0)).toBe(2)
+    expect(seatAt(6)).toBe(13)
+    expect(seatAt(9)).toBe(13)
+    expect(seatAt(18)).toBe(18)
+  })
+
   it('lets the caret into the marker once the line reveals its raw source', async () => {
     const view = await mount('- foo')
     // The reveal is the caret's own AND only while the editor holds focus — an unfocused editor shows every marker as its glyph, so the slot stays whole.

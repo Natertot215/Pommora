@@ -530,18 +530,26 @@ export function assembleLineIntents(
   return intents
 }
 
-export function prefixEndAt(cached: CachedLineIntents, scan: DocScan, pos: number): number {
-  const i = lineIndexAt(scan, pos)
-  let end = scan.lineStarts[i]
+function leadEnd(line: readonly DecoIntent[], start: number, atomics: boolean): number {
+  let end = start
   for (let moved = true; moved; ) {
     moved = false
-    for (const it of cached.perLine[i])
-      if (it.kind === 'prefix' && it.from === end) {
+    for (const it of line)
+      if (
+        (it.kind === 'prefix' || (atomics && it.kind === 'atomic')) &&
+        end >= it.from &&
+        end < it.to
+      ) {
         end = it.to
         moved = true
       }
   }
   return end
+}
+
+export function prefixEndAt(cached: CachedLineIntents, scan: DocScan, pos: number): number {
+  const i = lineIndexAt(scan, pos)
+  return leadEnd(cached.perLine[i], scan.lineStarts[i], false)
 }
 
 /** The seat a visible marker hands the caret: past its gap, where the content and any token opening it begin. A pointer landing at the marker's end sits before the zero-width gap, one seat short. */
@@ -550,31 +558,14 @@ export function seatPastMarker(
   scan: DocScan,
   pos: number,
 ): number | null {
-  const line = cached.perLine[lineIndexAt(scan, pos)]
+  const k = lineIndexAt(scan, pos)
+  const line = cached.perLine[k]
+  const ls = scan.lineStarts[k]
   // A REPLACED marker — a bullet, a checkbox — draws nothing the caret can sit against, so a press at its start reveals the source instead of landing on the item.
-  if (scan.scope === 'lists') {
-    let end = pos
-    for (let moved = true; moved; ) {
-      moved = false
-      for (const it of line)
-        if ((it.kind === 'atomic' || it.kind === 'prefix') && end >= it.from && end < it.to) {
-          end = it.to
-          moved = true
-        }
-    }
-    if (end !== pos) return end
-  }
-  const marker = line.find((it) => it.kind === 'class' && it.className.includes(GLYPH_CLASS))
-  if (marker?.kind !== 'class' || pos < marker.from || pos > marker.to) return null
-  let end = marker.to
-  for (const it of line)
-    if (
-      ((it.kind === 'class' && it.className === 'md-list-gap') || it.kind === 'hide') &&
-      it.from === end &&
-      it.to > end
-    )
-      end = it.to
-  return end
+  const lead = leadEnd(line, ls, true)
+  if (scan.markers[k] && pos < lead) return lead
+  const lm = markerIn(scan, k, undefined)
+  return lm && pos >= ls + lm.markerStart && pos <= ls + lm.markerEnd ? ls + lm.contentStart : null
 }
 
 function pushConstruct(
