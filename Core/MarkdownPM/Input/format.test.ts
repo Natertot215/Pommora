@@ -187,6 +187,10 @@ describe('setHeading', () => {
     const heads = '# one\n## two'
     expect(apply(heads, setHeading(scanDoc(heads), 0, heads.length, 0))).toBe('one\ntwo')
   })
+  it('writes before a callout head’s `- foo`, the text it shows', () => {
+    const head = '> [!note] - foo'
+    expect(apply(head, setHeading(scanDoc(head), 0, head.length, 2))).toBe('> [!note] ## - foo')
+  })
 })
 
 describe('setList', () => {

@@ -57,11 +57,6 @@ function pushPrefix(intents: DecoIntent[], from: number, to: number, drawnOver =
   if (to > from) intents.push({ kind: 'prefix', from, to, drawnOver })
 }
 
-function pushListLine(intents: DecoIntent[], ls: number, innerStart: number, lm: ListMarker): void {
-  intents.push({ kind: 'line', from: ls, className: listLineClass(lm), level: lm.level })
-  pushPrefix(intents, innerStart, ls + lm.markerStart)
-}
-
 const glyphOf = (e: CitationEntry): string => (e.ordinal === null ? '–' : `${e.ordinal}.`)
 
 export type WidgetSpec =
@@ -371,16 +366,17 @@ export function railIntents(scan: DocScan, quoteDepths: number[]): RailIntent[][
   let span = 0
   for (let i = 0; i < n; i++) {
     const carries = shown[i] === CARRIES
-    const level = carries ? -1 : levelAt(i)
+    const lm = carries ? null : markerIn(scan, i, undefined)
+    const level = lm?.level ?? -1
     const prevSpan = span
     if (shown[i] === LIST_ENDS) railKind.length = 0
     if (carries) span = Math.min(ahead[i], behind + 1)
-    else if (level < 0) {
+    else if (lm === null) {
       behind = -1
       span = 0
       continue
     } else {
-      railKind[level] = LIST_TYPES[scan.markers[i]!.kind].rail
+      railKind[level] = LIST_TYPES[lm.kind].rail
       railKind.length = level + 1
       behind = level
       span = ahead[i] > level ? level + 1 : level
@@ -605,6 +601,7 @@ function pushConstruct(
   const hrAbsorbs = base > 0 && !caretOnLine && isThematicBreakLine(inner)
   // The prefix is hidden here so a leading widget can ABSORB it: CM drops a widget-replace that merely touches one.
   pushPrefix(intents, ls, innerStart, bulletAbsorbs || hrAbsorbs)
+  if (lm) intents.push({ kind: 'line', from: ls, className: listLineClass(lm), level: lm.level })
 
   if (page && isHeadingLine(inner)) {
     const hm = headingParts(inner)
@@ -622,7 +619,7 @@ function pushConstruct(
       if (!caretOnLine) intents.push({ kind: 'hide', from: innerStart, to: contentStart })
     }
   } else if (lm?.kind === 'checkbox') {
-    pushListLine(intents, ls, innerStart, lm)
+    pushPrefix(intents, innerStart, ls + lm.markerStart)
     if (!onMarker) {
       intents.push({
         kind: 'hide',
@@ -651,7 +648,6 @@ function pushConstruct(
     }
   } else if (lm?.kind === 'bullet') {
     // The replace runs THROUGH the marker-content gap, so neither a source tab nor pasted gap spaces occupy the in-flow slot; the visible gap is the glyph's CSS margin.
-    intents.push({ kind: 'line', from: ls, className: listLineClass(lm), level: lm.level })
     if (onMarker) pushPrefix(intents, innerStart, ls + lm.markerStart)
     else {
       const slotStart = bulletAbsorbs ? ls : innerStart
@@ -671,7 +667,7 @@ function pushConstruct(
     }
   } else if (lm) {
     // Literal recolored source, no widget, so typing after the marker can't hit an atomic range.
-    pushListLine(intents, ls, innerStart, lm)
+    pushPrefix(intents, innerStart, ls + lm.markerStart)
     intents.push({
       kind: 'class',
       from: ls + lm.markerStart,

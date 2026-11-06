@@ -12,7 +12,6 @@ import {
   isCalloutHead,
   LIST_TYPES,
   indentWidth,
-  parseListMarker,
   stripQuotePrefix,
   type ListKind,
   type ListMarker,
@@ -298,10 +297,12 @@ function readLine(scan: DocScan, k: number): SelectedLine {
     return { ls, le, prefix, pad, indent: '', inner: text.trimStart() }
   }
   const { prefix, body } = splitPrefix(scan, k)
-  const lm = parseListMarker(body)
-  const stripped = stripInnerMarkers(body)
+  const lm = scan.markers[k]
+  const stripped = lm ? scan.lines[k].slice(lm.contentStart) : stripHeading(body)
   // An item's indent sits before its marker, a paragraph's leads its words — held apart either way, so converting a nested item keeps its level.
-  const indent = lm ? body.slice(0, lm.markerStart) : (/^[ \t]*(?=\S)/.exec(stripped)?.[0] ?? '')
+  const indent = lm
+    ? scan.lines[k].slice(prefix.length, lm.markerStart)
+    : (/^[ \t]*(?=\S)/.exec(stripped)?.[0] ?? '')
   return {
     ls,
     le,
@@ -452,7 +453,11 @@ export function setBlock(scan: DocScan, from: number, to: number, fmt: BlockForm
     case 'callout': {
       if (isCalloutHead(line) || fenceDelimiter(scan, k)) return { changes: [] }
       const at = pastSign(scan, ls)
-      const next = `> [!callout] ${stripInnerMarkers(stripQuotePrefix(doc.slice(at, le)))}`
+      const lm = scan.markers[k]
+      const body = lm
+        ? line.slice(lm.contentStart)
+        : stripHeading(stripQuotePrefix(doc.slice(at, le)))
+      const next = `> [!callout] ${body}`
       return { changes: [{ from: at, to: le, insert: next }], selection: at + next.length }
     }
     case 'code': {
@@ -489,9 +494,7 @@ export function setBlock(scan: DocScan, from: number, to: number, fmt: BlockForm
   }
 }
 
-function stripInnerMarkers(body: string): string {
-  const lm = parseListMarker(body)
-  if (lm) return body.slice(lm.contentStart)
+function stripHeading(body: string): string {
   const h = headingParts(body)
   return h ? h.indent + h.content : body
 }
