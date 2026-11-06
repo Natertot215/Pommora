@@ -230,9 +230,14 @@ export function codeMask(text: string): CodeMask {
 }
 
 export function inlineCodeMask(text: string): CodeMask {
-  const lines = text.split('\n')
-  const d = { lines, lineStarts: lineOffsetsOf(lines) }
-  return (offset) => codeAt(d, () => false, offset)
+  let d: LineTable | undefined
+  return (offset) => {
+    if (!d) {
+      const lines = text.split('\n')
+      d = { lines, lineStarts: lineOffsetsOf(lines) }
+    }
+    return codeAt(d, () => false, offset)
+  }
 }
 
 function isInsideInlineCode(line: string, offset: number): boolean {

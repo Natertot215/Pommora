@@ -320,6 +320,14 @@ describe('renameCascade over frontmatter', () => {
     expect((await fmOf(b.value.path)).Notes).toBe('[[New Target]]')
   })
 
+  it('rewrites a link between fence-shaped lines in a Text value, which holds no code block', async () => {
+    const a = await createTestPage(dir, 'Fenced', { body: 'no links here' })
+    if (!a.ok) throw new Error('setup failed')
+    await setValue(a.value.path, 'Notes', '```\n[[Target]]\n```')
+    await renameCascade(root, titled('Target', 'New Target'))
+    expect((await fmOf(a.value.path)).Notes).toBe('```\n[[New Target]]\n```')
+  })
+
   it('leaves a File, a Select, and a Number value that read as connections', async () => {
     await createProperty(root, { label: 'Stage', type: 'select' })
     await createProperty(root, { label: 'Rank', type: 'number' })
