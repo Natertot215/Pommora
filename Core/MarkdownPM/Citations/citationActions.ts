@@ -32,8 +32,10 @@ export function travelToCitation(view: EditorView, label: string): void {
   travelTo(view, entry.contentStart)
 }
 
-/** A footnote annotates the words it follows, so the selection's end is where every creation puts the marker — outside the section and outside code. Both halves come off the cached scan. */
-export function citationSeatAt(state: EditorState, at = state.selection.main.to): boolean {
+/** A footnote annotates the words it follows, so the selection's end is where every creation puts the marker — outside the section and outside code, read at a range's last character. Both halves come off the cached scan. */
+export function citationSeatAt(state: EditorState): boolean {
+  const { to, empty } = state.selection.main
+  const at = empty ? to : to - 1
   const scan = docScan(state)
   return state.doc.lineAt(at).number - 1 < scan.citations.firstLine && !inCodeAt(scan, at)
 }

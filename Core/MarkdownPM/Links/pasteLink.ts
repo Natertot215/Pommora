@@ -11,6 +11,7 @@ import { pasteAsWrite, type PasteMode, type PasteWrite } from '../../Actions/pas
 import { matchesCommand } from '../../Actions/commands'
 import { isWebAddress } from '../../Paths/urlPath'
 import { docScan } from '../docCache'
+import type { BlockSpan } from '../Engine/detect'
 import { inCodeNear, scanDoc, type DocScan } from '../Engine/docScan'
 import { linkAt, openLinkAt } from '../Input/edits'
 import { insertCitation } from '../Citations/citationActions'
@@ -36,7 +37,7 @@ interface PasteEdit {
 
 function pasteEdit(
   scan: DocScan,
-  sel: { from: number; to: number },
+  sel: BlockSpan,
   text: string,
   how: PasteMode,
   host: EditorHost,
@@ -131,7 +132,7 @@ export async function pasteFromClipboard(view: EditorView, how: PasteMode): Prom
 export async function pastedCellText(
   host: EditorHost,
   doc: string,
-  sel: { from: number; to: number },
+  sel: BlockSpan,
   text: string,
   how: PasteMode,
 ): Promise<TextEdit> {

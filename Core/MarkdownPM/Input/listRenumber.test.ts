@@ -152,7 +152,7 @@ describe('a level change recounts the run it joined and the run it left', () => 
   it('switching a numbered item out of its run recounts the run below', () => {
     const doc = '- p\n\t1. a\n\t2. b\n\t\t- kid\n\t3. c'
     const b = doc.indexOf('b')
-    const e = setList(scanDoc(doc), b, b + 1, 'bullet', {})
+    const e = setList(scanDoc(doc), doc.indexOf('\t2.'), b + 1, 'bullet', {})
     expect(landEdit(doc, e.changes, editEvent(e), 'page')).toBe(
       '- p\n\t1. a\n\t- b\n\t\t- kid\n\t1. c',
     )

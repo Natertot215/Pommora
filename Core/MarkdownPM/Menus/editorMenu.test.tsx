@@ -106,6 +106,35 @@ describe('the editor’s native menu', () => {
     }
   })
 
+  it('seats as a press does, so a row writes past a marker rather than into it', async () => {
+    format.mockResolvedValue('format:bold')
+    const view = await mountEditor({ initialBody: '1. one', host: host() })
+    await rightClick(view, 2, undefined, false)
+    expect(view.state.doc.toString()).toBe('1. ****one')
+  })
+
+  it('follows the seated word through an edit under the menu', async () => {
+    let pick: (action: string) => void = () => {}
+    format.mockReturnValue(new Promise((r) => (pick = r)))
+    const view = await mountEditor({ initialBody: 'one two', host: host() })
+    await rightClick(view, 5)
+    view.dispatch({ changes: { from: 0, insert: 'x' } })
+    await act(async () => pick('format:bold'))
+    expect(view.state.doc.toString()).toBe('xone **two**')
+  })
+
+  it('reads the flags over the seat, so a mark’s outer edge checks it', async () => {
+    const view = await mountEditor({ initialBody: '_it_ x', host: host() })
+    await rightClick(view, 0)
+    expect(format).toHaveBeenCalledWith(expect.objectContaining({ italic: true }))
+  })
+
+  it('offers no footnote on a word ending an inline code span', async () => {
+    const view = await mountEditor({ initialBody: 'a `abc` b', host: host() })
+    await rightClick(view, 4)
+    expect(format).toHaveBeenCalledWith(expect.objectContaining({ citeSeat: false }))
+  })
+
   it('reads the embed seat at the click, not at the caret', async () => {
     const view = await mountEditor({ initialBody: 'text\n\nmore', host: host() })
     view.dispatch({ selection: { anchor: 0 } })

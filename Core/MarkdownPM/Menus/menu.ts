@@ -6,7 +6,7 @@ import { citationSeatAt, insertCitation } from '../Citations/citationActions'
 import { embedInsertAtCaret, embedSeatAt, webpageInsertAtCaret } from '../Embeds/embedInsert'
 import { pasteFromClipboard } from '../Links/pasteLink'
 import { readFormatState } from '../Input/formatState'
-import type { MarkdownScope } from '../Engine/detect'
+import type { BlockSpan, MarkdownScope } from '../Engine/detect'
 import type { DocScan } from '../Engine/docScan'
 import { type EditorHost, editorHost } from '../api'
 import { applyEdit } from '../Input/applyEdit'
@@ -20,7 +20,7 @@ import { editFor } from '../Input/format'
 export function applyEditorAction(
   view: EditorView,
   action: string,
-  { from, to }: { from: number; to: number } = view.state.selection.main,
+  { from, to }: BlockSpan = view.state.selection.main,
 ): void {
   const how = pasteModeOf(action)
   const settings = view.state.facet(editorHost).settings()
@@ -41,7 +41,7 @@ function keepSeatedSelection(): void {
   setTimeout(() => document.removeEventListener('selectstart', refuse, true))
 }
 
-/** Every surface's right-click, routed from where its own hit test lands, run only once the host can ask: a list glyph asks for its type menu, anything else for the format menu. A click on text inside a selection's reach acts on the selection; anywhere else, and at a caret, the list rows and the format flags read the click's point, since a click points at an item, and every other row acts on the word under the pointer, or at the point where it sits on none, which the surface seats as its selection. */
+/** Every surface's right-click, routed from where its own hit test lands, run only once the host can ask: a list glyph asks for its type menu at its own point, which seats nothing, and anything else for the format menu over one range. That's the selection when the click lands in its reach, and otherwise the word under the pointer, or the point where it sits on none, as the surface seats it. */
 export function routeRightClick(
   host: EditorHost,
   scan: DocScan,
@@ -49,31 +49,25 @@ export function routeRightClick(
   click: () => {
     at: number
     glyph: boolean
-    sel: { from: number; to: number }
-    word: () => { from: number; to: number } | null
+    sel: BlockSpan
+    word: () => BlockSpan | null
   },
   surface: {
-    seat: (from: number, to: number) => void
+    seat: (range: BlockSpan) => BlockSpan
     request: (
       from: number,
       to: number,
-      start: number,
-      end: number,
     ) => Pick<EditorMenuRequest, 'embedSeat' | 'citeSeat' | 'resting'>
     apply: (action: string, from: number, to: number) => void
   },
 ): void {
   const ask = host.menus.format
   if (!ask) return
-  const { at, glyph, sel, word: wordOf } = click()
+  const { at, glyph, sel, word } = click()
+  const point = { from: at, to: at }
   const inside = !glyph && clickInside(scan.text, at, sel.from, sel.to)
-  const [from, to] = inside ? [sel.from, sel.to] : [at, at]
-  const word = inside || glyph ? null : wordOf()
-  const [start, end] = word ? [word.from, word.to] : [from, to]
-  if (!inside && !glyph) {
-    surface.seat(start, end)
-    keepSeatedSelection()
-  }
+  const { from, to } = glyph ? point : inside ? sel : surface.seat(word() ?? point)
+  if (!inside && !glyph) keepSeatedSelection()
   const state = readFormatState(scan, from, to, host.settings())
   if (glyph) event.preventDefault()
   const pick = glyph
@@ -83,12 +77,10 @@ export function routeRightClick(
         scope: scan.scope,
         x: event.clientX,
         y: event.clientY,
-        ...surface.request(from, to, start, end),
+        ...surface.request(from, to),
       })
   void pick.then((action) => {
-    if (!action) return
-    const list = action.startsWith('list:')
-    surface.apply(action, list ? from : start, list ? to : end)
+    if (action) surface.apply(action, from, to)
   })
 }
 
@@ -101,7 +93,7 @@ export const editorMenu = (scope: MarkdownScope): Extension =>
         const glyph = glyphAt(event)
         const opened = view.state.doc
         const hit = view.posAndSideAtCoords(event, false)
-        const wordUnder = (): { from: number; to: number } | null => {
+        const wordUnder = (): BlockSpan | null => {
           const edge = view.coordsAtPos(hit.pos, hit.assoc)
           const onText =
             !!edge &&
@@ -122,14 +114,21 @@ export const editorMenu = (scope: MarkdownScope): Extension =>
             word: wordUnder,
           }),
           {
-            seat: (from, to) => view.dispatch({ selection: EditorSelection.range(from, to) }),
-            request: (from, to) => ({
-              embedSeat: page && embedSeatAt(view.state, from),
-              citeSeat: page && citationSeatAt(view.state, to),
+            seat: ({ from, to }) => {
+              view.dispatch({
+                selection: EditorSelection.range(from, to),
+                userEvent: 'select.pointer',
+              })
+              return view.state.selection.main
+            },
+            request: () => ({
+              embedSeat: page && embedSeatAt(view.state),
+              citeSeat: page && citationSeatAt(view.state),
               resting: null,
             }),
             apply: (action, from, to) => {
-              if (view.state.doc === opened) applyEditorAction(view, action, { from, to })
+              if (!glyph) applyEditorAction(view, action)
+              else if (view.state.doc === opened) applyEditorAction(view, action, { from, to })
             },
           },
         )

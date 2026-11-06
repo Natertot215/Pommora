@@ -562,13 +562,16 @@ function StaticCellImpl({
         }
       },
       {
-        seat: (start, end) => showSource(cell, start, end),
-        request: (_from, _to, start, end) => ({
+        seat: (range) => {
+          showSource(cell, range.from, range.to)
+          return range
+        },
+        request: (from, to) => ({
           embedSeat: false,
           citeSeat: false,
-          resting: { selection: text.slice(start, end) },
+          resting: { selection: text.slice(from, to) },
         }),
-        apply: (action, start, end) => void restingAction(action, start, end),
+        apply: (action, from, to) => void restingAction(action, from, to),
       },
     )
   }

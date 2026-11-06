@@ -322,7 +322,7 @@ function selectedLines(scan: DocScan, from: number, to: number): SelectedLine[] 
     .filter((l) => from === to || !isBlank(scan.text.slice(l.ls + l.prefix.length, l.le)))
 }
 
-/** What a list-type pick reaches. A caret takes its item's group: with Preserve List-Level Formatting on, the siblings of its type; off, the siblings and everything nested under them. A range takes every item it touches and turns its plain lines into items. A continuation answers for its item and a blank line for itself, a code block's lines only by a pick wholly inside it, and math, tables, a callout's head and a fence's delimiters never are. */
+/** What a list-type pick reaches. A caret, and a selection inside one line, takes its item's group: with Preserve List-Level Formatting on, the siblings of its type; off, the siblings and everything nested under them. A selection holding a whole line, or reaching past one, takes every item it touches and turns its plain lines into items. A continuation answers for its item and a blank line for itself, a code block's lines only by a pick wholly inside it, and math, tables, a callout's head and a fence's delimiters never are. */
 function listReach(
   scan: DocScan,
   from: number,
@@ -338,7 +338,9 @@ function listReach(
   const owners = ownersOf(scan, anchor, region)
   const item = owners[0]?.k ?? null
   const reached = new Set<number>()
-  if (from === to) {
+  const ls = scan.lineStarts[anchor]
+  const holdsLine = from < to && from === ls && to >= ls + scan.lines[anchor].length
+  if (anchor === upTo && !holdsLine) {
     if (item === null || blank(anchor)) reached.add(anchor)
     else {
       const { items, last } = siblingsAt(scan, item)

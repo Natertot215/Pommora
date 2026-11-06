@@ -339,6 +339,14 @@ describe('setList over a whole block', () => {
     expect(listed(apart, 'ordered')).toBe('1. a\n\n1. b\n\n  1. cont b\n\n1. c')
   })
 
+  it('takes a selection inside one line as a caret, and narrows one holding the line to its item', () => {
+    const doc = '- a\n- b\n- c'
+    expect(listed(doc, 'ordered', 6, 7)).toBe('1. a\n2. b\n3. c')
+    expect(listed(doc, 'ordered', 4, 7)).toBe('- a\n1. b\n- c')
+    expect(listed(doc, 'ordered', 4, 8)).toBe('- a\n1. b\n- c')
+    expect(listed(doc, 'ordered', 2, 6)).toBe('1. a\n2. b\n- c')
+  })
+
   it('finds a quoted marker behind its prefix rather than missing it', () => {
     expect(listed('> - a\n> - b', 'checkbox')).toBe('> - [ ] a\n> - [ ] b')
   })
