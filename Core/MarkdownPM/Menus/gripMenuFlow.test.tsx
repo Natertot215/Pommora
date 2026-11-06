@@ -91,36 +91,33 @@ describe("a list grip's Type switch", () => {
     expect(view.state.doc.toString()).toBe('1. alpha\n2. beta')
   })
 
-  it('Checklist and Arrowed reach as a pick at the first item does, as Preserve List-Level Formatting decides', async () => {
-    const view = await mount('1. alpha\n\t2. sub\n\nafter')
-    nextPick = 'list:checkbox'
-    await gripMenu(view, 'alpha')
-    expect(view.state.doc.toString()).toBe('- [ ] alpha\n\t2. sub\n\nafter')
-    nextPick = 'list:arrow'
-    await gripMenu(view, 'alpha')
-    expect(view.state.doc.toString()).toBe('→ alpha\n\t2. sub\n\nafter')
-    await cleanupEditor()
-    const off = await mount('1. alpha\n\t2. sub\n\nafter', false)
-    nextPick = 'list:checkbox'
-    await gripMenu(off, 'alpha')
-    expect(off.state.doc.toString()).toBe('- [ ] alpha\n\t- [ ] sub\n\nafter')
+  it('reaches every item in its block, whatever Preserve List-Level Formatting reads', async () => {
+    for (const preserve of [true, false]) {
+      const view = await mount('1. alpha\n\t2. sub\n\nafter', preserve)
+      nextPick = 'list:checkbox'
+      await gripMenu(view, 'alpha')
+      expect(view.state.doc.toString()).toBe('- [ ] alpha\n\t- [ ] sub\n\nafter')
+      await cleanupEditor()
+    }
   })
 
-  it('a block opening on an indented paragraph reaches from its first item', async () => {
+  it('an indented paragraph above a list is a block of its own', async () => {
     const view = await mount('  para\n- a')
-    nextPick = 'list:ordered'
+    nextPick = null
     await gripMenu(view, 'para')
-    expect(calls[0]).toEqual(gripMenuItems({ kind: 'list', current: 'bullet' }))
-    expect(view.state.doc.toString()).toBe('  para\n1. a')
+    expect(calls[0]).toEqual(gripMenuItems({ kind: 'plain' }))
   })
 
-  it('the check reads what the pick reaches', async () => {
+  it('checks no row on a block holding more than one type', async () => {
     nextPick = null
-    await gripMenu(await mount('- alpha\n1. beta'), 'alpha')
-    expect(calls[0]).toEqual(gripMenuItems({ kind: 'list', current: 'bullet' }))
-    await cleanupEditor()
-    await gripMenu(await mount('- alpha\n1. beta', false), 'alpha')
-    expect(calls[1]).toEqual(gripMenuItems({ kind: 'list', current: null }))
+    for (const preserve of [true, false]) {
+      await gripMenu(await mount('- alpha\n1. beta', preserve), 'alpha')
+      await cleanupEditor()
+    }
+    expect(calls).toEqual([
+      gripMenuItems({ kind: 'list', current: null }),
+      gripMenuItems({ kind: 'list', current: null }),
+    ])
   })
 })
 

@@ -1,6 +1,5 @@
 import type { LinkKind, Token, TokenKind, TokenOf } from './tokens'
 import {
-  continuesList,
   isBlank,
   isThematicBreakLine,
   isHeadingLine,
@@ -19,6 +18,7 @@ import {
   readsLists,
 } from './detect'
 import { carriedFrom, type DocScan, spanAt } from './docScan'
+import { ridesList } from './listModel'
 import {
   isBlockquoteLine,
   lineIndexAt,
@@ -378,8 +378,7 @@ export function lineIntentsInto(
 }
 
 export function railIntents(
-  lines: string[],
-  lineStarts: number[],
+  scan: DocScan,
   listLevels: number[],
   listKinds: string[],
   quoteDepths: number[],
@@ -392,7 +391,7 @@ export function railIntents(
   for (let i = 0, depth = 0; i < n; i++) {
     const own = quoteDepths[i]
     if (listLevels[i] >= 0 && own === depth) shown[i] = listLevels[i]
-    else if (own >= depth && continuesList(lines[i], depth) !== 'ends') shown[i] = CARRIES
+    else if (own >= depth && ridesList(scan, i, depth)) shown[i] = CARRIES
     else {
       shown[i] = LIST_ENDS
       if (listLevels[i] >= 0) depth = own
@@ -434,7 +433,7 @@ export function railIntents(
         k < nextSpan ? null : !hangs ? 'cap' : reaching ? 'join' : 'elbow'
       const rail: RailIntent = {
         kind: 'rail',
-        from: lineStarts[i],
+        from: scan.lineStarts[i],
         level: k,
         typeClass,
         head,
@@ -479,13 +478,7 @@ function deriveLines(facts: LineFacts, scan: DocScan, from: number, to: number):
 function withRails(scan: DocScan, facts: LineFacts, fresh: [number, number][]): CachedLineIntents {
   return {
     ...facts,
-    rails: railIntents(
-      scan.lines,
-      scan.lineStarts,
-      facts.listLevels,
-      facts.listKinds,
-      facts.quoteDepths,
-    ),
+    rails: railIntents(scan, facts.listLevels, facts.listKinds, facts.quoteDepths),
     fresh,
   }
 }

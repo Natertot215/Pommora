@@ -25,9 +25,7 @@ import {
 } from '../Engine/markdownCode'
 import {
   isBlank,
-  isSequenced,
-  ordinalOf,
-  ordinalText,
+  listMarkerText,
   MAX_NESTING_LEVEL,
   calloutHeadPrefixLen,
   codeSeat,
@@ -81,12 +79,7 @@ export function continueListOnEnter(scan: DocScan, selStart: number, selEnd: num
 
   // Enter ALWAYS continues the list, even on an empty item — the exits are Shift+Enter and Backspace on the empty marker.
   const indent = line.slice(pfx.length, lm.markerStart)
-  const next = isSequenced(lm)
-    ? `${ordinalText(lm.kind, ordinalOf(lm) + 1)}. `
-    : lm.kind === 'checkbox'
-      ? `${lm.bullet} [ ] `
-      : `${lm.bullet} `
-  const insert = `\n${pfx}${indent}${next}`
+  const insert = `\n${pfx}${indent}${listMarkerText(lm.kind)}`
   return { from: selStart, to: selStart, insert, selection: selStart + insert.length, relist: true }
 }
 

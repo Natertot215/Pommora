@@ -562,11 +562,22 @@ export const ordinalOf = (lm: SequencedMarker): number =>
 export const ordinalText = (kind: SequencedKind, n: number): string =>
   kind === 'alphabetical' ? String.fromCharCode(65 + ((n - 1) % 26)) : String(n)
 
-/** How a line at quote depth `depth` or deeper that isn't an item there reads to a list at that depth: a wrapped item's body, indented past the list's prefix, continues it, as a blank line does outside a quote, where a loose list's gap sits, and anything else ends it. */
-export function continuesList(line: string, depth: number): 'nested' | 'blank' | 'ends' {
-  const body = depth === 0 ? line : line.slice(quotePrefixWidth(line, depth))
-  if (!isBlank(body)) return /^[ \t]/.test(body) ? 'nested' : 'ends'
-  return depth === 0 ? 'blank' : 'ends'
+/** Whether a line at quote depth `depth` or deeper that isn't an item there continues a list at that depth: a wrapped item's body, indented past the list's prefix, does, and a blank line ends the list. */
+export const continuesList = (line: string, depth: number): boolean =>
+  /^[ \t]+\S/.test(line.slice(quotePrefixWidth(line, depth)))
+
+export function listMarkerText(kind: ListKind): string {
+  switch (kind) {
+    case 'ordered':
+    case 'alphabetical':
+      return `${ordinalText(kind, 1)}. `
+    case 'checkbox':
+      return '- [ ] '
+    case 'arrow':
+      return '→ '
+    case 'bullet':
+      return '- '
+  }
 }
 
 export function parseListMarker(line: string, offset = 0): ListMarker | null {

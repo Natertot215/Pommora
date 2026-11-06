@@ -10,9 +10,8 @@ import {
   isBlank,
   headingParts,
   isCalloutHead,
-  ordinalText,
+  listMarkerText,
   indentWidth,
-  isSequenced,
   parseListMarker,
   stripQuotePrefix,
   type ListKind,
@@ -251,20 +250,6 @@ function toggleWrap(
   }
 }
 
-function listMarkerText(kind: ListKind): string {
-  switch (kind) {
-    case 'ordered':
-    case 'alphabetical':
-      return `${ordinalText(kind, 1)}. `
-    case 'checkbox':
-      return '- [ ] '
-    case 'arrow':
-      return '→ '
-    case 'bullet':
-      return '- '
-  }
-}
-
 /** For a callout HEAD the chrome includes the hidden `[!type] ` tag. Block transforms edit from AFTER the chrome, which preserves the box and keeps the change out of the callout guard's window. */
 export function splitPrefix(scan: DocScan, k: number): { prefix: string; body: string } {
   const line = scan.lines[k]
@@ -394,7 +379,7 @@ export function listKindOf(
   return kinds.size === 1 ? [...kinds][0] : null
 }
 
-/** The one list-type switch. An item already drawn as the type is left alone, a numbered or lettered one is written over, and a plain line becomes an item. A pick writes `1. ` or `A. ` over every sequenced marker it reaches, and the renumber filter (`listRenumber.ts`) restarts a run whose whole marker was rewritten, so any writer that rewrites a whole marker restarts its run (I-073). */
+/** The one list-type switch. An item already drawn as the type is left alone, any other is written over, and a plain line becomes an item; the renumber filter (`listRenumber.ts`) counts what it wrote. */
 export function setList(
   scan: DocScan,
   from: number,
@@ -413,7 +398,7 @@ export function setList(
       const lead = `${l.pad}${l.indent}${marker}`
       changes.push({ from: ls + l.prefix.length, to: l.le - l.inner.length, insert: lead })
       selection = ls + l.prefix.length + lead.length + l.inner.length
-    } else if (isSequenced(lm) || drawnKind(lm) !== kind)
+    } else if (drawnKind(lm) !== kind)
       changes.push({ from: ls + lm.markerStart, to: ls + lm.contentStart, insert: marker })
   }
   // A pick reaching one plain line keeps the caret at its end; any other pick leaves the selection where the edit maps it.

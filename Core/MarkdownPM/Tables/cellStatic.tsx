@@ -282,7 +282,8 @@ function renderCellBody(
   around: CellPage,
   headingLinkStyle: HeadingLinkStyle,
 ): React.ReactNode {
-  const { lines, lineStarts: starts, markers } = cellScan(text)
+  const scan = cellScan(text)
+  const { lines, lineStarts: starts, markers } = scan
   // A marker nothing draws is prose here exactly as it is in the editor, so the two surfaces accept the same lines.
   const items = markers.map((lm) => {
     const glyph = lm && listGlyphOf(lm)
@@ -291,8 +292,7 @@ function renderCellBody(
   if (items.every((it) => it === null))
     return renderCellContent(text, connections, { around, headingLinkStyle })
   const rails = railIntents(
-    lines,
-    starts,
+    scan,
     items.map((it) => it?.lm.level ?? -1),
     items.map((it) => (it ? (railTypeClass(it.lm) ?? '') : '')),
     lines.map(quoteDepthOf),

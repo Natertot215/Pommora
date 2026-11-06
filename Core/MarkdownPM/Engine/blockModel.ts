@@ -1,8 +1,8 @@
 // `to` is EXCLUSIVE of the trailing newline, matching subBlockAt, headingSections, and TableRegion, which the drag's self-drop guard relies on.
-import { continuesList, isBlank, type BlockSpan, type CalloutLine } from './detect'
-import { type DocScan, perScan, spanAt } from './docScan'
-import { lineEndOf, lineIndexAt } from './markdownCode'
-import { openerOf } from './listModel'
+import { isBlank, type BlockSpan, type CalloutLine } from './detect'
+import { type DocScan, markerIn, perScan, spanAt } from './docScan'
+import { lineEndOf, lineIndexAt, quoteDepthOf } from './markdownCode'
+import { ridesList } from './listModel'
 import { headingSections } from './headingScan'
 
 type BlockKind =
@@ -37,27 +37,14 @@ function blockContext(scan: DocScan): BlockContext {
     quotes: bq,
     headings,
     breaks,
-    markers,
   } = scan
   const n = lines.length
 
-  // Only where a run actually holds a marker, so a bare indented paragraph isn't swept in.
-  const isMarker = (i: number): boolean => markers[openerOf(scan, i)] !== null
-  const joins = (i: number): boolean =>
-    isMarker(i) || continuesList(lines[openerOf(scan, i)], 0) === 'nested'
-  const listMember = new Array<boolean>(n).fill(false)
-  for (let i = 0; i < n; ) {
-    if (!joins(i)) {
-      i++
-      continue
-    }
-    let j = i
-    while (j + 1 < n && joins(j + 1)) j++
-    let hasMarker = false
-    for (let k = i; k <= j && !hasMarker; k++) hasMarker = isMarker(k)
-    if (hasMarker) for (let k = i; k <= j; k++) listMember[k] = true
-    i = j + 1
-  }
+  const listMember = new Array<boolean>(n)
+  for (let i = 0; i < n; i++)
+    listMember[i] =
+      (quoteDepthOf(lines[i]) === 0 && markerIn(scan, i, undefined) !== null) ||
+      (i > 0 && listMember[i - 1] && ridesList(scan, i, 0))
 
   const ranged = new Array<BlockKind | undefined>(n)
   const hold = (kind: BlockKind, spans: readonly BlockSpan[]): void => {

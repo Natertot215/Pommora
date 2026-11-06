@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { scanDoc, type DocScan } from './docScan'
 import { blockAt as blockAtIn, blockStarts as blockStartsIn, type Block } from './blockModel'
+import { subBlockAt } from './listModel'
 
 describe('the block context is derived once per scan', () => {
   it('a second blockAt on the same scan reads the first derivation', () => {
@@ -28,6 +29,32 @@ describe('a callout head inside a closed quoted fence is quoted code, never a ca
 })
 
 const blockAt = (doc: string, pos: number): Block | null => blockAtIn(scanDoc(doc), pos)
+
+describe('a list block ends where the list model does', () => {
+  const span = (doc: string): string => {
+    const b = blockAt(doc, 0)!
+    return doc.slice(b.from, b.to)
+  }
+  it('stops short of a table whose header reads as an item', () => {
+    expect(span('- x\n→ a | b\n--|--\n| 1 | 2 |')).toBe('- x')
+  })
+  it('stops short of a quote below it', () => {
+    expect(span('- a\n> - b\n> - c')).toBe('- a')
+  })
+  it('opens on its first item, so an indented paragraph above it stands alone', () => {
+    expect(blockAt('  para\n- a', 0)?.kind).toBe('paragraph')
+    expect(blockAt('  para\n- a', 7)).toMatchObject({ kind: 'list', from: 7 })
+  })
+  it('takes the whole of a table an item carries, a flush row included', () => {
+    const doc = '- a\n  | h | i |\n  |---|---|\n| 1 | 2 |\n- b'
+    expect(span(doc)).toBe(doc)
+    expect(subBlockAt(scanDoc(doc), 0)?.to).toBe(doc.indexOf('\n- b'))
+  })
+  it('ends at a blank line', () => {
+    expect(span('- a\n\n- b')).toBe('- a')
+    expect(span('- a\n  more\n\n  para')).toBe('- a\n  more')
+  })
+})
 const blockStarts = (doc: string): ReturnType<typeof blockStartsIn> => blockStartsIn(scanDoc(doc))
 
 const slice = (doc: string, b: Block | null): string | null => (b ? doc.slice(b.from, b.to) : null)

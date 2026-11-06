@@ -320,11 +320,10 @@ describe('setList over a whole block', () => {
     expect(listed(deeper, 'ordered', deeper.indexOf('cont b'), deeper.indexOf('\n- c'))).toBe(
       '1. a\n  > 1. b\n  >   cont b\n  cont a\n- c',
     )
-    const loose = '- a\n\n- b\n\n  cont b\n\n- c'
-    const paragraph = loose.indexOf('cont')
-    const numbered = '1. a\n\n2. b\n\n  cont b\n\n3. c'
-    expect(listed(loose, 'ordered', paragraph, paragraph)).toBe(numbered)
-    expect(listed(loose, 'ordered')).toBe(numbered)
+    const apart = '- a\n\n- b\n\n  cont b\n\n- c'
+    const paragraph = apart.indexOf('cont')
+    expect(listed(apart, 'ordered', paragraph, paragraph)).toBe('- a\n\n- b\n\n  1. cont b\n\n- c')
+    expect(listed(apart, 'ordered')).toBe('1. a\n\n1. b\n\n  1. cont b\n\n1. c')
   })
 
   it('finds a quoted marker behind its prefix rather than missing it', () => {
@@ -335,8 +334,9 @@ describe('setList over a whole block', () => {
     expect(setList(scanDoc('- a\n- b'), 0, 7, 'bullet', {}).changes).toEqual([])
   })
 
-  it('repairs a broken ordered sequence', () => {
-    expect(listed('1. a\n1. b\n1. c', 'ordered')).toBe('1. a\n2. b\n3. c')
+  it('leaves a run already of the type as it stands, and Bulleted then Numbered repairs it', () => {
+    expect(listed('1. a\n1. b\n1. c', 'ordered')).toBe('1. a\n1. b\n1. c')
+    expect(listed(listed('1. a\n1. b\n1. c', 'bullet'), 'ordered')).toBe('1. a\n2. b\n3. c')
   })
 })
 

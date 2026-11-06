@@ -11,8 +11,7 @@ import { HEADING_LINE } from '../folding'
 import { applyEmbedZoom, embedExclusions, embedZoomAt, setWebLinkSeat } from '../Embeds/embedWidget'
 import { focusRange } from '../caretPlacement'
 import { titleFromPath } from '../../Paths/posix'
-import { lineEndAt, lineIndexAt, lineStartAt } from '../Engine/markdownCode'
-import type { DocScan } from '../Engine/docScan'
+import { lineEndAt, lineStartAt } from '../Engine/markdownCode'
 import { applyEdit } from '../Input/applyEdit'
 import { type EditorHost, editorHost } from '../api'
 import { gutterLineAt } from '../lineDom'
@@ -50,13 +49,6 @@ export function blockDeleteSpan(doc: string, r: BlockSpan): BlockSpan {
   return { from: r.from, to: r.to + 1 }
 }
 
-/** A list block's Type ▸ reads and picks as a right-click on its first item's glyph does, so Preserve List-Level Formatting decides its reach as it decides the glyph menu's; a paragraph the block opens on is that item's continuation. */
-function firstItemOf(scan: DocScan, block: BlockSpan): number {
-  let k = lineIndexAt(scan, block.from)
-  while (scan.fences[k] !== undefined || scan.markers[k] === null) k++
-  return scan.lineStarts[k]
-}
-
 function contextFor(view: EditorView, block: Block): GripMenuContext {
   const host = view.state.facet(editorHost)
   switch (block.kind) {
@@ -75,8 +67,7 @@ function contextFor(view: EditorView, block: Block): GripMenuContext {
       }
     case 'list': {
       const scan = docScan(view.state)
-      const at = firstItemOf(scan, block)
-      return { kind: 'list', current: listKindOf(scan, at, at, host.settings()) }
+      return { kind: 'list', current: listKindOf(scan, block.from, block.to, host.settings()) }
     }
     default:
       return { kind: 'plain' }
@@ -170,9 +161,7 @@ export const gripMenu = EditorView.domEventHandlers({
         })
       } else if (zoom !== undefined) applyEmbedZoom(view, block.from, Number(zoom))
       else if (action.startsWith('list:')) {
-        const scan = docScan(view.state)
-        const at = firstItemOf(scan, block)
-        applyEdit(view, editFor(action, scan, at, at, host.settings()))
+        applyEdit(view, editFor(action, docScan(view.state), block.from, block.to, host.settings()))
       } else if (action === 'editLink') {
         // The seat un-forms the tile back to its raw address with that address selected; leaving the line re-forms it.
         const line = view.state.doc.lineAt(block.from)

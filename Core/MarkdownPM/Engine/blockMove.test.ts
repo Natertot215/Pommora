@@ -91,6 +91,18 @@ describe('moveRange (blank-separated block move)', () => {
     )
   })
 
+  it('joins no run and leaves each list its numbers, since a blank line stands on either side of a moved block', () => {
+    const doc = '1. a\n2. b\n\n3. c\n\n4. d'
+    expect(apply(doc, { from: doc.indexOf('3. c'), to: doc.indexOf('3. c') + 4 }, 0)).toBe(
+      '3. c\n\n1. a\n2. b\n\n4. d',
+    )
+    const glued = '1. a\n2. b\nplain\n\n7. c'
+    const from = glued.indexOf('7. c')
+    expect(apply(glued, { from, to: from + 4 }, glued.indexOf('plain'))).toBe(
+      '1. a\n2. b\n\n7. c\n\nplain',
+    )
+  })
+
   it('does not double-blank when the source ends in a trailing blank line', () => {
     const doc = 'A\n\nB\n\n'
     expect(apply(doc, { from: 0, to: 1 }, doc.length)).toBe('B\n\nA\n')

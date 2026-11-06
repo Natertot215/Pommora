@@ -22,33 +22,34 @@ function reindentBlock(blockLines: string[], targetIndent: string | undefined): 
   })
 }
 
-type MoveSeams = { looseSource: boolean; looseSlot: boolean }
-
+/** A block stands apart, `fenced`, so a blank line seats it at the slot and heals the hole it leaves. An item drops straight into the lines at its slot, and only an item that was its whole list takes a blank with it. */
 export function rebuildMove(
   doc: string,
   range: BlockSpan,
   slot: Slot,
-  { looseSource, looseSlot }: MoveSeams,
+  fenced: boolean,
 ): { doc: string; sourceAt: number; destAt: number } | null {
   const trailingNL = doc.endsWith('\n')
   const lines = doc.split('\n')
   if (trailingNL) lines.pop()
   const starts = lineOffsetsOf(lines)
   const blankAt = (i: number): boolean => i >= 0 && i < lines.length && isBlank(lines[i])
+  const edgeAt = (i: number): boolean => i < 0 || i >= lines.length || blankAt(i)
 
   const bStart = starts.indexOf(range.from)
   let bEnd = bStart
   while (bEnd + 1 < lines.length && starts[bEnd + 1] <= range.to) bEnd++
 
   let tLine = slot.at >= doc.length ? lines.length : starts.indexOf(slot.at)
-  while (looseSlot && blankAt(tLine)) tLine++
+  while (fenced && blankAt(tLine)) tLine++
   if (tLine >= bStart && tLine <= bEnd + 1) return null
 
   const blockLines = reindentBlock(lines.slice(bStart, bEnd + 1), slot.indent)
+  const heals = fenced || (edgeAt(bStart - 1) && edgeAt(bEnd + 1))
   let cutStart = bStart
   let cutEnd = bEnd
-  if (looseSource && blankAt(bEnd + 1)) cutEnd = bEnd + 1
-  else if (looseSource && blankAt(bStart - 1)) cutStart = bStart - 1
+  if (heals && blankAt(bEnd + 1)) cutEnd = bEnd + 1
+  else if (heals && blankAt(bStart - 1)) cutStart = bStart - 1
 
   const out: string[] = []
   const sep = (wanted: boolean): void => {
@@ -58,21 +59,21 @@ export function rebuildMove(
   let sourceLine = 0
   for (let i = 0; i < lines.length; i++) {
     if (i === tLine) {
-      sep(looseSlot)
+      sep(fenced)
       destLine = out.length
       out.push(...blockLines)
-      if (looseSlot) out.push('')
+      if (fenced) out.push('')
     }
     if (i < cutStart || i > cutEnd) {
       if (i === cutEnd + 1) {
-        sep(looseSource)
+        sep(heals && i !== tLine)
         sourceLine = out.length
       }
       out.push(lines[i])
     }
   }
   if (tLine === lines.length) {
-    sep(looseSlot)
+    sep(fenced)
     destLine = out.length
     out.push(...blockLines)
   }
@@ -90,6 +91,6 @@ export function rebuildMove(
 }
 
 export function moveRange(doc: string, range: BlockSpan, slot: Slot): TextEdit[] | null {
-  const moved = rebuildMove(doc, range, slot, { looseSource: true, looseSlot: true })
+  const moved = rebuildMove(doc, range, slot, true)
   return moved === null ? null : diffAsSingleReplace(doc, moved.doc)
 }

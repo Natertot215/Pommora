@@ -55,8 +55,22 @@ describe('a line deletion closes the gap', () => {
     expect(del('one\ntwo\nthree', 4, 8)).toBe('one\nthree')
   })
 
-  it('closes the gap across a loose list', () => {
-    expect(del('1. a\n\n2. b\n\n3. c', 6, 12)).toBe('1. a\n\n2. c')
+  it('a list below a blank line keeps its numbers', () => {
+    expect(del('1. a\n\n2. b\n\n3. c', 6, 12)).toBe('1. a\n\n3. c')
+  })
+
+  it('removing the blank line between two lists merges them and recounts', () => {
+    expect(del('1. a\n2. b\n\n7. c\n8. d', 10, 11)).toBe('1. a\n2. b\n3. c\n4. d')
+  })
+
+  it('a marker taken by a selection recounts the run it broke', () => {
+    const doc = '- p\n\t1. x\n\t2. y\n\t3. z'
+    const y = doc.indexOf('2. y')
+    expect(del(doc, y, y + 3)).toBe('- p\n\t1. x\n\ty\n\t2. z')
+  })
+
+  it('a flush line left by a taken marker ends the list, and the lower one keeps its numbers', () => {
+    expect(del('1. a\n2. b\n3. c', 5, 8)).toBe('1. a\nb\n3. c')
   })
 
   it('a run that never began at 1 keeps its own base', () => {
@@ -76,6 +90,46 @@ describe('an edit landed in a cell', () => {
     expect(landEdit(doc, [{ from, to: from + 5, insert: '' }], 'delete', 'cell')).toBe(
       '```\n1. a\n2. c\n```',
     )
+  })
+})
+
+describe('a change resting on a carried block’s delimiter', () => {
+  it('removing the blank below the block merges the two lists and recounts them', () => {
+    const doc = '1. a\n   ```js\n   x\n   ```\n\n1. b\n2. c'
+    const at = doc.indexOf('\n\n1. b')
+    expect(del(doc, at, at + 1)).toBe('1. a\n   ```js\n   x\n   ```\n2. b\n3. c')
+  })
+
+  it('taking the item above the block counts past it from its opener', () => {
+    expect(del('1. a\n2. b\n   ```js\n   x\n   ```\n3. c', 5, 10)).toBe(
+      '1. a\n   ```js\n   x\n   ```\n2. c',
+    )
+  })
+
+  const blocks = '   ```js\n   x\n   ```\n   ```js\n   y\n   ```'
+
+  it('taking the item between two blocks counts past both', () => {
+    const doc = '1. a\n   ```js\n   x\n   ```\n2. b\n   ```js\n   y\n   ```\n3. c'
+    const from = doc.indexOf('2. b')
+    expect(del(doc, from, from + 5)).toBe(`1. a\n${blocks}\n2. c`)
+  })
+
+  it('removing the blank below two blocks merges the lists and recounts them', () => {
+    const doc = `1. a\n${blocks}\n\n1. b\n2. c`
+    const at = doc.indexOf('\n\n1. b')
+    expect(del(doc, at, at + 1)).toBe(`1. a\n${blocks}\n2. b\n3. c`)
+  })
+})
+
+describe('a keystroke over a selection across items', () => {
+  const over = (doc: string, from: number, to: number, insert: string, userEvent: string): string =>
+    EditorState.create({ doc, selection: { anchor: from, head: to }, extensions: [listRenumber] })
+      .update({ changes: { from, to, insert }, userEvent })
+      .state.doc.toString()
+
+  it('typing or Enter recounts the run it joins', () => {
+    expect(over(list, 3, 8, 'x', 'input.type')).toBe('1. xb\n2. c')
+    expect(over(list, 4, 10, '\n', 'input')).toBe('1. a\n2. c')
   })
 })
 
@@ -109,14 +163,14 @@ describe('a level change recounts the run it joined and the run it left', () => 
     expect(landEdit(run, [smartBackspace(scanDoc(run), y, y)!], 'delete', 'page')).toBe(
       '- p\n\t1. x\n\ty\n\t2. z',
     )
-    const loose = '- p\n\t1. a\n\n\t2. b\n\t3. c'
-    const a = loose.indexOf('a')
-    const l = setList(scanDoc(loose), a, a + 1, 'bullet', {})
-    expect(landEdit(loose, l.changes, editEvent(l), 'page')).toBe('- p\n\t- a\n\n\t1. b\n\t2. c')
+    const apart = '- p\n\t1. a\n\n\t2. b\n\t3. c'
+    const a = apart.indexOf('a')
+    const l = setList(scanDoc(apart), a, a + 1, 'bullet', {})
+    expect(landEdit(apart, l.changes, editEvent(l), 'page')).toBe('- p\n\t- a\n\n\t2. b\n\t3. c')
     const parent = '3. p\n\t1. a\n5. q'
     const n = parent.indexOf('a')
     const p = setList(scanDoc(parent), n, n + 1, 'bullet', {})
-    expect(landEdit(parent, p.changes, editEvent(p), 'page')).toBe('3. p\n\t- a\n5. q')
+    expect(landEdit(parent, p.changes, editEvent(p), 'page')).toBe('3. p\n\t- a\n4. q')
   })
 })
 
@@ -127,8 +181,22 @@ describe('Enter recounts the run it splits', () => {
   it('continuing a bullet leaves the numbered list below it alone', () => {
     expect(at('- a\n1. x\n3. y', 3, continueListOnEnter)).toBe('- a\n- \n1. x\n3. y')
   })
-  it('counts on through a loose list', () => {
-    expect(at('1. a\n\n2. b', 4, continueListOnEnter)).toBe('1. a\n2. \n\n3. b')
+  it('stops at a blank line, so the list below keeps its numbers', () => {
+    expect(at('1. a\n\n2. b', 4, continueListOnEnter)).toBe('1. a\n2. \n\n2. b')
+  })
+  it('lands past a run that grew a digit, the caret behind the marker it wrote', () => {
+    const state = EditorState.create({ doc: '9. a', extensions: listRenumber })
+    const e = continueListOnEnter(scanDoc('9. a'), 4, 4)!
+    const next = state.update({
+      changes: e,
+      selection: { anchor: e.selection },
+      userEvent: editEvent(e),
+    }).state
+    expect(next.doc.toString()).toBe('9. a\n10. ')
+    expect(next.selection.main.head).toBe(next.doc.length)
+  })
+  it('a lettered run past Z keeps its letters and carries on', () => {
+    expect(at('Y. a\nZ. b\nA. c', 14, continueListOnEnter)).toBe('Y. a\nZ. b\nA. c\nB. ')
   })
   it('counts past a code block nested in the list, and never counts the code', () => {
     const doc = '- p\n\t1. x\n\t```\n\t1. y\n\t```\n\t1. z'
@@ -154,18 +222,22 @@ describe('Lists ▸ continues the run a line joins', () => {
   it('a run that began past 1 keeps its base', () => {
     expect(listed('5. a\nb', 5)).toBe('5. a\n6. b')
   })
-  it('a pick over a numbered item restarts its run from 1, past the items it missed', () => {
-    expect(listed('5. a\n- b\n\n7. c', 0, 6)).toBe('1. a\n2. b\n\n3. c')
+  it('a pick leaves an item already numbered alone, and the run keeps its start', () => {
+    expect(listed('5. a\n- b\n\n7. c', 0, 6)).toBe('5. a\n6. b\n\n7. c')
+    expect(listed('1. a\n1. b\n1. c', 0)).toBe('1. a\n1. b\n1. c')
+  })
+  it('a line picked above a run starts it, since a run counts from its first item', () => {
+    expect(listed('b\n5. a', 0)).toBe('1. b\n2. a')
   })
   it('a quoted line continues the quoted run', () => {
     expect(listed('> 1. a\n> b', 9)).toBe('> 1. a\n> 2. b')
   })
-  it('a line a blank apart joins the run as a loose item', () => {
-    expect(listed('1. a\n\nb', 6)).toBe('1. a\n\n2. b')
+  it('a line a blank apart starts a list of its own', () => {
+    expect(listed('1. a\n\nb', 6)).toBe('1. a\n\n1. b')
   })
-  it('paragraphs apart by blank lines become one loose list', () => {
+  it('paragraphs apart by blank lines each become a list of their own', () => {
     const doc = 'a\n\nb\n\nc'
-    expect(listed(doc, 0, doc.length)).toBe('1. a\n\n2. b\n\n3. c')
+    expect(listed(doc, 0, doc.length)).toBe('1. a\n\n1. b\n\n1. c')
   })
   it('a blank line between two quotes ends the quoted run', () => {
     expect(listed('> 1. a\n\n> b', 10)).toBe('> 1. a\n\n> 1. b')
@@ -195,9 +267,7 @@ describe('Lists ▸ continues the run a line joins', () => {
       '- p\n\t1. x\n\t```md\n\t1. y\n\t2. y2\n\t```\n\t1. z',
     )
     expect(listed(doc, fence)).toBe(doc)
-    expect(listed(doc, doc.indexOf('y'), doc.length)).toBe(
-      '- p\n\t1. x\n\t```md\n\t- y\n\t- y2\n\t```\n\t2. z',
-    )
+    expect(listed(doc, doc.indexOf('y'), doc.length)).toBe(doc)
   })
   it('a carried Markdown block counts its own run, and the list around it counts past the block', () => {
     const doc = '1. a\n   ```md\n   1. x\n   2. y\n   ```\n2. b'

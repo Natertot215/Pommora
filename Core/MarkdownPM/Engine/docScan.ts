@@ -422,11 +422,10 @@ export function inCalloutAt(scan: DocScan, pos: number): boolean {
   return scan.callouts[lineIndexAt(scan, pos)] !== undefined
 }
 
-export function inSealedLine(scan: LineScan, i: number): boolean {
-  const at = scan.lineStarts[i]
-  return (
-    scan.fences[i] !== undefined ||
-    spanAt(scan.maths, at) !== undefined ||
-    spanAt(scan.tables, at) !== undefined
-  )
+export function sealedBlock(scan: LineScan, k: number): BlockSpan | undefined {
+  const at = scan.lineStarts[k]
+  return scan.fences[k] ?? spanAt(scan.maths, at) ?? spanAt(scan.tables, at)
 }
+
+export const inSealedLine = (scan: LineScan, i: number): boolean =>
+  sealedBlock(scan, i) !== undefined

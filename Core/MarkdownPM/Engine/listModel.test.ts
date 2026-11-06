@@ -1,7 +1,13 @@
 import { describe, it, expect } from 'vitest'
 import { scanDoc } from './docScan'
 import { applyEdits, lineIndexAt } from './markdownCode'
-import { subBlockAt, dropChanges, renumberRuns, checkboxToggleChange } from './listModel'
+import {
+  subBlockAt,
+  dropChanges,
+  renumberRuns,
+  checkboxToggleChange,
+  siblingsAt,
+} from './listModel'
 
 describe('subBlockAt × block math', () => {
   it('indented math with an internal blank rides the item — the reorder gesture cannot tear it', () => {
@@ -64,9 +70,9 @@ describe('subBlockAt', () => {
     const doc = '- a\n\t- a1\n\t- a2\n- b'
     const b = subBlockAt(scanDoc(doc), 1)!
     expect(doc.slice(b.from, b.to)).toBe('- a\n\t- a1\n\t- a2')
-    const loose = '- a\n\n- b\n\n  cont b\n\n- c'
-    const l = subBlockAt(scanDoc(loose), loose.indexOf('- b'))!
-    expect(loose.slice(l.from, l.to)).toBe('- b\n\n  cont b')
+    const apart = '- a\n\n- b\n\n  cont b\n\n- c'
+    const l = subBlockAt(scanDoc(apart), apart.indexOf('- b'))!
+    expect(apart.slice(l.from, l.to)).toBe('- b')
   })
   it('returns null off a list line', () => {
     expect(subBlockAt(scanDoc('plain text'), 2)).toBe(null)
@@ -84,11 +90,11 @@ describe('drag reorders source lines', () => {
     const doc = '- a\n- b\n- c'
     const out = drop(doc, lineStart(doc, 'a'), lineStart(doc, '- c'))
     expect(out).toBe('- b\n- a\n- c')
-    const loose = '- x\n\n- y\n\npara\n\n- a\n- b'
-    expect(drop(loose, 0, lineStart(loose, '- b'))).toBe('- y\n\npara\n\n- a\n- x\n- b')
-    const mixed = '- p\n  - x\n\n  - y\n\n\t- z'
-    expect(drop(mixed, lineStart(mixed, '\t- z'), lineStart(mixed, '  - y'))).toBe(
-      '- p\n  - x\n\n\t- z\n\n  - y',
+    const lone = '- x\n\n- y\n\npara\n\n- a\n- b'
+    expect(drop(lone, 0, lineStart(lone, '- b'))).toBe('- y\n\npara\n\n- a\n- x\n- b')
+    const lists = '- p\n  - x\n\n  - y\n\n\t- z'
+    expect(drop(lists, lineStart(lists, '\t- z'), lineStart(lists, '  - y'))).toBe(
+      '- p\n  - x\n\n\t- z\n  - y',
     )
   })
   it('moves a bullet item to the end', () => {
@@ -103,8 +109,8 @@ describe('ordered list renumbers after a move', () => {
     const doc = '1. a\n2. b\n3. c'
     const out = drop(doc, lineStart(doc, 'c'), 0)
     expect(out).toBe('1. c\n2. a\n3. b')
-    const loose = '1. a\n\n2. b\n\n3. c'
-    expect(drop(loose, lineStart(loose, 'c'), 0)).toBe('1. c\n\n2. a\n\n3. b')
+    const lists = '1. a\n\n2. b\n\n3. c'
+    expect(drop(lists, lineStart(lists, '3. c'), 0)).toBe('1. c\n2. a\n\n2. b')
   })
   it('reletters an alphabetical run', () => {
     const doc = 'A. a\nB. b\nC. c'
@@ -115,9 +121,9 @@ describe('ordered list renumbers after a move', () => {
     const doc = '1. a\n2. b\n3. c'
     const out = drop(doc, lineStart(doc, 'a'), doc.length)
     expect(out).toBe('1. b\n2. c\n3. a')
-    const loose = '1. a\n\n2. b\n\n3. c'
-    expect(drop(loose, 0, loose.length)).toBe('1. b\n\n2. c\n\n3. a')
-    expect(drop(loose, lineStart(loose, 'b'), loose.length)).toBe('1. a\n\n2. c\n\n3. b')
+    const lists = '1. a\n\n2. b\n\n3. c'
+    expect(drop(lists, 0, lists.length)).toBe('2. b\n\n3. c\n4. a')
+    expect(drop(lists, lineStart(lists, '2. b'), lists.length)).toBe('1. a\n\n3. c\n4. b')
   })
   it('renumbers the whole run when an item with a continuation line moves up', () => {
     const doc = '1. a\n2. b\n3. c\n   more about c\n4. d'
@@ -138,6 +144,53 @@ describe('ordered list renumbers after a move', () => {
     const doc = '1. a\n2. b\n3. c\n   more about c\n4. d'
     const out = drop(doc, lineStart(doc, '3. c'), 0)
     expect(out).toBe('1. c\n   more about c\n2. a\n3. b\n4. d')
+  })
+})
+
+describe('a drag recounts on its own surface', () => {
+  it('reads fence-shaped lines in a cell as lines, moved text included', () => {
+    const doc = '```\n1. a\n2. b\n```'
+    const scan = scanDoc(doc, 'cell')
+    const at = doc.indexOf('1. a')
+    const block = subBlockAt(scan, doc.indexOf('2. b'))!
+    const changes = dropChanges(scan, block, { at, line: lineIndexAt(scan, at) })
+    expect(applyEdits(doc, changes!)).toBe('```\n1. b\n2. a\n```')
+  })
+})
+
+describe('a drag keeps the start of the run it lands in', () => {
+  it('a list starting at 5 stays at 5 whichever way an item moves', () => {
+    const doc = '5. a\n6. b\n7. c'
+    expect(drop(doc, lineStart(doc, '7. c'), 0)).toBe('5. c\n6. a\n7. b')
+    expect(drop(doc, 0, doc.length)).toBe('5. b\n6. c\n7. a')
+  })
+  it('a lettered run past Z keeps its start across a drag', () => {
+    const doc = 'Y. a\nZ. b\nA. c'
+    expect(drop(doc, lineStart(doc, 'A. c'), 0)).toBe('Y. c\nZ. a\nA. b')
+  })
+  it('an item from another list takes its place in the run it joins', () => {
+    const doc = '1. x\n2. y\n\n5. a\n6. b'
+    expect(drop(doc, 0, lineStart(doc, '5. a'))).toBe('2. y\n\n5. x\n6. a\n7. b')
+  })
+  it('an item of another kind keeps its own number where it lands', () => {
+    const doc = '3. x\n\nA. a\nB. b'
+    expect(drop(doc, 0, lineStart(doc, 'A. a'))).toBe('3. x\nA. a\nB. b')
+  })
+  it('the source list closes up, and a lone item takes one blank with it', () => {
+    const doc = '1. a\n2. x\n3. b\n\n1. p'
+    expect(drop(doc, lineStart(doc, '2. x'), doc.length)).toBe('1. a\n2. b\n\n1. p\n2. x')
+    const lone = 'top\n\n- x\n\nend\n\n- a'
+    expect(drop(lone, lineStart(lone, '- x'), lone.length)).toBe('top\n\nend\n\n- a\n- x')
+  })
+})
+
+describe('a blank line ends a list', () => {
+  it('stops the walks at it, and a carried block\u2019s own blank line does not count', () => {
+    const doc = '- a\n\n  para\n- b'
+    expect(subBlockAt(scanDoc(doc), 0)!.to).toBe(3)
+    expect(siblingsAt(scanDoc(doc), 3).items).toEqual([3])
+    const code = '- a\n  ```\n  x\n\nflush\n  ```\n- b'
+    expect(siblingsAt(scanDoc(code), 0).items).toEqual([0, 6])
   })
 })
 
@@ -187,6 +240,20 @@ describe('renumberRuns', () => {
   it('fixes a broken run', () => {
     const doc = '1. a\n1. b\n1. c'
     expect(applyEdits(doc, renumberRuns(scanDoc(doc), [0]))).toBe('1. a\n2. b\n3. c')
+  })
+  it('counts every run of the list, each from its first item, and a nested run from 1', () => {
+    const doc = '5. a\n\t3. x\n\t3. y\n7. b\n- c\n9. d\n9. e'
+    expect(applyEdits(doc, renumberRuns(scanDoc(doc), [0]))).toBe(
+      '5. a\n\t1. x\n\t2. y\n6. b\n- c\n9. d\n10. e',
+    )
+  })
+  it('a quote carried by an item holds a list of its own, read apart from the one around it', () => {
+    const doc = '1. a\n  > 1. q\n  > 3. r\n3. b'
+    const outer = scanDoc(doc)
+    expect(applyEdits(doc, renumberRuns(outer, [0]))).toBe('1. a\n  > 1. q\n  > 3. r\n2. b')
+    expect(applyEdits(doc, renumberRuns(outer, [0, doc.indexOf('  > 1.')]))).toBe(
+      '1. a\n  > 1. q\n  > 2. r\n2. b',
+    )
   })
 })
 

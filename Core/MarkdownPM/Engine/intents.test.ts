@@ -737,15 +737,21 @@ describe('outliner rails', () => {
     expect(rails('+ parent\n\t- child')).toHaveLength(0)
   })
 
-  it('a blank line inside a loose list carries the rail across, and one leaving the run carries none', () => {
-    const t = '- A\n\n\t- B\n\n\t- C\n\n- D'
-    expect(rails(t).map((r) => [r.from, r.head, r.first, r.end])).toEqual([
-      [0, true, true, null],
-      [4, false, false, null],
-      [5, false, false, null],
-      [10, false, false, null],
-      [11, false, false, 'elbow'],
+  it('a blank line ends the rail', () => {
+    expect(rails('- A\n\n\t- B\n\n\t- C\n\n- D')).toEqual([])
+    expect(rails('- A\n\t- B\n\n\t- C').map((r) => [r.from, r.end])).toEqual([
+      [0, null],
+      [4, 'elbow'],
     ])
+  })
+
+  it('a flush line or blank line inside a block an item carries keeps the rail running', () => {
+    const t = '- a\n\t- b\n\t  ```\nflush\n\n\t  ```\n\t- c\n- d'
+    expect(
+      rails(t)
+        .filter((r) => r.level === 0)
+        .map((r) => r.end),
+    ).toEqual([null, null, null, null, null, null, 'cap'])
   })
 
   it('a run curves into its last line unless the next line is an item at its own level, and deeper runs ending there join the curve', () => {
