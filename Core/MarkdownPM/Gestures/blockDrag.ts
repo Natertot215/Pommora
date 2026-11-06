@@ -5,7 +5,7 @@ import { docScan, docString } from '../docCache'
 import { shadeField, type Boundary } from './dragChrome'
 import { beginRelocateDrag, editorGestureCleanup } from './editorGesture'
 import { gutterLineAt, lineElementAt, textColumn } from '../lineDom'
-import { moveRange } from '../Engine/listModel'
+import { moveRange } from '../Engine/blockMove'
 import { GRIP_LINE } from '../Engine/intents'
 import type { BlockSpan } from '../Engine/detect'
 
