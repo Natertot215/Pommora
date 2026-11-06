@@ -13,9 +13,11 @@ import {
   cursorGroupLeft,
   cursorGroupRight,
   defaultKeymap,
+  deleteCharForward,
   deleteGroupBackward,
   deleteGroupForward,
   insertBlankLine,
+  insertNewline,
   insertNewlineAndIndent,
   selectGroupLeft,
   selectGroupRight,
@@ -53,12 +55,12 @@ import { fenceAt, isWordChar, lineEndOf, lineIndexAt, lineOffsetsOf } from '../E
 import { shownEnd } from '../Links/linkEdit'
 import { embedTileRanges } from '../Embeds/embedWidget'
 import { caretInMargin, type DocScan, signSeatAt } from '../Engine/docScan'
-import { signedLine } from '../Engine/detect'
+import { type MarkdownScope, signedLine } from '../Engine/detect'
 import { blockLanguage, blockLines } from '../codeHighlight'
 import { commitCitation, seedTypedCitation } from '../Citations/citationActions'
 import { citationDeleteIntent } from '../Citations/citationEdits'
 import { docLineIntentsOf, docScan } from '../docCache'
-import { prefixEndAt } from '../Engine/intents'
+import { prefixEndAt, seatPastMarker } from '../Engine/intents'
 import { editorHost } from '../api'
 
 const settingsOf = (view: EditorView) => view.state.facet(editorHost).settings()
@@ -66,11 +68,16 @@ const settingsOf = (view: EditorView) => view.state.facet(editorHost).settings()
 const apply = (view: EditorView, edit: Edit | null): boolean =>
   applyEdit(view, edit, { scrollIntoView: true })
 
+const onItem = (scan: DocScan, at: number): boolean => scan.markers[lineIndexAt(scan, at)] !== null
+
+// From a caret on an item, Tab and Shift-Tab are the list's, holding at either end; over a range or off an item the key is the surface's.
 const nest =
   (transform: (scan: DocScan, selStart: number, selEnd: number) => Edit | null) =>
   (view: EditorView): boolean => {
     const s = view.state.selection.main
-    apply(view, transform(docScan(view.state), s.from, s.to))
+    const scan = docScan(view.state)
+    if (!s.empty || !onItem(scan, s.from)) return false
+    apply(view, transform(scan, s.from, s.to))
     return true
   }
 
@@ -210,6 +217,52 @@ export const smartDelete = (view: EditorView): boolean => {
   )
 }
 
+// Enter on an item is the list's, a break wherever it can't continue: before the marker, or over a selection.
+const onItemEnter = (view: EditorView): boolean => {
+  const { from, to } = view.state.selection.main
+  const scan = docScan(view.state)
+  if (!onItem(scan, from)) return false
+  return apply(view, continueListOnEnter(scan, from, to)) || insertNewline(view)
+}
+
+// A marker the caret lands INSIDE after an edit reads as a caret that went nowhere, so it takes the seat the marker hands it — the one a pointer press already gets.
+export const seatPastMarkerNow = (view: EditorView): void => {
+  const s = view.state.selection.main
+  if (!s.empty) return
+  const seat = seatPastMarker(docLineIntentsOf(view.state), docScan(view.state), s.head)
+  if (seat !== null && seat !== s.head) view.dispatch({ selection: EditorSelection.cursor(seat) })
+}
+
+const seated =
+  (command: Command): Command =>
+  (view) => {
+    if (!command(view)) return false
+    seatPastMarkerNow(view)
+    return true
+  }
+
+// Nothing sits above a first line, so a Backspace on an empty one takes the break ahead rather than refusing, and the content below comes up to meet the caret.
+const joinEmptyHead = (view: EditorView): boolean => {
+  const s = view.state.selection.main
+  const doc = view.state.doc
+  if (!s.empty || s.from !== 0 || doc.lines < 2 || doc.line(1).length !== 0) return false
+  view.dispatch({ changes: { from: 0, to: 1 }, userEvent: 'delete' })
+  return true
+}
+
+/** What a list claims on every surface, ahead of what each surface binds for a key no list claims. A page's Enter and deletes hold closers, citations, and quotes a list doesn't, so its own chain keeps them. */
+export const listKeys = (scope: MarkdownScope): KeyBinding[] => [
+  { key: 'Tab', run: nest(indentListOnTab) },
+  { key: 'Shift-Tab', run: nest(outdentListOnShiftTab) },
+  ...(scope === 'page'
+    ? []
+    : [
+        { key: 'Enter', run: onItemEnter },
+        { key: 'Backspace', run: seated(joinEmptyHead) },
+        { key: 'Delete', run: seated(deleteCharForward) },
+      ]),
+]
+
 // Except inside a callout, where it stays in the box. An unclosed pair is closed first so the break never lands inside it.
 const onShiftEnter = (view: EditorView): boolean => {
   const s = view.state.selection.main
@@ -233,7 +286,7 @@ export const wrapChords: KeyBinding[] = Object.entries({ "'": '"', 8: '*', 9: '(
   }),
 )
 
-/** Every typed character on both surfaces: a cell skips the callout shorthand and the citation seed, which write page constructs. */
+/** Every typed character on every surface: only a page takes the callout shorthand and the citation seed, which write page constructs. */
 export const typedInput: Extension = EditorView.inputHandler.of((view, from, to, text) => {
   // Never dispatch mid-composition: a transaction there aborts or garbles the IME session.
   if (view.composing || view.compositionStarted) return false
@@ -276,8 +329,8 @@ export const markdownInput = [
       { key: 'Enter', run: onEnter },
       { key: 'Shift-Enter', run: onShiftEnter },
       { key: 'Mod-Enter', run: diffBreak(insertBlankLine, ' ') },
-      { key: 'Tab', run: nest(indentListOnTab) },
-      { key: 'Shift-Tab', run: nest(outdentListOnShiftTab) },
+      { key: 'Tab', run: () => true },
+      { key: 'Shift-Tab', run: () => true },
       { key: 'Delete', run: onForwardDelete },
       // Shift+Backspace joins like Backspace inside a callout instead of falling to the default delete, which would erode the body prefix.
       { key: 'Shift-Backspace', run: smartDelete },

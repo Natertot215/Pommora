@@ -1,24 +1,15 @@
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import { EditorView, keymap } from '@codemirror/view'
-import { EditorSelection, EditorState, Prec } from '@codemirror/state'
-import { deleteCharForward, historyKeymap, redo, undo } from '@codemirror/commands'
+import { EditorState, Prec } from '@codemirror/state'
+import { historyKeymap, redo, undo } from '@codemirror/commands'
 import { useReconfigured } from '../Input/useReconfigured'
 import { formatKeymap } from '../Input/formatKeymap'
 import { cellCitations } from './cellCitations'
-import {
-  continueListOnEnter,
-  indentListOnTab,
-  outdentListOnShiftTab,
-  type Edit,
-} from '../Input/edits'
-import type { ListMarker } from '../Engine/detect'
 import { cellToSource } from '../Engine/Tables/codec'
 import { decodePayload, type TablePayload } from '../Engine/Tables/clipboard'
-import { applyEdit } from '../Input/applyEdit'
-import { docLineIntentsOf, docScan } from '../docCache'
+import { seatPastMarkerNow } from '../Input/markdownInput'
+import { docScan } from '../docCache'
 import { lineIndexAt } from '../Engine/markdownCode'
-import type { DocScan } from '../Engine/docScan'
-import { seatPastMarker } from '../Engine/intents'
 import { useConnectionAutocomplete } from '../Autocomplete/useConnectionAutocomplete'
 import { AutocompletePane } from '../Autocomplete/AutocompletePane'
 import type { NavDir } from '../Engine/Tables/navigate'
@@ -38,51 +29,12 @@ const consume =
     return true
   }
 
-/** The list transforms are pure over the cell's own document; a null hands the key back to the table's navigation. */
-const listEdit =
-  (transform: (scan: DocScan, selStart: number, selEnd: number) => Edit | null) =>
-  (view: EditorView): boolean => {
-    const s = view.state.selection.main
-    return applyEdit(view, transform(docScan(view.state), s.from, s.to))
-  }
-
-const continueList = listEdit(continueListOnEnter)
-const nestList = listEdit(indentListOnTab)
-const unnestList = listEdit(outdentListOnShiftTab)
-
-const listLineAt = (view: EditorView): ListMarker | null => {
-  const scan = docScan(view.state)
-  return scan.markers[lineIndexAt(scan, view.state.selection.main.from)]
-}
-
-// A key the list holds has to be one a transform could act on. With a range selected none applies, so holding it would leave a dead key where the cell would otherwise navigate.
-const listClaims = (view: EditorView): boolean =>
-  view.state.selection.main.empty && listLineAt(view) !== null
-
-// A marker the caret lands INSIDE after an edit reads as a caret that went nowhere, so it takes the seat the marker hands it — the one a pointer press already gets.
-const seatPastMarkerNow = (view: EditorView): void => {
-  const s = view.state.selection.main
-  if (!s.empty) return
-  const seat = seatPastMarker(docLineIntentsOf(view.state), docScan(view.state), s.head)
-  if (seat !== null && seat !== s.head) view.dispatch({ selection: EditorSelection.cursor(seat) })
-}
-
-// Nothing sits above a cell's first line, so a Backspace on an empty one takes the break ahead rather than refusing, and the content below comes up to meet the caret.
-const joinEmptyHead = (view: EditorView): boolean => {
-  const s = view.state.selection.main
-  const doc = view.state.doc
-  if (!s.empty || s.from !== 0 || doc.lines < 2 || doc.line(1).length !== 0) return false
-  view.dispatch({ changes: { from: 0, to: 1 }, userEvent: 'delete' })
-  return true
-}
-
-/** The item nothing further down the cell belongs to — a nested item below still carries the list on. */
+/** A caret on the cell's last item — a nested item below still carries the list on. */
 const atListEnd = (view: EditorView): boolean => {
   const scan = docScan(view.state)
-  for (let i = lineIndexAt(scan, view.state.selection.main.from) + 1; i < scan.lines.length; i++) {
-    if (scan.markers[i]) return false
-  }
-  return true
+  const s = view.state.selection.main
+  const k = lineIndexAt(scan, s.from)
+  return s.empty && scan.markers[k] !== null && scan.markers.slice(k + 1).every((m) => m === null)
 }
 
 export type Seat =
@@ -169,52 +121,16 @@ export function CellEditor({
           }),
           Prec.highest(
             keymap.of([
-              // In a list Tab is nest and nothing else; at the deepest level it holds, as Shift-Tab does at the shallowest.
-              {
-                key: 'Tab',
-                run: consume((view) => {
-                  if (!listClaims(view)) return onNavigateRef.current('next')
-                  nestList(view)
-                }),
-              },
-              {
-                key: 'Shift-Tab',
-                run: consume((view) => {
-                  if (!listClaims(view)) return onNavigateRef.current('prev')
-                  unnestList(view)
-                }),
-              },
-              {
-                key: 'Enter',
-                run: consume((view) => {
-                  // The cell is left from a line no list owns; on one a list owns, the body writes a break wherever it cannot continue — before the marker, or over a selection.
-                  if (!listLineAt(view)) return onNavigateRef.current('down')
-                  if (!continueList(view)) view.dispatch(view.state.replaceSelection('\n'))
-                }),
-              },
+              { key: 'Tab', run: consume(() => onNavigateRef.current('next')) },
+              { key: 'Shift-Tab', run: consume(() => onNavigateRef.current('prev')) },
+              { key: 'Enter', run: consume(() => onNavigateRef.current('down')) },
               // The exit is the list's final item alone; above it, and outside a list, the break is the body's own, and the row does NOT split, because cellToSource serializes it as <br> on disk.
               {
                 key: 'Shift-Enter',
                 run: consume((view) => {
-                  if (listClaims(view) && atListEnd(view)) return onNavigateRef.current('down')
+                  if (atListEnd(view)) return onNavigateRef.current('down')
                   view.dispatch(view.state.replaceSelection('\n'))
                 }),
-              },
-              {
-                key: 'Backspace',
-                run: (view) => {
-                  if (!joinEmptyHead(view)) return false
-                  seatPastMarkerNow(view)
-                  return true
-                },
-              },
-              {
-                key: 'Delete',
-                run: (view) => {
-                  if (!deleteCharForward(view)) return false
-                  seatPastMarkerNow(view)
-                  return true
-                },
               },
               // The main editor can't catch these itself (the widget's ignoreEvent), so the cell forwards them to the page history.
               ...HISTORY_BINDINGS.map((b) => ({

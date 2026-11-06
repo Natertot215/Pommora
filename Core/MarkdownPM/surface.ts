@@ -9,6 +9,7 @@ import { linkSettle, linkWriting, type Remembers } from './Links/linkSettle'
 import { listRenumber } from './Input/listRenumber'
 import {
   editorKeymap,
+  listKeys,
   smartDelete,
   typedInput,
   wordGestures,
@@ -61,7 +62,7 @@ const sharedSurface = (
   editorMenu(scope),
 ]
 
-/** What every editor holds beside its surface: its panes, with Enter and Tab picking the open one's row, the marker- and pair-aware Backspace, and the format chords, ahead of the default keymap, which also binds Mod-i and Mod-[. Each mount adds only what it alone holds. */
+/** What every editor holds beside its surface: its panes, with Enter and Tab picking the open one's row, the marker- and pair-aware Backspace, the list keys, and the format chords, ahead of the default keymap, which also binds Mod-i and Mod-[. Each mount adds only what it alone holds. */
 export const editorBase = ({
   host,
   scope,
@@ -84,6 +85,7 @@ export const editorBase = ({
       ...paneKeys(panes.map((p) => p.ctl)),
       { key: 'Enter', run: commitAliasOnEnter },
       { key: 'Backspace', run: smartDelete },
+      ...listKeys(scope),
     ]),
   ),
   panes.map((p) => p.extension),

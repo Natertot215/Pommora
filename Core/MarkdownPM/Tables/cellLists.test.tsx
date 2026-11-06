@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from 'vitest'
 import { act } from 'react'
-import { EditorView } from '@codemirror/view'
+import { EditorView, runScopeHandlers } from '@codemirror/view'
 import {
   cleanupEditor,
   editorContainer,
@@ -125,6 +125,18 @@ describe('the list vocabulary inside a table cell', () => {
     await enterCell()
     await press('Tab')
     expect(liveColumn()).toBe(1)
+  })
+
+  it('a page holds Tab off an item and over a range, where a cell moves on', async () => {
+    const view = await mountEditor({ initialBody: 'plain\n- a' })
+    for (const selection of [{ anchor: 2 }, { anchor: 8, head: 9 }]) {
+      await act(async () => view.dispatch({ selection }))
+      for (const shiftKey of [false, true]) {
+        const tab = new KeyboardEvent('keydown', { key: 'Tab', shiftKey })
+        expect(runScopeHandlers(view, tab, 'editor')).toBe(true)
+      }
+    }
+    expect(view.state.doc.toString()).toBe('plain\n- a')
   })
 
   it('Tab holds the cell at the deepest level, as Shift-Tab holds it at the shallowest', async () => {
