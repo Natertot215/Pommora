@@ -63,7 +63,7 @@ const tokenHidden = (scope: MarkdownScope) =>
     8192,
   )
 const pageHidden = tokenHidden('page')
-const cellHidden = tokenHidden('cell')
+const cellHidden = tokenHidden('lists')
 
 const hiddenIn = (text: string, hidden = pageHidden): Hidden[] =>
   holdsTokens(text) ? hidden(text) : NOTHING_HIDDEN

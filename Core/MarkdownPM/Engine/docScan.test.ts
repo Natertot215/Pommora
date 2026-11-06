@@ -186,7 +186,7 @@ describe('rescan — the incremental scan is the full scan', () => {
       let text = soup(r, 5 + Math.floor(r() * 40))
       let scan = scanDoc(text)
       let page = docLineIntents(scan)
-      let cellScan = scanDoc(text, 'cell')
+      let cellScan = scanDoc(text, 'lists')
       let cell = docLineIntents(cellScan)
       for (let step = 0; step < 30; step++) {
         const e = edit(r, text)
@@ -195,7 +195,7 @@ describe('rescan — the incremental scan is the full scan', () => {
         const nextPage = stepLineIntents(page, scan, stepped)
         const steppedCell = rescan(cellScan, e.from, e.to, next)
         if (
-          !isDeepStrictEqual({ ...steppedCell, fresh: 0 }, { ...scanDoc(next, 'cell'), fresh: 0 })
+          !isDeepStrictEqual({ ...steppedCell, fresh: 0 }, { ...scanDoc(next, 'lists'), fresh: 0 })
         )
           expect.fail(`cell rescan seed ${seed}\n${JSON.stringify([text, next, e.from, e.to])}`)
         const nextCell = stepLineIntents(cell, cellScan, steppedCell)

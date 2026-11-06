@@ -9,7 +9,7 @@ const stateOf = (
   doc: string,
   caret: number,
   settings: Partial<EditorSettings> = {},
-  scope: 'page' | 'cell' = 'page',
+  scope: 'page' | 'lists' = 'page',
 ) =>
   EditorState.create({
     doc,

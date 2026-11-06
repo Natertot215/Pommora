@@ -505,15 +505,15 @@ export function calloutHeadPrefixLen(line: string): number | null {
   return tag ? pfx.length + tag[0].length : null
 }
 
-// A page reads every block; a table cell reads the list vocabulary and nothing else of them, so a `#`, a fence, a quote marker and a rule are literal text there; a Text value reads the inline marks alone, so a list marker is literal text too.
-export type MarkdownScope = 'page' | 'cell' | 'text'
+// `page` reads every block; `lists` reads the list vocabulary and nothing else of them, so a `#`, a fence, a quote marker and a rule are literal text there; `inline` reads the inline marks alone, so a list marker is literal text too.
+export type MarkdownScope = 'page' | 'lists' | 'inline'
 
 export function readsLists(scope: MarkdownScope): boolean {
   switch (scope) {
     case 'page':
-    case 'cell':
+    case 'lists':
       return true
-    case 'text':
+    case 'inline':
       return false
   }
 }

@@ -23,7 +23,7 @@ import type { ListKind } from '../MarkdownPM/Engine/detect'
 
 /** What sits under a right-click, sent to the host as the menu is asked for; main cannot see CM6 state. */
 export const editorMenuRequest = z.object({
-  scope: z.enum(['page', 'cell', 'text']),
+  scope: z.enum(['page', 'lists', 'inline']),
   x: z.number(),
   y: z.number(),
   bold: z.boolean(),
@@ -163,9 +163,9 @@ export function editorContextItems(
   switch (s.scope) {
     case 'page':
       return [...insertLink, lists, insert, format, embed, heading]
-    case 'cell':
+    case 'lists':
       return [...insertLink, lists, format]
-    case 'text':
+    case 'inline':
       return [...insertLink, format]
   }
 }

@@ -90,7 +90,7 @@ export function ValueEditor({
       state: EditorState.create({
         doc: initial,
         extensions: [
-          editorBase({ host, scope: 'text', panes: [ac], formatExt, oneLine, remembers }),
+          editorBase({ host, scope: 'inline', panes: [ac], formatExt, oneLine, remembers }),
           heldPage.of(holder ?? null),
           history(),
           oneLine

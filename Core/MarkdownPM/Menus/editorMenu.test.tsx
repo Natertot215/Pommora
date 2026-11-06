@@ -216,7 +216,7 @@ describe('the editor’s native menu', () => {
     await rightClick(cell, 0)
     expect(format).toHaveBeenCalledTimes(1)
     expect(format).toHaveBeenCalledWith(
-      expect.objectContaining({ scope: 'cell', embedSeat: false, citeSeat: false }),
+      expect.objectContaining({ scope: 'lists', embedSeat: false, citeSeat: false }),
     )
     await act(async () => {})
     expect(page.state.doc.toString()).toBe(`before\n\n| A | B |\n| --- | --- |\n| **x** | z |`)

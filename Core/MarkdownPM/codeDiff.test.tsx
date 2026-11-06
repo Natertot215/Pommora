@@ -182,7 +182,7 @@ describe('a diff fence’s caret', () => {
   })
 
   it('belongs to the page alone, so a cell keeps the side it was given', () => {
-    const side = (scope: 'page' | 'cell') =>
+    const side = (scope: 'page' | 'lists') =>
       EditorState.create({
         doc,
         extensions: [surfaceScope.of(scope), markdownDecorations],
@@ -191,7 +191,7 @@ describe('a diff fence’s caret', () => {
         userEvent: 'select',
       }).state.selection.main.assoc
     expect(side('page')).toBe(1)
-    expect(side('cell')).toBe(-1)
+    expect(side('lists')).toBe(-1)
   })
 
   it('takes only a sign in the margin, and anything at the code’s start', async () => {

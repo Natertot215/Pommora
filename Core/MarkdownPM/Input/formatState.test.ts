@@ -18,7 +18,7 @@ describe('readFormatState', () => {
   it('reads list kind, blockquote, and code block', () => {
     expect(readFormatState(scanDoc('- [ ] task'), 7, 7, {}).list).toBe('checkbox')
     expect(readFormatState(scanDoc('1. item'), 4, 4, {}).list).toBe('ordered')
-    expect(readFormatState(scanDoc('1. item', 'text'), 4, 4, {}).list).toBeNull()
+    expect(readFormatState(scanDoc('1. item', 'inline'), 4, 4, {}).list).toBeNull()
     expect(readFormatState(scanDoc('> quote'), 3, 3, {}).block).toBe('quote')
     const fence = '```\n> code\n```'
     for (const at of [0, 6, fence.length])

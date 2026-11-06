@@ -77,7 +77,7 @@ const anyCellLive = (): boolean =>
 
 describe('the list vocabulary inside a table cell', () => {
   it('draws a bullet and its level, and leaves a heading, a rule and a quote as prose', () => {
-    const list = decorationsFor('- a\n\t- b', [], new Set(), -1, scanDoc('- a\n\t- b', 'cell'))
+    const list = decorationsFor('- a\n\t- b', [], new Set(), -1, scanDoc('- a\n\t- b', 'lists'))
     expect(
       list.filter((i) => i.kind === 'line' && i.className.includes('md-list-item')),
     ).toHaveLength(2)
@@ -85,7 +85,7 @@ describe('the list vocabulary inside a table cell', () => {
     expect(list.find((i) => i.kind === 'line' && i.level === 1)).toBeTruthy()
 
     const prose = '# h\n---\n> q\n```\nx\n```'
-    expect(decorationsFor(prose, [], new Set(), -1, scanDoc(prose, 'cell'))).toHaveLength(0)
+    expect(decorationsFor(prose, [], new Set(), -1, scanDoc(prose, 'lists'))).toHaveLength(0)
     expect(decorationsFor(prose, [], new Set(), -1).length).toBeGreaterThan(0)
   })
 
@@ -295,7 +295,7 @@ describe('the list vocabulary inside a table cell', () => {
       ['- [] x', '[] x'],
       ['+ a', 'a'],
     ]) {
-      const live = decorationsFor(source, [], new Set(), -1, scanDoc(source, 'cell'))
+      const live = decorationsFor(source, [], new Set(), -1, scanDoc(source, 'lists'))
       expect(live.some((d) => d.kind === 'widget' && d.spec.type === 'bullet')).toBe(true)
       await mountEditor({ initialBody: table(source) })
       const cell = (await tableEl()).querySelector('tbody')!.children[0].children[0]
@@ -397,7 +397,7 @@ describe('the list vocabulary inside a table cell', () => {
 
 describe('a block construct spelled in a cell, which reads as its text', () => {
   const kinds = (text: string): string[] =>
-    blockStarts(scanDoc(text, 'cell')).map((block) => block.kind)
+    blockStarts(scanDoc(text, 'lists')).map((block) => block.kind)
 
   it('pairs a bracket and paints a mark between fence-shaped lines', async () => {
     await mountEditor({ initialBody: table('```<br>*a*<br>```') })
@@ -413,7 +413,7 @@ describe('a block construct spelled in a cell, which reads as its text', () => {
 
   it('writes a format row between fence-shaped lines', () => {
     const text = '```\nword\n```'
-    const edit = editFor('format:bold', scanDoc(text, 'cell'), 4, 8, {})
+    const edit = editFor('format:bold', scanDoc(text, 'lists'), 4, 8, {})
     expect(edit?.changes.map((c) => c.insert)).toEqual(['**', '**'])
   })
 
@@ -427,7 +427,7 @@ describe('a block construct spelled in a cell, which reads as its text', () => {
 
   it('draws `$$` lines as text in a live cell, as a resting cell does', () => {
     expect(tokenize('$$\nx\n$$').some((t) => t.kind === 'blockLatex')).toBe(true)
-    expect(tokenize('$$\nx\n$$', 'cell').some((t) => t.kind === 'blockLatex')).toBe(false)
+    expect(tokenize('$$\nx\n$$', 'lists').some((t) => t.kind === 'blockLatex')).toBe(false)
   })
 
   it('draws a `§` run between fence-shaped lines at rest, as a live cell reads it', () => {
@@ -439,6 +439,6 @@ describe('a block construct spelled in a cell, which reads as its text', () => {
   it('binds no `[^1]:` note, since a cell has no citation tail', () => {
     const text = '[^1] x\n[^1]: note'
     expect(scanDoc(text).citations.entries).toHaveLength(1)
-    expect(scanDoc(text, 'cell').citations.entries).toHaveLength(0)
+    expect(scanDoc(text, 'lists').citations.entries).toHaveLength(0)
   })
 })

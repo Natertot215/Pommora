@@ -61,8 +61,8 @@ export type CellPage = Pick<PageHeadings, 'keys' | 'texts'> & {
 }
 
 // KNOB — distinct cell texts remembered; a table scrolling back in re-reads its cells from here.
-const cellTokens = perText((text) => tokenize(text, 'cell'), 4096)
-const cellScan = perText((text) => scanDoc(text, 'cell'), 4096)
+const cellTokens = perText((text) => tokenize(text, 'lists'), 4096)
+const cellScan = perText((text) => scanDoc(text, 'lists'), 4096)
 
 type Drawn = Token | { kind: 'section'; range: [number, number]; contentRange: [number, number] }
 
@@ -462,7 +462,7 @@ function StaticCellImpl({
 }): React.JSX.Element {
   const commitAtRest = (edits: readonly TextEdit[], userEvent = 'input'): boolean => {
     if (current() !== text) return false
-    const next = landEdit(text, edits, userEvent, 'cell')
+    const next = landEdit(text, edits, userEvent, 'lists')
     if (next === text) return false
     onCommit(next)
     return true

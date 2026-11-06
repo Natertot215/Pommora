@@ -150,7 +150,7 @@ describe('the window’s right-click', () => {
   describe('over a resting cell, which Chromium reports as not editable', () => {
     const resting = (selection: string): EditorMenuRequest => ({
       ...req(10, 10),
-      scope: 'cell',
+      scope: 'lists',
       resting: { selection },
     })
 

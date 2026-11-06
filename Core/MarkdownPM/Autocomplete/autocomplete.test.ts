@@ -391,10 +391,12 @@ describe('a pick reads an embed as the scanner does', () => {
     expect(pick('![[Notes]]')).toBe('![[A/Notes]]')
   })
 
-  it('a table cell draws no embed, so one alone in it keeps the title alias', () => {
+  it('only a page draws an embed, so one alone in a cell or a value keeps the title alias', () => {
     const doc = '![[Notes'
-    const ac = queryOf(scanDoc(doc, 'cell'), doc.length, undefined)!
-    expect(landed(doc, commitEdit(ac, 'A/Notes', {}))).toBe('![[A/Notes|Notes]]')
+    for (const scope of ['lists', 'inline'] as const) {
+      const ac = queryOf(scanDoc(doc, scope), doc.length, undefined)!
+      expect(landed(doc, commitEdit(ac, 'A/Notes', {}))).toBe('![[A/Notes|Notes]]')
+    }
   })
 })
 

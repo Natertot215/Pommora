@@ -81,19 +81,19 @@ describe('the editor’s right-click block', () => {
 
   it('trims a cell’s block to Insert Link, Format, and Lists', () => {
     expect(
-      editorContextItems({ ...state, scope: 'cell' }, DEFAULT_COMMANDS, '').map((i) => i.label),
+      editorContextItems({ ...state, scope: 'lists' }, DEFAULT_COMMANDS, '').map((i) => i.label),
     ).toEqual(['Lists', 'Format'])
     expect(
-      editorContextItems({ ...state, scope: 'cell' }, DEFAULT_COMMANDS, 'https://a.com')[0].label,
+      editorContextItems({ ...state, scope: 'lists' }, DEFAULT_COMMANDS, 'https://a.com')[0].label,
     ).toBe('Insert Link')
   })
 
   it('trims a Text value’s block to Insert Link and Format', () => {
     expect(
-      editorContextItems({ ...state, scope: 'text' }, DEFAULT_COMMANDS, '').map((i) => i.label),
+      editorContextItems({ ...state, scope: 'inline' }, DEFAULT_COMMANDS, '').map((i) => i.label),
     ).toEqual(['Format'])
     expect(
-      editorContextItems({ ...state, scope: 'text' }, DEFAULT_COMMANDS, 'https://a.com').map(
+      editorContextItems({ ...state, scope: 'inline' }, DEFAULT_COMMANDS, 'https://a.com').map(
         (i) => i.label,
       ),
     ).toEqual(['Insert Link', 'Format'])

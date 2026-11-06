@@ -101,7 +101,7 @@ export function autocompleteQuery(
     query,
     closed: closedLink !== null || o.full[1] > rel,
     embed:
-      scan.scope !== 'cell' &&
+      scan.scope === 'page' &&
       o.syntax === 'wiki' &&
       loneEmbedTitle(`${line.slice(0, o.full[0])}[[]]${line.slice(o.full[1])}`) !== null,
     ...(part === 'title' ? {} : { title: named?.title ?? '' }),

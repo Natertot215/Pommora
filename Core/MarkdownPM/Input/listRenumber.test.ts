@@ -88,7 +88,7 @@ describe('an edit landed in a cell', () => {
   it('recounts a run between fence-shaped lines, which a cell reads as lines', () => {
     const doc = '```\n1. a\n2. b\n3. c\n```'
     const from = doc.indexOf('2. b')
-    expect(landEdit(doc, [{ from, to: from + 5, insert: '' }], 'delete', 'cell')).toBe(
+    expect(landEdit(doc, [{ from, to: from + 5, insert: '' }], 'delete', 'lists')).toBe(
       '```\n1. a\n2. c\n```',
     )
   })

@@ -584,7 +584,7 @@ export function seatPastMarker(
 ): number | null {
   const line = cached.perLine[lineIndexAt(scan, pos)]
   // A REPLACED marker — a bullet, a checkbox — draws nothing the caret can sit against, so a press at its start reveals the source instead of landing on the item.
-  if (scan.scope === 'cell') {
+  if (scan.scope === 'lists') {
     let end = pos
     for (let moved = true; moved; ) {
       moved = false

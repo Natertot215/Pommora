@@ -78,7 +78,7 @@ export function perScopedDoc<T>(
   step: (prev: T, tr: Transaction) => T,
 ): PerScopedDoc<T> {
   const perScope = (scope: MarkdownScope): PerDoc<T> => perDoc((doc) => derive(doc, scope), step)
-  const scoped = { page: perScope('page'), cell: perScope('cell'), text: perScope('text') }
+  const scoped = { page: perScope('page'), lists: perScope('lists'), inline: perScope('inline') }
   return Object.assign((state: EditorState) => scoped[state.facet(surfaceScope)](state.doc), {
     after: (tr: Transaction) => scoped[tr.startState.facet(surfaceScope)].after(tr),
     of: (doc: Text, scope: MarkdownScope) => scoped[scope](doc),

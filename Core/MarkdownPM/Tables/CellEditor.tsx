@@ -150,7 +150,7 @@ export function CellEditor({
         extensions: [
           editorBase({
             host,
-            scope: 'cell',
+            scope: 'lists',
             panes: [ac],
             formatExt,
           }),

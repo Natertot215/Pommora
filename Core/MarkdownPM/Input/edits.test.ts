@@ -94,7 +94,7 @@ describe('list continuation (Enter)', () => {
         const end = doc.indexOf(line) + line.length
         expect(continueListOnEnter(scan, end, end)).toBeNull()
         expect(indentListOnTab(scan, end, end)).toBeNull()
-        expect(continueListOnEnter(scanDoc(doc, 'cell'), end, end)).not.toBeNull()
+        expect(continueListOnEnter(scanDoc(doc, 'lists'), end, end)).not.toBeNull()
       }
       const text = doc.indexOf('one')
       expect(smartBackspace(scan, text, text)).toBeNull()

@@ -136,7 +136,7 @@ export async function pastedCellText(
   text: string,
   how: PasteMode,
 ): Promise<TextEdit> {
-  const { from, to, write } = pasteEdit(scanDoc(doc, 'cell'), sel, text, how, host, null)
+  const { from, to, write } = pasteEdit(scanDoc(doc, 'lists'), sel, text, how, host, null)
   return { from, to, insert: await settledLinkText(host, write) }
 }
 

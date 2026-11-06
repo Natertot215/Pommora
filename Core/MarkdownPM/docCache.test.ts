@@ -144,7 +144,7 @@ describe('docCache — every version steps from the last', () => {
       '$$\n',
       '```\n',
     ]
-    for (const scope of ['page', 'cell'] as const) {
+    for (const scope of ['page', 'lists'] as const) {
       let seed = 7
       const next = (k: number): number => {
         seed = (seed * 1103515245 + 12345) % 2147483648

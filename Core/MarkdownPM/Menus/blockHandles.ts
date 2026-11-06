@@ -40,7 +40,7 @@ export const blockHandles: Extension = EditorView.decorations.compute(['doc'], (
   const page = scan.scope === 'page'
   const ranges: Range<Decoration>[] = []
   for (const b of blockStarts(scan)) {
-    // A cell speaks the list vocabulary alone, so a list is the only block there with anything for a grip to move or a menu to offer.
+    // `lists` speaks the list vocabulary alone, so a list is the only block there with anything for a grip to move or a menu to offer.
     if (GRIP_KINDS.has(b.kind) && (page || b.kind === 'list')) ranges.push(handleLine.range(b.from))
     else if (b.kind === 'blockquote')
       ranges.push(Decoration.widget({ widget: gripWidget, side: -1 }).range(b.from))
@@ -177,9 +177,9 @@ export function pointerReveal(): Extension {
     }),
     EditorView.domEventHandlers({
       pointermove(e, view) {
-        // A cell's grip lives inside the text column rather than left of it, so hovering the list at all is what reveals it — but the gate stays, as a DOM walk rather than a measurement, because posAtCoords below reads layout.
+        // At `lists` a grip lives inside the text column rather than left of it, so hovering the list at all is what reveals it — but the gate stays, as a DOM walk rather than a measurement, because posAtCoords below reads layout.
         const cheapMiss =
-          docScan(view.state).scope === 'cell'
+          docScan(view.state).scope === 'lists'
             ? !(e.target as HTMLElement).closest?.('.cm-line.md-list-item')
             : e.clientX >= columnLeft(view)
         if (cheapMiss) {

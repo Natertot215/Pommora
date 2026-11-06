@@ -173,7 +173,7 @@ describe('a right-click on a resting cell', () => {
     const event = await rightClick('plain words', 3)
     expect(format).toHaveBeenCalledWith(
       expect.objectContaining({
-        scope: 'cell',
+        scope: 'lists',
         x: 12,
         y: 34,
         embedSeat: false,

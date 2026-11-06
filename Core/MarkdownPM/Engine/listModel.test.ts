@@ -52,7 +52,7 @@ const lineStart = (doc: string, needle: string): number => doc.indexOf(needle)
 describe('a drop in a cell', () => {
   it('recounts a run between `$$` lines, which a cell reads as lines', () => {
     const doc = '$$\n1. a\n2. b\n3. c\n$$'
-    const scan = scanDoc(doc, 'cell')
+    const scan = scanDoc(doc, 'lists')
     const at = lineStart(doc, '1. a')
     const block = subBlockAt(scan, lineStart(doc, '3. c'))!
     const changes = dropChanges(scan, block, { at, line: lineIndexAt(scan, at) })!
@@ -150,7 +150,7 @@ describe('ordered list renumbers after a move', () => {
 describe('a drag recounts on its own surface', () => {
   it('reads fence-shaped lines in a cell as lines, moved text included', () => {
     const doc = '```\n1. a\n2. b\n```'
-    const scan = scanDoc(doc, 'cell')
+    const scan = scanDoc(doc, 'lists')
     const at = doc.indexOf('1. a')
     const block = subBlockAt(scan, doc.indexOf('2. b'))!
     const changes = dropChanges(scan, block, { at, line: lineIndexAt(scan, at) })
