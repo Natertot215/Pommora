@@ -1,0 +1,40 @@
+diff --git a/Core/MarkdownPM/Tables/cellStatic.tsx b/Core/MarkdownPM/Tables/cellStatic.tsx
+index c2e07cf88..d089ed153 100644
+--- a/Core/MarkdownPM/Tables/cellStatic.tsx
++++ b/Core/MarkdownPM/Tables/cellStatic.tsx
+@@ -49,7 +49,6 @@ import {
+ import { CITE_GLYPH, followCitation } from '../Citations/citationPointer'
+ import type { EditorHost } from '../api'
+ import { wordAt } from '../Input/markdownInput'
+-import { glyphAt } from '../lineDom'
+ import { routeRightClick } from '../Menus/menu'
+ import type { Seat } from './CellEditor'
+ import type { HeadingLinkStyle } from '../../Settings/personalization'
+@@ -550,24 +549,19 @@ function StaticCellImpl({
+ 
+   const restingMenu = (e: React.MouseEvent<HTMLElement>): void => {
+     const cell = e.currentTarget
+-    const glyph = glyphAt(e)
+     routeRightClick(
+       host,
+       scanDoc(text),
+       'cell',
+       e,
+       () => {
+-        const found = glyph ? null : document.caretPositionFromPoint(e.clientX, e.clientY)
++        const found = document.caretPositionFromPoint(e.clientX, e.clientY)
+         const caret = found && cell.contains(found.offsetNode) ? found : null
+-        const at = glyph
+-          ? srcOf(glyph)![0]
+-          : caret
+-            ? cellOffsetAt(cell, caret.offsetNode, caret.offset)
+-            : text.length
++        const at = caret ? cellOffsetAt(cell, caret.offsetNode, caret.offset) : text.length
+         const [from, to] = restingSelection(cell, at, text)
+         return {
+           at,
+-          glyph: glyph !== null,
++          glyph: false,
+           sel: { from, to },
+           word: () => {
+             const side = caret && sideOf(caret, e.clientX, e.clientY)

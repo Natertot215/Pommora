@@ -1,0 +1,30 @@
+diff --git a/Core/MarkdownPM/Input/listRenumber.ts b/Core/MarkdownPM/Input/listRenumber.ts
+index 4b844eec2..75abda9d9 100644
+--- a/Core/MarkdownPM/Input/listRenumber.ts
++++ b/Core/MarkdownPM/Input/listRenumber.ts
+@@ -1,7 +1,7 @@
+ import { type ChangeDesc, EditorState, type Extension } from '@codemirror/state'
+ import { docScan } from '../docCache'
+ import { itemAt, readsFrom, renumberRuns, rolesAgainst, subBlockAt } from '../Engine/listModel'
+-import { applyEdits, lineIndexAt, type TextEdit } from '../Engine/markdownCode'
++import { lineIndexAt, type TextEdit } from '../Engine/markdownCode'
+ import { isSequenced, type MarkdownScope } from '../Engine/detect'
+ 
+ /** The user event of an edit that writes list markers: Enter continuing a list, Tab and Shift+Tab, and every list-type pick. */
+@@ -9,7 +9,7 @@ const RELIST = 'input.list'
+ 
+ export const editEvent = (edit: { relist?: boolean }): string => (edit.relist ? RELIST : 'input')
+ 
+-// Every edit that reshapes a sequenced run counts it here, riding the same transaction so one undo takes both: a marker-writing edit recounts the runs it touched and, where a line it touched was numbered or lettered, the run just below that item's nesting, which is the one a nested or switched item left, and a numbered or lettered marker it wrote over whole restarts its run from 1 or A, while a re-pick that leaves the text as it was lands nothing; a deletion that removes a whole line closes the gap it leaves, and one that removes a whole numbered or lettered marker recounts the run below it, as a switched item does. Nothing inside a page's math or tables is counted, and a code block's own list counts only for a marker-writing edit inside it. The positions it recounts from map through the edit in one ascending sweep, `mapAscending`, landing where `mapPos(p, -1)` lands each, since mapping each on its own measured quadratic on a 20,000-line pick.
++// Every edit that reshapes a sequenced run counts it here, riding the same transaction so one undo takes both: a marker-writing edit recounts the runs it touched and, where a line it touched was numbered or lettered, the run just below that item's nesting, which is the one a nested or switched item left, and a numbered or lettered marker it wrote over whole restarts its run from 1 or A; a deletion that removes a whole line closes the gap it leaves, and one that removes a whole numbered or lettered marker recounts the run below it, as a switched item does. Nothing inside a page's math or tables is counted, and a code block's own list counts only for a marker-writing edit inside it. The positions it recounts from map through the edit in one ascending sweep, `mapAscending`, landing where `mapPos(p, -1)` lands each, since mapping each on its own measured quadratic on a 20,000-line pick.
+ export const listRenumber = (scope: MarkdownScope): Extension =>
+   EditorState.transactionFilter.of((tr) => {
+     if (!tr.docChanged) return tr
+@@ -60,7 +60,6 @@ export const listRenumber = (scope: MarkdownScope): Extension =>
+       arrived,
+       repicked,
+     )
+-    if (repicked.size > 0 && applyEdits(scan.text, changes) === was.text) return {}
+     return changes.length === 0 ? tr : [tr, { changes, sequential: true }]
+   })
+ 

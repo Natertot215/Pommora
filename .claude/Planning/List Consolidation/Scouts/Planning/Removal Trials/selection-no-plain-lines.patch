@@ -1,0 +1,23 @@
+diff --git a/Core/MarkdownPM/Input/format.ts b/Core/MarkdownPM/Input/format.ts
+index c4dd03e4e..bb7f06816 100644
+--- a/Core/MarkdownPM/Input/format.ts
++++ b/Core/MarkdownPM/Input/format.ts
+@@ -298,7 +298,7 @@ function selectedLines(doc: string, from: number, to: number): SelectedLine[] {
+     .filter((l) => from === to || !isBlank(doc.slice(l.ls + l.prefix.length, l.le)))
+ }
+ 
+-/** What a list-type pick reaches. A caret takes its item's group: with Preserve List-Level Formatting on, the siblings drawn as its type; off, the siblings and everything nested under them. A range takes every item it touches and turns its plain lines into items. A continuation answers for its item and a blank line for itself, a code block's lines only by a pick wholly inside it, and math, tables, a callout's head and a fence's delimiters never are. */
++/** What a list-type pick reaches. A caret takes its item's group: with Preserve List-Level Formatting on, the siblings drawn as its type; off, the siblings and everything nested under them. A range takes every item it touches. A continuation answers for its item and a blank line for itself, a code block's lines only by a pick wholly inside it, and math, tables, a callout's head and a fence's delimiters never are. */
+ function listReach(
+   scan: DocScan,
+   from: number,
+@@ -334,7 +334,8 @@ function listReach(
+     for (let k = anchor; k <= upTo; k++) {
+       while (open.length > 0 && open[open.length - 1].end < scan.lineStarts[k]) open.pop()
+       if (markerAt(k) !== null && k !== item) open.push({ k, end: endOf(k) })
+-      if (!blank(k)) reached.add(open[open.length - 1]?.k ?? k)
++      const owner = open[open.length - 1]?.k
++      if (owner !== undefined && !blank(k)) reached.add(owner)
+     }
+   }
+   const outOfReach = (k: number): boolean =>

@@ -1,0 +1,481 @@
+diff --git a/Core/Actions/gripMenu.ts b/Core/Actions/gripMenu.ts
+index 1a0e52cb8..f9abd7bc2 100644
+--- a/Core/Actions/gripMenu.ts
++++ b/Core/Actions/gripMenu.ts
+@@ -8,7 +8,7 @@ export type HeadingLevel = 0 | 1 | 2 | 3 | 4 | 5 | 6
+ export type GripMenuContext =
+   | { kind: 'embed'; tree: readonly PickItem<string>[]; zoom: number | null }
+   | { kind: 'webpage'; zoom: number | null }
+-  | { kind: 'list' | 'glyph'; current: ListKind | null }
++  | { kind: 'glyph'; current: ListKind | null }
+   | { kind: 'heading'; level: number; linkable: boolean; editable: boolean }
+   | { kind: 'plain' }
+ 
+@@ -71,8 +71,6 @@ function ownRows(ctx: GripMenuContext): ActionItem<GripMenuAction>[] {
+       ]
+     case 'webpage':
+       return [{ label: 'Edit Link', action: 'editLink' }, scaleRow(ctx.zoom)]
+-    case 'list':
+-      return [{ label: 'Type', submenu: listRows(ctx.current) }]
+     case 'glyph':
+       return listRows(ctx.current)
+     case 'heading': {
+diff --git a/Core/MarkdownPM/Engine/listModel.ts b/Core/MarkdownPM/Engine/listModel.ts
+index 1ebe99ca4..e7ee36b27 100644
+--- a/Core/MarkdownPM/Engine/listModel.ts
++++ b/Core/MarkdownPM/Engine/listModel.ts
+@@ -85,13 +85,13 @@ export function rolesAgainst(
+   }
+ }
+ 
+-/** The items a list draws at line `i`'s depth under its parent, in order, each side stopping at the first sibling `joins` rejects, and the last line the group's nesting reaches. Depth is quote depth and level, whatever whitespace indents a line, and a blank line outside a quote is a loose list's gap, while inside one it ends the quote. */
++/** The items a list draws at line `i`'s depth under its parent, in order, each side stopping at the first sibling `joins` rejects. Depth is quote depth and level, whatever whitespace indents a line, and a blank line outside a quote is a loose list's gap, while inside one it ends the quote. */
+ export function siblingsAt(
+   scan: DocScan,
+   i: number,
+   scope: MarkdownScope,
+   joins: (k: number) => boolean = () => true,
+-): { items: number[]; last: number } {
++): number[] {
+   const role = rolesAgainst(scan, i, scope)
+   const above: number[] = []
+   for (let k = i - 1; k >= 0; k--) {
+@@ -100,14 +100,12 @@ export function siblingsAt(
+     if (r === 'sibling') above.push(k)
+   }
+   const items = [...above.reverse(), i]
+-  let last = i
+   for (let k = i + 1; k < scan.lines.length; k++) {
+     const r = role(k)
+     if (r === 'ends' || (r === 'sibling' && !joins(k))) break
+     if (r === 'sibling') items.push(k)
+-    if (r !== 'blank') last = k
+   }
+-  return { items, last }
++  return items
+ }
+ 
+ /** `to` is the last line's end, EXCLUSIVE of the trailing newline. The move logic reads only these two offsets, so it is block-type-blind. */
+@@ -260,7 +258,7 @@ function runAt(scan: DocScan, i: number, scope: MarkdownScope): Row[] {
+     const lm = markerOf(k)
+     return isSequenced(lm) && lm.kind === head.kind
+   }
+-  return siblingsAt(scan, i, scope, joins).items.map((k) => ({
++  return siblingsAt(scan, i, scope, joins).map((k) => ({
+     k,
+     lm: markerOf(k) as SequencedMarker,
+   }))
+@@ -300,11 +298,11 @@ export function dropChanges(
+   const gapBefore = (items: readonly number[], n: number): boolean =>
+     n > 0 && n < items.length && isBlank(scan.lines[items[n] - 1])
+   const first = lineIndexAt(scan, block.from)
+-  const own = siblingsAt(scan, first, scope).items
++  const own = siblingsAt(scan, first, scope)
+   const at = own.indexOf(first)
+   const looseSource = gapBefore(own, at) || gapBefore(own, at + 1)
+   const t = lineIndexAt(scan, slot.at)
+-  const group = siblingsAt(scan, slot.line, scope).items
++  const group = siblingsAt(scan, slot.line, scope)
+   const n = group.findIndex((k) => k >= t)
+   const looseSlot = gapBefore(group, n < 0 ? group.length - 1 : Math.max(n, 1))
+   const moved = rebuildMove(doc, block, slot, { looseSource, looseSlot })
+diff --git a/Core/MarkdownPM/Input/format.ts b/Core/MarkdownPM/Input/format.ts
+index c4dd03e4e..b4c545d81 100644
+--- a/Core/MarkdownPM/Input/format.ts
++++ b/Core/MarkdownPM/Input/format.ts
+@@ -31,7 +31,6 @@ import { serialize } from '../Engine/Tables/codec'
+ import { type DocScan, inCodeAt, inFenceAt } from '../Engine/docScan'
+ import { itemAt, ownersOf, readsFrom, siblingsAt, subBlockAt } from '../Engine/listModel'
+ import { drawnKind } from '../Engine/intents'
+-import { type Personalization, settingOf } from '../../Settings/personalization'
+ import { blockPrefix } from './edits'
+ import { isValidLink, normalizeLinkUrl } from '../../Paths/urlPath'
+ import { serializeLink } from '../../Connections/linkValue'
+@@ -165,7 +164,6 @@ export function editFor(
+   scan: DocScan,
+   from: number,
+   to: number,
+-  settings: Personalization,
+   scope: MarkdownScope,
+ ): FormatEdit | null {
+   const [group, value] = action.split(':')
+@@ -182,7 +180,7 @@ export function editFor(
+     case 'heading':
+       return setHeading(scan.text, from, to, Number(value) as HeadingLevel)
+     case 'list':
+-      return setList(scan, from, to, value as ListKind, settings, scope)
++      return setList(scan, from, to, value as ListKind, scope)
+     case 'block':
+       return setBlock(scan, from, to, value as BlockFormat)
+     default:
+@@ -298,12 +296,11 @@ function selectedLines(doc: string, from: number, to: number): SelectedLine[] {
+     .filter((l) => from === to || !isBlank(doc.slice(l.ls + l.prefix.length, l.le)))
+ }
+ 
+-/** What a list-type pick reaches. A caret takes its item's group: with Preserve List-Level Formatting on, the siblings drawn as its type; off, the siblings and everything nested under them. A range takes every item it touches and turns its plain lines into items. A continuation answers for its item and a blank line for itself, a code block's lines only by a pick wholly inside it, and math, tables, a callout's head and a fence's delimiters never are. */
++/** What a list-type pick reaches. A caret takes the siblings drawn as its item's type. A range takes every item it touches and turns its plain lines into items. A continuation answers for its item and a blank line for itself, a code block's lines only by a pick wholly inside it, and math, tables, a callout's head and a fence's delimiters never are. */
+ function listReach(
+   scan: DocScan,
+   from: number,
+   to: number,
+-  settings: Personalization,
+   scope: MarkdownScope,
+ ): { k: number; lm: ListMarker | null }[] {
+   const anchor = lineIndexAt(scan, from)
+@@ -318,15 +315,10 @@ function listReach(
+   if (from === to) {
+     if (item === null || blank(anchor)) reached.add(anchor)
+     else {
+-      const { items, last } = siblingsAt(scan, item, scope)
+       const kind = drawnKind(markerAt(item)!)
+-      const preserve = settingOf(settings, 'preserveListLevels')
+-      const span = preserve
+-        ? items
+-        : Array.from({ length: last - items[0] + 1 }, (_, n) => items[0] + n)
+-      for (const k of span) {
++      for (const k of siblingsAt(scan, item, scope)) {
+         const lm = markerAt(k)
+-        if (lm !== null && (!preserve || drawnKind(lm) === kind)) reached.add(k)
++        if (lm !== null && drawnKind(lm) === kind) reached.add(k)
+       }
+     }
+   } else {
+@@ -351,12 +343,9 @@ export function listKindOf(
+   scan: DocScan,
+   from: number,
+   to: number,
+-  settings: Personalization,
+   scope: MarkdownScope,
+ ): ListKind | null {
+-  const kinds = new Set(
+-    listReach(scan, from, to, settings, scope).map(({ lm }) => lm && drawnKind(lm)),
+-  )
++  const kinds = new Set(listReach(scan, from, to, scope).map(({ lm }) => lm && drawnKind(lm)))
+   return kinds.size === 1 ? [...kinds][0] : null
+ }
+ 
+@@ -366,14 +355,13 @@ export function setList(
+   from: number,
+   to: number,
+   kind: ListKind,
+-  settings: Personalization,
+   scope: MarkdownScope,
+ ): FormatEdit {
+   const doc = scan.text
+   const marker = listMarkerText(kind)
+   const changes: FormatEdit['changes'] = []
+   let selection: number | undefined
+-  const reach = listReach(scan, from, to, settings, scope)
++  const reach = listReach(scan, from, to, scope)
+   for (const { k, lm } of reach) {
+     const ls = scan.lineStarts[k]
+     if (lm === null) {
+diff --git a/Core/MarkdownPM/Input/formatState.ts b/Core/MarkdownPM/Input/formatState.ts
+index e59bc97a4..f84d5c3c8 100644
+--- a/Core/MarkdownPM/Input/formatState.ts
++++ b/Core/MarkdownPM/Input/formatState.ts
+@@ -5,13 +5,11 @@ import { isQuoteToggleable, listKindOf, splitPrefix, underSelection } from './fo
+ import type { EditorMenuRequest } from '../../Actions/editorMenu'
+ import type { DocScan } from '../Engine/docScan'
+ import { lineIndexAt } from '../Engine/markdownCode'
+-import type { Personalization } from '../../Settings/personalization'
+ 
+ export function readFormatState(
+   scan: DocScan,
+   selFrom: number,
+   selTo: number,
+-  settings: Personalization,
+   scope: MarkdownScope,
+ ): Omit<EditorMenuRequest, 'scope' | 'x' | 'y' | 'embedSeat' | 'citeSeat' | 'resting'> {
+   const { from, to, ls, line, tokens, covering } = underSelection(scan, selFrom, selTo)
+@@ -37,7 +35,7 @@ export function readFormatState(
+       (tk) => tk.kind === 'wikiLink' && tk.range[0] <= lineFrom && lineTo <= tk.range[1],
+     ),
+     heading: hm ? hm.hashes.length : 0,
+-    list: listKindOf(scan, selFrom, selTo, settings, scope),
++    list: listKindOf(scan, selFrom, selTo, scope),
+     block: fenced ? 'code' : isQuoteToggleable(line) ? 'quote' : null,
+   }
+ }
+diff --git a/Core/MarkdownPM/Menus/gripMenu.ts b/Core/MarkdownPM/Menus/gripMenu.ts
+index 1e7f16b8c..519042d09 100644
+--- a/Core/MarkdownPM/Menus/gripMenu.ts
++++ b/Core/MarkdownPM/Menus/gripMenu.ts
+@@ -3,23 +3,15 @@ import { expressibleInLink, pageEmbedText, pageLinkText } from '../../Connection
+ import type { GripMenuContext, HeadingLevel } from '../../Actions/gripMenu'
+ import type { PickItem } from '../../Actions/menuModel'
+ import { COPY_LINK_ROW } from '../../Actions/pageMenu'
+-import { editFor, listKindOf, setHeading } from '../Input/format'
+-import {
+-  type BlockSpan,
+-  headingParts,
+-  isBlank,
+-  type MarkdownScope,
+-  webpageEmbedUrlSpan,
+-} from '../Engine/detect'
++import { setHeading } from '../Input/format'
++import { type BlockSpan, headingParts, isBlank, webpageEmbedUrlSpan } from '../Engine/detect'
+ import { type Block, blockAt } from '../Engine/blockModel'
+ import { docScan, docString } from '../docCache'
+ import { HEADING_LINE } from '../folding'
+ import { applyEmbedZoom, embedExclusions, embedZoomAt, setWebLinkSeat } from '../Embeds/embedWidget'
+ import { focusRange } from '../caretPlacement'
+ import { titleFromPath } from '../../Paths/posix'
+-import { lineEndAt, lineIndexAt, lineStartAt } from '../Engine/markdownCode'
+-import { itemAt } from '../Engine/listModel'
+-import type { DocScan } from '../Engine/docScan'
++import { lineEndAt, lineStartAt } from '../Engine/markdownCode'
+ import { applyEdit } from '../Input/applyEdit'
+ import { type EditorHost, editorHost } from '../api'
+ import { gutterLineAt } from '../lineDom'
+@@ -57,14 +49,7 @@ export function blockDeleteSpan(doc: string, r: BlockSpan): BlockSpan {
+   return { from: r.from, to: r.to + 1 }
+ }
+ 
+-/** A list block's Type ▸ reads and picks as a right-click on its first item's glyph does, so Preserve List-Level Formatting decides its reach as it decides the glyph menu's; a paragraph the block opens on is that item's continuation. */
+-function firstItemOf(scan: DocScan, block: BlockSpan, scope: MarkdownScope): number {
+-  let k = lineIndexAt(scan, block.from)
+-  while (itemAt(scan, k, 'outside', scope) === null) k++
+-  return scan.lineStarts[k]
+-}
+-
+-function contextFor(view: EditorView, block: Block, scope: MarkdownScope): GripMenuContext {
++function contextFor(view: EditorView, block: Block): GripMenuContext {
+   const host = view.state.facet(editorHost)
+   switch (block.kind) {
+     case 'embed':
+@@ -80,11 +65,6 @@ function contextFor(view: EditorView, block: Block, scope: MarkdownScope): GripM
+         kind: 'webpage',
+         zoom: embedZoomAt(view.state, block.from),
+       }
+-    case 'list': {
+-      const scan = docScan(view.state.doc)
+-      const at = firstItemOf(scan, block, scope)
+-      return { kind: 'list', current: listKindOf(scan, at, at, host.settings(), scope) }
+-    }
+     default:
+       return { kind: 'plain' }
+   }
+@@ -134,69 +114,64 @@ function popHeadingMenu(view: EditorView, headingEl: HTMLElement): void {
+     })
+ }
+ 
+-export const gripMenu = (scope: MarkdownScope) =>
+-  EditorView.domEventHandlers({
+-    // A grip acts on its block, never on the caret, and a right-press needs the same suppression the drag gestures give a left-press: preventing the contextmenu comes far too late to stop the seat.
+-    mousedown(e) {
+-      if (e.button !== 2 || (!gripLineAt(e) && !headingLineAt(e))) return false
++export const gripMenu = EditorView.domEventHandlers({
++  // A grip acts on its block, never on the caret, and a right-press needs the same suppression the drag gestures give a left-press: preventing the contextmenu comes far too late to stop the seat.
++  mousedown(e) {
++    if (e.button !== 2 || (!gripLineAt(e) && !headingLineAt(e))) return false
++    e.preventDefault()
++    return true
++  },
++  contextmenu(e, view) {
++    const headingEl = headingLineAt(e)
++    if (headingEl) {
+       e.preventDefault()
++      popHeadingMenu(view, headingEl)
+       return true
+-    },
+-    contextmenu(e, view) {
+-      const headingEl = headingLineAt(e)
+-      if (headingEl) {
+-        e.preventDefault()
+-        popHeadingMenu(view, headingEl)
+-        return true
+-      }
+-      if (view.state.readOnly) return false
+-      const line = gripLineAt(e)
+-      if (!line) return false
++    }
++    if (view.state.readOnly) return false
++    const line = gripLineAt(e)
++    if (!line) return false
++    const block = blockAt(docScan(view.state.doc), view.posAtDOM(line))
++    if (!block) return false
++    const opened = docString(view.state.doc).slice(block.from, block.to)
++    e.preventDefault()
++    const host: EditorHost = view.state.facet(editorHost)
++    void host.menus.grip(contextFor(view, block)).then((action) => {
++      if (!action) return
++      const doc = docString(view.state.doc)
+       const block = blockAt(docScan(view.state.doc), view.posAtDOM(line))
+-      if (!block) return false
+-      const opened = docString(view.state.doc).slice(block.from, block.to)
+-      e.preventDefault()
+-      const host: EditorHost = view.state.facet(editorHost)
+-      void host.menus.grip(contextFor(view, block, scope)).then((action) => {
+-        if (!action) return
+-        const doc = docString(view.state.doc)
+-        const block = blockAt(docScan(view.state.doc), view.posAtDOM(line))
+-        if (!block || doc.slice(block.from, block.to) !== opened) return
+-        const arg = (prefix: string): string | undefined =>
+-          action.startsWith(prefix) ? action.slice(prefix.length) : undefined
+-        const path = arg('source:')
+-        const zoom = arg('zoom:')
+-        if (path !== undefined) {
+-          // The block span IS the embed line, claimed or not — acting through the claimed set would dead-end the menu precisely when a stale embed needs re-aiming.
+-          view.dispatch({
+-            changes: {
+-              from: block.from,
+-              to: block.to,
+-              insert: pageEmbedText(nameOf(host, path)),
+-            },
+-            userEvent: 'input',
+-          })
+-        } else if (zoom !== undefined) applyEmbedZoom(view, block.from, Number(zoom))
+-        else if (action.startsWith('list:')) {
+-          const scan = docScan(view.state.doc)
+-          const at = firstItemOf(scan, block, scope)
+-          applyEdit(view, editFor(action, scan, at, at, host.settings(), scope))
+-        } else if (action === 'editLink') {
+-          // The seat un-forms the tile back to its raw address with that address selected; leaving the line re-forms it.
+-          const line = view.state.doc.lineAt(block.from)
+-          const span = webpageEmbedUrlSpan(line.text)
+-          if (span) {
+-            view.dispatch({ effects: setWebLinkSeat.of(line.from) })
+-            focusRange(view, line.from + span[0], line.from + span[1])
+-          }
+-        } else if (action === 'delete') {
+-          const span = blockDeleteSpan(doc, block)
+-          view.dispatch({
+-            changes: { from: span.from, to: span.to, insert: '' },
+-            userEvent: 'delete',
+-          })
++      if (!block || doc.slice(block.from, block.to) !== opened) return
++      const arg = (prefix: string): string | undefined =>
++        action.startsWith(prefix) ? action.slice(prefix.length) : undefined
++      const path = arg('source:')
++      const zoom = arg('zoom:')
++      if (path !== undefined) {
++        // The block span IS the embed line, claimed or not — acting through the claimed set would dead-end the menu precisely when a stale embed needs re-aiming.
++        view.dispatch({
++          changes: {
++            from: block.from,
++            to: block.to,
++            insert: pageEmbedText(nameOf(host, path)),
++          },
++          userEvent: 'input',
++        })
++      } else if (zoom !== undefined) applyEmbedZoom(view, block.from, Number(zoom))
++      else if (action === 'editLink') {
++        // The seat un-forms the tile back to its raw address with that address selected; leaving the line re-forms it.
++        const line = view.state.doc.lineAt(block.from)
++        const span = webpageEmbedUrlSpan(line.text)
++        if (span) {
++          view.dispatch({ effects: setWebLinkSeat.of(line.from) })
++          focusRange(view, line.from + span[0], line.from + span[1])
+         }
+-      })
+-      return true
+-    },
+-  })
++      } else if (action === 'delete') {
++        const span = blockDeleteSpan(doc, block)
++        view.dispatch({
++          changes: { from: span.from, to: span.to, insert: '' },
++          userEvent: 'delete',
++        })
++      }
++    })
++    return true
++  },
++})
+diff --git a/Core/MarkdownPM/Menus/menu.ts b/Core/MarkdownPM/Menus/menu.ts
+index 25b127aa7..bdd90da56 100644
+--- a/Core/MarkdownPM/Menus/menu.ts
++++ b/Core/MarkdownPM/Menus/menu.ts
+@@ -24,13 +24,11 @@ export function applyEditorAction(
+   { from, to }: { from: number; to: number } = view.state.selection.main,
+ ): void {
+   const how = pasteModeOf(action)
+-  const settings = view.state.facet(editorHost).settings()
+   if (action === 'block:page') embedInsertAtCaret(view)
+   else if (action === 'block:webpage') webpageInsertAtCaret(view)
+   else if (action === 'block:citation') insertCitation(view)
+   else if (how) void pasteFromClipboard(view, how)
+-  else if (applyEdit(view, editFor(action, docScan(view.state.doc), from, to, settings, scope)))
+-    view.focus()
++  else if (applyEdit(view, editFor(action, docScan(view.state.doc), from, to, scope))) view.focus()
+ }
+ 
+ const clickInside = (doc: string, at: number, from: number, to: number, glyph: boolean): boolean =>
+@@ -80,7 +78,7 @@ export function routeRightClick(
+     surface.seat(start, end)
+     keepSeatedSelection()
+   }
+-  const state = readFormatState(scan, from, to, host.settings(), scope)
++  const state = readFormatState(scan, from, to, scope)
+   if (glyph) event.preventDefault()
+   const pick = glyph
+     ? host.menus.grip({ kind: 'glyph', current: state.list })
+diff --git a/Core/MarkdownPM/Tables/cellStatic.tsx b/Core/MarkdownPM/Tables/cellStatic.tsx
+index c2e07cf88..6f7f52627 100644
+--- a/Core/MarkdownPM/Tables/cellStatic.tsx
++++ b/Core/MarkdownPM/Tables/cellStatic.tsx
+@@ -540,7 +540,7 @@ function StaticCellImpl({
+     }
+     const how = pasteModeOf(action)
+     if (how) return pasteAtRest(from, to, how)
+-    const edit = editFor(action, scanDoc(text), from, to, host.settings(), 'cell')
++    const edit = editFor(action, scanDoc(text), from, to, 'cell')
+     if (!edit || !commitAtRest(edit.changes, editEvent(edit))) return
+     const [group] = action.split(':')
+     const slot = (group === 'format' || isPaint(group)) && (from === to || action === 'format:link')
+diff --git a/Core/MarkdownPM/api.ts b/Core/MarkdownPM/api.ts
+index 682bd0a22..8911ac1f6 100644
+--- a/Core/MarkdownPM/api.ts
++++ b/Core/MarkdownPM/api.ts
+@@ -108,7 +108,6 @@ const EDITOR_SETTING_KEYS = [
+   'wrapSelections',
+   'deletePairsTogether',
+   'exitPairsOnEnter',
+-  'preserveListLevels',
+ ] as const
+ const EDITOR_DEVICE_KEYS = ['defaultLinkFormat'] as const
+ const EDITOR_KEYS = [...EDITOR_SETTING_KEYS, ...EDITOR_DEVICE_KEYS] as const
+diff --git a/Core/MarkdownPM/surface.ts b/Core/MarkdownPM/surface.ts
+index 8a5483ed1..afbd76042 100644
+--- a/Core/MarkdownPM/surface.ts
++++ b/Core/MarkdownPM/surface.ts
+@@ -37,7 +37,7 @@ function blockGestures(scope: MarkdownScope): Extension {
+         blockHandles(scope),
+         pointerReveal(scope),
+         blockDragExtension,
+-        gripMenu(scope),
++        gripMenu,
+       ]
+     case 'text':
+       return []
+diff --git a/Core/Settings/frames.ts b/Core/Settings/frames.ts
+index 2d09a53b2..78e3ed9e8 100644
+--- a/Core/Settings/frames.ts
++++ b/Core/Settings/frames.ts
+@@ -721,13 +721,6 @@ export const FRAMES = roster([
+             label: 'Outliner Lines',
+             caption: 'Show indent rails on nested lists in the editor.',
+           },
+-          {
+-            kind: 'toggle',
+-            key: 'preserveListLevels',
+-            label: 'Preserve List-Level Formatting',
+-            caption:
+-              "Leave indented lists and other types unchanged when adjusting a list's format.",
+-          },
+           { kind: 'toggle', key: 'titleIcon', label: 'Show Icon In Title' },
+         ],
+       },
+diff --git a/Core/Settings/personalization.ts b/Core/Settings/personalization.ts
+index e47787e78..2ebf2591e 100644
+--- a/Core/Settings/personalization.ts
++++ b/Core/Settings/personalization.ts
+@@ -145,7 +145,6 @@ const SETTINGS = {
+   hideChevrons: flag(false),
+   repairOnOpen: flag(true),
+   outlinerLines: flag(false),
+-  preserveListLevels: flag(true),
+   titleIcon: flag(false),
+   codeblockLineCount: flag(false),
+   codeblockScroll: flag(false),

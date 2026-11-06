@@ -1,0 +1,197 @@
+diff --git a/.claude/scripts/List Types Drive/MATRIX.md b/.claude/scripts/List Types Drive/MATRIX.md
+index 1713b82b6..d07ebd7d0 100644
+--- a/.claude/scripts/List Types Drive/MATRIX.md	
++++ b/.claude/scripts/List Types Drive/MATRIX.md	
+@@ -155,3 +155,25 @@ Every paste goes through the app's paste event with `text/plain`, and every item
+ | ` ```md ` | A Markdown block | an item | recounts | C-1, F-2 |
+ | ` ```js `, a no-language block, display math | Each | an item | counts nothing | C-3, F-2 |
+ | `1.`, `2.` | A focused cell | two items | recounts | F-2 |
++
++#### Group 5 — One Marker Grammar
++
++| Case | Surface | Operation | Expected | Decisions |
++| --- | --- | --- | --- | --- |
++| `+ x`, `+ [x] a`, `+ [ ] a` | A page, a resting and a focused cell | read | `•`, `☑`, `☐` beside the text | B-1 |
++| `- [] x` | The same | read | `•` beside `[] x` | B-1 |
++| `1. [ ] a`, `2. [x] foo` | The same | read | the number, with the box as text | B-3 |
++| `-[] x`, `-[ ] x`, `-[x] x`, `1.[ ] a` | The same | read | plain text | B-2 |
++| `* a`, `1) a` | The same | read | plain text | B-1 |
++| `+ p` | A page, a resting cell | the glyph, Lists ▸ | Bulleted checked | B-1 |
++| `- [] p` | A page | the glyph | Bulleted checked | B-1 |
++| `+ a`, `+ [ ] a` | A page | Enter | `- `, `- [ ] ` | B-4 |
++| `- [] x`, `9. a` | A page | Enter | `- `, `10. ` | B-1 |
++| `-[]`, `+[]`, `-[x]`, `  +[x]` | A page | a space | `- [ ] `, `- [ ] `, `- [x] `, `  - [x] ` | B-2 |
++| `+[]` | A focused cell | a space | `- [ ] ` | B-2 |
++| `2. [x] foo`, `1. [ ] a` | A page | Bulleted | a real box | B-3, F-1 |
++| `+ a` | A page | Bulleted | stays `+ a` | B-4 |
++| `- [] x` | A page | Checklist | `- [ ] [] x` | B-1 |
++| A nested `+` list | A page, a resting cell | Outliner Lines on, measured | a rail | B-9 |
++| A caret on a `+` marker, and on its text | A page | seat | reveals, and keeps its glyph, as a dash does | B-1 |
++| The arrow keys through a `+` marker | A page | Right and Left | the same seats as a dash | B-1 |
+diff --git a/.claude/scripts/List Types Drive/live-drive.mjs b/.claude/scripts/List Types Drive/live-drive.mjs
+index 62014ac82..efa5ceb2b 100644
+--- a/.claude/scripts/List Types Drive/live-drive.mjs	
++++ b/.claude/scripts/List Types Drive/live-drive.mjs	
+@@ -80,6 +80,16 @@ async function leaveCell(cdp) {
+   await until('the cell at rest', () => cdp.evaluate(`!${LIVE_CELL}`))
+   await sleep(300)
+ }
++// What a cell shows of `source` at rest and focused, and whether either marks it as `construct`.
++async function literal(cdp, source, word, construct) {
++  await setBody(cdp, table(inCell(source)))
++  const read = (scope) => cdp.evaluate(`({ text: (${scope}).innerText, marked: !!(${scope}).querySelector(${show(construct)}) })`)
++  const resting = await read(restingCell(word))
++  await enterCell(cdp, word)
++  const live = await read(LIVE_CELL)
++  await leaveCell(cdp)
++  return { held: [resting, live].every((r) => r.text === source && !r.marked), detail: show([resting, live]) }
++}
+ 
+ // ── Reads and presses ───────────────────────────────────────────────────────
+ 
+@@ -211,19 +221,9 @@ async function group1(cdp) {
+   await leaveCell(cdp)
+   item(1, 'B-11', '`*it*` between ``` lines reads italic, at rest and focused', restingItalic === 'it' && liveItalic === 'it', show([restingItalic, liveItalic]))
+ 
+-  // What a cell shows of `source` at rest and focused, and whether either marks it as `construct`.
+-  const literal = async (source, word, construct) => {
+-    await setBody(cdp, table(inCell(source)))
+-    const read = (scope) => cdp.evaluate(`({ text: (${scope}).innerText, marked: !!(${scope}).querySelector(${show(construct)}) })`)
+-    const resting = await read(restingCell(word))
+-    await enterCell(cdp, word)
+-    const live = await read(LIVE_CELL)
+-    await leaveCell(cdp)
+-    return { held: [resting, live].every((r) => r.text === source && !r.marked), detail: show([resting, live]) }
+-  }
+-  const math = await literal('$$\nxq\n$$', 'xq', S.math)
++  const math = await literal(cdp, '$$\nxq\n$$', 'xq', S.math)
+   item(1, 'B-11', '`$$` lines read as text, at rest and focused', math.held, math.detail)
+-  const note = await literal('[^1] zz\n[^1]: note', 'zz', `${S.citationRow}, ${S.citationMarker}`)
++  const note = await literal(cdp, '[^1] zz\n[^1]: note', 'zz', `${S.citationRow}, ${S.citationMarker}`)
+   item(1, 'B-11', "a cell's `[^1]: note` line binds nothing, at rest and focused", note.held, note.detail)
+ 
+   await setBody(cdp, '```\n- pa\n```\n\n$$\n- pb\n$$\n\nSee [^1] now.\n\n[^1]: note', '')
+@@ -652,6 +652,115 @@ async function group4(cdp) {
+   item(4, 'F-2', 'a paste into a focused cell recounts its list, and one ⌘Z takes both', cell === '1. pa\n2. px\n3. py\n4. pb' && undone.endsWith('| 1. pa<br>2. pb | x |'), show([cell, undone]))
+ }
+ 
++// ── Group 5 — One Marker Grammar ────────────────────────────────────────────
++
++async function group5(cdp) {
++  await setting(cdp, true)
++  for (const [source, word, drawn, decision] of [
++    ['+ x', 'x', ['• x'], 'B-1'],
++    ['+ [x] a', 'a', ['☑ a'], 'B-1'],
++    ['+ [ ] a', 'a', ['☐ a'], 'B-1'],
++    ['- [] x', 'x', ['• [] x'], 'B-1'],
++    ['1. [ ] a', 'a', ['1. [ ] a'], 'B-3'],
++    ['2. [x] foo', 'foo', ['2. [x] foo'], 'B-3'],
++  ]) {
++    await setBody(cdp, source)
++    const page = await drawnIn(cdp, PAGE_TEXT)
++    item(5, decision, `a page draws \`${source}\` as ${show(drawn)}`, show(page) === show(drawn), show(page))
++    await setBody(cdp, table(source))
++    const resting = await drawnIn(cdp, restingCell(word))
++    item(5, decision, `a resting cell draws \`${source}\` as ${show(drawn)}`, show(resting) === show(drawn), show(resting))
++    await enterCell(cdp, word)
++    const live = await drawnIn(cdp, LIVE_CELL)
++    item(5, decision, `a focused cell draws \`${source}\` as ${show(drawn)}`, show(live) === show(drawn), show(live))
++    await leaveCell(cdp)
++  }
++
++  for (const [source, word, decision] of [['-[] x', 'x', 'B-2'], ['-[ ] x', 'x', 'B-2'], ['-[x] x', 'x', 'B-2'], ['1.[ ] a', 'a', 'B-2'], ['* a', 'a', 'B-1'], ['1) a', 'a', 'B-1']]) {
++    await setBody(cdp, source)
++    const page = await cdp.evaluate(`(() => { const l = ${PAGE_TEXT}.querySelector('.cm-line'); return { text: l.textContent, item: l.matches(${show(S.item)}) } })()`)
++    const cell = await literal(cdp, source, word, S.item)
++    item(5, decision, `\`${source}\` reads as plain text on a page, at rest, and focused`, page.text === source && !page.item && cell.held, `${show(page)} · ${cell.detail}`)
++  }
++
++  await setBody(cdp, '+ p')
++  const onGlyph = await glyphPick(cdp, 'p')
++  const onWord = await wordPick(cdp, 'p', [])
++  item(5, 'B-1', "a `+` item's glyph menu and Lists ▸ check Bulleted", show(flat(onGlyph.rows)) === show(typeRows('Bulleted')) && show(listChecked(onWord.rows)) === show(['Bulleted']), `${seen(onGlyph)} · ${seen(onWord)}`)
++  await setBody(cdp, '- [] p')
++  const empty = await glyphPick(cdp, '[] p')
++  item(5, 'B-1', "`- [] x`'s glyph menu checks Bulleted", show(flat(empty.rows)) === show(typeRows('Bulleted')), seen(empty))
++  await setBody(cdp, table('+ pa<br>+ pb'))
++  const atRest = await pop(cdp, await boxOf(cdp, restingGlyph('pa')), [])
++  item(5, 'B-1', "a resting `+` item's glyph menu checks Bulleted", show(flat(atRest.rows)) === show(typeRows('Bulleted')), seen(atRest))
++
++  await stroke(cdp, 5, 'B-4', 'Enter under `+ a` writes `-`', '+ a', '+ a', ENTER, '+ a\n- ')
++  await stroke(cdp, 5, 'B-4', 'Enter under `+ [ ] a` writes `- [ ] `', '+ [ ] a', '+ [ ] a', ENTER, '+ [ ] a\n- [ ] ')
++  await stroke(cdp, 5, 'B-1', 'Enter under `- [] x` continues it', '- [] x', '- [] x', ENTER, '- [] x\n- ')
++  await stroke(cdp, 5, 'B-1', 'Enter under `9. a` writes `10. `', '9. a', '9. a', ENTER, '9. a\n10. ')
++
++  const typed = (decision, name, seed, want) => stroke(cdp, 5, decision, name, seed, seed, type(' '), want)
++  await typed('B-2', '`-[]` and a space writes a checkbox', '-[]', '- [ ] ')
++  await typed('B-2', '`+[]` and a space writes a checkbox with `-`', '+[]', '- [ ] ')
++  await typed('B-2', '`-[x]` and a space writes a checked box', '-[x]', '- [x] ')
++  await typed('B-2', 'an indented `+[x]` and a space keeps its indent', '  +[x]', '  - [x] ')
++  await setBody(cdp, table('sh'))
++  await enterCell(cdp, 'sh')
++  await cdp.evaluate(`(() => { const v = ${CELL_VIEW}; v.dispatch({ changes: { from: 0, to: v.state.doc.length, insert: '+[]' }, selection: { anchor: 3 } }) })()`)
++  await sleep(300)
++  await type(' ')(cdp)
++  const shorthand = await cdp.evaluate(`${CELL_VIEW}.state.doc.toString()`)
++  await leaveCell(cdp)
++  item(5, 'B-2', 'the shorthand writes `- [ ] ` in a focused cell', shorthand === '- [ ] ', show(shorthand))
++
++  const picked = async (decision, name, seed, word, type, want) => {
++    await setBody(cdp, seed)
++    const menu = await wordPick(cdp, word, listPath(type))
++    const got = await body(cdp)
++    item(5, decision, name, got === want, `${seen(menu)} · ${show(got)}`)
++  }
++  await picked('B-3 F-1', '`2. [x] foo` picked Bulleted writes a checked box', '2. [x] foo', 'foo', 'Bulleted', '- [x] foo')
++  await picked('B-3', '`1. [ ] a` picked Bulleted writes a real checkbox', '1. [ ] a', 'a', 'Bulleted', '- [ ] a')
++  await picked('B-4', '`+ a` picked Bulleted stays `+ a`', '+ a', 'a', 'Bulleted', '+ a')
++  await picked('B-1', '`- [] x` picked Checklist writes `- [ ] [] x`', '- [] x', 'x', 'Checklist', '- [ ] [] x')
++
++  await outliner(cdp, true)
++  const railRead = (scope) => cdp.evaluate(`[...(${scope}).querySelectorAll(${show(S.rail)})].filter((r) => r.getBoundingClientRect().height > 0).length`)
++  await setBody(cdp, '+ ra\n\t+ rb\n\t+ rc')
++  const pageRails = await railRead(PAGE_TEXT)
++  await shot(cdp, 'g5-plus-rail')
++  await setBody(cdp, table('+ ra<br>\t+ rb<br>\t+ rc'))
++  const cellRails = await railRead(restingCell('rc'))
++  await outliner(cdp, false)
++  item(5, 'B-9', 'a `+` item carries a bullet\'s rail on a page and in a resting cell', pageRails > 0 && cellRails > 0, show([pageRails, cellRails]))
++
++  // What a line draws with the caret at `past`, its marker's own character read as `¤`.
++  const drawnAt = async (marker, past) => {
++    await setBody(cdp, `zz\n${marker} ww`)
++    await caretPast(cdp, past(marker))
++    const line = `[...${PAGE_TEXT}.querySelectorAll('.cm-line')][1]`
++    return cdp.evaluate(`(() => { const l = ${line}; return { glyph: !!l.querySelector(${show(S.glyph)}), text: l.textContent.replaceAll(${show(marker)}, '¤') } })()`)
++  }
++  for (const [where, past, glyph] of [['on the marker', (m) => `zz\n${m}`, false], ['on the text', (m) => `${m} w`, true]]) {
++    const dash = await drawnAt('-', past)
++    const plus = await drawnAt('+', past)
++    item(5, 'B-1', `a caret ${where} of a \`+\` item draws as a dash's does, ${glyph ? 'keeping its glyph' : 'revealing its marker'}`, show(plus) === show(dash) && plus.glyph === glyph, show([plus, dash]))
++  }
++  const seats = async (marker) => {
++    await setBody(cdp, `zz\n${marker} ww`)
++    await caretPast(cdp, 'zz')
++    const heads = []
++    for (const key of ['ArrowRight', 'ArrowRight', 'ArrowRight', 'ArrowLeft', 'ArrowLeft', 'ArrowLeft']) {
++      await pressKey(cdp, key)
++      heads.push((await selection(cdp))[0])
++    }
++    return heads
++  }
++  const dashSeats = await seats('-')
++  const plusSeats = await seats('+')
++  item(5, 'B-1', "the arrow keys seat a `+` item's caret as a dash's", show(plusSeats) === show(dashSeats) && new Set(plusSeats).size > 2, show([plusSeats, dashSeats]))
++}
++
+ // ── The run ─────────────────────────────────────────────────────────────────
+ 
+ const GROUPS = {
+@@ -659,6 +768,7 @@ const GROUPS = {
+   2: ['Markdown Code Blocks', group2],
+   3: ['Blank Lines and Numbering', group3],
+   4: ['Paste', group4],
++  5: ['One Marker Grammar', group5],
+ }
+ const chosen = process.argv.slice(2).map(Number)
+ if (chosen.length === 0 || chosen.some((g) => !GROUPS[g])) {

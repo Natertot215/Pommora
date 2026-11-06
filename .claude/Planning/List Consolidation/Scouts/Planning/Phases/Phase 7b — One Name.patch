@@ -1,0 +1,165 @@
+diff --git a/Core/Actions/blockMenu.test.ts b/Core/Actions/blockMenu.test.ts
+index 37c4e55da..81bf3ea9c 100644
+--- a/Core/Actions/blockMenu.test.ts
++++ b/Core/Actions/blockMenu.test.ts
+@@ -16,11 +16,11 @@ describe('the block menu catalog', () => {
+       'Heading 6',
+     ])
+     expect(seated[1].rows.map((r) => r.label)).toEqual([
+-      'Bullet List',
+-      'Numbered List',
+-      'Alphabetical List',
+-      'Task List',
+-      'Arrowed List',
++      'Bulleted',
++      'Numbered',
++      'Alphabetical',
++      'Checklist',
++      'Arrowed',
+     ])
+     expect(seated[2].rows.map((r) => r.label)).toEqual([
+       'Connection',
+@@ -57,7 +57,7 @@ describe('the block menu filter', () => {
+     const hea = filterBlockMenu('hea')
+     expect(hea.map((s) => s.title)).toEqual(['Headings', 'Lists'])
+     expect(hea[0].rows).toHaveLength(6)
+-    expect(labels(hea[1])).toEqual(['Alphabetical List'])
++    expect(labels(hea[1])).toEqual(['Alphabetical'])
+     expect(filterBlockMenu('HEA')).toEqual(hea)
+   })
+ 
+@@ -65,7 +65,7 @@ describe('the block menu filter', () => {
+     const bl = filterBlockMenu('bl')
+     expect(bl.map((s) => s.title)).toEqual(['Insert', 'Lists', 'Embed'])
+     expect(labels(bl[0])).toEqual(['Blockquote', 'Code Block', 'Table'])
+-    expect(labels(bl[1])).toEqual(['Bullet List', 'Numbered List', 'Alphabetical List'])
++    expect(labels(bl[1])).toEqual(['Bulleted', 'Alphabetical'])
+     expect(labels(bl[2])).toEqual(['External Link', 'Internal Page'])
+     expect(filterBlockMenu('hr')).toEqual([
+       { title: 'Insert', rows: [expect.objectContaining({ label: 'Horizontal Rule' })] },
+@@ -97,18 +97,29 @@ describe('the block menu filter', () => {
+     expect(labels(embed[0])).toEqual(['External Link', 'Internal Page'])
+   })
+ 
+-  it('ranks by the name alone where the name matches, the shorter label first on a tie', () => {
++  it('ranks a name match above a section match, the shorter label first on a tie', () => {
+     const list = filterBlockMenu('list')
+     expect(list.map((s) => s.title)).toEqual(['Lists'])
+     expect(labels(list[0])).toEqual([
+-      'Task List',
+-      'Arrowed List',
+-      'Numbered List',
+-      'Bullet List',
+-      'Alphabetical List',
++      'Checklist',
++      'Arrowed',
++      'Bulleted',
++      'Numbered',
++      'Alphabetical',
+     ])
+   })
+ 
++  it('finds a list type by its one name', () => {
++    for (const [query, label] of [
++      ['bullet', 'Bulleted'],
++      ['number', 'Numbered'],
++      ['alpha', 'Alphabetical'],
++      ['check', 'Checklist'],
++      ['arrow', 'Arrowed'],
++    ])
++      expect(filterBlockMenu(query)[0].rows[0].label).toBe(label)
++  })
++
+   it('lists the menu as it stands for a query of word breaks alone', () => {
+     expect(filterBlockMenu(' / ').map((s) => s.title)).toEqual(seated.map((s) => s.title))
+   })
+diff --git a/Core/Actions/editorMenu.test.ts b/Core/Actions/editorMenu.test.ts
+index 402e23a1e..5ce8501f1 100644
+--- a/Core/Actions/editorMenu.test.ts
++++ b/Core/Actions/editorMenu.test.ts
+@@ -68,7 +68,7 @@ describe('the editor’s right-click block', () => {
+     )
+     expect(branch('Heading').find((r) => r.checked)?.label).toBe('Heading 2')
+     expect(branch('Heading')[0]).toMatchObject({ label: 'Paragraph', action: 'heading:0' })
+-    expect(branch('Lists').find((r) => r.checked)?.label).toBe('Arrowed List')
++    expect(branch('Lists').find((r) => r.checked)?.label).toBe('Arrowed')
+     expect(branch('Format').find((r) => r.checked)?.label).toBe('Bold')
+   })
+ 
+diff --git a/Core/Actions/gripMenu.test.ts b/Core/Actions/gripMenu.test.ts
+index c27693aab..042500f88 100644
+--- a/Core/Actions/gripMenu.test.ts
++++ b/Core/Actions/gripMenu.test.ts
+@@ -48,8 +48,9 @@ describe('the block grip menu', () => {
+     ])
+   })
+ 
+-  it('a list offers its Type set with the current kind in force, and a glyph the same set flat, without Delete', () => {
++  it('a list offers its Format set with the current kind in force, and a glyph the same set flat, without Delete', () => {
+     const items = gripMenuItems({ kind: 'list', current: 'bullet' })
++    expect(items[0].label).toBe('Format')
+     expect(items[0].submenu?.map((r) => [r.label, r.action, r.checked])).toEqual([
+       ['Bulleted', 'list:bullet', true],
+       ['Numbered', 'list:ordered', false],
+diff --git a/Core/Actions/gripMenu.ts b/Core/Actions/gripMenu.ts
+index 1a0e52cb8..7a4c8b06d 100644
+--- a/Core/Actions/gripMenu.ts
++++ b/Core/Actions/gripMenu.ts
+@@ -35,19 +35,13 @@ export const HEADING_LEVELS: readonly { level: HeadingLevel; label: string }[] =
+ export const LIST_KINDS: readonly {
+   kind: ListKind
+   label: string
+-  short: string
+   icon: string
+ }[] = [
+-  { kind: 'bullet', label: 'Bullet List', short: 'Bulleted', icon: 'list' },
+-  { kind: 'ordered', label: 'Numbered List', short: 'Numbered', icon: 'list-ordered' },
+-  {
+-    kind: 'alphabetical',
+-    label: 'Alphabetical List',
+-    short: 'Alphabetical',
+-    icon: 'arrow-down-az',
+-  },
+-  { kind: 'checkbox', label: 'Task List', short: 'Checklist', icon: 'list-todo' },
+-  { kind: 'arrow', label: 'Arrowed List', short: 'Arrowed', icon: 'arrow-right' },
++  { kind: 'bullet', label: 'Bulleted', icon: 'list' },
++  { kind: 'ordered', label: 'Numbered', icon: 'list-ordered' },
++  { kind: 'alphabetical', label: 'Alphabetical', icon: 'arrow-down-az' },
++  { kind: 'checkbox', label: 'Checklist', icon: 'list-todo' },
++  { kind: 'arrow', label: 'Arrowed', icon: 'arrow-right' },
+ ]
+ 
+ const scaleRow = (zoom: number | null): ActionItem<GripMenuAction> => ({
+@@ -56,8 +50,8 @@ const scaleRow = (zoom: number | null): ActionItem<GripMenuAction> => ({
+ })
+ 
+ const listRows = (current: ListKind | null): ActionItem<GripMenuAction>[] =>
+-  LIST_KINDS.map(({ kind, short }) => ({
+-    label: short,
++  LIST_KINDS.map(({ kind, label }) => ({
++    label,
+     action: `list:${kind}`,
+     checked: current === kind,
+   }))
+@@ -72,7 +66,7 @@ function ownRows(ctx: GripMenuContext): ActionItem<GripMenuAction>[] {
+     case 'webpage':
+       return [{ label: 'Edit Link', action: 'editLink' }, scaleRow(ctx.zoom)]
+     case 'list':
+-      return [{ label: 'Type', submenu: listRows(ctx.current) }]
++      return [{ label: 'Format', submenu: listRows(ctx.current) }]
+     case 'glyph':
+       return listRows(ctx.current)
+     case 'heading': {
+diff --git a/Core/MarkdownPM/Menus/gripMenuFlow.test.tsx b/Core/MarkdownPM/Menus/gripMenuFlow.test.tsx
+index 2b16c5629..7a489333a 100644
+--- a/Core/MarkdownPM/Menus/gripMenuFlow.test.tsx
++++ b/Core/MarkdownPM/Menus/gripMenuFlow.test.tsx
+@@ -82,7 +82,7 @@ async function gripMenu(view: EditorView, lineText: string): Promise<void> {
+   })
+ }
+ 
+-describe("a list grip's Type switch", () => {
++describe("a list grip's Format switch", () => {
+   it("offers the block's current kind, and switching rewrites every marker", async () => {
+     const view = await mount('- alpha\n- beta')
+     nextPick = 'list:ordered'

@@ -1,0 +1,769 @@
+diff --git a/Core/MarkdownPM/Engine/detect.ts b/Core/MarkdownPM/Engine/detect.ts
+index 281c5cb55..3002df325 100644
+--- a/Core/MarkdownPM/Engine/detect.ts
++++ b/Core/MarkdownPM/Engine/detect.ts
+@@ -633,6 +633,18 @@ export function parseListMarkerPrefixed(line: string): ListMarker | null {
+   return parseListMarker(line.slice(offset), offset)
+ }
+ 
++/** A code block that reads lists: Markdown, and no diff, whose leading `-` and `+` are change signs. */
++export const readsListsIn = (f: FenceInfo): boolean =>
++  f.name === 'Markdown' && f.tally === undefined
++
++/** The marker a line holds where it stands. A code block that reads lists reads them from its own body, so its fence's lead is no nesting and a quoted line is no item. */
++export function lineMarker(line: string, f: FenceInfo | undefined): ListMarker | null {
++  if (f === undefined) return parseListMarkerPrefixed(line)
++  if (!readsListsIn(f)) return null
++  const body = fenceBodyStart(line, f)
++  return parseListMarker(line.slice(body), body)
++}
++
+ const headingPrefilter = /^[ ]{0,3}#{1,6}([ \t]|$)/
+ // A first-character test would pay a full parse for every `- item`, which is what made a bulleted page the expensive case.
+ const thematicBreakPrefilter = /^[ ]{0,3}([-*_])[ \t]*(?:\1[ \t]*){2,}$/
+diff --git a/Core/MarkdownPM/Engine/docScan.test.ts b/Core/MarkdownPM/Engine/docScan.test.ts
+index 24dbd38f7..430a4ed8e 100644
+--- a/Core/MarkdownPM/Engine/docScan.test.ts
++++ b/Core/MarkdownPM/Engine/docScan.test.ts
+@@ -45,6 +45,13 @@ const LINES = [
+   '>   ```',
+   '```',
+   '```js',
++  '```md',
++  '```notes.md',
++  '```md diff',
++  '  ```md',
++  '> ```md',
++  '  - in',
++  '> - in',
+   '```diff',
+   '```ts|diff',
+   '-removed',
+diff --git a/Core/MarkdownPM/Engine/docScan.ts b/Core/MarkdownPM/Engine/docScan.ts
+index c46bce302..27149fd47 100644
+--- a/Core/MarkdownPM/Engine/docScan.ts
++++ b/Core/MarkdownPM/Engine/docScan.ts
+@@ -20,8 +20,8 @@ import {
+   isBlank,
+   isHeadingLine,
+   isThematicBreakLine,
++  lineMarker,
+   lineRefs,
+-  parseListMarkerPrefixed,
+   scanFencedCode,
+   signedLine,
+   splitWithOffsets,
+@@ -79,7 +79,7 @@ function scanLines(d: DocLines): LineScan {
+     headings: lines.map(isHeadingLine),
+     quotes: lines.map((l, i) => isBlockquoteLine(l) && fences[i]?.depth !== 0),
+     breaks: lines.map(isThematicBreakLine),
+-    markers: lines.map(parseListMarkerPrefixed),
++    markers: lines.map((l, i) => lineMarker(l, fences[i])),
+     refs: lines.map((l, i) => lineRefs(l, lineStarts[i], inCode)),
+     tables,
+     maths: math.ranges,
+@@ -368,6 +368,9 @@ export const inCodeNear = (scan: DocScan, pos: number): boolean =>
+ export const inFenceAt = (scan: DocScan, pos: number): boolean =>
+   scan.fences[lineIndexAt(scan, pos)] !== undefined
+ 
++export const fenceDelimiter = (scan: DocScan, k: number): boolean =>
++  (scan.fences[k]?.role ?? 'content') !== 'content'
++
+ export function inCalloutAt(scan: DocScan, pos: number): boolean {
+   if (pos < 0) return false
+   return scan.callouts[lineIndexAt(scan, pos)] !== undefined
+diff --git a/Core/MarkdownPM/Engine/listModel.ts b/Core/MarkdownPM/Engine/listModel.ts
+index 1ebe99ca4..24ac47c69 100644
+--- a/Core/MarkdownPM/Engine/listModel.ts
++++ b/Core/MarkdownPM/Engine/listModel.ts
+@@ -1,5 +1,6 @@
+ import {
+   continuesList,
++  fenceBodyStart,
+   indentWidth,
+   isBlank,
+   isSequenced,
+@@ -37,7 +38,7 @@ export function checkboxToggleChange(doc: string, pos: number): TextEdit | null
+ 
+ type Reader = number | 'outside'
+ 
+-/** Whether line `k` is open text to a `reader` on another line, or to one outside every block: on a page a code block is read only from inside it, so a list written there switches and counts on its own and nothing outside reaches in, while math and tables are never read; a cell reads every line. A reader outside a code or math block reads it as its opening line, `openerOf`, so a block whose opener joins a list rides it whole and one whose opener sits outside is never pulled in. */
++/** Whether line `k` is open text to a `reader` on another line, or to one outside every block: on a page a code block is read only from inside it, so a Markdown block's list takes every list gesture on its own and nothing outside reaches in, while math and tables are never read; a cell reads every line. A reader outside a code or math block reads it as its opening line, `openerOf`, so a block whose opener joins a list rides it whole and one whose opener sits outside is never pulled in. */
+ export function readsFrom(scan: DocScan, k: number, reader: Reader, scope: MarkdownScope): boolean {
+   if (scope !== 'page') return true
+   const code = scan.fences[k]
+@@ -70,10 +71,11 @@ export function rolesAgainst(
+ ): (k: number) => ListRole {
+   const depth = quoteDepthOf(scan.lines[i])
+   const level = itemAt(scan, i, i, scope)!.level
++  const block = scope === 'page' ? scan.fences[i] : undefined
+   return (line) => {
+     let k = line
+     if (!readsFrom(scan, k, i, scope)) {
+-      if (scan.fences[i] !== undefined) return 'ends'
++      if (block !== undefined) return 'ends'
+       k = openerOf(scan, k)
+     }
+     const own = quoteDepthOf(scan.lines[k])
+@@ -81,7 +83,9 @@ export function rolesAgainst(
+     if (own < depth) return 'ends'
+     if (own === depth && lm !== null)
+       return lm.level === level ? 'sibling' : lm.level > level ? 'nested' : 'ends'
+-    return continuesList(scan.lines[k], depth)
++    return block === undefined
++      ? continuesList(scan.lines[k], depth)
++      : continuesList(scan.lines[k].slice(fenceBodyStart(scan.lines[k], block)), 0)
+   }
+ }
+ 
+diff --git a/Core/MarkdownPM/Input/edits.test.ts b/Core/MarkdownPM/Input/edits.test.ts
+index 6832e439a..fed376962 100644
+--- a/Core/MarkdownPM/Input/edits.test.ts
++++ b/Core/MarkdownPM/Input/edits.test.ts
+@@ -161,13 +161,13 @@ describe('smart backspace (whole marker, all markers)', () => {
+ describe('checkbox canonicalization', () => {
+   it('-[] + space → "- [ ] " with caret after', () => {
+     const doc = '-[]'
+-    const e = canonicalizeCheckbox(doc, 3, 3, ' ')!
++    const e = canonicalizeCheckbox(scanDoc(doc), 3, 3, ' ')!
+     expect(apply(doc, e)).toBe('- [ ] ')
+     expect(e.selection).toBe(6)
+   })
+   it('-[x] + space → "- [x] "', () => {
+     const doc = '-[x]'
+-    expect(apply(doc, canonicalizeCheckbox(doc, 4, 4, ' ')!)).toBe('- [x] ')
++    expect(apply(doc, canonicalizeCheckbox(scanDoc(doc), 4, 4, ' ')!)).toBe('- [x] ')
+   })
+   it('a fence line keeps its marker on backspace', () => {
+     const doc = '```\n- [ ] \n```'
+@@ -837,7 +837,7 @@ describe('headingHash', () => {
+ 
+ describe('callout and exit settings', () => {
+   it('callout shorthand follows its setting', () => {
+-    expect(calloutShorthand('|', 1, 1, '|', { transformCallouts: false })).toBeNull()
++    expect(calloutShorthand(scanDoc('|'), 1, 1, '|', { transformCallouts: false })).toBeNull()
+   })
+   it('exit on enter follows its setting', () => {
+     expect(closeConstructOnEnter(scanDoc('[]'), 1, 1, { exitPairsOnEnter: false })).toBeNull()
+@@ -891,23 +891,23 @@ describe('blockquote continuation (Enter)', () => {
+ describe('callout shorthand (||)', () => {
+   it('expands `||` at line start to the callout head + a trailing exit line at doc end', () => {
+     const doc = '|'
+-    expect(apply(doc, calloutShorthand(doc, 1, 1, '|')!)).toBe('> [!callout] \n')
++    expect(apply(doc, calloutShorthand(scanDoc(doc), 1, 1, '|')!)).toBe('> [!callout] \n')
+   })
+   it('reuses an existing following line as the exit target (no extra newline)', () => {
+     const doc = '|\nafter'
+-    expect(apply(doc, calloutShorthand(doc, 1, 1, '|')!)).toBe('> [!callout] \nafter')
++    expect(apply(doc, calloutShorthand(scanDoc(doc), 1, 1, '|')!)).toBe('> [!callout] \nafter')
+   })
+   it('only fires on a bare `|` alone on the line (never mid-line / inside a table)', () => {
+-    expect(calloutShorthand('a |', 3, 3, '|')).toBeNull()
+-    expect(calloutShorthand('| x ', 4, 4, '|')).toBeNull()
++    expect(calloutShorthand(scanDoc('a |'), 3, 3, '|')).toBeNull()
++    expect(calloutShorthand(scanDoc('| x '), 4, 4, '|')).toBeNull()
+   })
+   it('preserves content already on the line (||ab → callout with "ab" body, no trailing line)', () => {
+     const doc = '|ab'
+-    expect(apply(doc, calloutShorthand(doc, 1, 1, '|')!)).toBe('> [!callout] ab')
++    expect(apply(doc, calloutShorthand(scanDoc(doc), 1, 1, '|')!)).toBe('> [!callout] ab')
+   })
+   it('separates from a callout directly above with a blank line (no touching boxes / merged run)', () => {
+     const doc = '> [!callout] first\n|'
+-    expect(apply(doc, calloutShorthand(doc, 20, 20, '|')!)).toBe(
++    expect(apply(doc, calloutShorthand(scanDoc(doc), 20, 20, '|')!)).toBe(
+       '> [!callout] first\n\n> [!callout] \n',
+     )
+   })
+@@ -1013,7 +1013,7 @@ describe('nested list behavior inside a callout', () => {
+   })
+   it('-[]+space canonicalizes to GFM behind the prefix', () => {
+     const doc = '> [!callout] head\n> -[]'
+-    const r = canonicalizeCheckbox(doc, doc.length, doc.length, ' ')!
++    const r = canonicalizeCheckbox(scanDoc(doc), doc.length, doc.length, ' ')!
+     expect(apply(doc, r)).toBe('> [!callout] head\n> - [ ] ')
+   })
+ })
+diff --git a/Core/MarkdownPM/Input/edits.ts b/Core/MarkdownPM/Input/edits.ts
+index cd65cd600..4c9295aea 100644
+--- a/Core/MarkdownPM/Input/edits.ts
++++ b/Core/MarkdownPM/Input/edits.ts
+@@ -8,7 +8,14 @@ import {
+   mapSpans,
+   mayHoldLink,
+ } from '../../Connections/connections'
+-import { inCalloutAt, inCodeAt, inCodeNear, spanAt, type DocScan } from '../Engine/docScan'
++import {
++  inCalloutAt,
++  inCodeAt,
++  inCodeNear,
++  inFenceAt,
++  spanAt,
++  type DocScan,
++} from '../Engine/docScan'
+ import {
+   fenceAt,
+   isBlockquoteLine,
+@@ -30,6 +37,7 @@ import {
+   ordinalText,
+   MAX_NESTING_LEVEL,
+   calloutHeadPrefixLen,
++  codeSeat,
+   headingParts,
+   fenceBodyStart,
+   signedLine,
+@@ -37,6 +45,7 @@ import {
+   type ListMarker,
+   type MarkdownScope,
+   readsLists,
++  readsListsIn,
+ } from '../Engine/detect'
+ import { itemAt, ownersOf } from '../Engine/listModel'
+ import { tokenize } from '../Engine/tokens'
+@@ -57,6 +66,13 @@ const shorthandCheckboxRe = /^([ \t]*)([-+])\[([ xX]?)\]$/
+ export const blockPrefix = (line: string, scope: MarkdownScope = 'page'): string =>
+   scope === 'page' ? quotePrefix(line) : ''
+ 
++/** What stands before line `k`'s own text: inside a code block its fence's lead and any diff sign, elsewhere its quote. */
++export function leadOf(scan: DocScan, k: number, scope: MarkdownScope): string {
++  const line = scan.lines[k]
++  const f = scope === 'page' ? scan.fences[k] : undefined
++  return f ? line.slice(0, codeSeat(line, f)) : blockPrefix(line, scope)
++}
++
+ function listLineAt(
+   scan: DocScan,
+   selStart: number,
+@@ -65,10 +81,9 @@ function listLineAt(
+ ): { ls: number; line: string; pfx: string; lm: ListMarker } | null {
+   if (selStart !== selEnd) return null
+   const k = lineIndexAt(scan, selStart)
+-  const lm = itemAt(scan, k, 'outside', scope)
++  const lm = itemAt(scan, k, k, scope)
+   if (lm === null) return null
+-  const line = scan.lines[k]
+-  return { ls: scan.lineStarts[k], line, pfx: blockPrefix(line, scope), lm }
++  return { ls: scan.lineStarts[k], line: scan.lines[k], pfx: leadOf(scan, k, scope), lm }
+ }
+ 
+ export function continueListOnEnter(
+@@ -98,7 +113,7 @@ export function continueBlockquoteOnEnter(
+   selStart: number,
+   selEnd: number,
+ ): Edit | null {
+-  if (selStart !== selEnd) return null
++  if (selStart !== selEnd || !scan.quotes[lineIndexAt(scan, selStart)]) return null
+   const doc = scan.text
+   const ls = lineStartAt(doc, selStart)
+   const lineEnd = lineEndAt(doc, selStart)
+@@ -112,7 +127,7 @@ export function continueBlockquoteOnEnter(
+ }
+ 
+ export function calloutShorthand(
+-  doc: string,
++  scan: DocScan,
+   selStart: number,
+   selEnd: number,
+   inserted: string,
+@@ -120,6 +135,8 @@ export function calloutShorthand(
+ ): Edit | null {
+   if (inserted !== '|' || selStart !== selEnd || !settingOf(settings, 'transformCallouts'))
+     return null
++  if (inFenceAt(scan, selStart)) return null
++  const doc = scan.text
+   const c = selStart
+   const ls = lineStartAt(doc, c)
+   if (ls !== c - 1 || doc[c - 1] !== '|') return null
+@@ -232,15 +249,15 @@ export function smartBackspace(
+     const body = fence ? ls + fenceBodyStart(line, fence) : ls
+     if (body > ls && selStart === body && ls > 0)
+       return { from: ls - 1, to: body, insert: '', selection: ls - 1 }
+-    // A fence holds literal text, so collapsing a marker there would eat characters the author typed as content.
+-    if (inCodeAt(scan, selStart)) return null
+   }
+ 
+-  const pfx = blockPrefix(line, scope)
+-  const lm = itemAt(scan, lineIndexAt(scan, selStart), 'outside', scope)
++  const k = lineIndexAt(scan, selStart)
++  const pfx = leadOf(scan, k, scope)
++  const lm = itemAt(scan, k, k, scope)
+   const taken = lm && takeMarker(scan, ls, pfx.length, lm, selStart, scope)
+   if (taken) return taken
+-  if (scope !== 'page') return null
++  // A fence holds literal text past its own list, so collapsing a prefix there would eat characters the author typed as content.
++  if (scope !== 'page' || inCodeAt(scan, selStart)) return null
+   // Inside a callout, never strip a lone `>` — that would drop the line out of the box, splitting it into a stray quote.
+   if (inCalloutAt(scan, selStart)) {
+     const headLen = calloutHeadPrefixLen(line)
+@@ -259,17 +276,19 @@ export function smartBackspace(
+ }
+ 
+ export function canonicalizeCheckbox(
+-  doc: string,
++  scan: DocScan,
+   selStart: number,
+   selEnd: number,
+   inserted: string,
+   scope: MarkdownScope = 'page',
+ ): Edit | null {
+   if (inserted !== ' ' || selStart !== selEnd || !readsLists(scope)) return null
+-  const ls = lineStartAt(doc, selStart)
+-  const before = doc.slice(ls, selStart)
+-  const pfx = blockPrefix(before, scope)
+-  const m = shorthandCheckboxRe.exec(before.slice(pfx.length))
++  const k = lineIndexAt(scan, selStart)
++  const f = scope === 'page' ? scan.fences[k] : undefined
++  if (f !== undefined && !readsListsIn(f)) return null
++  const ls = scan.lineStarts[k]
++  const pfx = leadOf(scan, k, scope)
++  const m = shorthandCheckboxRe.exec(scan.text.slice(ls + pfx.length, selStart))
+   if (m === null) return null
+   const [, ws, marker, inner] = m
+   // The trailing space is the task-list grammar's own requirement, not decoration: without it the line parses as plain text.
+@@ -692,6 +711,13 @@ const lineBodyBefore = (doc: string, pos: number): string => {
+   return doc.slice(ls + blockPrefix(doc.slice(ls, lineEndAt(doc, pos))).length, pos)
+ }
+ 
++const opensCodeList = (scan: DocScan, pos: number): boolean => {
++  const k = lineIndexAt(scan, pos)
++  const f = scan.fences[k]
++  const lead = scan.lineStarts[k] + leadOf(scan, k, 'page').length
++  return f !== undefined && readsListsIn(f) && isBlank(scan.text.slice(lead, pos))
++}
++
+ const opensLine = (doc: string, pos: number): boolean => {
+   const before = doc.slice(lineStartAt(doc, pos), pos)
+   return isBlank(before.slice(blockPrefix(before).length))
+@@ -767,7 +793,9 @@ export function punctuation(
+   const c = selStart
+   const pair = PAIR_OF[doc[c - 1]]
+   if (pair && PUNCTUATION[pair[1] + inserted])
+-    return { from: c - 1, to: c, insert: pair + inserted, selection: c + 2 }
++    return isLiteralAt(scan, c)
++      ? null
++      : { from: c - 1, to: c, insert: pair + inserted, selection: c + 2 }
+   const glyph = PUNCTUATION[doc[c - 1] + inserted]
+   if (!glyph || PUNCTUATION[doc.slice(c - 2, c)] || isLiteralAt(scan, c)) return null
+   if (glyph === '‖') {
+@@ -815,7 +843,11 @@ export function dashArrow(
+   if (selStart !== selEnd || inserted.length !== 1) return null
+   const doc = scan.text
+   const c = selStart
+-  if (!'-–←><'.includes(doc[c - 1]) || isLiteralAt(scan, c)) return null
++  if (!'-–←><'.includes(doc[c - 1])) return null
++  if (isLiteralAt(scan, c))
++    return inserted === '>' && doc[c - 1] === '-' && opensCodeList(scan, c - 1)
++      ? { from: c - 1, to: c, insert: '→', selection: c }
++      : null
+   const dashes = settingOf(settings, 'transformDashes')
+   const arrows = settingOf(settings, 'transformArrows')
+ 
+diff --git a/Core/MarkdownPM/Input/format.test.ts b/Core/MarkdownPM/Input/format.test.ts
+index 41de4cea0..6747da8e8 100644
+--- a/Core/MarkdownPM/Input/format.test.ts
++++ b/Core/MarkdownPM/Input/format.test.ts
+@@ -162,37 +162,39 @@ describe('toggleInline', () => {
+ 
+ describe('setHeading', () => {
+   it('sets a level', () => {
+-    expect(apply('hello', setHeading('hello', 0, 5, 2))).toBe('## hello')
++    expect(apply('hello', setHeading(scanDoc('hello'), 0, 5, 2))).toBe('## hello')
+   })
+   it('level 0 clears an existing heading', () => {
+-    expect(apply('## hello', setHeading('## hello', 0, 8, 0))).toBe('hello')
++    expect(apply('## hello', setHeading(scanDoc('## hello'), 0, 8, 0))).toBe('hello')
+   })
+   it('replaces a list marker rather than stacking', () => {
+-    expect(apply('- item', setHeading('- item', 0, 6, 1))).toBe('# item')
++    expect(apply('- item', setHeading(scanDoc('- item'), 0, 6, 1))).toBe('# item')
+   })
+   it('heads every selected line', () => {
+     const three = 'one\ntwo\nthree'
+-    expect(apply(three, setHeading(three, 0, three.length, 2))).toBe('## one\n## two\n## three')
+-    expect(apply(three, setHeading(three, 0, 4, 2))).toBe('## one\ntwo\nthree')
++    expect(apply(three, setHeading(scanDoc(three), 0, three.length, 2))).toBe(
++      '## one\n## two\n## three',
++    )
++    expect(apply(three, setHeading(scanDoc(three), 0, 4, 2))).toBe('## one\ntwo\nthree')
+     const heads = (level: 1 | 2) => (scan: DocScan, f: number, t: number) =>
+-      setHeading(scan.text, f, t, level)
++      setHeading(scanDoc(scan.text), f, t, level)
+     expect(picked('one\ntwo', 1, 5, heads(1), heads(2))).toBe('## one\n## two')
+   })
+   it('leaves a blank line unheaded', () => {
+     const gapped = 'one\n\ntwo'
+-    expect(apply(gapped, setHeading(gapped, 0, gapped.length, 1))).toBe('# one\n\n# two')
++    expect(apply(gapped, setHeading(scanDoc(gapped), 0, gapped.length, 1))).toBe('# one\n\n# two')
+   })
+   it('heads a blank line the caret sits on', () => {
+-    const edit = setHeading('', 0, 0, 2)
++    const edit = setHeading(scanDoc(''), 0, 0, 2)
+     expect(apply('', edit)).toBe('## ')
+     expect(edit.selection).toBe(3)
+-    expect(apply('> one\n>\n> two', setHeading('> one\n>\n> two', 7, 7, 2))).toBe(
++    expect(apply('> one\n>\n> two', setHeading(scanDoc('> one\n>\n> two'), 7, 7, 2))).toBe(
+       '> one\n> ## \n> two',
+     )
+   })
+   it('returns every selected line to plain body at 0', () => {
+     const heads = '# one\n## two'
+-    expect(apply(heads, setHeading(heads, 0, heads.length, 0))).toBe('one\ntwo')
++    expect(apply(heads, setHeading(scanDoc(heads), 0, heads.length, 0))).toBe('one\ntwo')
+   })
+ })
+ 
+diff --git a/Core/MarkdownPM/Input/format.ts b/Core/MarkdownPM/Input/format.ts
+index c4dd03e4e..1273855db 100644
+--- a/Core/MarkdownPM/Input/format.ts
++++ b/Core/MarkdownPM/Input/format.ts
+@@ -5,6 +5,7 @@ import {
+   calloutHeadPrefixLen,
+   isCalloutHead,
+   ordinalText,
++  indentWidth,
+   isSequenced,
+   parseListMarker,
+   stripQuotePrefix,
+@@ -17,6 +18,7 @@ import {
+   type TextEdit,
+   lineStartAt,
+   lineEndAt,
++  lineEndOf,
+   lineIndexAt,
+   quotePrefixWidth,
+   reachEnd,
+@@ -28,11 +30,11 @@ import type { BlockFormat, LinkWrapKind } from '../../Actions/blockMenu'
+ import { emptyTable } from '../Engine/Tables/model'
+ import { isPaint, type Paint, type PaintColor, writtenMark } from '../Engine/paints'
+ import { serialize } from '../Engine/Tables/codec'
+-import { type DocScan, inCodeAt, inFenceAt } from '../Engine/docScan'
++import { type DocScan, fenceDelimiter, inCodeAt, inFenceAt, signSeatAt } from '../Engine/docScan'
+ import { itemAt, ownersOf, readsFrom, siblingsAt, subBlockAt } from '../Engine/listModel'
+ import { drawnKind } from '../Engine/intents'
+ import { type Personalization, settingOf } from '../../Settings/personalization'
+-import { blockPrefix } from './edits'
++import { blockPrefix, leadOf } from './edits'
+ import { isValidLink, normalizeLinkUrl } from '../../Paths/urlPath'
+ import { serializeLink } from '../../Connections/linkValue'
+ 
+@@ -75,7 +77,7 @@ const LINKS: Record<LinkWrapKind, LinkWrap> = {
+ const SWAPS: Partial<Record<TokenKind, TokenKind>> = { bold: 'italic', italic: 'bold' }
+ const MARKER_CHARS = '*_~=`'
+ 
+-/** Inline marks are line-local, so only the selection's line is tokenized, in line-relative coords; the marks covering it are read with the marker characters at its edges stripped, and a fenced line holds none. An edge inside a link widens to the whole link, so a mark wraps the link rather than splitting its syntax. */
++/** Inline marks are line-local, so only the selection's line is tokenized, in line-relative coords; the marks covering it are read with the marker characters at its edges stripped, and a fenced line holds none, so a row there only ever writes. An edge inside a link widens to the whole link, so a mark wraps the link rather than splitting its syntax. */
+ export function underSelection(scan: DocScan, selFrom: number, selTo: number) {
+   const doc = scan.text
+   let [from, to] = trimmedRange(doc, selFrom, selTo)
+@@ -106,14 +108,12 @@ export function toggleInline(
+   fmt: InlineFormat,
+   color: PaintColor | 'accent' | null = null,
+ ): FormatEdit | null {
+-  const { fenced, from, to, ls, line, tokens, f, t, covering } = underSelection(
+-    scan,
+-    selFrom,
+-    selTo,
+-  )
+-  if (fenced || (fmt !== 'inlineCode' && (inCodeAt(scan, from) || inCodeAt(scan, to)))) return null
++  const { from, to, ls, line, tokens, f, t, covering } = underSelection(scan, selFrom, selTo)
++  const spanned = (at: number): boolean => !inFenceAt(scan, at) && inCodeAt(scan, at)
++  if (fenceDelimiter(scan, lineIndexAt(scan, from))) return null
++  if (fmt !== 'inlineCode' && (spanned(from) || spanned(to))) return null
+   const doc = scan.text
+-  if (fmt in LINKS) return toggleWrap(doc, from, to, LINKS[fmt as LinkWrapKind])
++  if (fmt in LINKS) return toggleWrap(doc, tokens, ls, from, to, LINKS[fmt as LinkWrapKind])
+   const kind = fmt as keyof typeof WRAP & TokenKind
+   const close = WRAP[kind]
+   const mark = color && color !== 'accent' ? color : undefined
+@@ -163,24 +163,25 @@ export function toggleInline(
+ export function editFor(
+   action: string,
+   scan: DocScan,
+-  from: number,
+-  to: number,
++  selFrom: number,
++  selTo: number,
+   settings: Personalization,
+   scope: MarkdownScope,
+ ): FormatEdit | null {
+   const [group, value] = action.split(':')
++  // A diff line's sign is its change, so a row writes past it.
++  const from = Math.max(selFrom, signSeatAt(scan, selFrom) ?? selFrom)
++  const to = Math.max(selTo, from)
+   switch (group) {
+     case 'link':
+-      return value === 'insert' && !inFenceAt(scan, from)
+-        ? insertLinkEdit(scan.text, from, to)
+-        : null
++      return value === 'insert' ? insertLinkEdit(scan.text, from, to) : null
+     case 'format':
+       return toggleInline(scan, from, to, value as InlineFormat)
+     case 'highlight':
+     case 'textColor':
+       return toggleInline(scan, from, to, group as Paint, value as PaintColor | 'accent')
+     case 'heading':
+-      return setHeading(scan.text, from, to, Number(value) as HeadingLevel)
++      return setHeading(scan, from, to, Number(value) as HeadingLevel)
+     case 'list':
+       return setList(scan, from, to, value as ListKind, settings, scope)
+     case 'block':
+@@ -200,12 +201,13 @@ function insertLinkEdit(doc: string, selFrom: number, selTo: number): FormatEdit
+ 
+ function toggleWrap(
+   doc: string,
++  tokens: ReturnType<typeof tokenize>,
++  ls: number,
+   from: number,
+   to: number,
+   { kind, open, close, caret }: LinkWrap,
+ ): FormatEdit {
+-  const ls = lineStartAt(doc, from)
+-  const found = tokenize(doc.slice(ls, lineEndAt(doc, from))).find(
++  const found = tokens.find(
+     (tk) => tk.kind === kind && tk.range[0] <= from - ls && to - ls <= tk.range[1],
+   )
+   const existing = found ? shiftToken(found, ls) : undefined
+@@ -251,8 +253,13 @@ export function splitPrefix(line: string, scope: MarkdownScope): { prefix: strin
+ }
+ 
+ /** Prefix-aware: `> - item` becomes `> ## item`, never `## - item` popped out of its quote. */
+-export function setHeading(doc: string, from: number, to: number, level: HeadingLevel): FormatEdit {
+-  const lines = selectedLines(doc, from, to)
++export function setHeading(
++  scan: DocScan,
++  from: number,
++  to: number,
++  level: HeadingLevel,
++): FormatEdit {
++  const lines = selectedLines(scan, from, to)
+   if (lines.length === 0) return { changes: [] }
+   const changes: FormatEdit['changes'] = []
+   let lastEnd = 0
+@@ -274,9 +281,18 @@ interface SelectedLine {
+   inner: string
+ }
+ 
+-function readLine(doc: string, ls: number, scope: MarkdownScope): SelectedLine {
+-  const le = lineEndAt(doc, ls)
+-  const { prefix, body } = splitPrefix(doc.slice(ls, le), scope)
++function readLine(scan: DocScan, k: number, scope: MarkdownScope): SelectedLine {
++  const ls = scan.lineStarts[k]
++  const le = lineEndOf(scan, k)
++  if (scope === 'page' && scan.fences[k] !== undefined) {
++    // A code line reads as written: a row's lead joins it past its own indent, and nothing there is stripped.
++    const lead = leadOf(scan, k, scope).length
++    const text = scan.lines[k].slice(lead)
++    const prefix = scan.lines[k].slice(0, lead + indentWidth(text))
++    const pad = prefix.endsWith('>') ? ' ' : ''
++    return { ls, le, prefix, pad, indent: '', inner: text.trimStart() }
++  }
++  const { prefix, body } = splitPrefix(scan.lines[k], scope)
+   const lm = parseListMarker(body)
+   const stripped = stripInnerMarkers(body)
+   // An item's indent sits before its marker, a paragraph's leads its words — held apart either way, so converting a nested item keeps its level.
+@@ -292,10 +308,12 @@ function readLine(doc: string, ls: number, scope: MarkdownScope): SelectedLine {
+ }
+ 
+ /** A selection passes over its blank lines; a caret alone on one keeps it, so the block starts there. */
+-function selectedLines(doc: string, from: number, to: number): SelectedLine[] {
+-  return spannedLines(doc, from, to)
+-    .map(({ ls }) => readLine(doc, ls, 'page'))
+-    .filter((l) => from === to || !isBlank(doc.slice(l.ls + l.prefix.length, l.le)))
++function selectedLines(scan: DocScan, from: number, to: number): SelectedLine[] {
++  return spannedLines(scan.text, from, to)
++    .map(({ ls }) => lineIndexAt(scan, ls))
++    .filter((k) => !fenceDelimiter(scan, k))
++    .map((k) => readLine(scan, k, 'page'))
++    .filter((l) => from === to || !isBlank(scan.text.slice(l.ls + l.prefix.length, l.le)))
+ }
+ 
+ /** What a list-type pick reaches. A caret takes its item's group: with Preserve List-Level Formatting on, the siblings drawn as its type; off, the siblings and everything nested under them. A range takes every item it touches and turns its plain lines into items. A continuation answers for its item and a blank line for itself, a code block's lines only by a pick wholly inside it, and math, tables, a callout's head and a fence's delimiters never are. */
+@@ -339,8 +357,7 @@ function listReach(
+   }
+   const outOfReach = (k: number): boolean =>
+     !readsFrom(scan, k, reader, scope) ||
+-    (scope === 'page' &&
+-      (scan.callouts[k]?.first || (scan.fences[k]?.role ?? 'content') !== 'content'))
++    (scope === 'page' && (scan.callouts[k]?.first || fenceDelimiter(scan, k)))
+   return [...reached]
+     .sort((a, b) => a - b)
+     .filter((k) => !outOfReach(k))
+@@ -369,7 +386,6 @@ export function setList(
+   settings: Personalization,
+   scope: MarkdownScope,
+ ): FormatEdit {
+-  const doc = scan.text
+   const marker = listMarkerText(kind)
+   const changes: FormatEdit['changes'] = []
+   let selection: number | undefined
+@@ -377,7 +393,7 @@ export function setList(
+   for (const { k, lm } of reach) {
+     const ls = scan.lineStarts[k]
+     if (lm === null) {
+-      const l = readLine(doc, ls, scope)
++      const l = readLine(scan, k, scope)
+       const lead = `${l.pad}${l.indent}${marker}`
+       changes.push({ from: ls + l.prefix.length, to: l.le - l.inner.length, insert: lead })
+       selection = ls + l.prefix.length + lead.length + l.inner.length
+@@ -412,7 +428,10 @@ export function setBlock(scan: DocScan, from: number, to: number, fmt: BlockForm
+   switch (fmt) {
+     case 'quote': {
+       // Off only where every selected line is already a quote. Toggling a callout head wraps rather than demoting it.
+-      const lines = spannedLines(doc, from, to)
++      const lines = spannedLines(doc, from, to).map((l) => ({
++        ...l,
++        ls: signSeatAt(scan, l.ls) ?? l.ls,
++      }))
+       const strip = lines.every(({ ls: s, le: e }) => isQuoteToggleable(doc.slice(s, e)))
+       const changes: FormatEdit['changes'] = []
+       let lastEnd = 0
+@@ -430,9 +449,11 @@ export function setBlock(scan: DocScan, from: number, to: number, fmt: BlockForm
+     }
+     case 'callout': {
+       if (isCalloutHead(line)) return { changes: [] }
+-      const body = stripInnerMarkers(line)
+-      const next = `> [!callout] ${parseListMarker(line) ? body : stripQuotePrefix(body)}`
+-      return { changes: [{ from: ls, to: le, insert: next }], selection: ls + next.length }
++      const at = signSeatAt(scan, ls) ?? ls
++      const own = doc.slice(at, le)
++      const body = stripInnerMarkers(own)
++      const next = `> [!callout] ${parseListMarker(own) ? body : stripQuotePrefix(body)}`
++      return { changes: [{ from: at, to: le, insert: next }], selection: at + next.length }
+     }
+     case 'code': {
+       // Inside a fence, the pick takes its two fence lines off; elsewhere, one fence goes around the whole selection, the gesture for a block of code pasted in.
+diff --git a/Core/MarkdownPM/Input/formatState.ts b/Core/MarkdownPM/Input/formatState.ts
+index e59bc97a4..3750e9bbf 100644
+--- a/Core/MarkdownPM/Input/formatState.ts
++++ b/Core/MarkdownPM/Input/formatState.ts
+@@ -4,7 +4,6 @@ import { headingParts, type MarkdownScope } from '../Engine/detect'
+ import { isQuoteToggleable, listKindOf, splitPrefix, underSelection } from './format'
+ import type { EditorMenuRequest } from '../../Actions/editorMenu'
+ import type { DocScan } from '../Engine/docScan'
+-import { lineIndexAt } from '../Engine/markdownCode'
+ import type { Personalization } from '../../Settings/personalization'
+ 
+ export function readFormatState(
+@@ -14,15 +13,14 @@ export function readFormatState(
+   settings: Personalization,
+   scope: MarkdownScope,
+ ): Omit<EditorMenuRequest, 'scope' | 'x' | 'y' | 'embedSeat' | 'citeSeat' | 'resting'> {
+-  const { from, to, ls, line, tokens, covering } = underSelection(scan, selFrom, selTo)
++  const { fenced, from, to, ls, line, tokens, covering } = underSelection(scan, selFrom, selTo)
+   const lineFrom = from - ls
+   const lineTo = to - ls
+   const wraps = (kind: string): boolean => covering.some((tk) => tk.kind === kind)
+   const painted = covering.find((tk): tk is TokenOf<Paint> => isPaint(tk.kind))
+-  const fenced = scan.fences[lineIndexAt(scan, selFrom)] !== undefined
+ 
+   // Heading state reads the line's INNER body so a `> # item` reports as a heading — the render layer draws it behind the `>`, and the menu must agree with what the user sees.
+-  const hm = headingParts(splitPrefix(line, scope).body)
++  const hm = fenced ? null : headingParts(splitPrefix(line, scope).body)
+ 
+   return {
+     bold: wraps('bold'),
+diff --git a/Core/MarkdownPM/Input/listRenumber.ts b/Core/MarkdownPM/Input/listRenumber.ts
+index 4b844eec2..7dd1272b7 100644
+--- a/Core/MarkdownPM/Input/listRenumber.ts
++++ b/Core/MarkdownPM/Input/listRenumber.ts
+@@ -1,6 +1,6 @@
+ import { type ChangeDesc, EditorState, type Extension } from '@codemirror/state'
+ import { docScan } from '../docCache'
+-import { itemAt, readsFrom, renumberRuns, rolesAgainst, subBlockAt } from '../Engine/listModel'
++import { itemAt, renumberRuns, rolesAgainst, subBlockAt } from '../Engine/listModel'
+ import { applyEdits, lineIndexAt, type TextEdit } from '../Engine/markdownCode'
+ import { isSequenced, type MarkdownScope } from '../Engine/detect'
+ 
+@@ -9,7 +9,7 @@ const RELIST = 'input.list'
+ 
+ export const editEvent = (edit: { relist?: boolean }): string => (edit.relist ? RELIST : 'input')
+ 
+-// Every edit that reshapes a sequenced run counts it here, riding the same transaction so one undo takes both: a marker-writing edit recounts the runs it touched and, where a line it touched was numbered or lettered, the run just below that item's nesting, which is the one a nested or switched item left, and a numbered or lettered marker it wrote over whole restarts its run from 1 or A, while a re-pick that leaves the text as it was lands nothing; a deletion that removes a whole line closes the gap it leaves, and one that removes a whole numbered or lettered marker recounts the run below it, as a switched item does. Nothing inside a page's math or tables is counted, and a code block's own list counts only for a marker-writing edit inside it. The positions it recounts from map through the edit in one ascending sweep, `mapAscending`, landing where `mapPos(p, -1)` lands each, since mapping each on its own measured quadratic on a 20,000-line pick.
++// Every edit that reshapes a sequenced run counts it here, riding the same transaction so one undo takes both: a marker-writing edit recounts the runs it touched and, where a line it touched was numbered or lettered, the run just below that item's nesting, which is the one a nested or switched item left, and a numbered or lettered marker it wrote over whole restarts its run from 1 or A, while a re-pick that leaves the text as it was lands nothing; a deletion that removes a whole line closes the gap it leaves, and one that removes a whole numbered or lettered marker recounts the run below it, as a switched item does. Nothing inside a page's math, tables, or plain code is counted, and a Markdown code block's own list counts from inside it. The positions it recounts from map through the edit in one ascending sweep, `mapAscending`, landing where `mapPos(p, -1)` lands each, since mapping each on its own measured quadratic on a 20,000-line pick.
+ export const listRenumber = (scope: MarkdownScope): Extension =>
+   EditorState.transactionFilter.of((tr) => {
+     if (!tr.docChanged) return tr
+@@ -24,7 +24,7 @@ export const listRenumber = (scope: MarkdownScope): Extension =>
+     tr.changes.iterChanges((fromA, toA, fromB, toB) => {
+       let below = -1
+       for (let i = lineIndexAt(was, fromA); i <= lineIndexAt(was, toA); i++) {
+-        const lm = itemAt(was, i, relist ? i : 'outside', scope)
++        const lm = itemAt(was, i, i, scope)
+         if (lm === null || !isSequenced(lm)) continue
+         const ls = was.lineStarts[i]
+         const whole = fromA <= ls + lm.markerStart && toA >= ls + lm.contentStart
+@@ -44,11 +44,7 @@ export const listRenumber = (scope: MarkdownScope): Extension =>
+           at.push(ls)
+           if (fromB < ls + lm.contentStart && toB >= ls) arrived.add(ls)
+         }
+-      else if (
+-        was.text.slice(fromA, toA).includes('\n') &&
+-        readsFrom(scan, lineIndexAt(scan, fromB), 'outside', scope)
+-      )
+-        at.push(fromB)
++      else if (was.text.slice(fromA, toA).includes('\n')) at.push(fromB)
+       if (below > 0 && below < was.text.length) runsBelow.push(below)
+     })
+     const repicked = new Set(mapAscending(tr.changes, rewritten))
+diff --git a/Core/MarkdownPM/Input/markdownInput.ts b/Core/MarkdownPM/Input/markdownInput.ts
+index 9fdede9ca..60ef97cb8 100644
+--- a/Core/MarkdownPM/Input/markdownInput.ts
++++ b/Core/MarkdownPM/Input/markdownInput.ts
+@@ -263,8 +263,8 @@ export const typedInput = (scope: MarkdownScope): Extension =>
+     return apply(
+       view,
+       headingHash(scan, from, from, text) ??
+-        (page ? calloutShorthand(scan.text, from, from, text, settings) : null) ??
+-        canonicalizeCheckbox(scan.text, from, from, text, scope) ??
++        (page ? calloutShorthand(scan, from, from, text, settings) : null) ??
++        canonicalizeCheckbox(scan, from, from, text, scope) ??
+         autoPair(scan, from, from, text, settings) ??
+         dashArrow(scan, from, from, text, settings) ??
+         ellipsis(scan, from, from, text, settings) ??
+diff --git a/Core/MarkdownPM/Menus/gripMenu.ts b/Core/MarkdownPM/Menus/gripMenu.ts
+index 1e7f16b8c..8be140461 100644
+--- a/Core/MarkdownPM/Menus/gripMenu.ts
++++ b/Core/MarkdownPM/Menus/gripMenu.ts
+@@ -128,7 +128,7 @@ function popHeadingMenu(view: EditorView, headingEl: HTMLElement): void {
+       } else {
+         // The grip addresses one block, so the range is that heading's own line — the selection belongs to the caret.
+         const level = Number(action.slice('size:'.length)) as HeadingLevel
+-        applyEdit(view, setHeading(doc, line.from, line.from, level))
++        applyEdit(view, setHeading(docScan(view.state.doc), line.from, line.from, level))
+         view.focus()
+       }
+     })
+diff --git a/Core/MarkdownPM/regressionPins.test.ts b/Core/MarkdownPM/regressionPins.test.ts
+index 07ac01bf1..e4e5b0d3f 100644
+--- a/Core/MarkdownPM/regressionPins.test.ts
++++ b/Core/MarkdownPM/regressionPins.test.ts
+@@ -162,12 +162,12 @@ describe('outdentListOnShiftTab', () => {
+ describe('format transforms — prefix-aware', () => {
+   it('setHeading on a quoted list line stays inside the quote', () => {
+     const doc = '> - item'
+-    const { changes } = setHeading(doc, 5, 5, 2)
++    const { changes } = setHeading(scanDoc(doc), 5, 5, 2)
+     expect(changes).toEqual([{ from: 2, to: 4, insert: '## ' }])
+   })
+   it('setHeading on a callout head edits after the tag — never exposes it', () => {
+     const doc = '> [!callout] Title'
+-    const { changes } = setHeading(doc, 15, 15, 1)
++    const { changes } = setHeading(scanDoc(doc), 15, 15, 1)
+     expect(changes[0].from).toBe(13)
+     expect(changes[0].insert).toBe('# ')
+   })
+diff --git a/Core/MarkdownPM/textScope.test.tsx b/Core/MarkdownPM/textScope.test.tsx
+index 9a586532f..277caf5da 100644
+--- a/Core/MarkdownPM/textScope.test.tsx
++++ b/Core/MarkdownPM/textScope.test.tsx
+@@ -82,8 +82,8 @@ describe('the text scope', () => {
+     const doc = '- a'
+     expect(smartBackspace(scanDoc(doc), 2, 2, 'text')).toBeNull()
+     expect(smartBackspace(scanDoc(doc), 2, 2, 'cell')).not.toBeNull()
+-    expect(canonicalizeCheckbox('-[]', 3, 3, ' ', 'text')).toBeNull()
+-    expect(canonicalizeCheckbox('-[]', 3, 3, ' ', 'cell')).not.toBeNull()
++    expect(canonicalizeCheckbox(scanDoc('-[]'), 3, 3, ' ', 'text')).toBeNull()
++    expect(canonicalizeCheckbox(scanDoc('-[]'), 3, 3, ' ', 'cell')).not.toBeNull()
+   })
+ 
+   it('draws no grip, glyph, or renumber on its surface', () => {

@@ -1,0 +1,1038 @@
+diff --git a/Core/Actions/editorMenu.test.ts b/Core/Actions/editorMenu.test.ts
+index 5ce8501f1..b3aa5ab52 100644
+--- a/Core/Actions/editorMenu.test.ts
++++ b/Core/Actions/editorMenu.test.ts
+@@ -9,8 +9,7 @@ import {
+ 
+ const state: EditorMenuRequest = {
+   scope: 'page',
+-  x: 0,
+-  y: 0,
++  menu: 'live',
+   bold: true,
+   italic: false,
+   strikethrough: false,
+@@ -23,7 +22,7 @@ const state: EditorMenuRequest = {
+   block: 'quote',
+   embedSeat: false,
+   citeSeat: true,
+-  resting: null,
++  selection: null,
+ }
+ 
+ const items = editorContextItems(state, DEFAULT_COMMANDS, '')
+diff --git a/Core/Actions/editorMenu.ts b/Core/Actions/editorMenu.ts
+index f1e100e45..f39869c61 100644
+--- a/Core/Actions/editorMenu.ts
++++ b/Core/Actions/editorMenu.ts
+@@ -24,8 +24,7 @@ import type { ListKind } from '../MarkdownPM/Engine/detect'
+ /** What sits under a right-click, sent to the host as the menu is asked for; main cannot see CM6 state. */
+ export const editorMenuRequest = z.object({
+   scope: z.enum(['page', 'lists', 'inline']),
+-  x: z.number(),
+-  y: z.number(),
++  menu: z.enum(['live', 'resting', 'short']),
+   bold: z.boolean(),
+   italic: z.boolean(),
+   strikethrough: z.boolean(),
+@@ -44,20 +43,35 @@ export const editorMenuRequest = z.object({
+   block: z.enum(['quote', 'code']).nullable(),
+   embedSeat: z.boolean(),
+   citeSeat: z.boolean(),
+-  resting: z.object({ selection: z.string() }).nullable(),
++  selection: z.string().nullable(),
+ })
+ export type EditorMenuRequest = z.infer<typeof editorMenuRequest>
+ 
+ export const PASTE_LITERAL_ACTION = 'paste:literal' as const
+-export const RESTING_EDITS = { cut: 'edit:cut', copy: 'edit:copy', paste: 'edit:paste' } as const
++export const SURFACE_EDITS = {
++  cut: 'edit:cut',
++  copy: 'edit:copy',
++  paste: 'edit:paste',
++  selectAll: 'edit:selectAll',
++} as const
+ 
+-export function restingEditItems(selected: boolean, canPaste: boolean): ActionItem<string>[] {
+-  return [
+-    { label: 'Cut', action: RESTING_EDITS.cut, chord: 'cmd+x', disabled: !selected },
+-    { label: 'Copy', action: RESTING_EDITS.copy, chord: 'cmd+c', disabled: !selected },
+-    { label: 'Paste', action: RESTING_EDITS.paste, chord: 'cmd+v', disabled: !canPaste },
+-  ]
+-}
++const copyRow = (selected: boolean): ActionItem<string> => ({
++  label: 'Copy',
++  action: SURFACE_EDITS.copy,
++  chord: 'cmd+c',
++  disabled: !selected,
++})
++
++export const restingRows = (selected: boolean, canPaste: boolean): ActionItem<string>[] => [
++  { label: 'Cut', action: SURFACE_EDITS.cut, chord: 'cmd+x', disabled: !selected },
++  copyRow(selected),
++  { label: 'Paste', action: SURFACE_EDITS.paste, chord: 'cmd+v', disabled: !canPaste },
++]
++
++export const shortRows = (selected: boolean): ActionItem<string>[] => [
++  copyRow(selected),
++  { label: 'Select All', action: SURFACE_EDITS.selectAll, chord: 'cmd+a' },
++]
+ 
+ export type FormatChordAction = Extract<CommandId, `format:${string}`>
+ 
+diff --git a/Core/Actions/pasteAsMenu.test.ts b/Core/Actions/pasteAsMenu.test.ts
+index 0ed0f678f..f31025ff0 100644
+--- a/Core/Actions/pasteAsMenu.test.ts
++++ b/Core/Actions/pasteAsMenu.test.ts
+@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
+ import { markdownLinkRegex } from '../Connections/links'
+ import { readLinkText, type LinkTarget } from '../Connections/linkValue'
+ import { buildPageIndex } from '../Connections/pageIndex'
+-import { PASTE_LITERAL_ACTION, RESTING_EDITS } from './editorMenu'
++import { PASTE_LITERAL_ACTION, SURFACE_EDITS } from './editorMenu'
+ import { pasteAsRows, pasteAsWrite, pasteModeOf, type PasteMode } from './pasteAsMenu'
+ 
+ const URL = 'https://www.example.com/a/b'
+@@ -230,7 +230,7 @@ describe('what a plain paste writes', () => {
+ describe('which paste an action asks for', () => {
+   it('reads the literal paste, the resting Paste, and each Paste As action, and nothing else', () => {
+     expect(pasteModeOf(PASTE_LITERAL_ACTION)).toBe('literal')
+-    expect(pasteModeOf(RESTING_EDITS.paste)).toBe('auto')
++    expect(pasteModeOf(SURFACE_EDITS.paste)).toBe('auto')
+     expect(forms(URL, true)).toContain('embedLink')
+     expect(pasteModeOf('format:bold')).toBeNull()
+   })
+diff --git a/Core/Actions/pasteAsMenu.ts b/Core/Actions/pasteAsMenu.ts
+index dac336222..a1fb1ec6b 100644
+--- a/Core/Actions/pasteAsMenu.ts
++++ b/Core/Actions/pasteAsMenu.ts
+@@ -14,7 +14,7 @@ import {
+   type LinkTarget,
+ } from '../Connections/linkValue'
+ import type { PageIndex } from '../Connections/pageIndex'
+-import { PASTE_LITERAL_ACTION, RESTING_EDITS } from './editorMenu'
++import { PASTE_LITERAL_ACTION, SURFACE_EDITS } from './editorMenu'
+ import type { LeafItem } from './menuModel'
+ 
+ type PasteAsForm =
+@@ -32,7 +32,7 @@ const PASTE_AS_PREFIX = 'pasteAs:'
+ 
+ export const pasteModeOf = (action: string): PasteMode | null => {
+   if (action === PASTE_LITERAL_ACTION) return 'literal'
+-  if (action === RESTING_EDITS.paste) return 'auto'
++  if (action === SURFACE_EDITS.paste) return 'auto'
+   return action.startsWith(PASTE_AS_PREFIX)
+     ? (action.slice(PASTE_AS_PREFIX.length) as PasteAsForm)
+     : null
+diff --git a/Core/Interface/Glance/GlancePane.test.tsx b/Core/Interface/Glance/GlancePane.test.tsx
+index ab0af95a4..4c69a1073 100644
+--- a/Core/Interface/Glance/GlancePane.test.tsx
++++ b/Core/Interface/Glance/GlancePane.test.tsx
+@@ -312,10 +312,10 @@ describe('the leave grace', () => {
+ 
+ describe('focus on close', () => {
+   const body = (): HTMLElement => document.querySelector('[data-glance]') as HTMLElement
+-  const pressInside = (): void => {
++  const pressInside = (button = 0): void => {
+     const b = body()
+     act(() => {
+-      b.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0 }))
++      b.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button }))
+     })
+     const editable = b.querySelector('.cm-content') as HTMLElement | null
+     editable?.focus()
+@@ -343,6 +343,17 @@ describe('focus on close', () => {
+     expect(document.activeElement).toBe(field)
+   })
+ 
++  it('hands focus back after a right press, whose row can ask for focus', () => {
++    const field = document.createElement('input')
++    document.body.appendChild(field)
++    field.focus()
++    present(link())
++    pressInside(2)
++    expect(body().contains(document.activeElement)).toBe(true)
++    closeByEscape()
++    expect(document.activeElement).toBe(field)
++  })
++
+   it('a second press inside the pane does not re-record', () => {
+     const field = document.createElement('input')
+     document.body.appendChild(field)
+diff --git a/Core/Interface/Glance/GlancePane.tsx b/Core/Interface/Glance/GlancePane.tsx
+index 370594684..7e2fe4853 100644
+--- a/Core/Interface/Glance/GlancePane.tsx
++++ b/Core/Interface/Glance/GlancePane.tsx
+@@ -35,7 +35,7 @@ import {
+ } from './glanceAction'
+ import './glance-pane.css'
+ 
+-// Contract: no dismiss backdrop and `focus="leave"` — a glance must never eat the next click or pull focus out of its host.
++// Contract: no dismiss backdrop and `focus="leave"` — a glance must never eat the next click or pull focus out of its host unless a row asks for it, as Select All does.
+ 
+ // KNOB — the default and floor sizes; the ceiling is the viewport and the anchor's band as the glance opens.
+ export const GLANCE_DEFAULT: Size = { w: 260, h: 120 }
+@@ -319,7 +319,7 @@ export function GlancePane(): React.JSX.Element {
+     })
+     dismiss()
+   }
+-  // `keepFocus` holds the pane's never-take-focus contract — a focusable button would else steal focus the close path can't restore.
++  // `keepFocus` holds the pane's focus contract — a focusable button would else steal focus the close path can't restore.
+   const lockBtn = page && (
+     <button
+       type="button"
+@@ -356,7 +356,7 @@ export function GlancePane(): React.JSX.Element {
+         origin="center"
+         resize={resize}
+       >
+-        {/* biome-ignore lint/a11y/noStaticElementInteractions: a pointer-only glance surface — the pane never takes focus by contract */}
++        {/* biome-ignore lint/a11y/noStaticElementInteractions: a pointer-only glance surface — the pane takes no focus of its own by contract */}
+         {/* biome-ignore lint/a11y/useKeyWithClickEvents: same — no keyboard path exists into a glance */}
+         <div
+           ref={cardRef}
+@@ -364,8 +364,7 @@ export function GlancePane(): React.JSX.Element {
+           data-reveal-host=""
+           className="glance-body"
+           style={{ width: resize.size.w, height: resize.size.h }}
+-          onPointerDownCapture={(e) => {
+-            if (e.button !== 0) return
++          onPointerDownCapture={() => {
+             if (!cardRef.current?.contains(document.activeElement))
+               focusBefore.current = document.activeElement
+           }}
+@@ -418,7 +417,7 @@ export function GlancePane(): React.JSX.Element {
+               modal={false}
+               origin="center"
+             >
+-              {/* biome-ignore lint/a11y/noStaticElementInteractions: a pointer-only glance surface — the pane never takes focus by contract */}
++              {/* biome-ignore lint/a11y/noStaticElementInteractions: a pointer-only glance surface — the pane takes no focus of its own by contract */}
+               {/* biome-ignore lint/a11y/useKeyWithClickEvents: same — no keyboard path exists into a glance */}
+               <div
+                 {...{ [GLANCE_BODY_ATTR]: '' }}
+diff --git a/Core/MarkdownPM/Input/formatState.ts b/Core/MarkdownPM/Input/formatState.ts
+index 60c877833..7075b65cb 100644
+--- a/Core/MarkdownPM/Input/formatState.ts
++++ b/Core/MarkdownPM/Input/formatState.ts
+@@ -12,7 +12,7 @@ export function readFormatState(
+   selFrom: number,
+   selTo: number,
+   settings: Personalization,
+-): Omit<EditorMenuRequest, 'scope' | 'x' | 'y' | 'embedSeat' | 'citeSeat' | 'resting'> {
++): Omit<EditorMenuRequest, 'scope' | 'menu' | 'embedSeat' | 'citeSeat' | 'selection'> {
+   const { fenced, from, to, ls, line, tokens, covering } = underSelection(scan, selFrom, selTo)
+   const lineFrom = from - ls
+   const lineTo = to - ls
+diff --git a/Core/MarkdownPM/MarkdownEditor.tsx b/Core/MarkdownPM/MarkdownEditor.tsx
+index 0dce366f8..1f0b91052 100644
+--- a/Core/MarkdownPM/MarkdownEditor.tsx
++++ b/Core/MarkdownPM/MarkdownEditor.tsx
+@@ -295,7 +295,8 @@ export function MarkdownEditor({
+   }, [])
+ 
+   return (
+-    <div ref={shellRef} className="mdpm-shell mdpm-fill">
++    // biome-ignore lint/a11y/noStaticElementInteractions: a bubble guard, not a control: a right-click here has asked its menu, and a glance's or an info pane's layer would cancel it
++    <div ref={shellRef} className="mdpm-shell mdpm-fill" onContextMenu={(e) => e.stopPropagation()}>
+       {header}
+       <div ref={editorRef} className="mdpm-editor interface-inset" />
+       <Scrollbar of={scroller} page timeline="--mdpm-scroll" />
+diff --git a/Core/MarkdownPM/Menus/editorMenu.test.tsx b/Core/MarkdownPM/Menus/editorMenu.test.tsx
+index 8e80f75b6..69b8ec4cc 100644
+--- a/Core/MarkdownPM/Menus/editorMenu.test.tsx
++++ b/Core/MarkdownPM/Menus/editorMenu.test.tsx
+@@ -1,5 +1,5 @@
+ // @vitest-environment jsdom
+-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
++import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest'
+ import { act } from 'react'
+ import { EditorView } from '@codemirror/view'
+ import { ok } from '../../Contract/result'
+@@ -61,13 +61,15 @@ async function rightClick(
+ }
+ 
+ describe('the editor’s native menu', () => {
++  const TABLE = '| A | B |\n| --- | --- |\n| x | z |'
++
+   it('asks at the click, leaves the event to the browser, and applies the reply', async () => {
+     format.mockResolvedValue('format:bold')
+     const view = await mountEditor({ initialBody: 'bold', host: host() })
+     view.dispatch({ selection: { anchor: 0, head: 4 } })
+     const event = await rightClick(view, 2)
+     expect(format).toHaveBeenCalledTimes(1)
+-    expect(format).toHaveBeenCalledWith(expect.objectContaining({ scope: 'page', x: 12, y: 34 }))
++    expect(format).toHaveBeenCalledWith(expect.objectContaining({ scope: 'page', menu: 'live' }))
+     expect(event.defaultPrevented).toBe(false)
+     expect(view.state.doc.toString()).toBe('**bold**')
+   })
+@@ -162,10 +164,58 @@ describe('the editor’s native menu', () => {
+     expect(drag.state.doc.toString()).toBe('x1. a\n2. b\n3. c\n4. d')
+   })
+ 
+-  it('never asks from a read-only editor', async () => {
++  it('asks the short menu from a read-only editor, with Copy over the seat and Select All', async () => {
++    format.mockResolvedValue('edit:copy')
++    const write = vi.fn(async () => {})
++    const view = await mountEditor({
++      initialBody: 'one two',
++      readOnly: true,
++      host: { ...host(), clipboard: { write } },
++    })
++    await rightClick(view, 5)
++    expect(format).toHaveBeenCalledWith(
++      expect.objectContaining({ menu: 'short', selection: 'two' }),
++    )
++    expect(write).toHaveBeenCalledWith('two')
++    format.mockResolvedValue('edit:selectAll')
++    await rightClick(view, 1)
++    expect(view.state.selection.main).toMatchObject({ from: 0, to: 7 })
++  })
++
++  it('keeps a right-click from the layers above, whose cancelling would strand the ask', async () => {
++    const above = vi.fn()
++    document.addEventListener('contextmenu', above)
++    onTestFinished(() => document.removeEventListener('contextmenu', above))
+     const view = await mountEditor({ initialBody: 'text', readOnly: true, host: host() })
+     await rightClick(view, 1)
+-    expect(format).not.toHaveBeenCalled()
++    expect(above).not.toHaveBeenCalled()
++  })
++
++  it('reads a glyph on a read-only editor as text', async () => {
++    const view = await mountEditor({ initialBody: '- a', readOnly: true, host: host() })
++    await rightClick(view, 2, view.dom.querySelector('.md-list-glyph')!)
++    expect(grip).not.toHaveBeenCalled()
++    expect(format).toHaveBeenCalledWith(expect.objectContaining({ menu: 'short' }))
++  })
++
++  it('selects and focuses the page from a read-only table’s Select All, so ⌘C reads it', async () => {
++    format.mockResolvedValue('edit:selectAll')
++    const doc = document as { caretPositionFromPoint?: unknown }
++    doc.caretPositionFromPoint = () => null
++    onTestFinished(() => {
++      delete doc.caretPositionFromPoint
++    })
++    const page = await mountEditor({ initialBody: `x\n\n${TABLE}`, readOnly: true, host: host() })
++    let cell: Element | null = null
++    for (let i = 0; !cell && i < 50; i++) {
++      await act(() => new Promise((r) => setTimeout(r, 20)))
++      cell = editorContainer().querySelector('tbody .mdpm-tbl-cell-static')
++    }
++    await act(async () => {
++      cell?.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }))
++    })
++    expect(page.state.selection.main).toMatchObject({ from: 0, to: page.state.doc.length })
++    expect(document.activeElement).toBe(page.contentDOM)
+   })
+ 
+   it('leaves a connection’s right-click to the connection menu', async () => {
+@@ -218,8 +268,6 @@ describe('the editor’s native menu', () => {
+     }
+   })
+ 
+-  const TABLE = '| A | B |\n| --- | --- |\n| x | z |'
+-
+   async function liveCell(body: string): Promise<{ page: EditorView; cell: EditorView }> {
+     const page = await mountEditor({ initialBody: body, host: host() })
+     let table: Element | null = null
+diff --git a/Core/MarkdownPM/Menus/menu.ts b/Core/MarkdownPM/Menus/menu.ts
+index ea9d52606..f059c6ab9 100644
+--- a/Core/MarkdownPM/Menus/menu.ts
++++ b/Core/MarkdownPM/Menus/menu.ts
+@@ -1,7 +1,8 @@
++import { selectAll } from '@codemirror/commands'
+ import { EditorSelection, Prec, type Extension } from '@codemirror/state'
+ import { EditorView } from '@codemirror/view'
+ import { pasteModeOf } from '../../Actions/pasteAsMenu'
+-import type { EditorMenuRequest } from '../../Actions/editorMenu'
++import { type EditorMenuRequest, SURFACE_EDITS } from '../../Actions/editorMenu'
+ import { citationSeatAt, insertCitation } from '../Citations/citationActions'
+ import { embedInsertAtCaret, embedSeatAt, webpageInsertAtCaret } from '../Embeds/embedInsert'
+ import { pasteFromClipboard } from '../Links/pasteLink'
+@@ -23,12 +24,17 @@ export function applyEditorAction(
+   { from, to }: BlockSpan = view.state.selection.main,
+ ): void {
+   const how = pasteModeOf(action)
+-  const settings = view.state.facet(editorHost).settings()
++  const host = view.state.facet(editorHost)
+   if (action === 'block:page') embedInsertAtCaret(view)
+   else if (action === 'block:webpage') webpageInsertAtCaret(view)
+   else if (action === 'block:citation') insertCitation(view)
+-  else if (how) void pasteFromClipboard(view, how)
+-  else if (applyEdit(view, editFor(action, docScan(view.state), from, to, settings))) view.focus()
++  else if (action === SURFACE_EDITS.copy) void host.clipboard.write(view.state.sliceDoc(from, to))
++  else if (action === SURFACE_EDITS.selectAll) {
++    selectAll(view)
++    view.focus()
++  } else if (how) void pasteFromClipboard(view, how)
++  else if (applyEdit(view, editFor(action, docScan(view.state), from, to, host.settings())))
++    view.focus()
+ }
+ 
+ const clickInside = (doc: string, at: number, from: number, to: number): boolean =>
+@@ -41,29 +47,22 @@ function keepSeatedSelection(): void {
+   setTimeout(() => document.removeEventListener('selectstart', refuse, true))
+ }
+ 
+-/** Every surface's right-click, routed from where its own hit test lands, run only once the host can ask: a list glyph asks for its type menu at its own point, which seats nothing, and anything else for the format menu over one range. That's the selection when the click lands in its reach, and otherwise the word under the pointer, or the point where it sits on none, as the surface seats it. */
++/** Every surface's right-click, routed from where its own hit test lands: a list glyph asks for its type menu at its own point, which seats nothing, and anything else for the format menu over one range. That's the selection when the click lands in its reach, and otherwise the word under the pointer, or the point where it sits on none, as the surface seats it. */
+ export function routeRightClick(
+   host: EditorHost,
+   scan: DocScan,
+-  event: { clientX: number; clientY: number; preventDefault(): void },
+-  click: () => {
+-    at: number
+-    glyph: boolean
+-    sel: BlockSpan
+-    word: () => BlockSpan | null
+-  },
++  event: { preventDefault(): void },
++  click: { at: number; glyph: boolean; sel: BlockSpan; word: () => BlockSpan | null },
+   surface: {
+     seat: (range: BlockSpan) => BlockSpan
+     request: (
+       from: number,
+       to: number,
+-    ) => Pick<EditorMenuRequest, 'embedSeat' | 'citeSeat' | 'resting'>
++    ) => Pick<EditorMenuRequest, 'menu' | 'selection' | 'embedSeat' | 'citeSeat'>
+     apply: (action: string, from: number, to: number) => void
+   },
+ ): void {
+-  const ask = host.menus.format
+-  if (!ask) return
+-  const { at, glyph, sel, word } = click()
++  const { at, glyph, sel, word } = click
+   const point = { from: at, to: at }
+   const inside = !glyph && clickInside(scan.text, at, sel.from, sel.to)
+   const { from, to } = glyph ? point : inside ? sel : surface.seat(word() ?? point)
+@@ -72,13 +71,7 @@ export function routeRightClick(
+   if (glyph) event.preventDefault()
+   const pick = glyph
+     ? host.menus.grip({ kind: 'glyph', current: state.list })
+-    : ask({
+-        ...state,
+-        scope: scan.scope,
+-        x: event.clientX,
+-        y: event.clientY,
+-        ...surface.request(from, to),
+-      })
++    : host.menus.format({ ...state, scope: scan.scope, ...surface.request(from, to) })
+   void pick.then((action) => {
+     if (action) surface.apply(action, from, to)
+   })
+@@ -89,8 +82,8 @@ export const editorMenu = (scope: MarkdownScope): Extension =>
+   Prec.lowest(
+     EditorView.domEventHandlers({
+       contextmenu(event, view) {
+-        if (view.state.readOnly) return false
+-        const glyph = glyphAt(event)
++        const { readOnly } = view.state
++        const glyph = readOnly ? null : glyphAt(event)
+         const opened = view.state.doc
+         const hit = view.posAndSideAtCoords(event, false)
+         const wordUnder = (): BlockSpan | null => {
+@@ -107,12 +100,12 @@ export const editorMenu = (scope: MarkdownScope): Extension =>
+           view.state.facet(editorHost),
+           docScan(view.state),
+           event,
+-          () => ({
++          {
+             at: glyph ? view.posAtDOM(glyph) : hit.pos,
+             glyph: glyph !== null,
+             sel: view.state.selection.main,
+             word: wordUnder,
+-          }),
++          },
+           {
+             seat: ({ from, to }) => {
+               view.dispatch({
+@@ -121,10 +114,11 @@ export const editorMenu = (scope: MarkdownScope): Extension =>
+               })
+               return view.state.selection.main
+             },
+-            request: () => ({
++            request: (from, to) => ({
++              menu: readOnly ? 'short' : 'live',
++              selection: readOnly ? view.state.sliceDoc(from, to) : null,
+               embedSeat: page && embedSeatAt(view.state),
+               citeSeat: page && citationSeatAt(view.state),
+-              resting: null,
+             }),
+             apply: (action, from, to) => {
+               if (!glyph) applyEditorAction(view, action)
+diff --git a/Core/MarkdownPM/Tables/cellRestingMenu.test.tsx b/Core/MarkdownPM/Tables/cellRestingMenu.test.tsx
+index e0bca2ade..7121c7b5c 100644
+--- a/Core/MarkdownPM/Tables/cellRestingMenu.test.tsx
++++ b/Core/MarkdownPM/Tables/cellRestingMenu.test.tsx
+@@ -174,11 +174,10 @@ describe('a right-click on a resting cell', () => {
+     expect(format).toHaveBeenCalledWith(
+       expect.objectContaining({
+         scope: 'lists',
+-        x: 12,
+-        y: 34,
++        menu: 'resting',
+         embedSeat: false,
+         citeSeat: false,
+-        resting: { selection: 'plain' },
++        selection: 'plain',
+       }),
+     )
+     expect(event.defaultPrevented).toBe(false)
+@@ -188,9 +187,7 @@ describe('a right-click on a resting cell', () => {
+   it('reads the format state at the point inside a mark', async () => {
+     await mount('**a** bc')
+     await rightClick('a', 1)
+-    expect(format).toHaveBeenCalledWith(
+-      expect.objectContaining({ bold: true, resting: { selection: 'a' } }),
+-    )
++    expect(format).toHaveBeenCalledWith(expect.objectContaining({ bold: true, selection: 'a' }))
+   })
+ 
+   it('sends the source a selection under the click covers', async () => {
+@@ -198,7 +195,7 @@ describe('a right-click on a resting cell', () => {
+     select('a', 0, ' bc', 3)
+     await rightClick(' bc', 1)
+     expect(format).toHaveBeenCalledWith(
+-      expect.objectContaining({ bold: false, resting: { selection: '**a** bc' } }),
++      expect.objectContaining({ bold: false, selection: '**a** bc' }),
+     )
+   })
+ 
+@@ -206,7 +203,7 @@ describe('a right-click on a resting cell', () => {
+     await mount('**a** bc')
+     select(' bc', 1, ' bc', 2)
+     await rightClick('a', 1)
+-    expect(format).toHaveBeenCalledWith(expect.objectContaining({ resting: { selection: 'a' } }))
++    expect(format).toHaveBeenCalledWith(expect.objectContaining({ selection: 'a' }))
+   })
+ 
+   it('claims the right press, so the selection and the page caret stay undisturbed', async () => {
+@@ -218,13 +215,28 @@ describe('a right-click on a resting cell', () => {
+     expect(press.defaultPrevented).toBe(true)
+   })
+ 
+-  it('asks nothing of a read-only cell', async () => {
++  it('asks the short menu of a read-only cell', async () => {
+     readOnly = true
+     await mount('**a** bc')
+     await rightClick('a', 1)
+-    expect(format).not.toHaveBeenCalled()
++    expect(format).toHaveBeenCalledWith(expect.objectContaining({ menu: 'short', selection: 'a' }))
++    await choose('edit:copy')
++    expect(written).toHaveBeenCalledWith('a')
++    expect(committed).not.toHaveBeenCalled()
+     expect(entered()).toBe(false)
+   })
++
++  it('reads a glyph on a read-only cell as text', async () => {
++    readOnly = true
++    const grip = vi.fn(async () => null)
++    host = { ...host, menus: { ...host.menus, grip } }
++    await mount('- ab')
++    const event = await rightClick('•', 1)
++    expect(grip).not.toHaveBeenCalled()
++    expect(event.defaultPrevented).toBe(false)
++    expect(format).toHaveBeenLastCalledWith(expect.objectContaining({ menu: 'short' }))
++    await choose(null)
++  })
+ })
+ 
+ describe('a row chosen at rest', () => {
+diff --git a/Core/MarkdownPM/Tables/cellStatic.test.tsx b/Core/MarkdownPM/Tables/cellStatic.test.tsx
+index 77d14b8ee..ace881333 100644
+--- a/Core/MarkdownPM/Tables/cellStatic.test.tsx
++++ b/Core/MarkdownPM/Tables/cellStatic.test.tsx
+@@ -1,5 +1,5 @@
+ // @vitest-environment jsdom
+-import { describe, it, expect, afterEach, vi } from 'vitest'
++import { describe, it, expect, afterEach, onTestFinished, vi } from 'vitest'
+ import { createElement, act } from 'react'
+ import { createRoot, type Root } from 'react-dom/client'
+ import { EditorView } from '@codemirror/view'
+@@ -111,6 +111,11 @@ describe('an entered cell draws what the resting cell drew', () => {
+   })
+ 
+   it('a right-click leaves the cell resting', async () => {
++    const doc = document as { caretPositionFromPoint?: unknown }
++    doc.caretPositionFromPoint = () => null
++    onTestFinished(() => {
++      delete doc.caretPositionFromPoint
++    })
+     await mount(numbering(2))
+     const cell = [...container.querySelectorAll('.mdpm-tbl-cell-static')].find((el) =>
+       el.textContent?.includes('see'),
+diff --git a/Core/MarkdownPM/Tables/cellStatic.tsx b/Core/MarkdownPM/Tables/cellStatic.tsx
+index 184e8c109..4f5efac7f 100644
+--- a/Core/MarkdownPM/Tables/cellStatic.tsx
++++ b/Core/MarkdownPM/Tables/cellStatic.tsx
+@@ -18,7 +18,7 @@ import {
+   textMarkerClass,
+ } from '../Engine/intents'
+ import { perText } from '../Engine/perText'
+-import type { ListMarker } from '../Engine/detect'
++import type { BlockSpan, ListMarker } from '../Engine/detect'
+ import { checkboxToggleChange } from '../Engine/listModel'
+ import { scanDoc } from '../Engine/docScan'
+ import { isPaint } from '../Engine/paints'
+@@ -26,7 +26,7 @@ import { editFor } from '../Input/format'
+ import { editEvent, landEdit } from '../Input/listRenumber'
+ import { decodePayload, type TablePayload } from '../Engine/Tables/clipboard'
+ import { pastedCellText } from '../Links/pasteLink'
+-import { RESTING_EDITS } from '../../Actions/editorMenu'
++import { SURFACE_EDITS } from '../../Actions/editorMenu'
+ import { pasteModeOf, type PasteMode } from '../../Actions/pasteAsMenu'
+ import { codeMask, quoteDepthOf, type TextEdit } from '../Engine/markdownCode'
+ import { sectionRunsIn } from '../../Connections/scan'
+@@ -45,10 +45,10 @@ import {
+   resolveLink,
+ } from '../../Connections/linkValue'
+ import { CITE_GLYPH, followCitation } from '../Citations/citationPointer'
+-import type { EditorHost } from '../api'
++import { type EditorHost, pageEditorAt } from '../api'
+ import { contractions, wordAt } from '../Input/markdownInput'
+ import { glyphAt } from '../lineDom'
+-import { routeRightClick } from '../Menus/menu'
++import { applyEditorAction, routeRightClick } from '../Menus/menu'
+ import type { Seat } from './CellEditor'
+ import type { HeadingLinkStyle } from '../../Settings/personalization'
+ import { CheckMark, checkboxClass } from '@pommora/uix/Controls/Checkbox'
+@@ -380,17 +380,17 @@ export function cellOffsetAt(
+   return acc
+ }
+ 
+-function restingSelection(cell: HTMLElement, at: number, text: string): [number, number] {
++function restingSelection(cell: HTMLElement, at: number, text: string): BlockSpan {
+   const sel = window.getSelection()
+   const range = sel && sel.rangeCount > 0 ? sel.getRangeAt(0) : null
+-  if (!range?.intersectsNode(cell)) return [at, at]
++  if (!range?.intersectsNode(cell)) return { from: at, to: at }
+   const from = cell.contains(range.startContainer)
+     ? cellOffsetAt(cell, range.startContainer, range.startOffset, 'start')
+     : 0
+   const to = cell.contains(range.endContainer)
+     ? cellOffsetAt(cell, range.endContainer, range.endOffset, 'end')
+     : text.length
+-  return [from, to]
++  return { from, to }
+ }
+ 
+ function sideOf({ offsetNode: node, offset }: CaretPosition, x: number, y: number): -1 | 1 | null {
+@@ -515,9 +515,9 @@ function StaticCellImpl({
+ 
+   const restingAction = async (action: string, from: number, to: number): Promise<void> => {
+     switch (action) {
+-      case RESTING_EDITS.copy:
++      case SURFACE_EDITS.copy:
+         return void host.clipboard.write(text.slice(from, to))
+-      case RESTING_EDITS.cut:
++      case SURFACE_EDITS.cut:
+         if (commitAtRest([{ from, to, insert: '' }], 'delete'))
+           void host.clipboard.write(text.slice(from, to))
+         return
+@@ -534,31 +534,28 @@ function StaticCellImpl({
+ 
+   const restingMenu = (e: React.MouseEvent<HTMLElement>): void => {
+     const cell = e.currentTarget
+-    const glyph = glyphAt(e)
++    const glyph = readOnly() ? null : glyphAt(e)
++    const found = glyph ? null : document.caretPositionFromPoint(e.clientX, e.clientY)
++    const caret = found && cell.contains(found.offsetNode) ? found : null
++    const at = glyph
++      ? srcOf(glyph)![0]
++      : caret
++        ? cellOffsetAt(cell, caret.offsetNode, caret.offset)
++        : text.length
+     routeRightClick(
+       host,
+       scanDoc(text, 'lists'),
+       e,
+-      () => {
+-        const found = glyph ? null : document.caretPositionFromPoint(e.clientX, e.clientY)
+-        const caret = found && cell.contains(found.offsetNode) ? found : null
+-        const at = glyph
+-          ? srcOf(glyph)![0]
+-          : caret
+-            ? cellOffsetAt(cell, caret.offsetNode, caret.offset)
+-            : text.length
+-        const [from, to] = restingSelection(cell, at, text)
+-        return {
+-          at,
+-          glyph: glyph !== null,
+-          sel: { from, to },
+-          word: () => {
+-            const side = caret && sideOf(caret, e.clientX, e.clientY)
+-            return side
+-              ? wordAt(EditorState.create({ doc: text, extensions: contractions }), at, side)
+-              : null
+-          },
+-        }
++      {
++        at,
++        glyph: glyph !== null,
++        sel: restingSelection(cell, at, text),
++        word: () => {
++          const side = caret && sideOf(caret, e.clientX, e.clientY)
++          return side
++            ? wordAt(EditorState.create({ doc: text, extensions: contractions }), at, side)
++            : null
++        },
+       },
+       {
+         seat: (range) => {
+@@ -566,11 +563,16 @@ function StaticCellImpl({
+           return range
+         },
+         request: (from, to) => ({
++          menu: readOnly() ? 'short' : 'resting',
++          selection: text.slice(from, to),
+           embedSeat: false,
+           citeSeat: false,
+-          resting: { selection: text.slice(from, to) },
+         }),
+-        apply: (action, from, to) => void restingAction(action, from, to),
++        apply: (action, from, to) => {
++          if (action === SURFACE_EDITS.selectAll)
++            applyEditorAction(pageEditorAt(cell).view!, action)
++          else void restingAction(action, from, to)
++        },
+       },
+     )
+   }
+@@ -590,8 +592,7 @@ function StaticCellImpl({
+     <div
+       className="mdpm-tbl-cell-static"
+       onContextMenu={(e) => {
+-        if (onContextMenu(e) || readOnly()) return
+-        restingMenu(e)
++        if (!onContextMenu(e)) restingMenu(e)
+       }}
+       onPointerOver={onPointerOver}
+       onPointerOut={onPointerOut}
+diff --git a/Core/MarkdownPM/api.ts b/Core/MarkdownPM/api.ts
+index 991badaa5..4363d02f8 100644
+--- a/Core/MarkdownPM/api.ts
++++ b/Core/MarkdownPM/api.ts
+@@ -188,7 +188,7 @@ export interface EditorHost {
+     table(ctx: TableMenuContext): Promise<TableMenuAction | null>
+     citation(ctx: CitationMenuContext): Promise<CitationMenuAction | null>
+     alias(): Promise<AliasRowAction | null>
+-    format?: (req: EditorMenuRequest) => Promise<string | null>
++    format(req: EditorMenuRequest): Promise<string | null>
+   }
+   /** Absent on a surface that never glances (a read-only snapshot); `contains` answers whether an element sits inside an open glance. */
+   glance?: {
+diff --git a/Core/Pages/editorHost.tsx b/Core/Pages/editorHost.tsx
+index 5cd4b08b6..902d68298 100644
+--- a/Core/Pages/editorHost.tsx
++++ b/Core/Pages/editorHost.tsx
+@@ -103,12 +103,10 @@ function buildEditorHost(
+       table: (ctx) => popMenu(tableMenuItems(ctx)),
+       citation: (ctx) => popMenu(citationMenuModel(ctx)),
+       alias: popAliasRowMenu,
+-      format: inert
+-        ? undefined
+-        : (req) =>
+-            dialer()
+-              .ask('editor:menu', req)
+-              .then((r) => valueOr(r, null)),
++      format: (req) =>
++        dialer()
++          .ask('editor:menu', req)
++          .then((r) => valueOr(r, null)),
+     },
+     glance: inert ? undefined : glanceHost,
+     renderTile: (tile) =>
+diff --git a/Core/Testing/editorHarness.ts b/Core/Testing/editorHarness.ts
+index 25fdac414..d1806c81d 100644
+--- a/Core/Testing/editorHarness.ts
++++ b/Core/Testing/editorHarness.ts
+@@ -126,6 +126,7 @@ function harnessHost(spec: HarnessHost, rerender: () => void = () => {}): Harnes
+       table: async () => null,
+       citation: async () => null,
+       alias: async () => null,
++      format: async () => null,
+       ...spec.menus,
+     },
+     glance: spec.glance === false ? undefined : (spec.glance ?? NO_GLANCE),
+diff --git a/Desktop/Actions/editorMenu.test.ts b/Desktop/Actions/editorMenu.test.ts
+index 9f5b72c7a..c267c97f2 100644
+--- a/Desktop/Actions/editorMenu.test.ts
++++ b/Desktop/Actions/editorMenu.test.ts
+@@ -1,7 +1,7 @@
+ import { describe, expect, it, vi } from 'vitest'
+ import type { BrowserWindow, ContextMenuParams, MenuItemConstructorOptions } from 'electron'
+ import type { EditorMenuRequest } from '@pommora/core/Actions/editorMenu'
+-import { askEditorMenu, atClick, installEditorContextMenu } from './editorMenu'
++import { askEditorMenu, installEditorContextMenu } from './editorMenu'
+ 
+ const native = vi.hoisted(() => ({
+   clipboard: '',
+@@ -21,10 +21,9 @@ vi.mock('electron', () => ({
+   },
+ }))
+ 
+-const req = (x: number, y: number): EditorMenuRequest => ({
++const req: EditorMenuRequest = {
+   scope: 'page',
+-  x,
+-  y,
++  menu: 'live',
+   bold: false,
+   italic: false,
+   strikethrough: false,
+@@ -37,33 +36,13 @@ const req = (x: number, y: number): EditorMenuRequest => ({
+   block: null,
+   embedSeat: false,
+   citeSeat: false,
+-  resting: null,
+-})
+-
+-describe('matching an editor’s ask to the click', () => {
+-  it('matches the click it was sent from', () => {
+-    expect(atClick(req(100, 40), { x: 100, y: 40 }, 1)).toBe(true)
+-  })
+-
+-  it('converts CSS pixels to window DIPs', () => {
+-    expect(atClick(req(101, 41), { x: 126, y: 51 }, 1.25)).toBe(true)
+-  })
+-
+-  it('widens with the zoom, since the renderer truncates its click to whole CSS pixels', () => {
+-    expect(atClick(req(282, 329), { x: 849, y: 990 }, 3)).toBe(true)
+-    expect(atClick(req(262, 77), { x: 1052, y: 312 }, 3.9999)).toBe(true)
+-  })
+-
+-  it('refuses a click farther than that slack', () => {
+-    expect(atClick(req(100, 40), { x: 104, y: 40 }, 1)).toBe(false)
+-    expect(atClick(req(100, 40), { x: 306, y: 120 }, 3)).toBe(false)
+-  })
+-})
++  selection: null,
++}
+ 
+ describe('the parked ask', () => {
+   it('answers an earlier ask with null when a second one arrives', async () => {
+-    const first = askEditorMenu(req(0, 0))
+-    void askEditorMenu(req(1, 1))
++    const first = askEditorMenu(req)
++    void askEditorMenu(req)
+     await expect(first).resolves.toBeNull()
+   })
+ })
+@@ -76,8 +55,6 @@ describe('the window’s right-click', () => {
+       on: (_event: string, fn: (e: unknown, p: ContextMenuParams) => void) => {
+         rightClick = (params) =>
+           fn({}, {
+-            x: 10,
+-            y: 10,
+             isEditable: true,
+             selectionText: '',
+             misspelledWord: '',
+@@ -86,7 +63,6 @@ describe('the window’s right-click', () => {
+             ...params,
+           } as ContextMenuParams)
+       },
+-      getZoomFactor: () => 1,
+       pasteAndMatchStyle,
+     },
+   } as unknown as BrowserWindow)
+@@ -97,38 +73,29 @@ describe('the window’s right-click', () => {
+   const pick = (item: MenuItemConstructorOptions | undefined): void =>
+     (item?.click as (() => void) | undefined)?.()
+ 
+-  it('builds the editor rows from the ask its click matches, and a row answers it', async () => {
+-    const asked = askEditorMenu(req(10, 10))
++  it('builds the editor rows from the parked ask, and a row answers it', async () => {
++    const asked = askEditorMenu(req)
+     rightClick({})
+     expect(labels()).toContain('Format')
+     pick((row('Format')?.submenu as MenuItemConstructorOptions[])[0])
+     await expect(asked).resolves.toBe('format:italic')
+   })
+ 
+-  it('answers null to an ask whose click lands elsewhere, and offers no editor rows', async () => {
+-    const asked = askEditorMenu(req(50, 50))
+-    rightClick({})
+-    expect(labels()).not.toContain('Format')
+-    await expect(asked).resolves.toBeNull()
+-  })
+-
+-  it('answers null and pops nothing over a field that isn’t editable', async () => {
++  it('pops nothing over a field that isn’t editable when nothing asked', () => {
+     native.popped = null
+-    const asked = askEditorMenu(req(10, 10))
+     rightClick({ isEditable: false })
+     expect(native.popped).toBeNull()
+-    await expect(asked).resolves.toBeNull()
+   })
+ 
+   it('answers null when the menu closes with nothing picked', async () => {
+-    const asked = askEditorMenu(req(10, 10))
++    const asked = askEditorMenu(req)
+     rightClick({})
+     native.close?.()
+     await expect(asked).resolves.toBeNull()
+   })
+ 
+   it('sends Paste Without Formatting to the editor that asked, and to the browser otherwise', async () => {
+-    const asked = askEditorMenu(req(10, 10))
++    const asked = askEditorMenu(req)
+     rightClick({})
+     pick(row('Paste Without Formatting'))
+     await expect(asked).resolves.toBe('paste:literal')
+@@ -139,19 +106,20 @@ describe('the window’s right-click', () => {
+ 
+   it('offers Paste As from the seats the ask carries', () => {
+     native.clipboard = 'plain words'
+-    void askEditorMenu({ ...req(10, 10), citeSeat: true })
++    void askEditorMenu({ ...req, citeSeat: true })
+     rightClick({})
+     expect(labels()).toContain('Paste As')
+-    void askEditorMenu(req(10, 10))
++    void askEditorMenu(req)
+     rightClick({})
+     expect(labels()).not.toContain('Paste As')
+   })
+ 
+   describe('over a resting cell, which Chromium reports as not editable', () => {
+     const resting = (selection: string): EditorMenuRequest => ({
+-      ...req(10, 10),
++      ...req,
+       scope: 'lists',
+-      resting: { selection },
++      menu: 'resting',
++      selection,
+     })
+ 
+     it('pops the edit rows the renderer acts on, without Undo, Redo, or Select All', async () => {
+@@ -230,9 +198,32 @@ describe('the window’s right-click', () => {
+     })
+   })
+ 
++  describe('over a surface that can’t be edited', () => {
++    const short = (selection: string): EditorMenuRequest => ({ ...req, menu: 'short', selection })
++
++    it('offers Copy and Select All alone, the renderer answering each', async () => {
++      const copied = askEditorMenu(short('wo'))
++      rightClick({ isEditable: true, misspelledWord: 'wo', dictionarySuggestions: ['we'] })
++      expect(labels()).toEqual(['Copy', 'Select All'])
++      pick(row('Copy'))
++      await expect(copied).resolves.toBe('edit:copy')
++      const all = askEditorMenu(short('wo'))
++      rightClick({ isEditable: false })
++      pick(row('Select All'))
++      await expect(all).resolves.toBe('edit:selectAll')
++    })
++
++    it('turns Copy off with nothing selected', () => {
++      void askEditorMenu(short(''))
++      rightClick({ isEditable: false, selectionText: 'drawn' })
++      expect(row('Copy')?.enabled).toBe(false)
++      expect(row('Select All')?.enabled).toBe(true)
++    })
++  })
++
+   it('seats Change Color under Select All, above the line over the editor block', async () => {
+     const asked = askEditorMenu({
+-      ...req(10, 10),
++      ...req,
+       painted: { paint: 'highlight', color: 'accent' },
+     })
+     rightClick({})
+@@ -245,7 +236,7 @@ describe('the window’s right-click', () => {
+       ),
+     )
+     await expect(asked).resolves.toBe('highlight:blue')
+-    void askEditorMenu(req(10, 10))
++    void askEditorMenu(req)
+     rightClick({})
+     expect(labels()).not.toContain('Change Color')
+   })
+diff --git a/Desktop/Actions/editorMenu.ts b/Desktop/Actions/editorMenu.ts
+index 549a4150b..17783f73d 100644
+--- a/Desktop/Actions/editorMenu.ts
++++ b/Desktop/Actions/editorMenu.ts
+@@ -10,7 +10,8 @@ import {
+   changeColorItems,
+   editorContextItems,
+   PASTE_LITERAL_ACTION,
+-  restingEditItems,
++  restingRows,
++  shortRows,
+ } from '@pommora/core/Actions/editorMenu'
+ import type { ActionItem } from '@pommora/core/Actions/menuModel'
+ import { pasteAsRows } from '@pommora/core/Actions/pasteAsMenu'
+@@ -34,25 +35,6 @@ export function askEditorMenu(req: EditorMenuRequest): Promise<string | null> {
+   })
+ }
+ 
+-/** The renderer truncates the click to whole CSS pixels and the event measures in window DIPs, differing by the window's zoom, so the slack is one CSS pixel at that zoom beyond two DIPs. */
+-export function atClick(
+-  req: EditorMenuRequest,
+-  params: Pick<ContextMenuParams, 'x' | 'y'>,
+-  zoom: number,
+-): boolean {
+-  const slack = 2 + zoom
+-  return Math.abs(req.x * zoom - params.x) <= slack && Math.abs(req.y * zoom - params.y) <= slack
+-}
+-
+-function takeEditorMenu(win: BrowserWindow, params: ContextMenuParams): EditorMenu | null {
+-  const menu = pending
+-  pending = null
+-  if (!menu) return null
+-  if (atClick(menu.req, params, win.webContents.getZoomFactor())) return menu
+-  menu.resolve(null)
+-  return null
+-}
+-
+ function systemItems(
+   wc: WebContents,
+   params: ContextMenuParams,
+@@ -74,11 +56,11 @@ function systemItems(
+     )
+   }
+ 
+-  const resting = editor?.req.resting
++  const resting = editor?.req.menu === 'resting' ? editor : null
+   const canPaste = resting ? clipboard.readText() !== '' : f.canPaste
+   items.push(
+-    ...(resting && editor
+-      ? editorRows(editor, restingEditItems(resting.selection !== '', canPaste))
++    ...(resting
++      ? editorRows(resting, restingRows(!!resting.req.selection, canPaste))
+       : ([
+           { role: 'undo', enabled: f.canUndo },
+           { role: 'redo', enabled: f.canRedo },
+@@ -132,17 +114,23 @@ function editorRows(
+ 
+ export function installEditorContextMenu(win: BrowserWindow): void {
+   win.webContents.on('context-menu', (_e, params) => {
+-    const editor = takeEditorMenu(win, params)
+-    if (!params.isEditable && !editor?.req.resting) return editor?.resolve(null)
+-    const items = systemItems(win.webContents, params, editor)
+-    const selection = editor?.req.resting?.selection ?? params.selectionText
+-    if (editor) {
+-      items.push(
+-        { type: 'separator' },
+-        ...editorRows(editor, editorContextItems(editor.req, heldCommands(), selection)),
+-      )
+-    }
+-    items.push(...speechShareItems(selection))
++    const editor = pending
++    pending = null
++    if (!params.isEditable && !editor) return
++    const selection = editor?.req.selection ?? params.selectionText
++    const items =
++      editor?.req.menu === 'short'
++        ? editorRows(editor, shortRows(selection !== ''))
++        : [
++            ...systemItems(win.webContents, params, editor),
++            ...(editor
++              ? [
++                  { type: 'separator' } as const,
++                  ...editorRows(editor, editorContextItems(editor.req, heldCommands(), selection)),
++                ]
++              : []),
++            ...speechShareItems(selection),
++          ]
+     Menu.buildFromTemplate(items).popup({ window: win, callback: () => editor?.resolve(null) })
+   })
+ }

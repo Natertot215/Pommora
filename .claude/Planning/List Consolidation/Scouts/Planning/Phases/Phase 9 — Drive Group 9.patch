@@ -1,0 +1,464 @@
+diff --git a/.claude/scripts/List Types Drive/MATRIX.md b/.claude/scripts/List Types Drive/MATRIX.md
+index c4e84bd46..9d6ccf7e5 100644
+--- a/.claude/scripts/List Types Drive/MATRIX.md	
++++ b/.claude/scripts/List Types Drive/MATRIX.md	
+@@ -35,10 +35,10 @@ The drive's cases, derived from *List Consolidation — Decisions & Intention*,
+ - **Preserve List-Level Formatting inside a block in group 2:** a pick reaches through the one `listReach` a page uses (*Scouts/8*, 8-T26), and group 3 crosses the setting on a page.
+ - **A paste in a Markdown block in group 2:** the recount arrives with paste, so group 4 holds it.
+ - **A table pasted onto a code line:** it needs a table's clipboard payload, and `tableGuard`'s test reads the marker the block no longer holds.
+-- **A cut at rest in group 3:** the resting menu's seat is Phase 9's rework, and a cut at rest lands through the `landEdit` a pick at rest takes; group 9 holds it.
++- **A cut at rest in group 3:** the resting menu's seat is Phase 9's rework, so group 9 holds it.
+ - **A paste in group 3:** the saved tree holds paste already, and group 4 owns the row.
+ - **Rails through wraps and the nesting cap:** `railIntents` reads lines, so a wrap is one line, and the cap writes no deeper level to draw; the elbow and join ends are read as part of each rail's reach.
+-- **A paste at rest in group 4:** an empty paste at rest is E-2's, and the resting menu is Phase 9's rework; group 9 holds it.
++- **A paste at rest in group 4:** the resting menu is Phase 9's rework, so group 9 holds it.
+ - **A table pasted into a list:** a table's clipboard payload reaches `tableGuard`, not the recount, and no decision names it.
+ - **Enter, Tab, and Shift-Tab off an item in a cell:** they're the cell's navigation rather than a list's key, which `cellLists.test.tsx` pins; group 6 reads the keys a list claims.
+ - **⌘Z after every cell key:** a cell forwards undo to the page's history, one path whatever the key, so one recount proves it.
+@@ -46,6 +46,8 @@ The drive's cases, derived from *List Consolidation — Decisions & Intention*,
+ - **A callout head's type menu:** a head draws no glyph (F-1), so nothing opens one, and `format.test.ts` pins what a pick writes there.
+ - **Word gestures in a Text value:** group 10's, since the pane's surface changes there; `textScope.test.tsx` holds the one-line field.
+ - **The word rule's character classes past those a user types:** `𝒶'b` and the 3,992-reading differential stay with `textScope.test.tsx`; a press can't land one half of an astral letter reliably.
++- **The info pane in group 9:** nothing mounts `InfoButton` today, so no surface draws one to press; `editorMenu.test.tsx` holds the bubble stop.
++- **A window tab and an embed in group 9:** both mount the unentered tile's read-only editor; the tile, the reader, and a glance cover the short menu's three routes in.
+ 
+ #### Group 1 — One Scan Per Surface
+ 
+@@ -240,3 +242,39 @@ Every row runs for all five types on a page and in a focused cell, asserted agai
+ | `'don't'` | A resting cell | right-click, Bold | the quotes ride, the accepted departure | E-6 |
+ | `// don't stop` | ` ```js ` | double-click, Option-arrow | the whole word, both ways | E-5 |
+ | `// $a's` | ` ```js ` | double-click | `a's`, the language's `$` dropped for that gesture | E-6 |
++
++#### Group 9 — Right-Click
++
++The menu stays up between a press and its choice, so a seat's highlight is read from `CSS.highlights` and a screenshot while it's up. The clipboard is read first and written back.
++
++| Case | Surface | Operation | Expected | Decisions |
++| --- | --- | --- | --- | --- |
++| A word | A resting cell | right-click | Cut, Copy, Paste, Paste Without Formatting, Lists ▸, Format ▸, Speech ▸, Share ▸, and Format ▸'s rows as a live cell's | E-1 |
++| A word | A resting cell | Format ▸ Bold, Lists ▸ | writes in the cell; no editor, the page's caret and focus unmoved | E-1 |
++| Bullets, numbers, arrows | A resting cell | the glyph's Checklist, ⌘Z | commits without entering, and reverts | E-1 |
++| `> a`, blank past `ab` | A resting cell | Bulleted, Bold | `- > a`, `ab****` | E-1 |
++| A dismissal, Copy, an empty paste, a pick changing nothing | A resting cell | close, type | typing lands at the page's caret | E-2 |
++| A page selection | A resting cell | dismiss, type | it stands, and typing replaces it | E-2 |
++| A closed menu | A resting cell | click | one click enters | E-2 |
++| Cut, ⌘Z; Paste; lines pasted; a cut across lines | A resting cell | row | writes without entering, reverts, and recounts | E-1, F-2, B-10 |
++| Use Native Highlighting on and off | A resting cell | hold the menu, read, close | the word registered in the selection color, nothing in Chromium's selection; cleared on close | E-2, E-3 |
++| Text, a glyph, a read-only cell | An unentered tile | right-click | Copy and Select All alone, Copy off on a glyph | E-4 |
++| Copy, Select All | An unentered tile | row | the seated word; the tile's document | E-4 |
++| A link, a heading's band | An unentered tile | right-click | their own menus | E-4 |
++| A glyph | An editing tile | Numbered, ⌘Z | the type menu, its own group, undone | E-4 |
++| Text, a glyph | The page reader | right-click | Copy and Select All alone | E-4 |
++| Text | A glance | right-click | Copy and Select All alone | E-4 |
++| A read-only table's cell | An unentered tile, a glance | Select All, ⌘C by a key event carrying `copy` | the clipboard holds that surface's document | E-4 |
++| Select All in a glance | A glance | Escape until it closes | the page holds the focus again | E-4 |
++| `- `, nested, box, nested box, number | A page | a press left of the glyph and at the line's edge, Bold | writes past the marker | E-7 |
++| `> quote` | A page | a press on the prefix, Bold | writes past it | E-7 |
++| A bullet | A page | a left press left of it, type | seats at the content | E-7 |
++| A link settling on the line | A page | Bold on a word | lands | E-7 |
++| A word ending an inline code span | A page | Insert ▸ | no Footnote, where prose offers it | E-7 |
++| `_it_`'s revealed `_` | A page | right-click | Italic checked | D-5 |
++| Inside a line; a word filling its item | A page | Lists ▸ | the item's group | D-5 |
++| A whole line, a triple-click | A page | Lists ▸ | narrows to that item | D-5 |
++| A triple-click or a drag ending at the next line's start | A page | a row from the next line, or Lists ▸ | acts on the line it means | D-5 |
++| A glyph inside and outside a selection | A page | pick | its group | D-2 |
++| A glyph, a revealed marker, blank past a line | A page | press | the caret stays; the glyph's reach; acts at the point | E-7 |
++| The Settings row | Settings | read, turn off | sits under Outliner Lines, and a pick follows without a reload | D-1 |
+diff --git a/.claude/scripts/List Types Drive/live-drive.mjs b/.claude/scripts/List Types Drive/live-drive.mjs
+index aea21f796..2f5ffc1fa 100644
+--- a/.claude/scripts/List Types Drive/live-drive.mjs	
++++ b/.claude/scripts/List Types Drive/live-drive.mjs	
+@@ -1,5 +1,6 @@
++import { execFileSync } from 'node:child_process'
+ import {
+-  ALT, ask, boxOf, clicks, createPage, hover, item, launch, META, mouseAt, must, openCollection, openPage, PAGE_VIEW, pickNative, popNative, pressKey, restore, row, SHIFT, shot, sleep, sweep, tally, typeText, until,
++  ALT, ask, boxOf, chooseNative, clicks, closePageWindow, closeSettings, createPage, hover, item, launch, META, mouseAt, must, openCollection, openPage, openSettings, PAGE_VIEW, pickNative, popNative, press, pressKey, restore, row, SHIFT, shot, sleep, sweep, SWITCH, tally, typeText, until, writeBody,
+ } from '../drive-harness.mjs'
+ 
+ const PORT = 9413
+@@ -20,6 +21,11 @@ const S = {
+   calloutHead: '.cm-line.md-callout-first',
+   caret: '.caret-bar',
+   rail: '.md-outline-rail',
++  tile: '.mdpm-embed-tile .cm-content',
++  tileEditing: '.mdpm-embed-tile.is-editing-tile',
++  reader: '.page-window .cm-content',
++  glance: '[data-glance] .cm-content',
++  link: '.md-connection-resolved',
+   italic: '.md-italic',
+   math: '.md-latex',
+   citationRow: '.cm-line.md-citation',
+@@ -1010,6 +1016,346 @@ async function group8(cdp) {
+   item(8, 'E-6', "a contraction in JS drops the language's `$` for that gesture, the accepted departure", dollar === "a's", show(dollar))
+ }
+ 
++// ── Group 9 — Right-Click ───────────────────────────────────────────────────
++
++async function group9(cdp) {
++  await setting(cdp, true)
++  const clipboard = execFileSync('pbpaste', { encoding: 'utf8' })
++  const setClip = (text) => execFileSync('pbcopy', { input: text })
++  const getClip = () => execFileSync('pbpaste', { encoding: 'utf8' })
++  try {
++    await rightClicks(cdp, setClip, getClip)
++  } finally {
++    setClip(clipboard)
++  }
++}
++
++async function rightClicks(cdp, setClip, getClip) {
++  const seatRead = () => cdp.evaluate(`CSS.highlights.has('mdpm-seat') ? [...CSS.highlights.get('mdpm-seat')].map(String).join('') : null`)
++  const liveMounted = () => cdp.evaluate(`!!${LIVE_CELL}`)
++  const pageSelection = () => selection(cdp)
++  const pageFocused = () => cdp.evaluate(`document.activeElement === ${PAGE_VIEW}.contentDOM`)
++  const atWord = (word, length) => textAt(cdp, restingCell(word), word, length)
++  const leftOf = async (expr, dx = 2) => { const b = await boxOf(cdp, expr); return { x: b.left - dx, y: b.y } }
++
++  // E-1: a resting cell's menu.
++  const RESTING_ROWS = ['Cut', 'Copy', 'Paste', 'Paste Without Formatting', '—', 'Lists ▸', 'Format ▸', '—', 'Speech ▸', 'Share ▸']
++  setClip('held')
++  await setBody(cdp, table('plain word here'))
++  const menu = await pop(cdp, await atWord('word'), [])
++  item(9, 'E-1', "a resting cell's menu holds its edit rows, Lists ▸, and Format ▸, with no Undo, Redo, or Select All", show(flat(menu.rows)) === show(RESTING_ROWS), seen(menu))
++  const restingFormat = flat(menu.rows?.find((r) => r.label === 'Format')?.submenu)
++  await setBody(cdp, table('plain word here'))
++  await enterCell(cdp, 'here')
++  const liveMenu = await pop(cdp, await textAt(cdp, LIVE_CELL, 'word'), [])
++  await leaveCell(cdp)
++  item(9, 'E-1', "a resting cell's Format ▸ reads a live cell's rows", restingFormat.length > 0 && show(restingFormat) === show(flat(liveMenu.rows?.find((r) => r.label === 'Format')?.submenu)), show([restingFormat, flat(liveMenu.rows?.find((r) => r.label === 'Format')?.submenu)]))
++
++  await setBody(cdp, table('plain word here'))
++  await pop(cdp, await atWord('word'), ['Format', 'Bold'])
++  const after = await pageSelection()
++  const end = (await docOf(cdp)).length
++  item(9, 'E-1', 'Format ▸ Bold at rest writes in the cell and leaves no caret there', (await body(cdp)) === table('plain **word** here') && !(await liveMounted()) && show(after) === show([end, end]) && (await pageFocused()), show([await body(cdp), await liveMounted(), after, end]))
++  await setBody(cdp, table('- a<br>- b'))
++  await pop(cdp, await atWord('b'), listPath('Numbered'))
++  item(9, 'E-1', "Lists ▸ from an item's text at rest takes a live cell's reach", (await body(cdp)) === table('1. a<br>2. b') && !(await liveMounted()), show(await body(cdp)))
++  for (const text of ['- a<br>- b', '1. a<br>2. b', '→ a<br>→ b']) {
++    await setBody(cdp, table(text))
++    const glyph = await pop(cdp, await boxOf(cdp, restingGlyph('a')), ['Checklist'])
++    const picked = await body(cdp)
++    await pressKey(cdp, 'z', META)
++    await sleep(400)
++    item(9, 'E-1', `${show(text)} at rest: the glyph's Checklist commits without entering, and ⌘Z reverts it`, picked === table('- [ ] a<br>- [ ] b') && !(await liveMounted()) && (await body(cdp)) === table(text), `${seen(glyph)} · ${show([picked, await body(cdp)])}`)
++  }
++  await setBody(cdp, table('> a'))
++  await pop(cdp, await atWord('a'), listPath('Bulleted'))
++  item(9, 'E-1', "a resting cell's `> a` becomes an item holding the `>`", (await body(cdp)) === table('- > a'), show(await body(cdp)))
++  await setBody(cdp, table('ab'))
++  const { x: abX, left: abLeft, y: abY } = await atWord('ab')
++  await pop(cdp, { x: 2 * abX - abLeft + 12, y: abY }, ['Format', 'Bold'])
++  const blankCell = await body(cdp)
++  await pressKey(cdp, 'Escape')
++  await sleep(400)
++  item(9, 'E-1', 'a resting right-click on blank space past the text acts at the point', blankCell === table('ab****'), show(blankCell))
++
++  // E-2: what stands after a resting menu closes.
++  const typedAtTail = async (name, close) => {
++    await setBody(cdp, table('plain word here'))
++    await close()
++    const seat = await seatRead()
++    await typeText(cdp, 'Q')
++    await sleep(300)
++    const doc = await docOf(cdp)
++    item(9, 'E-2', `typing after ${name} lands at the page's caret`, doc.endsWith('\n\nTail.Q') && seat === null, show([seat, doc]))
++  }
++  await typedAtTail('a dismissed resting menu', async () => pop(cdp, await atWord('word'), []))
++  await typedAtTail('Copy at rest', async () => {
++    await pop(cdp, await atWord('word'), ['Copy'])
++    item(9, 'E-2', 'Copy at rest copies the seated word', getClip() === 'word', show(getClip()))
++  })
++  await setBody(cdp, table('- one<br>- two'))
++  await pop(cdp, await atWord('one'), listPath('Bulleted'))
++  await typeText(cdp, 'Q')
++  await sleep(300)
++  item(9, 'E-2', "typing after a pick that changes nothing lands at the page's caret", (await docOf(cdp)).endsWith('\n\nTail.Q') && (await body(cdp)).startsWith(table('- one<br>- two')), show(await docOf(cdp)))
++  await typedAtTail('an empty paste at rest', async () => {
++    setClip('held')
++    const rows = await popNative(cdp, await atWord('word'), 'right')
++    setClip('')
++    await pickNative(['Paste'])
++    await sleep(500)
++    item(9, 'E-2', 'an empty paste at rest writes nothing', (await docOf(cdp)).startsWith(table('plain word here')) && rows !== null, show(await docOf(cdp)))
++  })
++  await setBody(cdp, table('plain word here'))
++  await select(cdp, 'Tail')
++  await pop(cdp, await atWord('word'), [])
++  const stood = await cdp.evaluate(`(() => { const v = ${PAGE_VIEW}; const s = v.state.selection.main; return v.state.sliceDoc(s.from, s.to) })()`)
++  await typeText(cdp, 'Z')
++  await sleep(300)
++  item(9, 'E-2', 'a page selection stands through a resting menu, and typing replaces it', stood === 'Tail' && (await docOf(cdp)).endsWith('\n\nZ.'), show([stood, await docOf(cdp)]))
++  await setBody(cdp, table('plain word here'))
++  await pop(cdp, await atWord('word'), [])
++  await mouseAt(cdp, await atWord('word'))
++  await until('the cell live', () => liveMounted(), 2000).catch(() => {})
++  const entered = await liveMounted()
++  if (entered) await leaveCell(cdp)
++  item(9, 'E-2', 'one click enters a cell after its menu closed with nothing chosen', entered, show(entered))
++
++  // A cut and a paste at rest.
++  setClip('held')
++  await setBody(cdp, table('plain word here'))
++  await pop(cdp, await atWord('word'), ['Cut'])
++  item(9, 'E-1', 'Cut at rest takes the seated word to the clipboard, leaving no caret', (await body(cdp)) === table('plain  here') && getClip() === 'word' && !(await liveMounted()), show([await body(cdp), getClip()]))
++  await pressKey(cdp, 'z', META)
++  await sleep(400)
++  item(9, 'E-1', '⌘Z after a cut at rest puts the word back', (await body(cdp)) === table('plain word here'), show(await body(cdp)))
++  setClip('zz')
++  await setBody(cdp, table('plain word here'))
++  await pop(cdp, await atWord('word'), ['Paste'])
++  item(9, 'E-1', 'Paste at rest replaces the seated word', (await body(cdp)) === table('plain zz here') && !(await liveMounted()), show(await body(cdp)))
++  setClip('pa\n9. x\n9. y')
++  await setBody(cdp, table('1. pa<br>2. pb'))
++  await pop(cdp, await atWord('pa'), ['Paste'])
++  item(9, 'F-2', 'lines pasted at rest recount the cell', (await body(cdp)) === table('1. pa<br>2. x<br>3. y<br>4. pb'), show(await body(cdp)))
++  await setBody(cdp, table('1. a<br>2. b<br>3. c<br>4. d'))
++  await cdp.evaluate(`(() => { const nodes = [...(${restingCell('b')}).querySelectorAll(${show(S.text)})].map((e) => e.firstChild); const s = getSelection(); s.setBaseAndExtent(nodes[1], 0, nodes[2], 1) })()`)
++  await pop(cdp, await atWord('b'), ['Cut'])
++  item(9, 'B-10', 'a cut across lines at rest recounts what follows', (await body(cdp)) === table('1. a<br>2. <br>3. d'), show(await body(cdp)))
++  await cdp.evaluate('getSelection().removeAllRanges()')
++
++  // E-3: a seated word's highlight.
++  const selectionPaint = () => cdp.evaluate(`(() => { const e = document.createElement('div'); e.style.background = 'var(--text-selection)'; document.body.append(e); const c = getComputedStyle(e).backgroundColor; e.remove(); return c })()`)
++  const seatPaint = () => cdp.evaluate(`getComputedStyle(${restingCell('apple')}, '::highlight(mdpm-seat)').backgroundColor`)
++  for (const native of [false, true]) {
++    await ask(cdp, 'personalization:set', 'nativeHighlight', native)
++    await sleep(300)
++    await setBody(cdp, table('apple pear'))
++    const rows = await popNative(cdp, await atWord('apple'), 'right')
++    await sleep(200)
++    const seat = await seatRead()
++    const paint = await seatPaint()
++    const want = await selectionPaint()
++    const chromium = await cdp.evaluate('getSelection().toString()')
++    await shot(cdp, `g9-seat-native-${native ? 'on' : 'off'}`)
++    await pickNative([])
++    await sleep(300)
++    const cleared = await seatRead()
++    await shot(cdp, `g9-seat-cleared-${native ? 'on' : 'off'}`)
++    item(9, 'E-3', `a seated word holds its highlight in the selection color, Use Native Highlighting ${native ? 'on' : 'off'}`, rows !== null && seat === 'apple' && paint === want && chromium === '', show([seat, paint, want, chromium]))
++    item(9, 'E-2', `the seat's highlight clears on close, Use Native Highlighting ${native ? 'on' : 'off'}`, cleared === null, show(cleared))
++  }
++  await ask(cdp, 'personalization:set', 'nativeHighlight', false)
++
++  // E-4: read-only surfaces.
++  const SHORT = ['Copy', 'Select All']
++  const short = (surface, at, seated) => pop(cdp, at, []).then((r) => {
++    item(9, 'E-4', `${surface} offers Copy and Select All alone`, show(flat(r.rows)) === show(SHORT) && r.rows[0].enabled === seated, `${seen(r)} · ${show(r.rows?.[0])}`)
++    return r
++  })
++  // Select All from a read-only cell, then ⌘C, read off the system clipboard. The page holds the focus first, since a press on a read-only editor's text would hand that editor the key on its own.
++  const copiedAll = async (word) => {
++    setClip('held')
++    await cdp.evaluate(`${PAGE_VIEW}.focus()`)
++    await pop(cdp, await textAt(cdp, restingCell(word), word), ['Select All'])
++    await pressKey(cdp, 'c', META, ['copy'])
++    await sleep(400)
++    return getClip()
++  }
++  await createPage(cdp, 'LT Target')
++  await createPage(cdp, 'LT Embedded')
++  writeBody('LT Target', 'target words here\n\n| Ga | Gb |\n| --- | --- |\n| glanceword | y |\n')
++  writeBody('LT Embedded', '## Head\n\nplain word here\n\n- ga\n- gb\n\nsee [[LT Target]] now\n\n| Ta | Tb |\n| --- | --- |\n| cellword | y |\n')
++  await sleep(800)
++  await setBody(cdp, '![[LT Embedded]]')
++  const TILE = `document.querySelector(${show(S.tile)})`
++  await until('the tile', () => cdp.evaluate(`!!${TILE}?.querySelector(${show(S.glyph)})`))
++  await sleep(600)
++  await short('an unentered tile', await textAt(cdp, TILE, 'word'), true)
++  await short("an unentered tile's glyph, reading as text", await boxOf(cdp, `${TILE}.querySelector(${show(S.glyph)})`), false)
++  await short("a read-only table's cell", await textAt(cdp, restingCell('cellword'), 'cellword'), true)
++  setClip('held')
++  await pop(cdp, await textAt(cdp, TILE, 'word'), ['Copy'])
++  item(9, 'E-4', "Copy on an unentered tile copies its seated word", getClip() === 'word', show(getClip()))
++  await pop(cdp, await textAt(cdp, TILE, 'word'), ['Select All'])
++  const allOf = await cdp.evaluate(`(() => { const v = ${TILE}.cmTile.root.view; const s = v.state.selection.main; return [s.from, s.to, v.state.doc.length] })()`)
++  item(9, 'E-4', "Select All on an unentered tile selects that tile's document", allOf[0] === 0 && allOf[1] === allOf[2], show(allOf))
++  const tileDoc = () => cdp.evaluate(`${TILE}.cmTile.root.view.state.doc.toString()`)
++  const tileCopied = await copiedAll('cellword')
++  item(9, 'E-4', "Select All from a read-only table's cell, then ⌘C, copies the tile's document", tileCopied === (await tileDoc()), show(tileCopied))
++  const onLink = await pop(cdp, await textAt(cdp, TILE, 'LT Target'), [])
++  item(9, 'E-4', "a link's own menu answers first on a read-only surface", flat(onLink.rows).includes('Copy Link') && !flat(onLink.rows).includes('Select All'), seen(onLink))
++  const headLine = `[...${TILE}.querySelectorAll('.cm-line')].find((l) => l.textContent.includes('Head'))`
++  const onHeading = await gripPick(cdp, headLine, [])
++  item(9, 'E-4', "a heading's own menu answers first on a read-only surface", onHeading.rows !== null && !flat(onHeading.rows).includes('Select All') && !flat(onHeading.rows).includes('Delete'), seen(onHeading))
++
++  await mouseAt(cdp, await textAt(cdp, TILE, 'ga'))
++  await until('the tile editing', () => cdp.evaluate(`!!document.querySelector(${show(S.tileEditing)})`))
++  const seeded = await tileDoc()
++  const inTile = await pop(cdp, await boxOf(cdp, `${TILE}.querySelector(${show(S.glyph)})`), ['Numbered'])
++  const numbered = await tileDoc()
++  await pressKey(cdp, 'z', META)
++  await sleep(400)
++  item(9, 'E-4', "an editing tile's glyph keeps the type menu, numbers its own group, and ⌘Z takes it back", show(flat(inTile.rows)) === show(typeRows('Bulleted')) && numbered.includes('1. ga\n2. gb') && (await tileDoc()) === seeded, `${seen(inTile)} · ${show(numbered)}`)
++  await pressKey(cdp, 'Escape')
++  await sleep(400)
++
++  await setBody(cdp, 'plain word here\n\n- ga\n- gb')
++  await chooseNative(cdp, `document.querySelector(${show(`[role=tab][title="${TITLE}"]`)})`, 'Preview')
++  await until('the reader', () => cdp.evaluate(`!!document.querySelector(${show(S.reader)})`))
++  await sleep(800)
++  const READER = `document.querySelector(${show(S.reader)})`
++  await short('the page reader', await textAt(cdp, READER, 'word'), true)
++  await shot(cdp, 'g9-reader')
++  await short("the page reader's glyph, reading as text", await boxOf(cdp, `${READER}.querySelector(${show(S.glyph)})`), false)
++  await closePageWindow(cdp)
++
++  await setBody(cdp, 'see [[LT Target]] now')
++  await hover(cdp, `${PAGE_TEXT}.querySelector(${show(S.link)})`, 1500)
++  await until('the glance', () => cdp.evaluate(`!!document.querySelector(${show(S.glance)})`), 5000)
++  await sleep(500)
++  const GLANCE = `document.querySelector(${show(S.glance)})`
++  await short('a glance', await textAt(cdp, GLANCE, 'words'), true)
++  const glanceCopied = await copiedAll('glanceword')
++  item(9, 'E-4', "Select All from a read-only cell in a glance, then ⌘C, copies the glance's document", glanceCopied === (await cdp.evaluate(`${GLANCE}.cmTile.root.view.state.doc.toString()`)), show(glanceCopied))
++  await pressKey(cdp, 'Escape')
++  // An Escape over the glance's own selection clears it, and the next one closes the pane.
++  if (await cdp.evaluate(`!!${GLANCE}`)) await pressKey(cdp, 'Escape')
++  await until('the glance gone', () => cdp.evaluate(`!${GLANCE}`))
++  await sleep(400)
++  item(9, 'E-4', 'a glance closing after its Select All gives the focus back to the page', await pageFocused(), await cdp.evaluate('document.activeElement?.tagName'))
++
++  // E-7: a press left of a glyph.
++  for (const [seed, word, want] of [
++    ['- First item here', 'First', '- ****First item here'],
++    ['- top\n\t- Nested item here', 'Nested', '- top\n\t- ****Nested item here'],
++    ['- [ ] Box item here', 'Box', '- [ ] ****Box item here'],
++    ['- [ ] top\n\t- [ ] Nested box here', 'Nested', '- [ ] top\n\t- [ ] ****Nested box here'],
++    ['1. numbered one', 'numbered', '1. ****numbered one'],
++  ]) {
++    const line = `[...${PAGE_TEXT}.querySelectorAll('.cm-line')].find((l) => l.textContent.includes(${show(word)}))`
++    for (const [where, at] of [['left of its glyph', () => leftOf(`(${line}).querySelector(${show(S.glyph)})`)], ["at its line's left edge", async () => { const b = await boxOf(cdp, line); return { x: b.left + 1, y: b.y } }]]) {
++      await setBody(cdp, seed)
++      const press = await pop(cdp, await at(), ['Format', 'Bold'])
++      item(9, 'E-7', `a press ${where} writes past the marker: ${show(want)}`, (await body(cdp)) === want, `${seen(press)} · ${show(await body(cdp))}`)
++    }
++  }
++  await setBody(cdp, '> quote here')
++  const quoted = await textAt(cdp, PAGE_TEXT, 'quote', 1)
++  await pop(cdp, { x: quoted.left - 3, y: quoted.y }, ['Format', 'Bold'])
++  item(9, 'E-7', "a press on a quote's prefix writes past it", (await body(cdp)) === '> ****quote here', show(await body(cdp)))
++  await setBody(cdp, '- First item here')
++  await mouseAt(cdp, await leftOf(glyphOf('First item here')))
++  await typeText(cdp, 'X')
++  await sleep(300)
++  item(9, 'E-7', 'a left press left of a bullet seats at the content', (await body(cdp)) === '- XFirst item here', show(await body(cdp)))
++
++  // Row 44, 45, and 46.
++  await setBody(cdp, '[[LT Target|x]] tail word')
++  await caretPast(cdp, '|x')
++  await BACKSPACE(cdp)
++  await wordPick(cdp, 'word', ['Format', 'Bold'])
++  await sleep(400)
++  item(9, 'E-7', 'Bold on a word lands after a link settles on the same line', (await body(cdp)) === '[[LT Target]] tail **word**', show(await body(cdp)))
++  const insertRows = (rows) => flat(rows?.find((r) => r.label === 'Insert')?.submenu)
++  await setBody(cdp, '`abc` plain')
++  const inCode = await wordPick(cdp, 'abc', [])
++  const inProse = await wordPick(cdp, 'plain', [])
++  item(9, 'E-7', 'a word ending an inline code span offers no footnote, where prose does', !insertRows(inCode.rows).includes('Footnote') && insertRows(inProse.rows).includes('Footnote'), show([insertRows(inCode.rows), insertRows(inProse.rows)]))
++  await setBody(cdp, '_it_ x')
++  // The caret inside the mark reveals its `_`, so the press has an outer edge to land on.
++  await caretPast(cdp, '_i')
++  const edge = await pop(cdp, await textAt(cdp, PAGE_TEXT, '_', 1), [])
++  const italic = (edge.rows?.find((r) => r.label === 'Format')?.submenu ?? []).find((r) => r.label === 'Italic')
++  item(9, 'D-5', "a right-click on `_it_`'s outer edge checks Italic", italic?.checked === true, `${seen(edge)} · ${show(italic)}`)
++
++  // D-5 and D-2: what a selection reaches.
++  const TWO = '- alpha one\n- beta'
++  await setBody(cdp, TWO)
++  await select(cdp, 'pha')
++  await wordPick(cdp, 'pha', listPath('Numbered'))
++  item(9, 'D-5', "a selection inside one line acts as a caret, on the item's group", (await body(cdp)) === '1. alpha one\n2. beta', show(await body(cdp)))
++  await setBody(cdp, '- word\n- beta')
++  await select(cdp, 'word')
++  await wordPick(cdp, 'word', listPath('Numbered'))
++  item(9, 'D-5', 'a word filling its item counts as inside the line', (await body(cdp)) === '1. word\n2. beta', show(await body(cdp)))
++  await setBody(cdp, TWO)
++  await select(cdp, '- alpha one')
++  await wordPick(cdp, 'pha', listPath('Numbered'))
++  item(9, 'D-5', 'a selection holding a whole line narrows to that item', (await body(cdp)) === '1. alpha one\n- beta', show(await body(cdp)))
++  await setBody(cdp, TWO)
++  await clicks(cdp, await textAt(cdp, PAGE_TEXT, 'alpha'), 3, { settle: 400 })
++  await wordPick(cdp, 'alpha', listPath('Numbered'))
++  item(9, 'D-5', 'a triple-clicked line narrows to that item', (await body(cdp)) === '1. alpha one\n- beta', show(await body(cdp)))
++
++  const edgeOf = async (word) => { const { left, y } = await textAt(cdp, PAGE_TEXT, word, 1); return { x: left + 1, y } }
++  for (const [path, want] of [[['Format', 'Bold'], 'one\n**two** two'], [listPath('Bulleted'), 'one\n- two two']]) {
++    await setBody(cdp, 'one\ntwo two')
++    await clicks(cdp, await textAt(cdp, PAGE_TEXT, 'one'), 3, { settle: 400 })
++    await pop(cdp, await edgeOf('two'), path)
++    item(9, 'D-5', `after a triple-clicked line, ${path.join(' ▸ ')} from the next line's first pixel acts on that line`, (await body(cdp)) === want, show(await body(cdp)))
++  }
++  await setBody(cdp, 'one\ntwo two')
++  await sweep(cdp, await edgeOf('one'), await edgeOf('two'), { steps: 6 })
++  await wordPick(cdp, 'one', listPath('Numbered'))
++  item(9, 'D-5', "a drag-selection ending at the next line's start numbers only its own line", (await body(cdp)) === '1. one\ntwo two', show(await body(cdp)))
++
++  await setBody(cdp, EXAMPLE)
++  await select(cdp, 'B', 'E')
++  const inside = await glyphPick(cdp, 'C', 'Checklist')
++  item(9, 'D-2', "a glyph inside a selection acts on its group", (await body(cdp)) === '- A\n\t- B\n\t\t- [ ] C\n\t\t- [ ] D\n\t- E\n- F', `${seen(inside)} · ${show(await body(cdp))}`)
++  await setBody(cdp, EXAMPLE)
++  await select(cdp, 'B')
++  const outside = await glyphPick(cdp, 'F', 'Numbered')
++  item(9, 'D-2', 'a glyph outside the selection acts on its group', (await body(cdp)) === '1. A\n\t- B\n\t\t- C\n\t\t- D\n\t- E\n2. F', `${seen(outside)} · ${show(await body(cdp))}`)
++  await setBody(cdp, '1. one\n2. two\n→ arrow')
++  for (const text of ['one', 'arrow']) {
++    const was = await pageSelection()
++    const glyph = await glyphPick(cdp, text)
++    item(9, 'E-7', `a right-press on ${text}'s glyph leaves the caret where it stood`, show(await pageSelection()) === show(was), seen(glyph))
++  }
++  await setBody(cdp, EXAMPLE)
++  await caretAt(cdp, 0)
++  const revealed = await pop(cdp, await textAt(cdp, lineOf('A'), '-'), listPath('Numbered'))
++  item(9, 'E-7', "a revealed marker's Lists ▸ acts as its glyph", (await body(cdp)) === '1. A\n\t- B\n\t\t- C\n\t\t- D\n\t- E\n2. F', `${seen(revealed)} · ${show(await body(cdp))}`)
++  await setBody(cdp, 'ab\nlonger line')
++  const shortLine = await textAt(cdp, PAGE_TEXT, 'ab')
++  await pop(cdp, { x: 2 * shortLine.x - shortLine.left + 40, y: shortLine.y }, ['Format', 'Bold'])
++  item(9, 'E-7', 'a right-click on blank space past a short line acts at the point', (await body(cdp)) === 'ab****\nlonger line', show(await body(cdp)))
++
++  // D-1: the setting.
++  await openSettings(cdp, 'Pages & Writing')
++  const order = await cdp.evaluate(`[...document.querySelectorAll('[role="switch"]')].map((s) => s.getAttribute('aria-label'))`)
++  const preserve = SWITCH('Preserve List-Level Formatting')
++  const on = await cdp.evaluate(`(${preserve})?.getAttribute('aria-checked') ?? null`)
++  item(9, 'D-1', 'Preserve List-Level Formatting sits under Outliner Lines, on', order[order.indexOf('Outliner Lines') + 1] === 'Preserve List-Level Formatting' && on === 'true', show([order, on]))
++  await press(cdp, preserve)
++  await closeSettings(cdp)
++  await setBody(cdp, EXAMPLE)
++  await glyphPick(cdp, 'E', 'Numbered')
++  item(9, 'D-1', 'turned off in Settings, a pick reaches the nesting without a reload', (await body(cdp)) === '- A\n\t1. B\n\t\t1. C\n\t\t2. D\n\t2. E\n- F', show(await body(cdp)))
++  await setting(cdp, true)
++}
++
+ // ── The run ─────────────────────────────────────────────────────────────────
+ 
+ const GROUPS = {
+@@ -1021,6 +1367,7 @@ const GROUPS = {
+   6: ['One Set of List Keys', group6],
+   7: ['One Definition Per Type', group7],
+   8: ['The Word Rule', group8],
++  9: ['Right-Click', group9],
+ }
+ const chosen = process.argv.slice(2).map(Number)
+ if (chosen.length === 0 || chosen.some((g) => !GROUPS[g])) {
+diff --git a/.claude/scripts/drive-harness.mjs b/.claude/scripts/drive-harness.mjs
+index f73ff2608..3b3328bf8 100644
+--- a/.claude/scripts/drive-harness.mjs
++++ b/.claude/scripts/drive-harness.mjs
+@@ -260,10 +260,11 @@ export const hover = async (cdp, expr, dwell = 600) => {
+ 
+ export const click = (cdp, expr) => cdp.evaluate(`(${expr}).click()`)
+ 
+-const VK = { Enter: 13, Escape: 27, Tab: 9, Backspace: 8, Delete: 46, b: 66, f: 70, z: 90, ArrowDown: 40, ArrowUp: 38, ArrowLeft: 37, ArrowRight: 39, ' ': 32 }
+-export async function pressKey(cdp, name, modifiers = 0) {
++const VK = { Enter: 13, Escape: 27, Tab: 9, Backspace: 8, Delete: 46, b: 66, c: 67, f: 70, z: 90, ArrowDown: 40, ArrowUp: 38, ArrowLeft: 37, ArrowRight: 39, ' ': 32 }
++// `commands` are the editing commands the app's Edit menu runs for a chord, which a key event alone never reaches.
++export async function pressKey(cdp, name, modifiers = 0, commands = []) {
+   for (const type of ['rawKeyDown', 'keyUp'])
+-    await cdp.send('Input.dispatchKeyEvent', { type, key: name, code: name === ' ' ? 'Space' : name.length === 1 ? `Key${name.toUpperCase()}` : name, windowsVirtualKeyCode: VK[name], modifiers })
++    await cdp.send('Input.dispatchKeyEvent', { type, key: name, code: name === ' ' ? 'Space' : name.length === 1 ? `Key${name.toUpperCase()}` : name, windowsVirtualKeyCode: VK[name], modifiers, ...(type === 'rawKeyDown' && { commands }) })
+   await sleep(300)
+ }
+ export const ALT = 1

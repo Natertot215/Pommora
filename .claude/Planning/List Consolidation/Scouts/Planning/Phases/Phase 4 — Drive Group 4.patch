@@ -1,0 +1,101 @@
+diff --git a/.claude/scripts/List Types Drive/MATRIX.md b/.claude/scripts/List Types Drive/MATRIX.md
+index 2704e4549..1713b82b6 100644
+--- a/.claude/scripts/List Types Drive/MATRIX.md	
++++ b/.claude/scripts/List Types Drive/MATRIX.md	
+@@ -38,6 +38,8 @@ The drive's cases, derived from *List Consolidation — Decisions & Intention*,
+ - **A cut at rest in group 3:** the resting menu's seat is Phase 9's rework, and a cut at rest lands through the `landEdit` a pick at rest takes; group 9 holds it.
+ - **A paste in group 3:** the saved tree holds paste already, and group 4 owns the row.
+ - **Rails through wraps and the nesting cap:** `railIntents` reads lines, so a wrap is one line, and the cap writes no deeper level to draw; the elbow and join ends are read as part of each rail's reach.
++- **A paste at rest in group 4:** an empty paste at rest is E-2's, and the resting menu is Phase 9's rework; group 9 holds it.
++- **A table pasted into a list:** a table's clipboard payload reaches `tableGuard`, not the recount, and no decision names it.
+ 
+ #### Group 1 — One Scan Per Surface
+ 
+@@ -134,3 +136,22 @@ Every drag is a real press on a glyph, or a grip, carried to a line's edge, asse
+ | Outliner Lines off | A page, a resting cell | measured | no rail draws | B-9 |
+ | A blank under a nested list | A page, a resting cell | measured | the rail ends at the blank | B-5 |
+ | A code block, a flush line in one, a rider | A page, a resting cell | measured | the rail carries through | B-5, B-6, F-1 |
++
++#### Group 4 — Paste
++
++Every paste goes through the app's paste event with `text/plain`, and every item asserts one ⌘Z back to the seed.
++
++| Case | Surface | Paste | Expected | Decisions |
++| --- | --- | --- | --- | --- |
++| `1.`, `2.`, `3.` | A page | `9. x`, `9. y` under `2.` | 1 through 5 | F-2 |
++| A list at 5 | A page | two lines at `6.`'s start | they join and count on from 5 | F-2 |
++| A list at 5 | A page | one line with its newline, at `6.`'s start | it joins that line as text, its edge whitespace left out, and nothing recounts | F-2 |
++| Two lists a blank apart | A page | `2. b` on the blank | they join and recount | F-2 |
++| A run at 5 | A page | `9. x`, `9. y` above it | takes the pasted start | F-2 |
++| `1. a`, `3. b` | A page | a word inside an item | nothing recounts | F-2 |
++| `1.`, `2.`, `3.` | A page | a flush line | the list ends, the lower keeps its number | F-2 |
++| A quoted list | A quote | quoted items | recounts | F-2 |
++| Two lines, or an end across two items | A page | over a selection | the gap closes | F-2 |
++| ` ```md ` | A Markdown block | an item | recounts | C-1, F-2 |
++| ` ```js `, a no-language block, display math | Each | an item | counts nothing | C-3, F-2 |
++| `1.`, `2.` | A focused cell | two items | recounts | F-2 |
+diff --git a/.claude/scripts/List Types Drive/live-drive.mjs b/.claude/scripts/List Types Drive/live-drive.mjs
+index dc5106968..62014ac82 100644
+--- a/.claude/scripts/List Types Drive/live-drive.mjs	
++++ b/.claude/scripts/List Types Drive/live-drive.mjs	
+@@ -141,6 +141,12 @@ const SHIFT_TAB = (cdp) => pressKey(cdp, 'Tab', SHIFT)
+ const BACKSPACE = (cdp) => pressKey(cdp, 'Backspace')
+ const DELETE = (cdp) => pressKey(cdp, 'Delete')
+ const type = (text) => async (cdp) => { await typeText(cdp, text); await sleep(300) }
++// The app's own paste path, by an event carrying `text`, so the system clipboard stays untouched.
++const pasteInto = (view, text) => async (cdp) => {
++  await cdp.evaluate(`(() => { const dt = new DataTransfer(); dt.setData('text/plain', ${show(text)}); ${view}.contentDOM.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true })) })()`)
++  await sleep(500)
++}
++const paste = (text) => pasteInto(PAGE_VIEW, text)
+ // One stroke's result, asserted against `want`, and ⌘Z asserted back to the seed where the stroke changed the text.
+ async function stroke(cdp, group, decision, name, seed, past, key, want) {
+   await setBody(cdp, seed)
+@@ -612,12 +618,47 @@ async function group3(cdp) {
+   item(3, 'B-9', 'Outliner Lines off draws no rail on a page or in a resting cell', offPage.length === 0 && offCell.length === 0, show([offPage, offCell]))
+ }
+ 
++// ── Group 4 — Paste ─────────────────────────────────────────────────────────
++
++async function group4(cdp) {
++  const pasted = (name, seed, past, text, want) => stroke(cdp, 4, 'F-2', name, seed, past, paste(text), want)
++  await pasted("lines pasted into a numbered list recount it, their own numbers not counting, and one ⌘Z takes both", '1. a\n2. b\n3. c', '2. b', '\n9. x\n9. y', '1. a\n2. b\n3. x\n4. y\n5. c')
++  await pasted('pasted lines join a list at 5 where they land', '5. a\n6. b', '5. a\n', '1. x\n1. y\n', '5. a\n6. x\n7. y\n8. b')
++  await pasted("a one-line paste at an item's start joins its line as text, its edge whitespace left out, and recounts nothing", '5. a\n6. b', '5. a\n', '1. x\n', '5. a\n1. x6. b')
++  await pasted('an item pasted into the gap between two lists joins and recounts them', '1. a\n\n3. c\n4. d', '1. a\n', '2. b', '1. a\n2. b\n3. c\n4. d')
++  await pasted('a list pasted above a run past 1 takes the pasted start', '5. a\n6. b', '', '9. x\n9. y\n', '9. x\n10. y\n11. a\n12. b')
++  await pasted('words pasted inside an item recount nothing, a gapped run included', '1. a\n3. b', '1. a', 'word', '1. aword\n3. b')
++  await pasted('a flush line a paste brings ends the list, and the lower list keeps its number', '1. a\n2. b\n3. c', '2. b', ' x\nplain', '1. a\n2. b x\nplain\n3. c')
++  await pasted('a paste into a quoted list recounts it', '> 1. a\n> 2. b', '1. a', '\n> 9. x\n> 9. y', '> 1. a\n> 2. x\n> 3. y\n> 4. b')
++
++  const over = (name, seed, from, to, text, want) => stroke(cdp, 4, 'F-2', name, seed, '', async (c) => { await select(c, from, to); await paste(text)(c) }, want)
++  await over('a paste over whole lines closes the gap they leave', '1. a\n2. b\n3. c\n4. d', '2. b', '3. c\n', '2. x\n', '1. a\n2. x\n3. d')
++  await over('a paste across two items closes the gap they leave', '1. a\n2. b\n3. c\n4. d', 'b', '3. c', 'x', '1. a\n2. x\n3. d')
++
++  await pasted('a paste into a Markdown block recounts its list', fenced('md', '1. a\n2. b'), '1. a', '\n7. x', fenced('md', '1. a\n2. x\n3. b'))
++  await pasted('a paste into plain code counts nothing', fenced('js', '1. a\n2. b'), '1. a', '\n7. x', fenced('js', '1. a\n7. x\n2. b'))
++  await pasted('a paste into a no-language block counts nothing', fenced('', '1. a\n2. b'), '1. a', '\n7. x', fenced('', '1. a\n7. x\n2. b'))
++  await pasted('a paste into display math counts nothing', '$$\n1. a\n2. b\n$$', '1. a', '\n7. x\n7. y', '$$\n1. a\n7. x\n7. y\n2. b\n$$')
++
++  await setBody(cdp, table('1. pa<br>2. pb'))
++  await enterCell(cdp, 'pa')
++  await cdp.evaluate(`(() => { const v = ${CELL_VIEW}; v.dispatch({ selection: { anchor: v.state.doc.line(1).to } }) })()`)
++  await pasteInto(CELL_VIEW, '\n9. px\n9. py')(cdp)
++  const cell = await cdp.evaluate(`${CELL_VIEW}.state.doc.toString()`)
++  await pressKey(cdp, 'z', META)
++  await sleep(300)
++  await leaveCell(cdp)
++  const undone = await body(cdp)
++  item(4, 'F-2', 'a paste into a focused cell recounts its list, and one ⌘Z takes both', cell === '1. pa\n2. px\n3. py\n4. pb' && undone.endsWith('| 1. pa<br>2. pb | x |'), show([cell, undone]))
++}
++
+ // ── The run ─────────────────────────────────────────────────────────────────
+ 
+ const GROUPS = {
+   1: ['One Scan Per Surface', group1],
+   2: ['Markdown Code Blocks', group2],
+   3: ['Blank Lines and Numbering', group3],
++  4: ['Paste', group4],
+ }
+ const chosen = process.argv.slice(2).map(Number)
+ if (chosen.length === 0 || chosen.some((g) => !GROUPS[g])) {

@@ -1,0 +1,292 @@
+diff --git a/Core/MarkdownPM/Input/markdownInput.ts b/Core/MarkdownPM/Input/markdownInput.ts
+index eb9399e08..c1bad632a 100644
+--- a/Core/MarkdownPM/Input/markdownInput.ts
++++ b/Core/MarkdownPM/Input/markdownInput.ts
+@@ -1,4 +1,4 @@
+-import { type Command, Decoration, EditorView, type KeyBinding, keymap } from '@codemirror/view'
++import { type Command, EditorView, type KeyBinding, keymap } from '@codemirror/view'
+ import {
+   EditorSelection,
+   EditorState,
+@@ -10,17 +10,11 @@ import {
+   type Transaction,
+ } from '@codemirror/state'
+ import {
+-  cursorGroupLeft,
+-  cursorGroupRight,
+   defaultKeymap,
+   deleteCharForward,
+-  deleteGroupBackward,
+-  deleteGroupForward,
+   insertBlankLine,
+   insertNewline,
+   insertNewlineAndIndent,
+-  selectGroupLeft,
+-  selectGroupRight,
+   toggleBlockComment,
+   toggleComment,
+ } from '@codemirror/commands'
+@@ -51,7 +45,7 @@ import {
+   type Edit,
+ } from './edits'
+ import { applyEdit } from './applyEdit'
+-import { fenceAt, isWordChar, lineEndOf, lineIndexAt, lineOffsetsOf } from '../Engine/markdownCode'
++import { fenceAt, lineEndOf, lineIndexAt, lineOffsetsOf } from '../Engine/markdownCode'
+ import { shownEnd } from '../Links/linkEdit'
+ import { embedTileRanges } from '../Embeds/embedWidget'
+ import { caretInMargin, type DocScan, signSeatAt } from '../Engine/docScan'
+@@ -338,64 +332,21 @@ export const markdownInput = [
+   ),
+ ]
+ 
+-const joins = (state: EditorState, at: number): boolean =>
+-  /['’]/.test(state.sliceDoc(at, at + 1)) &&
+-  isWordChar(state.sliceDoc(at - 1, at)) &&
+-  isWordChar(state.sliceDoc(at + 1, at + 2))
++/** A position reads an apostrophe as a word character when a walk from it, either way across any space and over letters, digits, and `_`, reaches one with a letter or digit on both sides. CodeMirror asks once per gesture and takes the first answer, so a quote touching that gesture's run rides with it, as `'don't'` reads whole, and a surface mounts this ahead of a fence's language. */
++const CONTRACTION_REACH =
++  /(?=\s*[\p{L}\p{N}_]*(?<=[\p{L}\p{N}])['’][\p{L}\p{N}])|(?<=[\p{L}\p{N}]['’](?=[\p{L}\p{N}])[\p{L}\p{N}_]*\s*)/uy
++
++export const contractions = EditorState.languageData.of((state, pos) => {
++  const { from, text } = state.doc.lineAt(pos)
++  CONTRACTION_REACH.lastIndex = pos - from
++  return CONTRACTION_REACH.test(text) ? [{ wordChars: "'’" }] : []
++})
+ 
+-/** Every word gesture reads `wordAt`'s word, the one holding the character on `side` of `pos`: CodeMirror's word, carried across an apostrophe with a letter or digit on both sides, so `don't` reads whole and `'quoted'` reads `quoted`; a code fence's language adds its own word characters. A right-click's word on every surface is it, and while a double-click or a group motion or selection runs in a view, or a group deletion from a caret, each joined word in view is one atom to it, so every other motion still steps through one, and a deletion over a selection takes exactly the selection. A double-click's atoms last only its press, since CodeMirror reads atomic ranges once, when it creates the mouse selection, which the press's microtask outlives. */
+ export function wordAt(state: EditorState, pos: number, side: -1 | 1): SelectionRange | null {
+   const word = state.wordAt(pos)
+-  if (!word) return null
+-  let { from, to } = word
+-  while (joins(state, to)) to = state.wordAt(to + 1)!.to
+-  while (joins(state, from - 1)) from = state.wordAt(from - 1)!.from
+-  return (side < 0 ? from < pos : to > pos) ? EditorSelection.range(from, to) : null
++  return word && (side < 0 ? word.from < pos : word.to > pos) ? word : null
+ }
+ 
+-const grouping = new WeakSet<EditorView>()
+-const JOINED = Decoration.mark({})
+-const wordPress = EditorView.mouseSelectionStyle.of((view, press) => {
+-  if (press.button === 0 && press.detail === 2) {
+-    grouping.add(view)
+-    queueMicrotask(() => grouping.delete(view))
+-  }
+-  return null
+-})
+-const joinedWords = EditorView.atomicRanges.of((view) => {
+-  if (!grouping.has(view)) return Decoration.none
+-  const { state } = view
+-  const { from, to } = view.viewport
+-  const words = [...state.sliceDoc(from, to).matchAll(/['’]/g)].flatMap(({ index }) => {
+-    const word = joins(state, from + index) && wordAt(state, from + index, -1)
+-    return word ? [JOINED.range(word.from, word.to)] : []
+-  })
+-  return Decoration.set(words, true)
+-})
+-export const wordGestures = [wordPress, joinedWords]
+-const DELETES: readonly Command[] = [deleteGroupBackward, deleteGroupForward]
+-const GROUPS: readonly Command[] = [
+-  cursorGroupLeft,
+-  cursorGroupRight,
+-  selectGroupLeft,
+-  selectGroupRight,
+-  ...DELETES,
+-]
+-const byWords = (command: Command | undefined): Command | undefined =>
+-  command && GROUPS.includes(command)
+-    ? (view) => {
+-        if (DELETES.includes(command) && view.state.selection.ranges.some((r) => !r.empty))
+-          return command(view)
+-        grouping.add(view)
+-        try {
+-          return command(view)
+-        } finally {
+-          grouping.delete(view)
+-        }
+-      }
+-    : command
+-export const editorKeymap = defaultKeymap.flatMap((b) =>
+-  b.run === toggleComment || b.run === toggleBlockComment
+-    ? []
+-    : [{ ...b, run: byWords(b.run), shift: byWords(b.shift) }],
++export const editorKeymap = defaultKeymap.filter(
++  (b) => b.run !== toggleComment && b.run !== toggleBlockComment,
+ )
+diff --git a/Core/MarkdownPM/Tables/cellStatic.tsx b/Core/MarkdownPM/Tables/cellStatic.tsx
+index f1142cc70..783356f8c 100644
+--- a/Core/MarkdownPM/Tables/cellStatic.tsx
++++ b/Core/MarkdownPM/Tables/cellStatic.tsx
+@@ -46,7 +46,7 @@ import {
+ } from '../../Connections/linkValue'
+ import { CITE_GLYPH, followCitation } from '../Citations/citationPointer'
+ import type { EditorHost } from '../api'
+-import { wordAt } from '../Input/markdownInput'
++import { contractions, wordAt } from '../Input/markdownInput'
+ import { glyphAt } from '../lineDom'
+ import { routeRightClick } from '../Menus/menu'
+ import type { Seat } from './CellEditor'
+@@ -554,7 +554,9 @@ function StaticCellImpl({
+           sel: { from, to },
+           word: () => {
+             const side = caret && sideOf(caret, e.clientX, e.clientY)
+-            return side ? wordAt(EditorState.create({ doc: text }), at, side) : null
++            return side
++              ? wordAt(EditorState.create({ doc: text, extensions: contractions }), at, side)
++              : null
+           },
+         }
+       },
+diff --git a/Core/MarkdownPM/inlineScope.test.tsx b/Core/MarkdownPM/inlineScope.test.tsx
+index 03d8d6682..8b8ca086c 100644
+--- a/Core/MarkdownPM/inlineScope.test.tsx
++++ b/Core/MarkdownPM/inlineScope.test.tsx
+@@ -2,6 +2,9 @@
+ import { afterEach, describe, expect, it, vi } from 'vitest'
+ import { EditorState, Prec, type Extension } from '@codemirror/state'
+ import { EditorView, runScopeHandlers } from '@codemirror/view'
++import { ensureSyntaxTree, LanguageDescription } from '@codemirror/language'
++import { markdown } from '@codemirror/lang-markdown'
++import { javascript } from '@codemirror/lang-javascript'
+ import { decorationsFor } from '../Testing/markdownEngine'
+ import { testHost } from '../Testing/editorHarness'
+ import { tokenize } from './Engine/tokens'
+@@ -31,21 +34,20 @@ afterEach(() => {
+   for (const v of views) v.destroy()
+   views = []
+ })
++const base = () =>
++  editorBase({
++    host: { ...testHost(), connections: () => conn },
++    scope: 'inline',
++    panes: [],
++    formatExt: [],
++  })
+ const mount = (doc: string, ...extensions: Extension[]): EditorView => {
+   const view = new EditorView({
+     parent: document.body,
+     state: EditorState.create({
+       doc,
+       selection: { anchor: doc.length },
+-      extensions: [
+-        editorBase({
+-          host: { ...testHost(), connections: () => conn },
+-          scope: 'inline',
+-          panes: [],
+-          formatExt: [],
+-        }),
+-        ...extensions,
+-      ],
++      extensions: [base(), ...extensions],
+     }),
+   })
+   views.push(view)
+@@ -146,6 +148,27 @@ describe('a bare heading in a Text value', () => {
+ })
+ 
+ describe('a word', () => {
++  const doubleClick = (view: EditorView, pos: number) => {
++    const line = view.dom.querySelector('.cm-line') as HTMLElement
++    vi.spyOn(view, 'posAtCoords').mockReturnValue(pos)
++    vi.spyOn(view, 'posAndSideAtCoords').mockReturnValue({ pos, assoc: 1 })
++    const init = { bubbles: true, cancelable: true, button: 0, detail: 2, clientX: 5, clientY: 5 }
++    line.dispatchEvent(new MouseEvent('mousedown', init))
++    document.dispatchEvent(new MouseEvent('mouseup', init))
++    const { from, to } = view.state.selection.main
++    return [from, to]
++  }
++  const groupFrom = (doc: string, anchor: number, key: 'ArrowLeft' | 'ArrowRight') => {
++    const view = mount(doc)
++    view.dispatch({ selection: { anchor } })
++    runScopeHandlers(view, new KeyboardEvent('keydown', { key, ctrlKey: true }), 'editor')
++    return view.state.selection.main.head
++  }
++  const wordIn = (doc: string, pos: number, side: -1 | 1) => {
++    const word = wordAt(mount(doc).state, pos, side)
++    return word && doc.slice(word.from, word.to)
++  }
++
+   it('holds an apostrophe between letters for every word gesture', () => {
+     const doc = "don't it’s Ada's 'quoted' ‘quoted’ students'"
+     const view = mount(doc)
+@@ -154,13 +177,8 @@ describe('a word', () => {
+     const inside = (w: string) => doc.indexOf(w) + 1
+     const read = (r: { from: number; to: number } | null) => r && doc.slice(r.from, r.to)
+     expect(written.map((w) => read(wordAt(view.state, inside(w), 1)))).toEqual(words)
+-    const line = view.dom.querySelector('.cm-line') as HTMLElement
+     const pressed = written.map((w) => {
+-      vi.spyOn(view, 'posAtCoords').mockReturnValue(inside(w))
+-      vi.spyOn(view, 'posAndSideAtCoords').mockReturnValue({ pos: inside(w), assoc: 1 })
+-      const init = { bubbles: true, cancelable: true, button: 0, detail: 2, clientX: 5, clientY: 5 }
+-      line.dispatchEvent(new MouseEvent('mousedown', init))
+-      document.dispatchEvent(new MouseEvent('mouseup', init))
++      doubleClick(view, inside(w))
+       return read(view.state.selection.main)
+     })
+     expect(pressed).toEqual(words)
+@@ -196,4 +214,40 @@ describe('a word', () => {
+       expect(cut.state.doc.toString()).toBe(left)
+     }
+   })
++
++  it('takes a quote touching a contraction', () => {
++    const doc = "say 'don't' now"
++    expect(wordIn(doc, 5, 1)).toBe("'don't'")
++    expect(doubleClick(mount(doc), 5)).toEqual([4, 11])
++    expect(wordIn("'I don't'", 4, 1)).toBe("don't'")
++  })
++
++  it("carries a neighbor's quote across a contraction's gap", () => {
++    expect(groupFrom("students' don't", 10, 'ArrowLeft')).toBe(0)
++    expect(groupFrom("don't 'quoted'", 5, 'ArrowRight')).toBe(14)
++    expect(doubleClick(mount("don't 'quoted'"), 6)).toEqual([6, 14])
++    expect(wordIn("'tis don't", 4, -1)).toBe("'tis")
++  })
++
++  it('leaves a quote no walk reaches a contraction from', () => {
++    expect(groupFrom("'don't'", 0, 'ArrowRight')).toBe(1)
++    expect(groupFrom("x 'don't", 1, 'ArrowRight')).toBe(3)
++  })
++
++  it('joins only a letter or digit on both sides, astral letters included', () => {
++    expect(wordIn("a'_b", 0, 1)).toBe('a')
++    expect(wordIn("𝒶'b", 0, 1)).toBe("𝒶'b")
++  })
++
++  it("answers ahead of a fence's language", () => {
++    const doc = "```js\n// don't stop\n```"
++    const js = LanguageDescription.of({ name: 'js', support: javascript() })
++    const state = EditorState.create({
++      doc,
++      extensions: [markdown({ codeLanguages: [js] }), base()],
++    })
++    ensureSyntaxTree(state, doc.length, 1e9)
++    const word = wordAt(state, 10, 1)!
++    expect(doc.slice(word.from, word.to)).toBe("don't")
++  })
+ })
+diff --git a/Core/MarkdownPM/surface.ts b/Core/MarkdownPM/surface.ts
+index c01f0b79a..bf7755e35 100644
+--- a/Core/MarkdownPM/surface.ts
++++ b/Core/MarkdownPM/surface.ts
+@@ -8,11 +8,11 @@ import { linkRest } from './Links/linkReveal'
+ import { linkSettle, linkWriting, type Remembers } from './Links/linkSettle'
+ import { listRenumber } from './Input/listRenumber'
+ import {
++  contractions,
+   editorKeymap,
+   listKeys,
+   smartDelete,
+   typedInput,
+-  wordGestures,
+   wrapChords,
+ } from './Input/markdownInput'
+ import { blockHandles, pointerReveal } from './Menus/blockHandles'
+@@ -58,7 +58,7 @@ const sharedSurface = (
+   }),
+   Prec.high(keymap.of(wrapChords)),
+   typedInput,
+-  wordGestures,
++  Prec.high(contractions),
+   editorMenu(scope),
+ ]
+ 

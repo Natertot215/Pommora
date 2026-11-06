@@ -1,0 +1,46 @@
+diff --git a/Core/MarkdownPM/Input/edits.ts b/Core/MarkdownPM/Input/edits.ts
+index cd65cd600..e1f0fa550 100644
+--- a/Core/MarkdownPM/Input/edits.ts
++++ b/Core/MarkdownPM/Input/edits.ts
+@@ -38,7 +38,7 @@ import {
+   type MarkdownScope,
+   readsLists,
+ } from '../Engine/detect'
+-import { itemAt, ownersOf } from '../Engine/listModel'
++import { itemAt } from '../Engine/listModel'
+ import { tokenize } from '../Engine/tokens'
+ import { isPaint } from '../Engine/paints'
+ 
+@@ -185,20 +185,12 @@ export function outdentListOnShiftTab(
+   }
+ }
+ 
+-/** Where a Backspace takes the list marker of the line at `ls`, behind its `pfx`-long prefix: the marker is one unit, so a caret anywhere past its first character takes all of it rather than leaving a stray space or half a box, and the line keeps its indent only where an item above owns it, as that item's continuation. */
+-function takeMarker(
+-  scan: DocScan,
+-  ls: number,
+-  pfx: number,
+-  lm: ListMarker,
+-  selStart: number,
+-  scope: MarkdownScope,
+-): Edit | null {
++/** Where a Backspace takes the list marker of the line at `ls`, behind its `pfx`-long prefix: the marker is one unit, so a caret anywhere past its first character takes all of it rather than leaving a stray space or half a box. */
++function takeMarker(ls: number, pfx: number, lm: ListMarker, selStart: number): Edit | null {
+   const from = ls + lm.markerStart
+   const to = ls + lm.contentStart
+   if (selStart <= from || selStart > to) return null
+-  const k = lineIndexAt(scan, ls)
+-  const cut = ownersOf(scan, k, k, scope).some((o) => o.k !== k) ? from : ls + pfx
++  const cut = ls + pfx
+   return { from: cut, to, insert: '', selection: cut }
+ }
+ 
+@@ -238,7 +230,7 @@ export function smartBackspace(
+ 
+   const pfx = blockPrefix(line, scope)
+   const lm = itemAt(scan, lineIndexAt(scan, selStart), 'outside', scope)
+-  const taken = lm && takeMarker(scan, ls, pfx.length, lm, selStart, scope)
++  const taken = lm && takeMarker(ls, pfx.length, lm, selStart)
+   if (taken) return taken
+   if (scope !== 'page') return null
+   // Inside a callout, never strip a lone `>` — that would drop the line out of the box, splitting it into a stray quote.

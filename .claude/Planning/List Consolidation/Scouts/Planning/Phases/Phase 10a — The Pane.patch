@@ -1,0 +1,367 @@
+diff --git a/Core/MarkdownPM/markdown-pm.css b/Core/MarkdownPM/markdown-pm.css
+index 77a9b1f0f..cae478a92 100644
+--- a/Core/MarkdownPM/markdown-pm.css
++++ b/Core/MarkdownPM/markdown-pm.css
+@@ -175,6 +175,12 @@
+   transition: opacity var(--reveal-fade) var(--ease-base);
+ }
+ 
++/* A cell and a Text pane have no gutter, so the block grip sits in the inset the list already reserves, and the press band reaches that far into the line rather than staying left of it. */
++:is(.mdpm-tbl-cell-editor, .text-pane-body) .cm-line.md-block-handle {
++  --grip-strip: var(--list-indent);
++  --grip-left: calc((var(--list-indent) - var(--icon-body) * var(--glyph-scale)) / 2);
++}
++
+ .mdpm-fold-reveal {
+   display: grid;
+   transition: grid-template-rows var(--duration-fast) var(--ease-base);
+diff --git a/Core/MarkdownPM/markdown-tables.css b/Core/MarkdownPM/markdown-tables.css
+index fbe6ff3da..49435f53a 100644
+--- a/Core/MarkdownPM/markdown-tables.css
++++ b/Core/MarkdownPM/markdown-tables.css
+@@ -192,11 +192,6 @@
+   overflow-wrap: anywhere;
+   cursor: text;
+ }
+-/* A cell has no gutter, so the block grip sits in the inset the list already reserves, and the press band reaches that far into the line rather than staying left of it. */
+-.mdpm-tbl-cell-editor .cm-line.md-block-handle {
+-  --grip-strip: var(--list-indent);
+-  --grip-left: calc((var(--list-indent) - var(--icon-body) * var(--glyph-scale)) / 2);
+-}
+ 
+ /* The checkbox is the one glyph a resting cell acts on; a resting cell has no drag, so the rest keep the cell's text cursor. */
+ .mdpm-tbl-cell-static .md-list-checkbox-seat {
+diff --git a/Core/MarkdownPM/surface.ts b/Core/MarkdownPM/surface.ts
+index 490a09431..60b1b468b 100644
+--- a/Core/MarkdownPM/surface.ts
++++ b/Core/MarkdownPM/surface.ts
+@@ -29,11 +29,8 @@ import { surfaceScope } from './docCache'
+ import { type EditorHost, editorHost } from './api'
+ import { type EditorPane, paneKeys } from './Menus/caretPane'
+ 
+-/** Everything a page body, a table cell, and a property value share: inline rendering, the block gestures their scope holds, link and footnote pointers, the paste and alias rules, typing, the word gestures, and the right-click menu. The surfaces differ only in what wraps this. `oneLine` is a value field's surface: it scrolls where a body wraps, and it spellchecks nothing, since a field often holds an address or a name; every surface states its spellcheck, since a cell's contentEditable=false widget host suppresses the inherited one, and the other content attributes are iOS keyboard hints. `remembers` is when its alias memory writes. */
+-const sharedSurface = (
+-  scope: MarkdownScope,
+-  { oneLine = false, remembers = 'leave' }: { oneLine?: boolean; remembers?: Remembers } = {},
+-): Extension => [
++/** Everything a page body, a table cell, and a property value share: inline rendering, the block gestures their scope holds, link and footnote pointers, the paste and alias rules, typing, the word gestures, and the right-click menu. The surfaces differ only in what wraps this. An `inline` surface is a value's one-line field: it scrolls where a body wraps, and it spellchecks nothing, since a field often holds an address or a name; every surface states its spellcheck, since a cell's contentEditable=false widget host suppresses the inherited one, and the other content attributes are iOS keyboard hints. `remembers` is when its alias memory writes. */
++const sharedSurface = (scope: MarkdownScope, remembers: Remembers = 'leave'): Extension => [
+   surfaceScope.of(scope),
+   markdownDecorations,
+   readsLists(scope)
+@@ -48,11 +45,11 @@ const sharedSurface = (
+   linkSettle.of(remembers),
+   linkRest,
+   linkWriting,
+-  oneLine ? [] : EditorView.lineWrapping,
++  scope === 'inline' ? [] : EditorView.lineWrapping,
+   EditorView.contentAttributes.of({
+     autocapitalize: 'sentences',
+     autocorrect: 'off',
+-    spellcheck: oneLine ? 'false' : 'true',
++    spellcheck: scope === 'inline' ? 'false' : 'true',
+     enterkeyhint: 'enter',
+     'data-drawn-caret': '',
+   }),
+@@ -68,18 +65,16 @@ export const editorBase = ({
+   scope,
+   panes,
+   formatExt,
+-  oneLine,
+   remembers,
+ }: {
+   host: EditorHost
+   scope: MarkdownScope
+   panes: readonly EditorPane[]
+   formatExt: Extension
+-  oneLine?: boolean
+   remembers?: Remembers
+ }): Extension => [
+   editorHost.of(host),
+-  sharedSurface(scope, { oneLine, remembers }),
++  sharedSurface(scope, remembers),
+   Prec.highest(
+     keymap.of([
+       ...paneKeys(panes.map((p) => p.ctl)),
+diff --git a/Core/Properties/Pickers/TextPane.test.tsx b/Core/Properties/Pickers/TextPane.test.tsx
+index ba2da8d24..92c749a97 100644
+--- a/Core/Properties/Pickers/TextPane.test.tsx
++++ b/Core/Properties/Pickers/TextPane.test.tsx
+@@ -10,6 +10,7 @@ import { useSession } from '../../Session/store'
+ import type { ConnPage } from '../../Connections/pageIndex'
+ import type { PropertyValue } from '../propertyValue'
+ import { TextPane } from './TextPane'
++import { blockQuery } from '../../MarkdownPM/Menus/blockQuery'
+ import { writeLinkAt } from '../../MarkdownPM/Links/pendingTitle'
+ import { useEditorHost } from '../../Pages/editorHost'
+ import { previewConnections } from '../../Session/pageConnections'
+@@ -114,7 +115,7 @@ const exited = (): Promise<void> =>
+   act(() => new Promise<void>((r) => setTimeout(r, exitWait('menu') + 20)))
+ 
+ describe('TextPane', () => {
+-  it('Enter saves and closes; Shift-Enter writes a line break; Tab stays in the editor and inserts nothing', async () => {
++  it('Enter and Shift-Enter each write a line break; Tab stays in the editor and inserts nothing', async () => {
+     render(text('x'))
+     expect(view().state.selection.main.head).toBe(1)
+     expect(document.activeElement).toBe(view().contentDOM)
+@@ -128,13 +129,13 @@ describe('TextPane', () => {
+     expect(doc()).toBe('x\na')
+     expect(document.activeElement).toBe(view().contentDOM)
+     press('Enter')
+-    expect(onCommit).toHaveBeenCalledExactlyOnceWith(text('x\na'))
++    expect(doc()).toBe('x\na\n')
+     await exited()
+-    expect(pane()).toBeNull()
+-    expect(onCommit).toHaveBeenCalledOnce()
++    expect(pane()).not.toBeNull()
++    expect(onCommit).not.toHaveBeenCalled()
+   })
+ 
+-  it('Enter in an alias rests past the link, and a second Enter closes the pane', async () => {
++  it('Enter in an alias rests past the link, and a second Enter breaks the line', async () => {
+     render(text('see [[Alpha|al]] x'))
+     act(() => view().dispatch({ selection: { anchor: 13 } }))
+     press('Enter')
+@@ -142,12 +143,13 @@ describe('TextPane', () => {
+     await exited()
+     expect(pane()).not.toBeNull()
+     press('Enter')
++    expect(doc()).toBe('see [[Alpha|al]]\n x')
+     await exited()
+-    expect(pane()).toBeNull()
++    expect(pane()).not.toBeNull()
+     expect(onCommit).not.toHaveBeenCalled()
+   })
+ 
+-  it('an alias typed into a link and closed by Return is remembered, and an emptied alias saves collapsed', () => {
++  it('an alias typed into a link and closed by Escape is remembered, and an emptied alias saves collapsed', () => {
+     const mutate = vi.spyOn(useSession.getState(), 'mutate').mockResolvedValue(null)
+     const edit = (from: number, to: number, insert: string): void =>
+       act(() => {
+@@ -160,7 +162,7 @@ describe('TextPane', () => {
+     render(text('see [[Alpha|]] x'))
+     edit(12, 12, 'new')
+     act(() => view().dispatch({ selection: { anchor: 8 } }))
+-    press('Enter')
++    press('Escape')
+     expect(onCommit).toHaveBeenCalledExactlyOnceWith(text('see [[Alpha|new]] x'))
+     expect(mutate).toHaveBeenCalledWith(
+       expect.objectContaining({ op: 'editAliases', edit: { op: 'add', alias: 'new' } }),
+@@ -171,7 +173,7 @@ describe('TextPane', () => {
+     act(() => reopen())
+     edit(12, 13, '')
+     act(() => view().dispatch({ selection: { anchor: 8 } }))
+-    press('Enter')
++    press('Escape')
+     expect(onCommit).toHaveBeenCalledExactlyOnceWith(text('see [[Alpha]] x'))
+     mutate.mockRestore()
+   })
+@@ -190,6 +192,16 @@ describe('TextPane', () => {
+     expect(onCommit).toHaveBeenCalledOnce()
+   })
+ 
++  it('Escape over a selection saves and closes in one press', async () => {
++    render(text('xy'))
++    typeAtEnd('z')
++    act(() => view().dispatch({ selection: { anchor: 0, head: 2 } }))
++    press('Escape')
++    expect(onCommit).toHaveBeenCalledExactlyOnceWith(text('xyz'))
++    await exited()
++    expect(pane()).toBeNull()
++  })
++
+   it('the × commits and closes; an unchanged document commits nothing; a blanked document commits null', async () => {
+     const close = (): void =>
+       act(() =>
+@@ -213,6 +225,27 @@ describe('TextPane', () => {
+     expect(onCommit).toHaveBeenLastCalledWith(null)
+   })
+ 
++  it('leaves a value a tool wrote with \\r\\n as it was when closed untouched, and saves it as written once edited', async () => {
++    render(text('- a\r\n- b'))
++    expect(doc()).toBe('- a\n- b')
++    press('Escape')
++    await exited()
++    expect(onCommit).not.toHaveBeenCalled()
++
++    act(() => reopen())
++    typeAtEnd('c')
++    press('Escape')
++    expect(onCommit).toHaveBeenCalledExactlyOnceWith(text('- a\n- bc'))
++  })
++
++  it('takes an outside write with \\r\\n as the document holds it, and closes with nothing to save', () => {
++    render(text('a\r\nb'))
++    render(text('c\r\nd'))
++    expect(doc()).toBe('c\nd')
++    press('Escape')
++    expect(onCommit).not.toHaveBeenCalled()
++  })
++
+   it('unmounting the pane while its seat unmounts still lands the typed text (the layout cleanup runs before the seat’s passive one)', () => {
+     render(text('x'))
+     typeAtEnd('y')
+@@ -302,3 +335,56 @@ describe('TextPane', () => {
+     expect(document.querySelector('.mdpm-ac')?.textContent).toContain('Setup')
+   })
+ })
++
++describe('a list in the pane', () => {
++  it('wraps and spellchecks as a body does', () => {
++    render(text('x'))
++    expect(view().contentDOM.classList.contains('cm-lineWrapping')).toBe(true)
++    expect(view().contentDOM.getAttribute('spellcheck')).toBe('true')
++  })
++
++  it('reads a first-line marker as a list, and draws its grip', () => {
++    render(text('- milk'))
++    expect(document.querySelector('.text-pane .cm-line.md-list-item')).not.toBeNull()
++    expect(document.querySelector('.text-pane .md-block-handle')).not.toBeNull()
++  })
++
++  it('Enter continues an item and breaks a plain line flush, Tab and Shift-Tab nest and outdent, and Shift-Enter stays a plain break', async () => {
++    render(text('- milk'))
++    expect(press('Enter')).toBe(true)
++    expect(doc()).toBe('- milk\n- ')
++    expect(press('Tab')).toBe(true)
++    expect(doc()).toBe('- milk\n\t- ')
++    expect(press('Tab', true)).toBe(true)
++    expect(doc()).toBe('- milk\n- ')
++    expect(document.activeElement).toBe(view().contentDOM)
++    typeAtEnd('eggs')
++    press('Enter', true)
++    expect(doc()).toBe('- milk\n- eggs\n')
++    typeAtEnd('  then')
++    press('Enter')
++    expect(doc()).toBe('- milk\n- eggs\n  then\n')
++    press('Escape')
++    expect(onCommit).toHaveBeenCalledExactlyOnceWith(text('- milk\n- eggs\n  then\n'))
++    await exited()
++    expect(pane()).toBeNull()
++  })
++
++  it('renumbers a run around a removed item', () => {
++    render(text('1. a\n2. b\n3. c'))
++    act(() => view().dispatch({ changes: { from: 4, to: 9 }, userEvent: 'delete' }))
++    expect(doc()).toBe('1. a\n2. c')
++  })
++
++  it('holds no `/` menu', () => {
++    render(text(''))
++    expect(view().state.field(blockQuery, false)).toBeUndefined()
++  })
++
++  it('leaves a heading, a quote, and a fence as literal text', () => {
++    render(text('# h\n> q\n```\nx\n```'))
++    expect(
++      document.querySelector('.text-pane .md-h1, .text-pane .md-blockquote, .text-pane .codeblock'),
++    ).toBeNull()
++  })
++})
+diff --git a/Core/Properties/Pickers/ValueEditor.tsx b/Core/Properties/Pickers/ValueEditor.tsx
+index 81a0332db..d1b8c8d34 100644
+--- a/Core/Properties/Pickers/ValueEditor.tsx
++++ b/Core/Properties/Pickers/ValueEditor.tsx
+@@ -24,7 +24,8 @@ import './text-pane.css'
+ 
+ const stopBubble = (e: { stopPropagation: () => void }): void => e.stopPropagation()
+ 
+-const blanked = (doc: string): string => (doc.trim() === '' ? '' : doc)
++// CodeMirror reads `\r\n` as one break, so a value a tool wrote that way compares as the document holds it, and a pane closed untouched leaves it as it was.
++const docText = (text: string): string => (text.trim() === '' ? '' : text.replace(/\r\n?/g, '\n'))
+ 
+ /** The one editor every property value is typed in: the Text pane's, and in `oneLine` mode a field's. Both save once on every way out; a field also ends its own edit, Return and blur committing unless the text is invalid, Escape cancelling, with the invalid state on the editor's own node. A commit settles the link under edit first, so what the leave would have written is what's read; a cancel ends the edit, so nothing after it, the unmount's save included, writes. */
+ export function ValueEditor({
+@@ -53,11 +54,12 @@ export function ValueEditor({
+ }): React.JSX.Element {
+   const mountRef = useRef<HTMLDivElement>(null)
+   const viewRef = useRef<EditorView | null>(null)
+-  const committed = useRef(blanked(initial))
++  const committed = useRef(docText(initial))
+   const ended = useRef(false)
+   const onCommitRef = useLatest(onCommit)
+   const onCloseRef = useLatest(onClose)
+   const invalidRef = useLatest(invalid)
++  const scope = oneLine ? 'inline' : 'lists'
+   const ac = useConnectionAutocomplete(viewRef, host)
+   const formatExt = useReconfigured(viewRef, host.settings().commands, formatKeymap)
+ 
+@@ -65,7 +67,7 @@ export function ValueEditor({
+     const view = viewRef.current
+     if (!view || ended.current) return
+     view.plugin(linkSettle)?.flush()
+-    const text = blanked(view.state.doc.toString())
++    const text = docText(view.state.doc.toString())
+     if (text === committed.current) return
+     committed.current = text
+     onCommitRef.current(text)
+@@ -90,7 +92,7 @@ export function ValueEditor({
+       state: EditorState.create({
+         doc: initial,
+         extensions: [
+-          editorBase({ host, scope: 'inline', panes: [ac], formatExt, oneLine, remembers }),
++          editorBase({ host, scope, panes: [ac], formatExt, remembers }),
+           heldPage.of(holder ?? null),
+           history(),
+           oneLine
+@@ -122,20 +124,22 @@ export function ValueEditor({
+               ]
+             : placeholder('Begin typing.'),
+           Prec.highest(
+-            keymap.of([
+-              { key: 'Enter', run: leave },
+-              { key: 'Shift-Enter', run: oneLine ? () => true : insertNewline },
+-              ...(oneLine
++            keymap.of(
++              oneLine
+                 ? [
++                    { key: 'Enter', run: leave },
++                    { key: 'Shift-Enter', run: () => true },
+                     { key: 'Mod-Enter', run: () => true },
+                     { key: 'Escape', run: cancel },
+                   ]
+                 : [
++                    { key: 'Enter', run: insertNewline, shift: insertNewline },
++                    { key: 'Escape', run: leave },
+                     // A field lets Tab move the focus as a plain field does; the pane keeps it, and Shift-Tab stops short of its focus trap, which would carry it to the ×.
+                     { key: 'Tab', run: () => true },
+                     { key: 'Shift-Tab', run: () => true, stopPropagation: true },
+-                  ]),
+-            ]),
++                  ],
++            ),
+           ),
+           keymap.of(historyKeymap),
+         ],
+@@ -179,13 +183,14 @@ export function ValueEditor({
+   // An outside write lands only in an editor that holds nothing unsaved; the editor's own close then writes last, as a page body's merge does.
+   useEffect(() => {
+     const view = viewRef.current
++    const next = docText(initial)
+     if (
+       view &&
+-      blanked(view.state.doc.toString()) === committed.current &&
+-      initial !== committed.current
++      docText(view.state.doc.toString()) === committed.current &&
++      next !== committed.current
+     ) {
+-      committed.current = initial
+-      mirrorBody(view, initial)
++      committed.current = next
++      mirrorBody(view, next)
+     }
+   }, [initial])
+ 
+diff --git a/Core/Properties/Pickers/text-pane.css b/Core/Properties/Pickers/text-pane.css
+index 4ba2165a7..cb3602c55 100644
+--- a/Core/Properties/Pickers/text-pane.css
++++ b/Core/Properties/Pickers/text-pane.css
+@@ -14,7 +14,7 @@
+   max-height: 320px; /* KNOB */
+   overflow-y: auto;
+ }
+-/* A page's editor pads for a rail neither the pane nor the field has. */
++/* A page's editor pads for a gutter neither the pane nor the field has. */
+ .text-pane .mdpm-editor .cm-content {
+   /* KNOB — the pane's interior inset; the right edge clears the × (its 6px inset, 20px box, and 6px of air) */
+   padding: 12px 32px 12px 14px;

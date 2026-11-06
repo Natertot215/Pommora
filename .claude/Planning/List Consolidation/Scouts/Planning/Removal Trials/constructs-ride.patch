@@ -1,0 +1,99 @@
+diff --git a/Core/MarkdownPM/Engine/blockModel.ts b/Core/MarkdownPM/Engine/blockModel.ts
+index aa886467a..691b08d1a 100644
+--- a/Core/MarkdownPM/Engine/blockModel.ts
++++ b/Core/MarkdownPM/Engine/blockModel.ts
+@@ -2,7 +2,7 @@
+ import { continuesList, isBlank, type BlockSpan, type CalloutLine } from './detect'
+ import { type DocScan, perScan, spanAt } from './docScan'
+ import { lineEndOf, lineIndexAt } from './markdownCode'
+-import { openerOf } from './listModel'
++import { itemAt, readsFrom } from './listModel'
+ import { headingSections } from './headingScan'
+ 
+ type BlockKind =
+@@ -37,14 +37,14 @@ function blockContext(scan: DocScan): BlockContext {
+     quotes: bq,
+     headings,
+     breaks,
+-    markers,
+   } = scan
+   const n = lines.length
+ 
+   // Only where a run actually holds a marker, so a bare indented paragraph isn't swept in.
+-  const isMarker = (i: number): boolean => markers[openerOf(scan, i)] !== null
++  const isMarker = (i: number): boolean => itemAt(scan, i, 'outside', 'page') !== null
+   const joins = (i: number): boolean =>
+-    isMarker(i) || continuesList(lines[openerOf(scan, i)], 0) === 'nested'
++    isMarker(i) ||
++    (readsFrom(scan, i, 'outside', 'page') && continuesList(lines[i], 0) === 'nested')
+   const listMember = new Array<boolean>(n).fill(false)
+   for (let i = 0; i < n; ) {
+     if (!joins(i)) {
+diff --git a/Core/MarkdownPM/Engine/intents.ts b/Core/MarkdownPM/Engine/intents.ts
+index d0ea04014..36b23d216 100644
+--- a/Core/MarkdownPM/Engine/intents.ts
++++ b/Core/MarkdownPM/Engine/intents.ts
+@@ -399,7 +399,7 @@ export function railIntents(
+   for (let i = 0, depth = 0; i < n; i++) {
+     const own = quoteDepths[i]
+     if (listLevels[i] >= 0 && own === depth) shown[i] = listLevels[i]
+-    else if (own >= depth && continuesList(lines[i], depth) !== 'ends') shown[i] = CARRIES
++    else if (own === depth && continuesList(lines[i], depth) !== 'ends') shown[i] = CARRIES
+     else {
+       shown[i] = LIST_ENDS
+       if (listLevels[i] >= 0) depth = own
+diff --git a/Core/MarkdownPM/Engine/listModel.ts b/Core/MarkdownPM/Engine/listModel.ts
+index 1ebe99ca4..4de99af56 100644
+--- a/Core/MarkdownPM/Engine/listModel.ts
++++ b/Core/MarkdownPM/Engine/listModel.ts
+@@ -25,7 +25,7 @@ import {
+   lineStartAt,
+   lineEndAt,
+ } from './markdownCode'
+-import { type DocScan, inSealedLine, scanDoc, spanAt } from './docScan'
++import { type DocScan, inSealedLine, scanDoc } from './docScan'
+ 
+ /** Shared by the extension's click handler so press-to-drag never flips the box. */
+ export function checkboxToggleChange(doc: string, pos: number): TextEdit | null {
+@@ -37,7 +37,7 @@ export function checkboxToggleChange(doc: string, pos: number): TextEdit | null
+ 
+ type Reader = number | 'outside'
+ 
+-/** Whether line `k` is open text to a `reader` on another line, or to one outside every block: on a page a code block is read only from inside it, so a list written there switches and counts on its own and nothing outside reaches in, while math and tables are never read; a cell reads every line. A reader outside a code or math block reads it as its opening line, `openerOf`, so a block whose opener joins a list rides it whole and one whose opener sits outside is never pulled in. */
++/** Whether line `k` is open text to a `reader` on another line, or to one outside every block: on a page a code block is read only from inside it, so a list written there switches and counts on its own and nothing outside reaches in, while math and tables are never read; a cell reads every line. */
+ export function readsFrom(scan: DocScan, k: number, reader: Reader, scope: MarkdownScope): boolean {
+   if (scope !== 'page') return true
+   const code = scan.fences[k]
+@@ -45,11 +45,6 @@ export function readsFrom(scan: DocScan, k: number, reader: Reader, scope: Markd
+   return code?.from === own?.from && (code !== undefined || !inSealedLine(scan, k))
+ }
+ 
+-export function openerOf(scan: DocScan, k: number): number {
+-  const block = scan.fences[k] ?? spanAt(scan.maths, scan.lineStarts[k])
+-  return block === undefined ? k : lineIndexAt(scan, block.from)
+-}
+-
+ export function itemAt(
+   scan: DocScan,
+   k: number,
+@@ -70,17 +65,10 @@ export function rolesAgainst(
+ ): (k: number) => ListRole {
+   const depth = quoteDepthOf(scan.lines[i])
+   const level = itemAt(scan, i, i, scope)!.level
+-  return (line) => {
+-    let k = line
+-    if (!readsFrom(scan, k, i, scope)) {
+-      if (scan.fences[i] !== undefined) return 'ends'
+-      k = openerOf(scan, k)
+-    }
+-    const own = quoteDepthOf(scan.lines[k])
++  return (k) => {
++    if (!readsFrom(scan, k, i, scope) || quoteDepthOf(scan.lines[k]) !== depth) return 'ends'
+     const lm = itemAt(scan, k, i, scope)
+-    if (own < depth) return 'ends'
+-    if (own === depth && lm !== null)
+-      return lm.level === level ? 'sibling' : lm.level > level ? 'nested' : 'ends'
++    if (lm !== null) return lm.level === level ? 'sibling' : lm.level > level ? 'nested' : 'ends'
+     return continuesList(scan.lines[k], depth)
+   }
+ }

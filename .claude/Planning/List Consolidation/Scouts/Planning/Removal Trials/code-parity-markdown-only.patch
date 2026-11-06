@@ -1,0 +1,93 @@
+diff --git a/Core/MarkdownPM/Engine/listModel.ts b/Core/MarkdownPM/Engine/listModel.ts
+index 1ebe99ca4..18488083f 100644
+--- a/Core/MarkdownPM/Engine/listModel.ts
++++ b/Core/MarkdownPM/Engine/listModel.ts
+@@ -37,10 +37,11 @@ export function checkboxToggleChange(doc: string, pos: number): TextEdit | null
+ 
+ type Reader = number | 'outside'
+ 
+-/** Whether line `k` is open text to a `reader` on another line, or to one outside every block: on a page a code block is read only from inside it, so a list written there switches and counts on its own and nothing outside reaches in, while math and tables are never read; a cell reads every line. A reader outside a code or math block reads it as its opening line, `openerOf`, so a block whose opener joins a list rides it whole and one whose opener sits outside is never pulled in. */
++/** Whether line `k` is open text to a `reader` on another line, or to one outside every block: on a page a Markdown code block is read only from inside it, so a list written there takes every list gesture on its own and nothing outside reaches in, while any other code block, a diff of any language, math, and tables are never read; a cell reads every line. A reader outside a code or math block reads it as its opening line, `openerOf`, so a block whose opener joins a list rides it whole and one whose opener sits outside is never pulled in. */
+ export function readsFrom(scan: DocScan, k: number, reader: Reader, scope: MarkdownScope): boolean {
+   if (scope !== 'page') return true
+   const code = scan.fences[k]
++  if (code !== undefined && (code.name !== 'Markdown' || code.tally !== undefined)) return false
+   const own = reader === 'outside' ? undefined : scan.fences[reader]
+   return code?.from === own?.from && (code !== undefined || !inSealedLine(scan, k))
+ }
+diff --git a/Core/MarkdownPM/Input/edits.ts b/Core/MarkdownPM/Input/edits.ts
+index cd65cd600..f03a7e9c6 100644
+--- a/Core/MarkdownPM/Input/edits.ts
++++ b/Core/MarkdownPM/Input/edits.ts
+@@ -65,7 +65,7 @@ function listLineAt(
+ ): { ls: number; line: string; pfx: string; lm: ListMarker } | null {
+   if (selStart !== selEnd) return null
+   const k = lineIndexAt(scan, selStart)
+-  const lm = itemAt(scan, k, 'outside', scope)
++  const lm = itemAt(scan, k, k, scope)
+   if (lm === null) return null
+   const line = scan.lines[k]
+   return { ls: scan.lineStarts[k], line, pfx: blockPrefix(line, scope), lm }
+@@ -232,15 +232,15 @@ export function smartBackspace(
+     const body = fence ? ls + fenceBodyStart(line, fence) : ls
+     if (body > ls && selStart === body && ls > 0)
+       return { from: ls - 1, to: body, insert: '', selection: ls - 1 }
+-    // A fence holds literal text, so collapsing a marker there would eat characters the author typed as content.
+-    if (inCodeAt(scan, selStart)) return null
+   }
+ 
+   const pfx = blockPrefix(line, scope)
+-  const lm = itemAt(scan, lineIndexAt(scan, selStart), 'outside', scope)
++  const k = lineIndexAt(scan, selStart)
++  const lm = itemAt(scan, k, k, scope)
+   const taken = lm && takeMarker(scan, ls, pfx.length, lm, selStart, scope)
+   if (taken) return taken
+-  if (scope !== 'page') return null
++  // Plain code holds literal text, so collapsing a marker there would eat characters the author typed as content.
++  if (scope !== 'page' || inCodeAt(scan, selStart)) return null
+   // Inside a callout, never strip a lone `>` — that would drop the line out of the box, splitting it into a stray quote.
+   if (inCalloutAt(scan, selStart)) {
+     const headLen = calloutHeadPrefixLen(line)
+diff --git a/Core/MarkdownPM/Input/listRenumber.ts b/Core/MarkdownPM/Input/listRenumber.ts
+index 4b844eec2..7dd1272b7 100644
+--- a/Core/MarkdownPM/Input/listRenumber.ts
++++ b/Core/MarkdownPM/Input/listRenumber.ts
+@@ -1,6 +1,6 @@
+ import { type ChangeDesc, EditorState, type Extension } from '@codemirror/state'
+ import { docScan } from '../docCache'
+-import { itemAt, readsFrom, renumberRuns, rolesAgainst, subBlockAt } from '../Engine/listModel'
++import { itemAt, renumberRuns, rolesAgainst, subBlockAt } from '../Engine/listModel'
+ import { applyEdits, lineIndexAt, type TextEdit } from '../Engine/markdownCode'
+ import { isSequenced, type MarkdownScope } from '../Engine/detect'
+ 
+@@ -9,7 +9,7 @@ const RELIST = 'input.list'
+ 
+ export const editEvent = (edit: { relist?: boolean }): string => (edit.relist ? RELIST : 'input')
+ 
+-// Every edit that reshapes a sequenced run counts it here, riding the same transaction so one undo takes both: a marker-writing edit recounts the runs it touched and, where a line it touched was numbered or lettered, the run just below that item's nesting, which is the one a nested or switched item left, and a numbered or lettered marker it wrote over whole restarts its run from 1 or A, while a re-pick that leaves the text as it was lands nothing; a deletion that removes a whole line closes the gap it leaves, and one that removes a whole numbered or lettered marker recounts the run below it, as a switched item does. Nothing inside a page's math or tables is counted, and a code block's own list counts only for a marker-writing edit inside it. The positions it recounts from map through the edit in one ascending sweep, `mapAscending`, landing where `mapPos(p, -1)` lands each, since mapping each on its own measured quadratic on a 20,000-line pick.
++// Every edit that reshapes a sequenced run counts it here, riding the same transaction so one undo takes both: a marker-writing edit recounts the runs it touched and, where a line it touched was numbered or lettered, the run just below that item's nesting, which is the one a nested or switched item left, and a numbered or lettered marker it wrote over whole restarts its run from 1 or A, while a re-pick that leaves the text as it was lands nothing; a deletion that removes a whole line closes the gap it leaves, and one that removes a whole numbered or lettered marker recounts the run below it, as a switched item does. Nothing inside a page's math, tables, or plain code is counted, and a Markdown code block's own list counts from inside it. The positions it recounts from map through the edit in one ascending sweep, `mapAscending`, landing where `mapPos(p, -1)` lands each, since mapping each on its own measured quadratic on a 20,000-line pick.
+ export const listRenumber = (scope: MarkdownScope): Extension =>
+   EditorState.transactionFilter.of((tr) => {
+     if (!tr.docChanged) return tr
+@@ -24,7 +24,7 @@ export const listRenumber = (scope: MarkdownScope): Extension =>
+     tr.changes.iterChanges((fromA, toA, fromB, toB) => {
+       let below = -1
+       for (let i = lineIndexAt(was, fromA); i <= lineIndexAt(was, toA); i++) {
+-        const lm = itemAt(was, i, relist ? i : 'outside', scope)
++        const lm = itemAt(was, i, i, scope)
+         if (lm === null || !isSequenced(lm)) continue
+         const ls = was.lineStarts[i]
+         const whole = fromA <= ls + lm.markerStart && toA >= ls + lm.contentStart
+@@ -44,11 +44,7 @@ export const listRenumber = (scope: MarkdownScope): Extension =>
+           at.push(ls)
+           if (fromB < ls + lm.contentStart && toB >= ls) arrived.add(ls)
+         }
+-      else if (
+-        was.text.slice(fromA, toA).includes('\n') &&
+-        readsFrom(scan, lineIndexAt(scan, fromB), 'outside', scope)
+-      )
+-        at.push(fromB)
++      else if (was.text.slice(fromA, toA).includes('\n')) at.push(fromB)
+       if (below > 0 && below < was.text.length) runsBelow.push(below)
+     })
+     const repicked = new Set(mapAscending(tr.changes, rewritten))

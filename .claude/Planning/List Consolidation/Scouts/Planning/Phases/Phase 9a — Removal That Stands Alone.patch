@@ -1,0 +1,250 @@
+diff --git a/Core/MarkdownPM/Gestures/pointerPath.ts b/Core/MarkdownPM/Gestures/pointerPath.ts
+index f7f673615..04720e027 100644
+--- a/Core/MarkdownPM/Gestures/pointerPath.ts
++++ b/Core/MarkdownPM/Gestures/pointerPath.ts
+@@ -45,7 +45,7 @@ export function pointerHandlers<H extends PointerTarget>(spec: PointerSpec<H>):
+       editingOnPress = hit ? caretInside(view, hit.range) : false
+       if (!hit) return false
+       const go = spec.follow(hit, view, event)
+-      // LOAD-BEARING: `contextmenu` reads the live caret to decide it is inside the syntax and should stand down, so a fallthrough seats one on every right-press and the menu never appears.
++      // LOAD-BEARING: a fallthrough seats a caret on every right-press, which would leave it inside the link once the menu closes.
+       if (event.button === 2) return go != null
+       if (event.button !== 0 || event.shiftKey || event.detail > 1) return false
+       // Strictly inside, unlike `caretInside`: a caret resting at the link's edge isn't editing it, so the seat still applies there.
+diff --git a/Core/MarkdownPM/Links/pasteLink.ts b/Core/MarkdownPM/Links/pasteLink.ts
+index 95ea62988..d947f128e 100644
+--- a/Core/MarkdownPM/Links/pasteLink.ts
++++ b/Core/MarkdownPM/Links/pasteLink.ts
+@@ -125,8 +125,7 @@ export function paste(view: EditorView, text: string, how: PasteMode): boolean {
+ 
+ export async function pasteFromClipboard(view: EditorView, how: PasteMode): Promise<void> {
+   const text = await view.state.facet(editorHost).clipboard.read()
+-  // The clipboard read is a round trip through main, so the view this was aimed at may be gone.
+-  if (text && view.dom.isConnected) paste(view, text, how)
++  if (text) paste(view, text, how)
+ }
+ 
+ export async function pastedCellText(
+diff --git a/Core/MarkdownPM/Menus/editorMenu.test.tsx b/Core/MarkdownPM/Menus/editorMenu.test.tsx
+index a30344d72..b3cca35c0 100644
+--- a/Core/MarkdownPM/Menus/editorMenu.test.tsx
++++ b/Core/MarkdownPM/Menus/editorMenu.test.tsx
+@@ -1,5 +1,5 @@
+ // @vitest-environment jsdom
+-import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest'
++import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+ import { act } from 'react'
+ import { EditorView } from '@codemirror/view'
+ import { ok } from '../../Contract/result'
+@@ -113,7 +113,7 @@ describe('the editor’s native menu', () => {
+     expect(format).toHaveBeenCalledWith(expect.objectContaining({ embedSeat: true }))
+   })
+ 
+-  it('acts on the selection from a glyph on a line it touches, and on the glyph’s group past it', async () => {
++  it('acts on the glyph’s group, whatever the selection touches', async () => {
+     grip.mockResolvedValue('list:checkbox')
+     const view = await mountEditor({ initialBody: '- a\n1. b\n2. c', host: host() })
+     view.dispatch({ selection: { anchor: 0, head: 4 } })
+@@ -124,13 +124,13 @@ describe('the editor’s native menu', () => {
+     const drag = await mountEditor({ initialBody: '- a\n- b\n- c\n- d', host: host() })
+     drag.dispatch({ selection: { anchor: 6, head: 11 } })
+     await rightClick(drag, 4, drag.dom.querySelectorAll('.md-list-glyph')[1])
+-    expect(drag.state.doc.toString()).toBe('- a\n1. b\n2. c\n- d')
++    expect(drag.state.doc.toString()).toBe('1. a\n2. b\n3. c\n4. d')
+     let pick: (action: GripMenuAction) => void = () => {}
+     grip.mockReturnValue(new Promise((r) => (pick = r)))
+     await rightClick(drag, 0, drag.dom.querySelector('.md-list-glyph')!)
+     drag.dispatch({ changes: { from: 0, insert: 'x' } })
+     await act(async () => pick('list:checkbox'))
+-    expect(drag.state.doc.toString()).toBe('x- a\n1. b\n2. c\n- d')
++    expect(drag.state.doc.toString()).toBe('x1. a\n2. b\n3. c\n4. d')
+   })
+ 
+   it('never asks from a read-only editor', async () => {
+@@ -231,32 +231,4 @@ describe('the editor’s native menu', () => {
+     await act(async () => {})
+     expect(page.state.doc.toString()).toBe('| A | B |\n| --- | --- |\n| a | b |\n| c | d |')
+   })
+-
+-  it('keeps the page caret and a resting cell’s seated word when the table redraws under its menu', async () => {
+-    const page = await mountEditor({ initialBody: `before\n\n${TABLE}`, host: host() })
+-    let table: Element | null = null
+-    for (let i = 0; !table && i < 50; i++) {
+-      await act(() => new Promise((r) => setTimeout(r, 20)))
+-      table = editorContainer().querySelector('table.mdpm-tbl')
+-    }
+-    page.focus()
+-    page.dispatch({ selection: { anchor: 3 } })
+-    const cell = table?.querySelector('tbody .mdpm-tbl-cell-static') as HTMLElement
+-    const node = cell.firstChild as Text
+-    const doc = document as { caretPositionFromPoint?: unknown }
+-    doc.caretPositionFromPoint = () => ({ offsetNode: node, offset: 0 })
+-    const box = vi.spyOn(Range.prototype, 'getBoundingClientRect')
+-    box.mockReturnValue(new DOMRect(0, 0, 100, 100))
+-    onTestFinished(() => {
+-      delete doc.caretPositionFromPoint
+-      box.mockRestore()
+-    })
+-    const click = { bubbles: true, cancelable: true, button: 2, clientX: 12, clientY: 34 }
+-    await act(async () => {
+-      cell.dispatchEvent(new MouseEvent('contextmenu', click))
+-      cell.dispatchEvent(new MouseEvent('pointerover', { bubbles: true }))
+-    })
+-    expect(window.getSelection()?.toString()).toBe('x')
+-    expect(page.state.selection.main.head).toBe(3)
+-  })
+ })
+diff --git a/Core/MarkdownPM/Menus/menu.ts b/Core/MarkdownPM/Menus/menu.ts
+index c868f99b4..8258c7547 100644
+--- a/Core/MarkdownPM/Menus/menu.ts
++++ b/Core/MarkdownPM/Menus/menu.ts
+@@ -11,7 +11,7 @@ import type { DocScan } from '../Engine/docScan'
+ import { type EditorHost, editorHost } from '../api'
+ import { applyEdit } from '../Input/applyEdit'
+ import { docScan } from '../docCache'
+-import { lineStartAt, reachEnd } from '../Engine/markdownCode'
++import { reachEnd } from '../Engine/markdownCode'
+ import { glyphAt } from '../lineDom'
+ import { wordAt } from '../Input/markdownInput'
+ import { editFor } from '../Input/format'
+@@ -31,26 +31,23 @@ export function applyEditorAction(
+   else if (applyEdit(view, editFor(action, docScan(view.state), from, to, settings))) view.focus()
+ }
+ 
+-const clickInside = (doc: string, at: number, from: number, to: number, glyph: boolean): boolean =>
+-  (glyph || from < to) &&
+-  at >= (glyph ? lineStartAt(doc, from) : from) &&
+-  at <= reachEnd(doc, from, to)
++const clickInside = (doc: string, at: number, from: number, to: number): boolean =>
++  from < to && at >= from && at <= reachEnd(doc, from, to)
+ 
+-/** A surface that seated the selection itself keeps it for the press. Chromium seats its own word after a right-click's handler wherever the selection doesn't hold the click, so the browser's is refused; and an editor reads the DOM selection on any mutation inside it, where only a `selectionchange` honors a widget's `ignoreEvent`, so the seat is announced at once, before a redraw inside a resting cell's table could hand its word to the page as the page's caret. */
++/** Chromium seats its own word after a right-click's handler wherever the selection doesn't hold the click, so a surface that seated its own range refuses it. */
+ function keepSeatedSelection(): void {
+-  document.dispatchEvent(new Event('selectionchange'))
+   const refuse = (e: Event): void => e.preventDefault()
+   document.addEventListener('selectstart', refuse, true)
+   setTimeout(() => document.removeEventListener('selectstart', refuse, true))
+ }
+ 
+-/** Every surface's right-click, routed from where its own hit test lands, run only once the host can ask, `at` null where the pointer resolves no position: a list glyph asks for its type menu, anything else for the format menu. A click on text inside a selection's reach, or on a glyph on any line it touches, acts on the selection; anywhere else, and at a caret, the list rows and the format flags read the click's point, since a click points at an item, and every other row acts on the word under the pointer, or at the point where it sits on none, which the surface seats as its selection. */
++/** Every surface's right-click, routed from where its own hit test lands, run only once the host can ask: a list glyph asks for its type menu, anything else for the format menu. A click on text inside a selection's reach acts on the selection; anywhere else, and at a caret, the list rows and the format flags read the click's point, since a click points at an item, and every other row acts on the word under the pointer, or at the point where it sits on none, which the surface seats as its selection. */
+ export function routeRightClick(
+   host: EditorHost,
+   scan: DocScan,
+   event: { clientX: number; clientY: number; preventDefault(): void },
+   click: () => {
+-    at: number | null
++    at: number
+     glyph: boolean
+     sel: { from: number; to: number }
+     word: () => { from: number; to: number } | null
+@@ -69,7 +66,7 @@ export function routeRightClick(
+   const ask = host.menus.format
+   if (!ask) return
+   const { at, glyph, sel, word: wordOf } = click()
+-  const inside = at === null || clickInside(scan.text, at, sel.from, sel.to, glyph)
++  const inside = !glyph && clickInside(scan.text, at, sel.from, sel.to)
+   const [from, to] = inside ? [sel.from, sel.to] : [at, at]
+   const word = inside || glyph ? null : wordOf()
+   const [start, end] = word ? [word.from, word.to] : [from, to]
+@@ -103,9 +100,8 @@ export const editorMenu = (scope: MarkdownScope): Extension =>
+         if (view.state.readOnly) return false
+         const glyph = glyphAt(event)
+         const opened = view.state.doc
+-        const hit = glyph ? null : view.posAndSideAtCoords(event)
++        const hit = view.posAndSideAtCoords(event, false)
+         const wordUnder = (): { from: number; to: number } | null => {
+-          if (!hit) return null
+           const edge = view.coordsAtPos(hit.pos, hit.assoc)
+           const onText =
+             !!edge &&
+@@ -120,7 +116,7 @@ export const editorMenu = (scope: MarkdownScope): Extension =>
+           docScan(view.state),
+           event,
+           () => ({
+-            at: glyph ? view.posAtDOM(glyph) : (hit?.pos ?? null),
++            at: glyph ? view.posAtDOM(glyph) : hit.pos,
+             glyph: glyph !== null,
+             sel: view.state.selection.main,
+             word: wordUnder,
+@@ -133,8 +129,7 @@ export const editorMenu = (scope: MarkdownScope): Extension =>
+               resting: null,
+             }),
+             apply: (action, from, to) => {
+-              if (view.dom.isConnected && view.state.doc === opened)
+-                applyEditorAction(view, action, { from, to })
++              if (view.state.doc === opened) applyEditorAction(view, action, { from, to })
+             },
+           },
+         )
+diff --git a/Core/MarkdownPM/Tables/CellEditor.tsx b/Core/MarkdownPM/Tables/CellEditor.tsx
+index 95f325b6e..de2d22f16 100644
+--- a/Core/MarkdownPM/Tables/CellEditor.tsx
++++ b/Core/MarkdownPM/Tables/CellEditor.tsx
+@@ -163,15 +163,9 @@ export function CellEditor({
+     })
+     viewRef.current = view
+     view.focus()
+-    const posAt = (p: { x: number; y: number }): number | null => {
+-      // posAtCoords can throw before the view has measured.
+-      try {
+-        return view.posAtCoords(p)
+-      } catch {
+-        return null
+-      }
+-    }
+-    view.dispatch({ selection: seatSelection(seat, view.state.doc.length, posAt) })
++    view.dispatch({
++      selection: seatSelection(seat, view.state.doc.length, (p) => view.posAtCoords(p)),
++    })
+     // The press that promoted this cell never reached CM, so the seat its own pointer filter would have given lands here.
+     seatPastMarkerNow(view)
+     return () => {
+diff --git a/Core/MarkdownPM/Tables/MarkdownTable.tsx b/Core/MarkdownPM/Tables/MarkdownTable.tsx
+index 6f81757aa..b8a98c35a 100644
+--- a/Core/MarkdownPM/Tables/MarkdownTable.tsx
++++ b/Core/MarkdownPM/Tables/MarkdownTable.tsx
+@@ -482,6 +482,7 @@ export function MarkdownTable({
+   const tableHeight = lastRow ? lastRow.top + lastRow.height - tableTop : 0
+ 
+   return (
++    // biome-ignore lint/a11y/noStaticElementInteractions: a right-click's glance close, not a control
+     <div
+       className={cx(
+         'mdpm-tbl-wrap',
+@@ -491,8 +492,7 @@ export function MarkdownTable({
+       )}
+       data-reveal-host={addsHidden ? 'off' : ''}
+       ref={wrapRef}
+-      // Captured, because a cell's own menu handler claims the event before it could bubble here.
+-      onContextMenuCapture={(e) => {
++      onContextMenu={(e) => {
+         if (!host.glance?.contains(e.currentTarget)) host.glance?.close()
+       }}
+       onPointerOver={trackHover}
+diff --git a/Core/MarkdownPM/Tables/cellRestingMenu.test.tsx b/Core/MarkdownPM/Tables/cellRestingMenu.test.tsx
+index bc548c4e6..e0bca2ade 100644
+--- a/Core/MarkdownPM/Tables/cellRestingMenu.test.tsx
++++ b/Core/MarkdownPM/Tables/cellRestingMenu.test.tsx
+@@ -329,7 +329,7 @@ describe('a row chosen at rest', () => {
+     select('b', 0, 'c', 1)
+     await rightClick('2.', 1)
+     await choose('list:bullet')
+-    expect(committed).toHaveBeenLastCalledWith(1, 0, '1. a\n- b\n- c\n4. d')
++    expect(committed).toHaveBeenLastCalledWith(1, 0, '- a\n- b\n- c\n- d')
+   })
+ 
+   it('enters with the caret inside the empty address External Link writes over a selection', async () => {
+diff --git a/Core/MarkdownPM/Tables/cellStatic.tsx b/Core/MarkdownPM/Tables/cellStatic.tsx
+index 783356f8c..48f89bc52 100644
+--- a/Core/MarkdownPM/Tables/cellStatic.tsx
++++ b/Core/MarkdownPM/Tables/cellStatic.tsx
+@@ -588,7 +588,6 @@ function StaticCellImpl({
+       className="mdpm-tbl-cell-static"
+       onContextMenu={(e) => {
+         if (onContextMenu(e) || readOnly()) return
+-        e.stopPropagation()
+         restingMenu(e)
+       }}
+       onPointerOver={onPointerOver}

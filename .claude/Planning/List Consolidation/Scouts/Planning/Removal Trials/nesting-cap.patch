@@ -1,0 +1,40 @@
+diff --git a/Core/MarkdownPM/Engine/detect.ts b/Core/MarkdownPM/Engine/detect.ts
+index 281c5cb55..acb1930c3 100644
+--- a/Core/MarkdownPM/Engine/detect.ts
++++ b/Core/MarkdownPM/Engine/detect.ts
+@@ -518,13 +518,11 @@ export function readsLists(scope: MarkdownScope): boolean {
+   }
+ }
+ 
+-export const MAX_NESTING_LEVEL = 3
+-
+ export function indentLevel(ws: string): number {
+   let tabs = 0
+   let spaces = 0
+   for (const ch of ws) ch === '\t' ? tabs++ : spaces++
+-  return Math.min(MAX_NESTING_LEVEL, tabs + Math.floor(spaces / 2))
++  return tabs + Math.floor(spaces / 2)
+ }
+ 
+ interface MarkerSpan {
+diff --git a/Core/MarkdownPM/Input/edits.ts b/Core/MarkdownPM/Input/edits.ts
+index cd65cd600..d8d5abe65 100644
+--- a/Core/MarkdownPM/Input/edits.ts
++++ b/Core/MarkdownPM/Input/edits.ts
+@@ -28,7 +28,6 @@ import {
+   isSequenced,
+   ordinalOf,
+   ordinalText,
+-  MAX_NESTING_LEVEL,
+   calloutHeadPrefixLen,
+   headingParts,
+   fenceBodyStart,
+@@ -160,7 +159,7 @@ export function indentListOnTab(
+   scope: MarkdownScope = 'page',
+ ): Edit | null {
+   const at = listLineAt(scan, selStart, selEnd, scope)
+-  if (at === null || at.lm.level >= MAX_NESTING_LEVEL) return null
++  if (at === null) return null
+   const from = at.ls + at.pfx.length
+   return { from, to: from, insert: '\t', selection: selStart + 1, relist: true }
+ }

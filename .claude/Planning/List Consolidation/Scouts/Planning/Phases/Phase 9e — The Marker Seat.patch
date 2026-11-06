@@ -1,0 +1,121 @@
+diff --git a/Core/MarkdownPM/Engine/intents.ts b/Core/MarkdownPM/Engine/intents.ts
+index d696801cb..bd20e4c23 100644
+--- a/Core/MarkdownPM/Engine/intents.ts
++++ b/Core/MarkdownPM/Engine/intents.ts
+@@ -534,13 +534,16 @@ export function assembleLineIntents(
+   return intents
+ }
+ 
+-export function prefixEndAt(cached: CachedLineIntents, scan: DocScan, pos: number): number {
+-  const i = lineIndexAt(scan, pos)
+-  let end = scan.lineStarts[i]
++function leadEnd(line: readonly DecoIntent[], start: number, atomics: boolean): number {
++  let end = start
+   for (let moved = true; moved; ) {
+     moved = false
+-    for (const it of cached.perLine[i])
+-      if (it.kind === 'prefix' && it.from === end) {
++    for (const it of line)
++      if (
++        (it.kind === 'prefix' || (atomics && it.kind === 'atomic')) &&
++        end >= it.from &&
++        end < it.to
++      ) {
+         end = it.to
+         moved = true
+       }
+@@ -548,26 +551,22 @@ export function prefixEndAt(cached: CachedLineIntents, scan: DocScan, pos: numbe
+   return end
+ }
+ 
++export function prefixEndAt(cached: CachedLineIntents, scan: DocScan, pos: number): number {
++  const i = lineIndexAt(scan, pos)
++  return leadEnd(cached.perLine[i], scan.lineStarts[i], false)
++}
++
+ /** The seat a visible marker hands the caret: past its gap, where the content and any token opening it begin. A pointer landing at the marker's end sits before the zero-width gap, one seat short. */
+ export function seatPastMarker(
+   cached: CachedLineIntents,
+   scan: DocScan,
+   pos: number,
+ ): number | null {
+-  const line = cached.perLine[lineIndexAt(scan, pos)]
++  const k = lineIndexAt(scan, pos)
++  const line = cached.perLine[k]
+   // A REPLACED marker — a bullet, a checkbox — draws nothing the caret can sit against, so a press at its start reveals the source instead of landing on the item.
+-  if (scan.scope === 'lists') {
+-    let end = pos
+-    for (let moved = true; moved; ) {
+-      moved = false
+-      for (const it of line)
+-        if ((it.kind === 'atomic' || it.kind === 'prefix') && end >= it.from && end < it.to) {
+-          end = it.to
+-          moved = true
+-        }
+-    }
+-    if (end !== pos) return end
+-  }
++  const lead = leadEnd(line, scan.lineStarts[k], true)
++  if (scan.markers[k] && pos < lead) return lead
+   const marker = line.find((it) => it.kind === 'class' && it.className.includes(GLYPH_CLASS))
+   if (marker?.kind !== 'class' || pos < marker.from || pos > marker.to) return null
+   let end = marker.to
+diff --git a/Core/MarkdownPM/Engine/listMarkerSeats.test.tsx b/Core/MarkdownPM/Engine/listMarkerSeats.test.tsx
+index 68549691f..1f62ab457 100644
+--- a/Core/MarkdownPM/Engine/listMarkerSeats.test.tsx
++++ b/Core/MarkdownPM/Engine/listMarkerSeats.test.tsx
+@@ -56,6 +56,18 @@ describe('a list marker holds no seats the reader cannot see', () => {
+     expect(view.state.selection.main.head).toBe(2)
+   })
+ 
++  it('a pointer seat left of a replaced marker lands past it, and short of a footnote leading a line', async () => {
++    const view = await mount('- foo\n\t- [ ] bar\n[^1] baz\n\n[^1]: note')
++    const seatAt = (at: number): number => {
++      view.dispatch({ selection: EditorSelection.cursor(at), userEvent: 'select.pointer' })
++      return view.state.selection.main.head
++    }
++    expect(seatAt(0)).toBe(2)
++    expect(seatAt(6)).toBe(13)
++    expect(seatAt(9)).toBe(13)
++    expect(seatAt(18)).toBe(18)
++  })
++
+   it('lets the caret into the marker once the line reveals its raw source', async () => {
+     const view = await mount('- foo')
+     // The reveal is the caret's own AND only while the editor holds focus — an unfocused editor shows every marker as its glyph, so the slot stays whole.
+diff --git a/Core/MarkdownPM/Menus/editorMenu.test.tsx b/Core/MarkdownPM/Menus/editorMenu.test.tsx
+index 69b8ec4cc..7b5919beb 100644
+--- a/Core/MarkdownPM/Menus/editorMenu.test.tsx
++++ b/Core/MarkdownPM/Menus/editorMenu.test.tsx
+@@ -113,6 +113,10 @@ describe('the editor’s native menu', () => {
+     const view = await mountEditor({ initialBody: '1. one', host: host() })
+     await rightClick(view, 2, undefined, false)
+     expect(view.state.doc.toString()).toBe('1. ****one')
++    await cleanupEditor()
++    const bullet = await mountEditor({ initialBody: '- one', host: host() })
++    await rightClick(bullet, 0, undefined, false)
++    expect(bullet.state.doc.toString()).toBe('- ****one')
+   })
+ 
+   it('follows the seated word through an edit under the menu', async () => {
+diff --git a/Core/MarkdownPM/decorations.ts b/Core/MarkdownPM/decorations.ts
+index 619507862..adb8ed982 100644
+--- a/Core/MarkdownPM/decorations.ts
++++ b/Core/MarkdownPM/decorations.ts
+@@ -782,13 +782,10 @@ const caretSeat: Extension = [
+     const { anchor, head, empty, assoc } = range
+     const intents = docLineIntentsOf.after(tr)
+     const scan = docScan.after(tr)
+-    const visible = prefixEndAt(intents, scan, head)
++    const visible = head > anchor ? head : Math.max(head, prefixEndAt(intents, scan, head))
+     const seat =
+-      (head < visible && head <= anchor
+-        ? visible
+-        : empty && tr.isUserEvent('select.pointer')
+-          ? seatPastMarker(intents, scan, head)
+-          : null) ?? head
++      (empty && tr.isUserEvent('select.pointer') ? seatPastMarker(intents, scan, visible) : null) ??
++      visible
+     let side = assoc
+     if (signSeatAt(scan, seat) === seat) side = empty && inMargin(tr, seat) ? -1 : 1
+     if (range === main && seat === head && side === assoc) return tr

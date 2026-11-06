@@ -1,0 +1,321 @@
+diff --git a/Core/MarkdownPM/Engine/listModel.ts b/Core/MarkdownPM/Engine/listModel.ts
+index 1ebe99ca4..353f29b02 100644
+--- a/Core/MarkdownPM/Engine/listModel.ts
++++ b/Core/MarkdownPM/Engine/listModel.ts
+@@ -231,14 +231,8 @@ function rebuildMove(
+   }
+ }
+ 
+-/** Recounts every sequenced run holding a position in `at`, each once however many positions it holds, where a position on a blank line, as in a loose list's gap, counts the run below it. A line in `arrived` had its marker written by the edit, so its ordinal came from the writer rather than the run, and never sets a top-level run's start, while a run holding a line in `repicked` counts from 1 or A. */
+-export function renumberRuns(
+-  scan: DocScan,
+-  at: readonly number[],
+-  scope: MarkdownScope,
+-  arrived: ReadonlySet<number> = new Set(),
+-  repicked: ReadonlySet<number> = new Set(),
+-): TextEdit[] {
++/** Recounts every sequenced run holding a position in `at`, each once however many positions it holds, where a position on a blank line, as in a loose list's gap, counts the run below it. */
++function renumberRuns(scan: DocScan, at: readonly number[], scope: MarkdownScope): TextEdit[] {
+   const counted = new Set<number>()
+   return at.flatMap((p) => {
+     let i = lineIndexAt(scan, p)
+@@ -246,7 +240,7 @@ export function renumberRuns(
+     if (counted.has(i)) return []
+     const rows = runAt(scan, i, scope)
+     for (const { k } of rows) counted.add(k)
+-    return renumberRun(scan, rows, arrived, repicked)
++    return renumberRun(scan, rows)
+   })
+ }
+ 
+@@ -266,20 +260,11 @@ function runAt(scan: DocScan, i: number, scope: MarkdownScope): Row[] {
+   }))
+ }
+ 
+-function renumberRun(
+-  scan: DocScan,
+-  rows: readonly Row[],
+-  arrived: ReadonlySet<number>,
+-  repicked: ReadonlySet<number>,
+-): TextEdit[] {
++function renumberRun(scan: DocScan, rows: readonly Row[]): TextEdit[] {
+   if (rows.length === 0) return []
+   const head = rows[0].lm
+   // A nested run counts from 1. A top-level run counts from its SMALLEST present ordinal: a move only permutes the ordinals, so a list that began at 5 stays 5,6,7 while a 1-based one snaps back.
+-  const settled = rows.filter(({ k }) => !arrived.has(scan.lineStarts[k]))
+-  const start =
+-    head.level > 0 || rows.some(({ k }) => repicked.has(scan.lineStarts[k]))
+-      ? 1
+-      : Math.min(...(settled.length > 0 ? settled : rows).map(({ lm }) => ordinalOf(lm)))
++  const start = head.level > 0 ? 1 : Math.min(...rows.map(({ lm }) => ordinalOf(lm)))
+   const changes: TextEdit[] = []
+   rows.forEach(({ k, lm: { markerStart, ordinal } }, n) => {
+     const from = scan.lineStarts[k] + markerStart
+diff --git a/Core/MarkdownPM/Input/applyEdit.ts b/Core/MarkdownPM/Input/applyEdit.ts
+index 01fc342ef..67a494c9b 100644
+--- a/Core/MarkdownPM/Input/applyEdit.ts
++++ b/Core/MarkdownPM/Input/applyEdit.ts
+@@ -1,7 +1,6 @@
+ import type { EditorView } from '@codemirror/view'
+ import type { Edit } from './edits'
+ import type { FormatEdit } from './format'
+-import { editEvent } from './listRenumber'
+ 
+ export function applyEdit(
+   view: EditorView,
+@@ -23,7 +22,7 @@ export function applyEdit(
+     changes,
+     selection,
+     scrollIntoView: opts.scrollIntoView,
+-    userEvent: opts.userEvent ?? editEvent(edit),
++    userEvent: opts.userEvent ?? 'input',
+   })
+   return true
+ }
+diff --git a/Core/MarkdownPM/Input/edits.ts b/Core/MarkdownPM/Input/edits.ts
+index cd65cd600..368671519 100644
+--- a/Core/MarkdownPM/Input/edits.ts
++++ b/Core/MarkdownPM/Input/edits.ts
+@@ -48,7 +48,6 @@ export interface Edit extends TextEdit {
+   selection: number
+   head?: number
+   /** Writes list markers, so the runs it touches count again. */
+-  relist?: boolean
+ }
+ 
+ const shorthandCheckboxRe = /^([ \t]*)([-+])\[([ xX]?)\]$/
+@@ -90,7 +89,7 @@ export function continueListOnEnter(
+       ? `${lm.bullet} [ ] `
+       : `${lm.bullet} `
+   const insert = `\n${pfx}${indent}${next}`
+-  return { from: selStart, to: selStart, insert, selection: selStart + insert.length, relist: true }
++  return { from: selStart, to: selStart, insert, selection: selStart + insert.length }
+ }
+ 
+ export function continueBlockquoteOnEnter(
+@@ -162,7 +161,7 @@ export function indentListOnTab(
+   const at = listLineAt(scan, selStart, selEnd, scope)
+   if (at === null || at.lm.level >= MAX_NESTING_LEVEL) return null
+   const from = at.ls + at.pfx.length
+-  return { from, to: from, insert: '\t', selection: selStart + 1, relist: true }
++  return { from, to: from, insert: '\t', selection: selStart + 1 }
+ }
+ 
+ export function outdentListOnShiftTab(
+@@ -181,7 +180,6 @@ export function outdentListOnShiftTab(
+     to: from + width,
+     insert: '',
+     selection: Math.max(from, selStart - width),
+-    relist: true,
+   }
+ }
+ 
+diff --git a/Core/MarkdownPM/Input/format.ts b/Core/MarkdownPM/Input/format.ts
+index c4dd03e4e..e4a10a168 100644
+--- a/Core/MarkdownPM/Input/format.ts
++++ b/Core/MarkdownPM/Input/format.ts
+@@ -41,7 +41,6 @@ type InlineFormat = keyof typeof WRAP | LinkWrapKind
+ export interface FormatEdit {
+   changes: TextEdit[]
+   selection?: number
+-  relist?: boolean
+ }
+ 
+ /** True for a real blockquote, but NOT a callout head, whose `>` is box chrome — stripping it orphans the `[!type]`. */
+@@ -360,7 +359,7 @@ export function listKindOf(
+   return kinds.size === 1 ? [...kinds][0] : null
+ }
+ 
+-/** The one list-type switch. An item already drawn as the type is left alone, a numbered or lettered one is written over, and a plain line becomes an item. A pick writes `1. ` or `A. ` over every sequenced marker it reaches, and the renumber filter (`listRenumber.ts`) restarts a run whose whole marker was rewritten, so any writer that rewrites a whole marker restarts its run (I-073). */
++/** The one list-type switch. An item already drawn as the type is left alone, a numbered or lettered one is written over, and a plain line becomes an item. */
+ export function setList(
+   scan: DocScan,
+   from: number,
+@@ -385,9 +384,7 @@ export function setList(
+       changes.push({ from: ls + lm.markerStart, to: ls + lm.contentStart, insert: marker })
+   }
+   // A pick reaching one plain line keeps the caret at its end; any other pick leaves the selection where the edit maps it.
+-  return reach.length === 1 && selection !== undefined
+-    ? { changes, selection, relist: true }
+-    : { changes, relist: true }
++  return reach.length === 1 && selection !== undefined ? { changes, selection } : { changes }
+ }
+ 
+ /** Quoting is the one line transform a blank line belongs in: a bare `>` is the quote's own empty line, and skipping it splits the block. */
+diff --git a/Core/MarkdownPM/Input/listRenumber.ts b/Core/MarkdownPM/Input/listRenumber.ts
+deleted file mode 100644
+index 4b844eec2..000000000
+--- a/Core/MarkdownPM/Input/listRenumber.ts
++++ /dev/null
+@@ -1,89 +0,0 @@
+-import { type ChangeDesc, EditorState, type Extension } from '@codemirror/state'
+-import { docScan } from '../docCache'
+-import { itemAt, readsFrom, renumberRuns, rolesAgainst, subBlockAt } from '../Engine/listModel'
+-import { applyEdits, lineIndexAt, type TextEdit } from '../Engine/markdownCode'
+-import { isSequenced, type MarkdownScope } from '../Engine/detect'
+-
+-/** The user event of an edit that writes list markers: Enter continuing a list, Tab and Shift+Tab, and every list-type pick. */
+-const RELIST = 'input.list'
+-
+-export const editEvent = (edit: { relist?: boolean }): string => (edit.relist ? RELIST : 'input')
+-
+-// Every edit that reshapes a sequenced run counts it here, riding the same transaction so one undo takes both: a marker-writing edit recounts the runs it touched and, where a line it touched was numbered or lettered, the run just below that item's nesting, which is the one a nested or switched item left, and a numbered or lettered marker it wrote over whole restarts its run from 1 or A, while a re-pick that leaves the text as it was lands nothing; a deletion that removes a whole line closes the gap it leaves, and one that removes a whole numbered or lettered marker recounts the run below it, as a switched item does. Nothing inside a page's math or tables is counted, and a code block's own list counts only for a marker-writing edit inside it. The positions it recounts from map through the edit in one ascending sweep, `mapAscending`, landing where `mapPos(p, -1)` lands each, since mapping each on its own measured quadratic on a 20,000-line pick.
+-export const listRenumber = (scope: MarkdownScope): Extension =>
+-  EditorState.transactionFilter.of((tr) => {
+-    if (!tr.docChanged) return tr
+-    const relist = tr.isUserEvent(RELIST)
+-    if (!relist && !tr.isUserEvent('delete')) return tr
+-    const was = docScan(tr.startState.doc)
+-    const scan = docScan.after(tr)
+-    const at: number[] = []
+-    const arrived = new Set<number>()
+-    const rewritten: number[] = []
+-    const runsBelow: number[] = []
+-    tr.changes.iterChanges((fromA, toA, fromB, toB) => {
+-      let below = -1
+-      for (let i = lineIndexAt(was, fromA); i <= lineIndexAt(was, toA); i++) {
+-        const lm = itemAt(was, i, relist ? i : 'outside', scope)
+-        if (lm === null || !isSequenced(lm)) continue
+-        const ls = was.lineStarts[i]
+-        const whole = fromA <= ls + lm.markerStart && toA >= ls + lm.contentStart
+-        if (!relist && !whole) continue
+-        const role = rolesAgainst(was, i, scope)
+-        let k = lineIndexAt(was, subBlockAt(was, ls, scope)!.to) + 1
+-        while (k < was.lines.length && role(k) === 'blank') k++
+-        if (k < was.lines.length && role(k) === 'sibling')
+-          below = Math.max(below, was.lineStarts[k])
+-        if (relist && whole) rewritten.push(ls)
+-      }
+-      if (relist)
+-        for (let i = lineIndexAt(scan, fromB); i <= lineIndexAt(scan, toB); i++) {
+-          const ls = scan.lineStarts[i]
+-          const lm = itemAt(scan, i, i, scope)
+-          if (lm === null) continue
+-          at.push(ls)
+-          if (fromB < ls + lm.contentStart && toB >= ls) arrived.add(ls)
+-        }
+-      else if (
+-        was.text.slice(fromA, toA).includes('\n') &&
+-        readsFrom(scan, lineIndexAt(scan, fromB), 'outside', scope)
+-      )
+-        at.push(fromB)
+-      if (below > 0 && below < was.text.length) runsBelow.push(below)
+-    })
+-    const repicked = new Set(mapAscending(tr.changes, rewritten))
+-    runsBelow.sort((a, b) => a - b)
+-    const changes = renumberRuns(
+-      scan,
+-      at.concat(mapAscending(tr.changes, runsBelow)),
+-      scope,
+-      arrived,
+-      repicked,
+-    )
+-    if (repicked.size > 0 && applyEdits(scan.text, changes) === was.text) return {}
+-    return changes.length === 0 ? tr : [tr, { changes, sequential: true }]
+-  })
+-
+-function mapAscending(changes: ChangeDesc, positions: readonly number[]): number[] {
+-  const out: number[] = []
+-  let n = 0
+-  changes.iterChangedRanges((fromA, toA, fromB) => {
+-    for (; n < positions.length && positions[n] <= fromA; n++)
+-      out.push(positions[n] - fromA + fromB)
+-    for (; n < positions.length && positions[n] < toA; n++) out.push(fromB)
+-  }, true)
+-  for (; n < positions.length; n++) out.push(positions[n] + changes.newLength - changes.length)
+-  return out
+-}
+-
+-/** An edit as the editor lands it: its changes, then the list renumber that rides the same transaction. */
+-export function landEdit(
+-  doc: string,
+-  changes: readonly TextEdit[],
+-  userEvent: string,
+-  scope: MarkdownScope,
+-): string {
+-  return EditorState.create({ doc, extensions: listRenumber(scope) })
+-    .update({ changes: [...changes], userEvent })
+-    .state.doc.toString()
+-}
+diff --git a/Core/MarkdownPM/Tables/cellStatic.tsx b/Core/MarkdownPM/Tables/cellStatic.tsx
+index c2e07cf88..b07b6ee86 100644
+--- a/Core/MarkdownPM/Tables/cellStatic.tsx
++++ b/Core/MarkdownPM/Tables/cellStatic.tsx
+@@ -25,12 +25,17 @@ import { checkboxToggleChange } from '../Engine/listModel'
+ import { scanDoc } from '../Engine/docScan'
+ import { isPaint } from '../Engine/paints'
+ import { editFor } from '../Input/format'
+-import { editEvent, landEdit } from '../Input/listRenumber'
+ import { decodePayload, type TablePayload } from '../Engine/Tables/clipboard'
+ import { pastedCellText } from '../Links/pasteLink'
+ import { RESTING_EDITS } from '../../Actions/editorMenu'
+ import { pasteModeOf, type PasteMode } from '../../Actions/pasteAsMenu'
+-import { codeMask, lineOffsetsOf, quoteDepthOf, type TextEdit } from '../Engine/markdownCode'
++import {
++  applyEdits,
++  codeMask,
++  lineOffsetsOf,
++  quoteDepthOf,
++  type TextEdit,
++} from '../Engine/markdownCode'
+ import { sectionRunsIn } from '../../Connections/scan'
+ import { mayNameOwnHeading } from '../../Connections/connections'
+ import { labelEscapes } from '../../Connections/links'
+@@ -469,9 +474,9 @@ function StaticCellImpl({
+   onCommit: (text: string) => void
+   onFill: (payload: TablePayload) => void
+ }): React.JSX.Element {
+-  const commitAtRest = (edits: readonly TextEdit[], userEvent = 'input'): boolean => {
++  const commitAtRest = (edits: readonly TextEdit[]): boolean => {
+     if (current() !== text) return false
+-    const next = landEdit(text, edits, userEvent, 'cell')
++    const next = applyEdits(text, edits)
+     if (next === text) return false
+     onCommit(next)
+     return true
+@@ -526,7 +531,7 @@ function StaticCellImpl({
+     if (!clip) return
+     const payload = decodePayload(clip)
+     if (payload) return onFill(payload)
+-    commitAtRest([await pastedCellText(host, text, { from, to }, clip, how)], 'input.paste')
++    commitAtRest([await pastedCellText(host, text, { from, to }, clip, how)])
+   }
+ 
+   const restingAction = async (action: string, from: number, to: number): Promise<void> => {
+@@ -534,14 +539,14 @@ function StaticCellImpl({
+       case RESTING_EDITS.copy:
+         return void host.clipboard.write(text.slice(from, to))
+       case RESTING_EDITS.cut:
+-        if (commitAtRest([{ from, to, insert: '' }], 'delete'))
++        if (commitAtRest([{ from, to, insert: '' }]))
+           void host.clipboard.write(text.slice(from, to))
+         return
+     }
+     const how = pasteModeOf(action)
+     if (how) return pasteAtRest(from, to, how)
+     const edit = editFor(action, scanDoc(text), from, to, host.settings(), 'cell')
+-    if (!edit || !commitAtRest(edit.changes, editEvent(edit))) return
++    if (!edit || !commitAtRest(edit.changes)) return
+     const [group] = action.split(':')
+     const slot = (group === 'format' || isPaint(group)) && (from === to || action === 'format:link')
+     if (slot && edit.selection !== undefined)
+diff --git a/Core/MarkdownPM/surface.ts b/Core/MarkdownPM/surface.ts
+index 8a5483ed1..19cbdb5eb 100644
+--- a/Core/MarkdownPM/surface.ts
++++ b/Core/MarkdownPM/surface.ts
+@@ -6,7 +6,6 @@ import { listDragExtension } from './Gestures/listDrag'
+ import { blockDragExtension } from './Gestures/blockDrag'
+ import { linkRest } from './Links/linkReveal'
+ import { linkSettle, linkWriting, type Remembers } from './Links/linkSettle'
+-import { listRenumber } from './Input/listRenumber'
+ import {
+   editorKeymap,
+   smartDelete,
+@@ -33,7 +32,6 @@ function blockGestures(scope: MarkdownScope): Extension {
+     case 'cell':
+       return [
+         listDragExtension(scope),
+-        listRenumber(scope),
+         blockHandles(scope),
+         pointerReveal(scope),
+         blockDragExtension,

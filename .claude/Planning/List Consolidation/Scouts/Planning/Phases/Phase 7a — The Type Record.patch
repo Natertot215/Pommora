@@ -1,0 +1,273 @@
+diff --git a/Core/MarkdownPM/Engine/Tables/codec.test.ts b/Core/MarkdownPM/Engine/Tables/codec.test.ts
+index 87ebd34f7..01bad6a01 100644
+--- a/Core/MarkdownPM/Engine/Tables/codec.test.ts
++++ b/Core/MarkdownPM/Engine/Tables/codec.test.ts
+@@ -94,4 +94,9 @@ describe('what a GFM cell can hold', () => {
+     expect(cellToDisplay('-')).toBe('-')
+     expect(cellToDisplay('n/a<br>-')).toBe('n/a\n-')
+   })
++
++  it('leaves a box with no space after its bullet as the plain text it reads as', () => {
++    expect(cellToDisplay('-[ ]')).toBe('-[ ]')
++    expect(cellToDisplay('- a<br>-[x]')).toBe('- a\n-[x]')
++  })
+ })
+diff --git a/Core/MarkdownPM/Engine/Tables/codec.ts b/Core/MarkdownPM/Engine/Tables/codec.ts
+index 1c3877607..ea4ff26d9 100644
+--- a/Core/MarkdownPM/Engine/Tables/codec.ts
++++ b/Core/MarkdownPM/Engine/Tables/codec.ts
+@@ -14,15 +14,13 @@ export const unescapeCell = (s: string): string => s.replace(/\\([\\|])/g, '$1')
+ 
+ // GFM trims a cell on both edges, so an empty last item arrives back as a bare marker with the grammar's required space gone.
+ // A box says task list and nothing else, so it is restored wherever it sits; a bare `-` is restored only under a list line, since a lone dash in a cell is the prose it reads as.
+-const BARE_MARKER = /^[ \t]*(?:(?:\d+|[A-Z])\.|[-+→])$/
+-const BARE_TASK = /^[ \t]*[-+][ \t]*\[[ xX]\]$/
+ const restoreTrailingItem = (display: string): string => {
+   const cut = display.lastIndexOf('\n')
+   const last = display.slice(cut + 1)
+-  if (BARE_TASK.test(last)) return `${display} `
+-  if (cut === -1 || !BARE_MARKER.test(last)) return display
+-  const above = display.slice(lineStartAt(display, cut), cut)
+-  return parseListMarker(above) ? `${display} ` : display
++  const lm = parseListMarker(`${last} `)
++  if (lm?.markerEnd !== last.length) return display
++  const above = cut === -1 ? '' : display.slice(lineStartAt(display, cut), cut)
++  return lm.kind === 'checkbox' || parseListMarker(above) ? `${display} ` : display
+ }
+ 
+ // A cell is single-line GFM on disk, so an in-cell line break serializes as `<br>` (literal newlines would split the row); model + segments stay in raw source form.
+diff --git a/Core/MarkdownPM/Engine/detect.test.ts b/Core/MarkdownPM/Engine/detect.test.ts
+index a047e83ab..1560f8e8a 100644
+--- a/Core/MarkdownPM/Engine/detect.test.ts
++++ b/Core/MarkdownPM/Engine/detect.test.ts
+@@ -79,7 +79,7 @@ describe('parseListMarker (single marker source)', () => {
+       markerStart: 0,
+       markerEnd: 5,
+       contentStart: 6,
+-      box: { start: 2, end: 5 },
++      boxStart: 2,
+       checked: true,
+     })
+   })
+@@ -236,7 +236,7 @@ describe('lineMarker (lists behind a quote/callout prefix)', () => {
+   it('finds a checkbox behind `> ` with shifted box offsets', () => {
+     expect(lineMarker('> - [x] done', undefined)).toMatchObject({
+       kind: 'checkbox',
+-      box: { start: '> - '.length },
++      boxStart: '> - '.length,
+     })
+   })
+   it('matches plain parseListMarker when there is no prefix', () => {
+diff --git a/Core/MarkdownPM/Engine/detect.ts b/Core/MarkdownPM/Engine/detect.ts
+index bb7ece8ce..63e0f28d0 100644
+--- a/Core/MarkdownPM/Engine/detect.ts
++++ b/Core/MarkdownPM/Engine/detect.ts
+@@ -534,17 +534,23 @@ interface MarkerSpan {
+   contentStart: number
+ }
+ 
+-type Box = { start: number; end: number }
+-
+ export type ListKind = 'ordered' | 'alphabetical' | 'bullet' | 'checkbox' | 'arrow'
+ 
++export const LIST_TYPES: Record<ListKind, { marker: string; rail?: string }> = {
++  ordered: { marker: '1. ' },
++  alphabetical: { marker: 'A. ', rail: 'md-outline-alpha' },
++  bullet: { marker: '- ', rail: 'md-outline-bullet' },
++  checkbox: { marker: '- [ ] ', rail: 'md-outline-task' },
++  arrow: { marker: '→ ' },
++}
++
+ type SequencedKind = Extract<ListKind, 'ordered' | 'alphabetical'>
+ 
+ export type SequencedMarker = MarkerSpan & { kind: SequencedKind; ordinal: string }
+ 
+ export type ListMarker =
+   | SequencedMarker
+-  | (MarkerSpan & { kind: 'checkbox'; box: Box; checked: boolean })
++  | (MarkerSpan & { kind: 'checkbox'; boxStart: number; checked: boolean })
+   | (MarkerSpan & { kind: 'bullet' | 'arrow' })
+ 
+ // `-` and `+` are the only bullet characters: `*` and `•` stay prose.
+@@ -564,20 +570,6 @@ export const ordinalText = (kind: SequencedKind, n: number): string =>
+ export const continuesList = (line: string, depth: number): boolean =>
+   /^[ \t]+\S/.test(line.slice(quotePrefixWidth(line, depth)))
+ 
+-export function listMarkerText(kind: ListKind): string {
+-  switch (kind) {
+-    case 'ordered':
+-    case 'alphabetical':
+-      return `${ordinalText(kind, 1)}. `
+-    case 'checkbox':
+-      return '- [ ] '
+-    case 'arrow':
+-      return '→ '
+-    case 'bullet':
+-      return '- '
+-  }
+-}
+-
+ export function parseListMarker(line: string, offset = 0): ListMarker | null {
+   if (isThematicBreakLine(line)) return null
+   const m = LIST_MARKER_RE.exec(line)
+@@ -601,14 +593,13 @@ export function parseListMarker(line: string, offset = 0): ListMarker | null {
+     }
+   }
+   if (b) {
+-    const box = { start: offset + b[0], end: offset + b[1] }
+     return {
+       kind: 'checkbox',
+       level,
+       markerStart,
+-      markerEnd: box.end,
++      markerEnd: offset + b[1],
+       contentStart,
+-      box,
++      boxStart: offset + b[0],
+       checked: m[4] !== ' ',
+     }
+   }
+diff --git a/Core/MarkdownPM/Engine/intents.ts b/Core/MarkdownPM/Engine/intents.ts
+index c33142ac3..268fec11f 100644
+--- a/Core/MarkdownPM/Engine/intents.ts
++++ b/Core/MarkdownPM/Engine/intents.ts
+@@ -4,6 +4,7 @@ import {
+   isThematicBreakLine,
+   isHeadingLine,
+   isSequenced,
++  LIST_TYPES,
+   parseListMarker,
+   headingParts,
+   fenceBodyStart,
+@@ -99,14 +100,6 @@ export type DecoIntent =
+     }
+   | RailIntent
+ 
+-// The rail's x sits on its ANCESTOR's glyph center; ordered and arrow return null, so no rail is drawn under one.
+-export function railTypeClass(m: ListMarker): string | null {
+-  if (m.kind === 'checkbox') return 'md-outline-task'
+-  if (m.kind === 'bullet') return 'md-outline-bullet'
+-  if (m.kind === 'alphabetical') return 'md-outline-alpha'
+-  return null
+-}
+-
+ export const railClass = (r: Pick<RailIntent, 'typeClass' | 'head' | 'first' | 'end'>): string =>
+   cx(
+     'md-outline-rail',
+@@ -456,7 +449,7 @@ function deriveLines(facts: LineFacts, scan: DocScan, from: number, to: number):
+     const li = lineIntentsInto(scan, i, NO_CARET, out)
+     facts.perLine[i] = out
+     facts.listLevels[i] = li ? li.level : -1
+-    facts.listKinds[i] = li ? (railTypeClass(li) ?? '') : ''
++    facts.listKinds[i] = li ? (LIST_TYPES[li.kind].rail ?? '') : ''
+     facts.quoteDepths[i] = quoteDepthOf(scan.lines[i])
+   }
+ }
+@@ -657,12 +650,12 @@ function pushConstruct(
+       intents.push({
+         kind: 'hide',
+         from: innerStart + lm.markerStart,
+-        to: innerStart + lm.box.start,
++        to: innerStart + lm.boxStart,
+       })
+       intents.push({
+         kind: 'widget',
+-        from: innerStart + lm.box.start,
+-        to: innerStart + lm.box.end,
++        from: innerStart + lm.boxStart,
++        to: innerStart + lm.markerEnd,
+         spec: {
+           type: 'checkbox',
+           checked: lm.checked,
+@@ -670,7 +663,7 @@ function pushConstruct(
+       })
+       intents.push({
+         kind: 'hide',
+-        from: innerStart + lm.box.end,
++        from: innerStart + lm.markerEnd,
+         to: innerStart + lm.contentStart,
+       })
+       intents.push({
+diff --git a/Core/MarkdownPM/Engine/listModel.ts b/Core/MarkdownPM/Engine/listModel.ts
+index 5e2952d63..6d4437a18 100644
+--- a/Core/MarkdownPM/Engine/listModel.ts
++++ b/Core/MarkdownPM/Engine/listModel.ts
+@@ -24,7 +24,7 @@ export function checkboxToggleChange(scan: DocScan, pos: number): TextEdit | nul
+   const lm = scan.markers[k]
+   if (lm?.kind !== 'checkbox') return null
+   const ls = scan.lineStarts[k]
+-  return { from: ls + lm.box.start, to: ls + lm.box.end, insert: lm.checked ? '[ ]' : '[x]' }
++  return { from: ls + lm.boxStart, to: ls + lm.markerEnd, insert: lm.checked ? '[ ]' : '[x]' }
+ }
+ 
+ function openerOf(scan: DocScan, k: number): number {
+diff --git a/Core/MarkdownPM/Input/edits.ts b/Core/MarkdownPM/Input/edits.ts
+index 8e5202761..f7a193c33 100644
+--- a/Core/MarkdownPM/Input/edits.ts
++++ b/Core/MarkdownPM/Input/edits.ts
+@@ -32,7 +32,7 @@ import {
+ } from '../Engine/markdownCode'
+ import {
+   isBlank,
+-  listMarkerText,
++  LIST_TYPES,
+   MAX_NESTING_LEVEL,
+   calloutHeadPrefixLen,
+   codeSeat,
+@@ -86,7 +86,7 @@ export function continueListOnEnter(scan: DocScan, selStart: number, selEnd: num
+ 
+   // Enter ALWAYS continues the list, even on an empty item — the exits are Shift+Enter and Backspace on the empty marker.
+   const indent = line.slice(pfx.length, lm.markerStart)
+-  const insert = `\n${pfx}${indent}${listMarkerText(lm.kind)}`
++  const insert = `\n${pfx}${indent}${LIST_TYPES[lm.kind].marker}`
+   return { from: selStart, to: selStart, insert, selection: selStart + insert.length, relist: true }
+ }
+ 
+diff --git a/Core/MarkdownPM/Input/format.ts b/Core/MarkdownPM/Input/format.ts
+index 96fd993a2..1fe5c8882 100644
+--- a/Core/MarkdownPM/Input/format.ts
++++ b/Core/MarkdownPM/Input/format.ts
+@@ -11,7 +11,7 @@ import {
+   headingParts,
+   calloutHeadPrefixLen,
+   isCalloutHead,
+-  listMarkerText,
++  LIST_TYPES,
+   indentWidth,
+   parseListMarker,
+   stripQuotePrefix,
+@@ -381,7 +381,7 @@ export function setList(
+   kind: ListKind,
+   settings: Personalization,
+ ): FormatEdit {
+-  const marker = listMarkerText(kind)
++  const { marker } = LIST_TYPES[kind]
+   const changes: FormatEdit['changes'] = []
+   let selection: number | undefined
+   const reach = listReach(scan, from, to, settings)
+diff --git a/Core/MarkdownPM/Tables/cellStatic.tsx b/Core/MarkdownPM/Tables/cellStatic.tsx
+index cbd365f89..fcf9fea7d 100644
+--- a/Core/MarkdownPM/Tables/cellStatic.tsx
++++ b/Core/MarkdownPM/Tables/cellStatic.tsx
+@@ -15,11 +15,10 @@ import {
+   railClass,
+   railIntents,
+   railStyle,
+-  railTypeClass,
+   textMarkerClass,
+ } from '../Engine/intents'
+ import { perText } from '../Engine/perText'
+-import type { ListMarker } from '../Engine/detect'
++import { LIST_TYPES, type ListMarker } from '../Engine/detect'
+ import { checkboxToggleChange } from '../Engine/listModel'
+ import { scanDoc } from '../Engine/docScan'
+ import { isPaint } from '../Engine/paints'
+@@ -285,7 +284,7 @@ function renderCellBody(
+   const rails = railIntents(
+     scan,
+     markers.map((lm) => lm?.level ?? -1),
+-    markers.map((lm) => (lm ? (railTypeClass(lm) ?? '') : '')),
++    markers.map((lm) => (lm ? (LIST_TYPES[lm.kind].rail ?? '') : '')),
+     lines.map(quoteDepthOf),
+   )
+   return lines.map((line, i) => {

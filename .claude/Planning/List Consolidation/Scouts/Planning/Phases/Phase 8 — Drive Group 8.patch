@@ -1,0 +1,168 @@
+diff --git a/.claude/scripts/List Types Drive/MATRIX.md b/.claude/scripts/List Types Drive/MATRIX.md
+index 4fc8fb6de..c4e84bd46 100644
+--- a/.claude/scripts/List Types Drive/MATRIX.md	
++++ b/.claude/scripts/List Types Drive/MATRIX.md	
+@@ -44,6 +44,8 @@ The drive's cases, derived from *List Consolidation — Decisions & Intention*,
+ - **⌘Z after every cell key:** a cell forwards undo to the page's history, one path whatever the key, so one recount proves it.
+ - **Each key in a quote or a callout:** they read the same `listKeys`, and groups 3 and 7 hold what's particular to those blocks.
+ - **A callout head's type menu:** a head draws no glyph (F-1), so nothing opens one, and `format.test.ts` pins what a pick writes there.
++- **Word gestures in a Text value:** group 10's, since the pane's surface changes there; `textScope.test.tsx` holds the one-line field.
++- **The word rule's character classes past those a user types:** `𝒶'b` and the 3,992-reading differential stay with `textScope.test.tsx`; a press can't land one half of an astral letter reliably.
+ 
+ #### Group 1 — One Scan Per Surface
+ 
+@@ -221,3 +223,20 @@ Every row runs for all five types on a page and in a focused cell, asserted agai
+ | A head over a body item | A callout | read | the body keeps its glyph | F-1 |
+ | A caret past a head's `- ` | A callout | seat, type | it stands at the text, and typing lands there | F-1 |
+ | A press on a head's text | A callout | click | the caret seats in that text | F-1 |
++
++#### Group 8 — The Word Rule
++
++| Case | Surface | Operation | Expected | Decisions |
++| --- | --- | --- | --- | --- |
++| `don't`, `don’t`, `rock'n'roll`, `8'9` | A page | double-click | the whole word | E-5 |
++| `students'.`, `'quoted',`, `a'_b` | A page | double-click | the word, its quote or tail left out | E-5 |
++| `'don't'`, `'I don't'` | A page | double-click | the quote rides, the accepted departure | E-6 |
++| `don't stop` | A page | Option-Right, Option-Left | crosses it whole both ways | E-5 |
++| `students' don't`, `don't 'quoted'` | A page | Option-arrow across the gap | runs on, the accepted departure | E-6 |
++| `'don't'` from 0 | A page | Option-Right | stops past the quote | E-6 |
++| `don't` | A page | Option-Backspace, Format ▸ Bold | takes and wraps it whole | E-5 |
++| `don't` | A focused cell | double-click, Option-arrow | the whole word, both ways | E-5 |
++| `don't`, `'quoted'` | A resting cell | right-click, Bold | wraps the word, a quote left out | E-5 |
++| `'don't'` | A resting cell | right-click, Bold | the quotes ride, the accepted departure | E-6 |
++| `// don't stop` | ` ```js ` | double-click, Option-arrow | the whole word, both ways | E-5 |
++| `// $a's` | ` ```js ` | double-click | `a's`, the language's `$` dropped for that gesture | E-6 |
+diff --git a/.claude/scripts/List Types Drive/live-drive.mjs b/.claude/scripts/List Types Drive/live-drive.mjs
+index f9040429e..aea21f796 100644
+--- a/.claude/scripts/List Types Drive/live-drive.mjs	
++++ b/.claude/scripts/List Types Drive/live-drive.mjs	
+@@ -1,5 +1,5 @@
+ import {
+-  ask, boxOf, clicks, createPage, hover, item, launch, META, mouseAt, must, openCollection, openPage, PAGE_VIEW, pickNative, popNative, pressKey, restore, row, SHIFT, shot, sleep, sweep, tally, typeText, until,
++  ALT, ask, boxOf, clicks, createPage, hover, item, launch, META, mouseAt, must, openCollection, openPage, PAGE_VIEW, pickNative, popNative, pressKey, restore, row, SHIFT, shot, sleep, sweep, tally, typeText, until,
+ } from '../drive-harness.mjs'
+ 
+ const PORT = 9413
+@@ -914,6 +914,102 @@ async function group7(cdp) {
+   item(7, 'F-1', 'a press on a head\'s text seats the caret in that text', pressed >= '> [!note] - '.length && pressed <= '> [!note] - foo'.length, show(pressed))
+ }
+ 
++// ── Group 8 — The Word Rule ─────────────────────────────────────────────────
++
++async function group8(cdp) {
++  const selected = (view) => cdp.evaluate(`(() => { const v = ${view}; const s = v.state.selection.main; return v.state.sliceDoc(s.from, s.to) })()`)
++  const head = (view) => cdp.evaluate(`${view}.state.selection.main.head`)
++  const seat = async (view, pos) => {
++    await cdp.evaluate(`(() => { const v = ${view}; v.focus(); v.dispatch({ selection: { anchor: ${pos} } }) })()`)
++    await sleep(200)
++  }
++  // Each row presses `press`'s first character, twice, and reads what's selected.
++  const WORDS = [
++    ["say don't now", 'on', "don't", 'E-5', 'a contraction, from its first half'],
++    ["say don't now", 't now', "don't", 'E-5', 'a contraction, from its last letter'],
++    ['say don’t now', 'on', 'don’t', 'E-5', 'a curly apostrophe'],
++    ["rock'n'roll now", 'ck', "rock'n'roll", 'E-5', 'two apostrophes in one word'],
++    ["8'9 now", '8', "8'9", 'E-5', 'digits on both sides'],
++    ["students'. now", 'den', 'students', 'E-5', "`students'.`, whose apostrophe closes the word"],
++    ["'quoted', now", 'uot', 'quoted', 'E-5', "`'quoted',`, whose quotes stay out"],
++    ["a'_b now", 'a', 'a', 'E-5', "`a'_b`, with no letter past its apostrophe"],
++    ["say 'don't' now", 'on', "'don't'", 'E-6', "`'don't'`'s outer quotes, the accepted departure"],
++    ["'I don't' x", 'on', "don't'", 'E-6', "`'I don't'`'s closing quote, the accepted departure"],
++  ]
++  for (const [seed, press, want, decision, name] of WORDS) {
++    await setBody(cdp, seed)
++    await clicks(cdp, await textAt(cdp, PAGE_TEXT, press, 1), 2, { settle: 300 })
++    const got = await selected(PAGE_VIEW)
++    item(8, decision, `a page's double-click: ${name} selects ${show(want)}`, got === want, show(got))
++  }
++
++  // Each row seats the caret at `from`, presses `key` with Option, and reads where the caret lands.
++  const GROUPS_MOVED = [
++    ["don't stop", 0, 'ArrowRight', 5, 'E-5', 'right across a contraction'],
++    ["don't stop", 5, 'ArrowLeft', 0, 'E-5', 'left across a contraction'],
++    ["students' don't", 10, 'ArrowLeft', 0, 'E-6', "left from `students' don't`'s gap runs to the word's start, the accepted departure"],
++    ["don't 'quoted'", 5, 'ArrowRight', 14, 'E-6', "right from `don't`'s end runs past `'quoted'`, the accepted departure"],
++    ["'don't'", 0, 'ArrowRight', 1, 'E-6', 'right from a quote no walk reaches stops past it'],
++  ]
++  for (const [seed, from, key, want, decision, name] of GROUPS_MOVED) {
++    await setBody(cdp, seed)
++    await seat(PAGE_VIEW, from)
++    await pressKey(cdp, key, ALT)
++    const got = await head(PAGE_VIEW)
++    item(8, decision, `a page's Option-arrow: ${name}`, got === want, show(got))
++  }
++  await setBody(cdp, "don't stop")
++  await seat(PAGE_VIEW, 5)
++  await pressKey(cdp, 'Backspace', ALT)
++  item(8, 'E-5', "a page's Option-Backspace takes a contraction whole", (await body(cdp)) === ' stop', show(await body(cdp)))
++  await setBody(cdp, "don't stop")
++  await wordPick(cdp, "don't", ['Format', 'Bold'])
++  item(8, 'E-5', "a page's right-click Bold wraps a contraction whole", (await body(cdp)) === "**don't** stop", show(await body(cdp)))
++
++  await setBody(cdp, table("say don't now"))
++  await enterCell(cdp, 'now')
++  await clicks(cdp, await textAt(cdp, LIVE_CELL, 'on', 1), 2, { settle: 300 })
++  const inCellWord = await selected(CELL_VIEW)
++  item(8, 'E-5', "a focused cell's double-click selects a contraction", inCellWord === "don't", show(inCellWord))
++  await seat(CELL_VIEW, 4)
++  await pressKey(cdp, 'ArrowRight', ALT)
++  const right = await head(CELL_VIEW)
++  await pressKey(cdp, 'ArrowLeft', ALT)
++  const left = await head(CELL_VIEW)
++  await leaveCell(cdp)
++  item(8, 'E-5', "a focused cell's Option-arrow crosses a contraction both ways", right === 9 && left === 4, show([right, left]))
++
++  for (const [cell, press, want, decision, name] of [
++    ["don't stop", 'on', "**don't** stop", 'E-5', 'a contraction'],
++    ["'quoted' it", 'uot', "'**quoted**' it", 'E-5', 'a quoted word, its quotes left out'],
++    ["say 'don't' now", 'on', "say **'don't'** now", 'E-6', "`'don't'`, the accepted departure"],
++  ]) {
++    await setBody(cdp, table(cell))
++    const menu = await pop(cdp, await textAt(cdp, restingCell(press), press, 1), ['Format', 'Bold'])
++    const got = await body(cdp)
++    await sleep(200)
++    await pressKey(cdp, 'Escape')
++    item(8, decision, `a resting cell's right-click word: Bold wraps ${name}`, got.endsWith(`| ${want} | x |`), `${seen(menu)} · ${show(got)}`)
++  }
++
++  const JS = fenced('js', "// don't stop")
++  await setBody(cdp, JS)
++  await clicks(cdp, await textAt(cdp, PAGE_TEXT, 'on', 1), 2, { settle: 300 })
++  const fenceWord = await selected(PAGE_VIEW)
++  item(8, 'E-5', 'a double-click in a JS fence selects a contraction', fenceWord === "don't", show(fenceWord))
++  const start = JS.indexOf("don't")
++  await seat(PAGE_VIEW, start)
++  await pressKey(cdp, 'ArrowRight', ALT)
++  const fenceRight = await head(PAGE_VIEW)
++  await pressKey(cdp, 'ArrowLeft', ALT)
++  const fenceLeft = await head(PAGE_VIEW)
++  item(8, 'E-5', 'Option-arrow in a JS fence crosses a contraction both ways', fenceRight === start + 5 && fenceLeft === start, show([fenceRight, fenceLeft, start]))
++  await setBody(cdp, fenced('js', "// $a's end"))
++  await clicks(cdp, await textAt(cdp, PAGE_TEXT, "a's", 1), 2, { settle: 300 })
++  const dollar = await selected(PAGE_VIEW)
++  item(8, 'E-6', "a contraction in JS drops the language's `$` for that gesture, the accepted departure", dollar === "a's", show(dollar))
++}
++
+ // ── The run ─────────────────────────────────────────────────────────────────
+ 
+ const GROUPS = {
+@@ -924,6 +1020,7 @@ const GROUPS = {
+   5: ['One Marker Grammar', group5],
+   6: ['One Set of List Keys', group6],
+   7: ['One Definition Per Type', group7],
++  8: ['The Word Rule', group8],
+ }
+ const chosen = process.argv.slice(2).map(Number)
+ if (chosen.length === 0 || chosen.some((g) => !GROUPS[g])) {
+diff --git a/.claude/scripts/drive-harness.mjs b/.claude/scripts/drive-harness.mjs
+index 943e4db01..f73ff2608 100644
+--- a/.claude/scripts/drive-harness.mjs
++++ b/.claude/scripts/drive-harness.mjs
+@@ -266,6 +266,7 @@ export async function pressKey(cdp, name, modifiers = 0) {
+     await cdp.send('Input.dispatchKeyEvent', { type, key: name, code: name === ' ' ? 'Space' : name.length === 1 ? `Key${name.toUpperCase()}` : name, windowsVirtualKeyCode: VK[name], modifiers })
+   await sleep(300)
+ }
++export const ALT = 1
+ export const SHIFT = 8
+ export const META = 4
+ export const typeText = (cdp, text) => cdp.send('Input.insertText', { text })
