@@ -12,6 +12,7 @@ describe('readFormatState', () => {
   it('reads the caret line heading level', () => {
     expect(readFormatState(scanDoc('## Title'), 4, 4, {}).heading).toBe(2)
     expect(readFormatState(scanDoc('plain'), 2, 2, {}).heading).toBe(0)
+    expect(readFormatState(scanDoc('plain\n> # h'), 5, 11, {}).heading).toBe(1)
   })
 
   it('reads list kind, blockquote, and code block', () => {

@@ -8,7 +8,14 @@ import {
   mapSpans,
   mayHoldLink,
 } from '../../Connections/connections'
-import { inCalloutAt, inCodeAt, inCodeNear, spanAt, type DocScan } from '../Engine/docScan'
+import {
+  inCalloutAt,
+  inCodeAt,
+  inCodeNear,
+  inFenceAt,
+  spanAt,
+  type DocScan,
+} from '../Engine/docScan'
 import {
   fenceAt,
   isBlockquoteLine,
@@ -30,14 +37,16 @@ import {
   ordinalText,
   MAX_NESTING_LEVEL,
   calloutHeadPrefixLen,
+  codeSeat,
   headingParts,
   fenceBodyStart,
   signedLine,
   signKind,
   type ListMarker,
   readsLists,
+  readsListsIn,
 } from '../Engine/detect'
-import { itemAt, ownersOf } from '../Engine/listModel'
+import { ownersOf } from '../Engine/listModel'
 import { tokenize } from '../Engine/tokens'
 import { isPaint } from '../Engine/paints'
 
@@ -52,9 +61,12 @@ export interface Edit extends TextEdit {
 
 const shorthandCheckboxRe = /^([ \t]*)([-+])\[([ xX]?)\]$/
 
-// A cell draws no quote, so a `>` there is prose and carries no prefix — otherwise the keys would nest inside a box the surface never shows.
-export const blockPrefix = (scan: DocScan, line: string): string =>
-  scan.scope === 'page' ? quotePrefix(line) : ''
+/** What stands before line `k`'s own text: inside a code block its fence's lead and any diff sign, elsewhere its quote. */
+export function leadOf(scan: DocScan, k: number): string {
+  const line = scan.lines[k]
+  const f = scan.fences[k]
+  return f ? line.slice(0, codeSeat(line, f)) : scan.quotes[k] ? quotePrefix(line) : ''
+}
 
 function listLineAt(
   scan: DocScan,
@@ -63,9 +75,9 @@ function listLineAt(
 ): { ls: number; line: string; pfx: string; lm: ListMarker } | null {
   if (selStart !== selEnd) return null
   const k = lineIndexAt(scan, selStart)
-  const lm = itemAt(scan, k, 'outside')
+  const lm = scan.markers[k]
   if (lm === null) return null
-  return { ls: scan.lineStarts[k], line: scan.lines[k], pfx: blockPrefix(scan, scan.lines[k]), lm }
+  return { ls: scan.lineStarts[k], line: scan.lines[k], pfx: leadOf(scan, k), lm }
 }
 
 export function continueListOnEnter(scan: DocScan, selStart: number, selEnd: number): Edit | null {
@@ -90,21 +102,21 @@ export function continueBlockquoteOnEnter(
   selStart: number,
   selEnd: number,
 ): Edit | null {
-  if (selStart !== selEnd) return null
-  const doc = scan.text
-  const ls = lineStartAt(doc, selStart)
-  const lineEnd = lineEndAt(doc, selStart)
-  const pfx = quotePrefix(doc.slice(ls, lineEnd))
-  if (pfx === '' || selStart < ls + pfx.length) return null
+  const k = lineIndexAt(scan, selStart)
+  if (selStart !== selEnd || !scan.quotes[k]) return null
+  const ls = scan.lineStarts[k]
+  const line = scan.lines[k]
+  const pfx = quotePrefix(line)
+  if (selStart < ls + pfx.length) return null
   // Callouts keep continuing — their documented exit is caret placement below the box, and stripping a body `> ` would split it.
-  if (isBlank(doc.slice(ls + pfx.length, lineEnd)) && !inCalloutAt(scan, selStart))
-    return { from: ls, to: lineEnd, insert: '', selection: ls }
+  if (isBlank(line.slice(pfx.length)) && !inCalloutAt(scan, selStart))
+    return { from: ls, to: ls + line.length, insert: '', selection: ls }
   const insert = `\n${pfx.replace(/[ \t]+$/, '')} `
   return { from: selStart, to: selStart, insert, selection: selStart + insert.length }
 }
 
 export function calloutShorthand(
-  doc: string,
+  scan: DocScan,
   selStart: number,
   selEnd: number,
   inserted: string,
@@ -112,6 +124,8 @@ export function calloutShorthand(
 ): Edit | null {
   if (inserted !== '|' || selStart !== selEnd || !settingOf(settings, 'transformCallouts'))
     return null
+  if (inFenceAt(scan, selStart)) return null
+  const doc = scan.text
   const c = selStart
   const ls = lineStartAt(doc, c)
   if (ls !== c - 1 || doc[c - 1] !== '|') return null
@@ -183,7 +197,7 @@ function takeMarker(
   const to = ls + lm.contentStart
   if (selStart <= from || selStart > to) return null
   const k = lineIndexAt(scan, ls)
-  const cut = ownersOf(scan, k, k).some((o) => o.k !== k) ? from : ls + pfx
+  const cut = ownersOf(scan, k, scan.fences[k]?.from).some((o) => o.k !== k) ? from : ls + pfx
   return { from: cut, to, insert: '', selection: cut }
 }
 
@@ -202,23 +216,21 @@ export function marginSign(scan: DocScan, seat: number, text: string): Edit | nu
 
 export function smartBackspace(scan: DocScan, selStart: number, selEnd: number): Edit | null {
   if (selStart !== selEnd) return null
-  const doc = scan.text
-  const ls = lineStartAt(doc, selStart)
-  const line = doc.slice(ls, lineEndAt(doc, selStart))
   const k = lineIndexAt(scan, selStart)
+  const ls = scan.lineStarts[k]
+  const line = scan.lines[k]
 
   const fence = scan.fences[k]
   const body = fence ? ls + fenceBodyStart(line, fence) : ls
   if (body > ls && selStart === body && ls > 0)
     return { from: ls - 1, to: body, insert: '', selection: ls - 1 }
-  // A fence holds literal text, so collapsing a marker there would eat characters the author typed as content.
-  if (inCodeAt(scan, selStart)) return null
 
-  const pfx = blockPrefix(scan, line)
-  const lm = itemAt(scan, k, 'outside')
+  const pfx = leadOf(scan, k)
+  const lm = scan.markers[k]
   const taken = lm && takeMarker(scan, ls, pfx.length, lm, selStart)
   if (taken) return taken
-  if (scan.scope !== 'page') return null
+  // A fence holds literal text past its own list, so collapsing a prefix there would eat characters the author typed as content.
+  if (scan.scope !== 'page' || inCodeAt(scan, selStart)) return null
   // Inside a callout, never strip a lone `>` — that would drop the line out of the box, splitting it into a stray quote.
   if (inCalloutAt(scan, selStart)) {
     const headLen = calloutHeadPrefixLen(line)
@@ -243,11 +255,12 @@ export function canonicalizeCheckbox(
   inserted: string,
 ): Edit | null {
   if (inserted !== ' ' || selStart !== selEnd || !readsLists(scan.scope)) return null
-  const doc = scan.text
-  const ls = lineStartAt(doc, selStart)
-  const before = doc.slice(ls, selStart)
-  const pfx = blockPrefix(scan, before)
-  const m = shorthandCheckboxRe.exec(before.slice(pfx.length))
+  const k = lineIndexAt(scan, selStart)
+  const f = scan.fences[k]
+  if (f !== undefined && !readsListsIn(f)) return null
+  const ls = scan.lineStarts[k]
+  const pfx = leadOf(scan, k)
+  const m = shorthandCheckboxRe.exec(scan.text.slice(ls + pfx.length, selStart))
   if (m === null) return null
   const [, ws, marker, inner] = m
   // The trailing space is the task-list grammar's own requirement, not decoration: without it the line parses as plain text.
@@ -665,14 +678,14 @@ const inBracket = (doc: string, c: number): boolean => {
 export const literalOrBracketAt = (scan: DocScan, c: number): boolean =>
   isLiteralAt(scan, c) || inBracket(scan.text, c)
 
-const lineBodyBefore = (doc: string, pos: number): string => {
-  const ls = lineStartAt(doc, pos)
-  return doc.slice(ls + quotePrefix(doc.slice(ls, lineEndAt(doc, pos))).length, pos)
+const lineBodyBefore = (scan: DocScan, pos: number): string => {
+  const k = lineIndexAt(scan, pos)
+  return scan.text.slice(scan.lineStarts[k] + leadOf(scan, k).length, pos)
 }
 
-const opensLine = (doc: string, pos: number): boolean => {
-  const before = doc.slice(lineStartAt(doc, pos), pos)
-  return isBlank(before.slice(quotePrefix(before).length))
+const opensCodeList = (scan: DocScan, pos: number): boolean => {
+  const f = scan.fences[lineIndexAt(scan, pos)]
+  return f !== undefined && readsListsIn(f) && isBlank(lineBodyBefore(scan, pos))
 }
 
 export function ellipsis(
@@ -703,7 +716,7 @@ export function sectionSign(
   const doc = scan.text
   const c = selStart
   if (doc[c - 1] !== '#' || doc[c - 2] === '#') return null
-  if (opensLine(doc, c - 1) || literalOrBracketAt(scan, c)) return null
+  if (isBlank(lineBodyBefore(scan, c - 1)) || literalOrBracketAt(scan, c)) return null
   return { from: c - 1, to: c, insert: '§', selection: c }
 }
 
@@ -719,7 +732,7 @@ export function bullet(
   const doc = scan.text
   const c = selStart
   if (c < 2 || doc[c - 1] !== '^' || doc[c - 2] !== ' ') return null
-  if (literalOrBracketAt(scan, c) || isBlank(lineBodyBefore(doc, c - 2))) return null
+  if (literalOrBracketAt(scan, c) || isBlank(lineBodyBefore(scan, c - 2))) return null
   return { from: c - 1, to: c, insert: '• ', selection: c + 1 }
 }
 
@@ -744,12 +757,12 @@ export function punctuation(
   const doc = scan.text
   const c = selStart
   const pair = PAIR_OF[doc[c - 1]]
-  if (pair && PUNCTUATION[pair[1] + inserted])
+  if (pair && PUNCTUATION[pair[1] + inserted] && !isLiteralAt(scan, c))
     return { from: c - 1, to: c, insert: pair + inserted, selection: c + 2 }
   const glyph = PUNCTUATION[doc[c - 1] + inserted]
   if (!glyph || PUNCTUATION[doc.slice(c - 2, c)] || isLiteralAt(scan, c)) return null
   if (glyph === '‖') {
-    const before = lineBodyBefore(doc, c - 1)
+    const before = lineBodyBefore(scan, c - 1)
     if (isBlank(before) || before.includes('|')) return null
   }
   return { from: c - 1, to: c, insert: glyph, selection: c }
@@ -793,7 +806,11 @@ export function dashArrow(
   if (selStart !== selEnd || inserted.length !== 1) return null
   const doc = scan.text
   const c = selStart
-  if (!'-–←><'.includes(doc[c - 1]) || isLiteralAt(scan, c)) return null
+  if (!'-–←><'.includes(doc[c - 1])) return null
+  if (isLiteralAt(scan, c))
+    return inserted === '>' && doc[c - 1] === '-' && opensCodeList(scan, c - 1)
+      ? { from: c - 1, to: c, insert: '→', selection: c }
+      : null
   const dashes = settingOf(settings, 'transformDashes')
   const arrows = settingOf(settings, 'transformArrows')
 
@@ -812,7 +829,11 @@ export function dashArrow(
     return { from: c - 1, to: c, insert: '—', selection: c }
   if (inserted === '>') {
     if (arrows && doc[c - 1] === '←') return { from: c - 1, to: c, insert: '↔', selection: c }
-    if (doc[c - 1] === '-' && doc[c - 2] !== '-' && (arrows || opensLine(doc, c - 1)))
+    if (
+      doc[c - 1] === '-' &&
+      doc[c - 2] !== '-' &&
+      (arrows || isBlank(lineBodyBefore(scan, c - 1)))
+    )
       return { from: c - 1, to: c, insert: '→', selection: c }
     if (arrows && doc[c - 1] === '>' && !isBlank(doc.slice(lineStartAt(doc, c - 1), c - 1)))
       return { from: c - 1, to: c, insert: '»', selection: c }
@@ -827,7 +848,7 @@ export function dashArrow(
     c >= 2 &&
     doc[c - 1] === '-' &&
     doc[c - 2] === ' ' &&
-    !isBlank(lineBodyBefore(doc, c - 2))
+    !isBlank(lineBodyBefore(scan, c - 2))
   )
     return { from: c - 1, to: c, insert: '– ', selection: c + 1 }
   return null

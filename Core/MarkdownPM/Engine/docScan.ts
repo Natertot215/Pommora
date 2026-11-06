@@ -20,9 +20,9 @@ import {
   isBlank,
   isHeadingLine,
   isThematicBreakLine,
+  lineMarker,
   lineRefs,
   parseListMarker,
-  parseListMarkerPrefixed,
   readsLists,
   scanFencedCode,
   signedLine,
@@ -113,7 +113,11 @@ function scanLines(d: DocLines, scope: MarkdownScope): LineScan {
     headings: lines.map(isHeadingLine),
     quotes: lines.map((l, i) => isBlockquoteLine(l) && fences[i]?.depth !== 0),
     breaks: lines.map(isThematicBreakLine),
-    markers: lines.map(parseListMarkerPrefixed),
+    markers: lines.map((l, i) =>
+      (spanAt(math.ranges, lineStarts[i]) ?? spanAt(tables, lineStarts[i]))
+        ? null
+        : lineMarker(l, fences[i]),
+    ),
     refs: lines.map((l, i) => lineRefs(l, lineStarts[i], inCode)),
     tables,
     maths: math.ranges,
@@ -403,6 +407,15 @@ export const inCodeNear = (scan: DocScan, pos: number): boolean =>
 
 export const inFenceAt = (scan: DocScan, pos: number): boolean =>
   scan.fences[lineIndexAt(scan, pos)] !== undefined
+
+export const fenceDelimiter = (scan: DocScan, k: number): boolean =>
+  (scan.fences[k]?.role ?? 'content') !== 'content'
+
+export const markerIn = (
+  scan: DocScan,
+  k: number,
+  region: number | undefined,
+): ListMarker | null => (scan.fences[k]?.from === region ? scan.markers[k] : null)
 
 export function inCalloutAt(scan: DocScan, pos: number): boolean {
   if (pos < 0) return false

@@ -96,6 +96,23 @@ describe('list continuation (Enter)', () => {
     const x = nested.indexOf('x')
     expect(smartBackspace(scanDoc(nested), x, x)).toBeNull()
   })
+  it('takes every list key on a list-shaped line inside a Markdown code block', () => {
+    const doc = '```md\n1. one\n- name: a\n```'
+    const scan = scanDoc(doc)
+    const one = doc.indexOf('one')
+    const end = one + 'one'.length
+    expect(apply(doc, continueListOnEnter(scan, end, end)!)).toBe(
+      '```md\n1. one\n2. \n- name: a\n```',
+    )
+    expect(apply(doc, indentListOnTab(scan, end, end)!)).toBe('```md\n\t1. one\n- name: a\n```')
+    expect(apply(doc, smartBackspace(scan, one, one)!)).toBe('```md\none\n- name: a\n```')
+    const name = doc.indexOf('a\n```')
+    expect(apply(doc, continueListOnEnter(scan, name + 1, name + 1)!)).toBe(
+      '```md\n1. one\n- name: a\n- \n```',
+    )
+    const box = '```md\n- [ ] \n```'
+    expect(apply(box, smartBackspace(scanDoc(box), 12, 12)!)).toBe('```md\n\n```')
+  })
 })
 
 describe('list outdent (Shift+Tab)', () => {
@@ -837,7 +854,7 @@ describe('headingHash', () => {
 
 describe('callout and exit settings', () => {
   it('callout shorthand follows its setting', () => {
-    expect(calloutShorthand('|', 1, 1, '|', { transformCallouts: false })).toBeNull()
+    expect(calloutShorthand(scanDoc('|'), 1, 1, '|', { transformCallouts: false })).toBeNull()
   })
   it('exit on enter follows its setting', () => {
     expect(closeConstructOnEnter(scanDoc('[]'), 1, 1, { exitPairsOnEnter: false })).toBeNull()
@@ -891,23 +908,23 @@ describe('blockquote continuation (Enter)', () => {
 describe('callout shorthand (||)', () => {
   it('expands `||` at line start to the callout head + a trailing exit line at doc end', () => {
     const doc = '|'
-    expect(apply(doc, calloutShorthand(doc, 1, 1, '|')!)).toBe('> [!callout] \n')
+    expect(apply(doc, calloutShorthand(scanDoc(doc), 1, 1, '|')!)).toBe('> [!callout] \n')
   })
   it('reuses an existing following line as the exit target (no extra newline)', () => {
     const doc = '|\nafter'
-    expect(apply(doc, calloutShorthand(doc, 1, 1, '|')!)).toBe('> [!callout] \nafter')
+    expect(apply(doc, calloutShorthand(scanDoc(doc), 1, 1, '|')!)).toBe('> [!callout] \nafter')
   })
   it('only fires on a bare `|` alone on the line (never mid-line / inside a table)', () => {
-    expect(calloutShorthand('a |', 3, 3, '|')).toBeNull()
-    expect(calloutShorthand('| x ', 4, 4, '|')).toBeNull()
+    expect(calloutShorthand(scanDoc('a |'), 3, 3, '|')).toBeNull()
+    expect(calloutShorthand(scanDoc('| x '), 4, 4, '|')).toBeNull()
   })
   it('preserves content already on the line (||ab → callout with "ab" body, no trailing line)', () => {
     const doc = '|ab'
-    expect(apply(doc, calloutShorthand(doc, 1, 1, '|')!)).toBe('> [!callout] ab')
+    expect(apply(doc, calloutShorthand(scanDoc(doc), 1, 1, '|')!)).toBe('> [!callout] ab')
   })
   it('separates from a callout directly above with a blank line (no touching boxes / merged run)', () => {
     const doc = '> [!callout] first\n|'
-    expect(apply(doc, calloutShorthand(doc, 20, 20, '|')!)).toBe(
+    expect(apply(doc, calloutShorthand(scanDoc(doc), 20, 20, '|')!)).toBe(
       '> [!callout] first\n\n> [!callout] \n',
     )
   })

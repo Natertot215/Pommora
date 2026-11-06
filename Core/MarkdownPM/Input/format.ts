@@ -1,10 +1,18 @@
-import { insideMark, type LinkKind, shiftToken, tokenize, type TokenKind } from '../Engine/tokens'
+import {
+  insideMark,
+  type LinkKind,
+  shiftToken,
+  type Token,
+  tokenize,
+  type TokenKind,
+} from '../Engine/tokens'
 import {
   isBlank,
   headingParts,
   calloutHeadPrefixLen,
   isCalloutHead,
   ordinalText,
+  indentWidth,
   isSequenced,
   parseListMarker,
   stripQuotePrefix,
@@ -16,8 +24,8 @@ import {
   type TextEdit,
   lineStartAt,
   lineEndAt,
+  lineEndOf,
   lineIndexAt,
-  quotePrefix,
   quotePrefixWidth,
   reachEnd,
   trimmedRange,
@@ -28,11 +36,19 @@ import type { BlockFormat, LinkWrapKind } from '../../Actions/blockMenu'
 import { emptyTable } from '../Engine/Tables/model'
 import { isPaint, type Paint, type PaintColor, writtenMark } from '../Engine/paints'
 import { serialize } from '../Engine/Tables/codec'
-import { type DocScan, inCodeAt, inFenceAt } from '../Engine/docScan'
-import { itemAt, ownersOf, readsFrom, siblingsAt, subBlockAt } from '../Engine/listModel'
+import {
+  type DocScan,
+  fenceDelimiter,
+  inCodeAt,
+  inFenceAt,
+  inSealedLine,
+  markerIn,
+  signSeatAt,
+} from '../Engine/docScan'
+import { ownersOf, siblingsAt, subBlockAt } from '../Engine/listModel'
 import { drawnKind } from '../Engine/intents'
 import { type Personalization, settingOf } from '../../Settings/personalization'
-import { blockPrefix } from './edits'
+import { leadOf } from './edits'
 import { isValidLink, normalizeLinkUrl } from '../../Paths/urlPath'
 import { serializeLink } from '../../Connections/linkValue'
 
@@ -75,7 +91,7 @@ const LINKS: Record<LinkWrapKind, LinkWrap> = {
 const SWAPS: Partial<Record<TokenKind, TokenKind>> = { bold: 'italic', italic: 'bold' }
 const MARKER_CHARS = '*_~=`'
 
-/** Inline marks are line-local, so only the selection's line is tokenized, in line-relative coords; the marks covering it are read with the marker characters at its edges stripped, and a fenced line holds none. An edge inside a link widens to the whole link, so a mark wraps the link rather than splitting its syntax. */
+/** Inline marks are line-local, so only the selection's line is tokenized, in line-relative coords; the marks covering it are read with the marker characters at its edges stripped, and a fenced line holds none, so a row there only ever writes. An edge inside a link widens to the whole link, so a mark wraps the link rather than splitting its syntax. */
 export function underSelection(scan: DocScan, selFrom: number, selTo: number) {
   const doc = scan.text
   let [from, to] = trimmedRange(doc, selFrom, selTo)
@@ -106,14 +122,12 @@ export function toggleInline(
   fmt: InlineFormat,
   color: PaintColor | 'accent' | null = null,
 ): FormatEdit | null {
-  const { fenced, from, to, ls, line, tokens, f, t, covering } = underSelection(
-    scan,
-    selFrom,
-    selTo,
-  )
-  if (fenced || (fmt !== 'inlineCode' && (inCodeAt(scan, from) || inCodeAt(scan, to)))) return null
+  const { from, to, ls, line, tokens, f, t, covering } = underSelection(scan, selFrom, selTo)
+  const spanned = (at: number): boolean => !inFenceAt(scan, at) && inCodeAt(scan, at)
+  if (fenceDelimiter(scan, lineIndexAt(scan, from))) return null
+  if (fmt !== 'inlineCode' && (spanned(from) || spanned(to))) return null
   const doc = scan.text
-  if (fmt in LINKS) return toggleWrap(doc, from, to, LINKS[fmt as LinkWrapKind])
+  if (fmt in LINKS) return toggleWrap(doc, tokens, ls, from, to, LINKS[fmt as LinkWrapKind])
   const kind = fmt as keyof typeof WRAP & TokenKind
   const close = WRAP[kind]
   const mark = color && color !== 'accent' ? color : undefined
@@ -163,23 +177,24 @@ export function toggleInline(
 export function editFor(
   action: string,
   scan: DocScan,
-  from: number,
-  to: number,
+  selFrom: number,
+  selTo: number,
   settings: Personalization,
 ): FormatEdit | null {
   const [group, value] = action.split(':')
+  // A diff line's sign is its change, so a row writes past it.
+  const from = Math.max(selFrom, signSeatAt(scan, selFrom) ?? selFrom)
+  const to = Math.max(selTo, from)
   switch (group) {
     case 'link':
-      return value === 'insert' && !inFenceAt(scan, from)
-        ? insertLinkEdit(scan.text, from, to)
-        : null
+      return value === 'insert' ? insertLinkEdit(scan.text, from, to) : null
     case 'format':
       return toggleInline(scan, from, to, value as InlineFormat)
     case 'highlight':
     case 'textColor':
       return toggleInline(scan, from, to, group as Paint, value as PaintColor | 'accent')
     case 'heading':
-      return setHeading(scan.text, from, to, Number(value) as HeadingLevel)
+      return setHeading(scan, from, to, Number(value) as HeadingLevel)
     case 'list':
       return setList(scan, from, to, value as ListKind, settings)
     case 'block':
@@ -199,12 +214,13 @@ function insertLinkEdit(doc: string, selFrom: number, selTo: number): FormatEdit
 
 function toggleWrap(
   doc: string,
+  tokens: Token[],
+  ls: number,
   from: number,
   to: number,
   { kind, open, close, caret }: LinkWrap,
 ): FormatEdit {
-  const ls = lineStartAt(doc, from)
-  const found = tokenize(doc.slice(ls, lineEndAt(doc, from))).find(
+  const found = tokens.find(
     (tk) => tk.kind === kind && tk.range[0] <= from - ls && to - ls <= tk.range[1],
   )
   const existing = found ? shiftToken(found, ls) : undefined
@@ -243,17 +259,21 @@ function listMarkerText(kind: ListKind): string {
 }
 
 /** For a callout HEAD the chrome includes the hidden `[!type] ` tag. Block transforms edit from AFTER the chrome, which preserves the box and keeps the change out of the callout guard's window. */
-export function splitPrefix(
-  line: string,
-  quote = quotePrefix(line),
-): { prefix: string; body: string } {
+export function splitPrefix(scan: DocScan, k: number): { prefix: string; body: string } {
+  const line = scan.lines[k]
+  const quote = leadOf(scan, k)
   const len = quote === '' ? 0 : (calloutHeadPrefixLen(line) ?? quote.length)
   return { prefix: line.slice(0, len), body: line.slice(len) }
 }
 
 /** Prefix-aware: `> - item` becomes `> ## item`, never `## - item` popped out of its quote. */
-export function setHeading(doc: string, from: number, to: number, level: HeadingLevel): FormatEdit {
-  const lines = selectedLines(doc, from, to)
+export function setHeading(
+  scan: DocScan,
+  from: number,
+  to: number,
+  level: HeadingLevel,
+): FormatEdit {
+  const lines = selectedLines(scan, from, to)
   if (lines.length === 0) return { changes: [] }
   const changes: FormatEdit['changes'] = []
   let lastEnd = 0
@@ -275,9 +295,18 @@ interface SelectedLine {
   inner: string
 }
 
-function readLine(doc: string, ls: number, lead?: string): SelectedLine {
-  const le = lineEndAt(doc, ls)
-  const { prefix, body } = splitPrefix(doc.slice(ls, le), lead)
+function readLine(scan: DocScan, k: number): SelectedLine {
+  const ls = scan.lineStarts[k]
+  const le = lineEndOf(scan, k)
+  if (scan.fences[k] !== undefined) {
+    // A code line reads as written: a row's lead joins it past its own indent, and nothing there is stripped.
+    const lead = leadOf(scan, k).length
+    const text = scan.lines[k].slice(lead)
+    const prefix = scan.lines[k].slice(0, lead + indentWidth(text))
+    const pad = prefix.endsWith('>') ? ' ' : ''
+    return { ls, le, prefix, pad, indent: '', inner: text.trimStart() }
+  }
+  const { prefix, body } = splitPrefix(scan, k)
   const lm = parseListMarker(body)
   const stripped = stripInnerMarkers(body)
   // An item's indent sits before its marker, a paragraph's leads its words — held apart either way, so converting a nested item keeps its level.
@@ -293,10 +322,12 @@ function readLine(doc: string, ls: number, lead?: string): SelectedLine {
 }
 
 /** A selection passes over its blank lines; a caret alone on one keeps it, so the block starts there. */
-function selectedLines(doc: string, from: number, to: number): SelectedLine[] {
-  return spannedLines(doc, from, to)
-    .map(({ ls }) => readLine(doc, ls))
-    .filter((l) => from === to || !isBlank(doc.slice(l.ls + l.prefix.length, l.le)))
+function selectedLines(scan: DocScan, from: number, to: number): SelectedLine[] {
+  return spannedLines(scan.text, from, to)
+    .map(({ ls }) => lineIndexAt(scan, ls))
+    .filter((k) => !fenceDelimiter(scan, k))
+    .map((k) => readLine(scan, k))
+    .filter((l) => from === to || !isBlank(scan.text.slice(l.ls + l.prefix.length, l.le)))
 }
 
 /** What a list-type pick reaches. A caret takes its item's group: with Preserve List-Level Formatting on, the siblings drawn as its type; off, the siblings and everything nested under them. A range takes every item it touches and turns its plain lines into items. A continuation answers for its item and a blank line for itself, a code block's lines only by a pick wholly inside it, and math, tables, a callout's head and a fence's delimiters never are. */
@@ -308,25 +339,24 @@ function listReach(
 ): { k: number; lm: ListMarker | null }[] {
   const anchor = lineIndexAt(scan, from)
   const upTo = lineIndexAt(scan, reachEnd(scan.text, from, to))
-  const reader = readsFrom(scan, upTo, anchor) ? anchor : 'outside'
-  const markerAt = (k: number): ListMarker | null => itemAt(scan, k, reader)
+  const own = scan.fences[anchor]?.from
+  const region = scan.fences[upTo]?.from === own ? own : undefined
   const endOf = (k: number): number => subBlockAt(scan, scan.lineStarts[k])!.to
-  const blank = (k: number): boolean =>
-    isBlank(splitPrefix(scan.lines[k], blockPrefix(scan, scan.lines[k])).body)
-  const owners = ownersOf(scan, anchor, reader)
+  const blank = (k: number): boolean => isBlank(splitPrefix(scan, k).body)
+  const owners = ownersOf(scan, anchor, region)
   const item = owners[0]?.k ?? null
   const reached = new Set<number>()
   if (from === to) {
     if (item === null || blank(anchor)) reached.add(anchor)
     else {
       const { items, last } = siblingsAt(scan, item)
-      const kind = drawnKind(markerAt(item)!)
+      const kind = drawnKind(markerIn(scan, item, region)!)
       const preserve = settingOf(settings, 'preserveListLevels')
       const span = preserve
         ? items
         : Array.from({ length: last - items[0] + 1 }, (_, n) => items[0] + n)
       for (const k of span) {
-        const lm = markerAt(k)
+        const lm = markerIn(scan, k, region)
         if (lm !== null && (!preserve || drawnKind(lm) === kind)) reached.add(k)
       }
     }
@@ -334,18 +364,19 @@ function listReach(
     const open = owners.reverse()
     for (let k = anchor; k <= upTo; k++) {
       while (open.length > 0 && open[open.length - 1].end < scan.lineStarts[k]) open.pop()
-      if (markerAt(k) !== null && k !== item) open.push({ k, end: endOf(k) })
+      if (markerIn(scan, k, region) !== null && k !== item) open.push({ k, end: endOf(k) })
       if (!blank(k)) reached.add(open[open.length - 1]?.k ?? k)
     }
   }
   const outOfReach = (k: number): boolean =>
-    !readsFrom(scan, k, reader) ||
     scan.callouts[k]?.first ||
-    (scan.fences[k]?.role ?? 'content') !== 'content'
+    (region === undefined
+      ? inSealedLine(scan, k)
+      : scan.fences[k]?.from !== region || fenceDelimiter(scan, k))
   return [...reached]
     .sort((a, b) => a - b)
     .filter((k) => !outOfReach(k))
-    .map((k) => ({ k, lm: markerAt(k) }))
+    .map((k) => ({ k, lm: markerIn(scan, k, region) }))
 }
 
 export function listKindOf(
@@ -366,7 +397,6 @@ export function setList(
   kind: ListKind,
   settings: Personalization,
 ): FormatEdit {
-  const doc = scan.text
   const marker = listMarkerText(kind)
   const changes: FormatEdit['changes'] = []
   let selection: number | undefined
@@ -374,7 +404,7 @@ export function setList(
   for (const { k, lm } of reach) {
     const ls = scan.lineStarts[k]
     if (lm === null) {
-      const l = readLine(doc, ls, blockPrefix(scan, scan.lines[k]))
+      const l = readLine(scan, k)
       const lead = `${l.pad}${l.indent}${marker}`
       changes.push({ from: ls + l.prefix.length, to: l.le - l.inner.length, insert: lead })
       selection = ls + l.prefix.length + lead.length + l.inner.length
@@ -409,7 +439,10 @@ export function setBlock(scan: DocScan, from: number, to: number, fmt: BlockForm
   switch (fmt) {
     case 'quote': {
       // Off only where every selected line is already a quote. Toggling a callout head wraps rather than demoting it.
-      const lines = spannedLines(doc, from, to)
+      const lines = spannedLines(doc, from, to).map((l) => ({
+        ...l,
+        ls: signSeatAt(scan, l.ls) ?? l.ls,
+      }))
       const strip = lines.every(({ ls: s, le: e }) => isQuoteToggleable(doc.slice(s, e)))
       const changes: FormatEdit['changes'] = []
       let lastEnd = 0
@@ -427,9 +460,11 @@ export function setBlock(scan: DocScan, from: number, to: number, fmt: BlockForm
     }
     case 'callout': {
       if (isCalloutHead(line)) return { changes: [] }
-      const body = stripInnerMarkers(line)
-      const next = `> [!callout] ${parseListMarker(line) ? body : stripQuotePrefix(body)}`
-      return { changes: [{ from: ls, to: le, insert: next }], selection: ls + next.length }
+      const at = signSeatAt(scan, ls) ?? ls
+      const own = doc.slice(at, le)
+      const body = stripInnerMarkers(own)
+      const next = `> [!callout] ${parseListMarker(own) ? body : stripQuotePrefix(body)}`
+      return { changes: [{ from: at, to: le, insert: next }], selection: at + next.length }
     }
     case 'code': {
       // Inside a fence, the pick takes its two fence lines off; elsewhere, one fence goes around the whole selection, the gesture for a block of code pasted in.

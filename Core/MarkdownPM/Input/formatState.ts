@@ -1,7 +1,6 @@
 import type { TokenOf } from '../Engine/tokens'
 import { isPaint, type Paint } from '../Engine/paints'
 import { headingParts } from '../Engine/detect'
-import { blockPrefix } from './edits'
 import { isQuoteToggleable, listKindOf, splitPrefix, underSelection } from './format'
 import type { EditorMenuRequest } from '../../Actions/editorMenu'
 import type { DocScan } from '../Engine/docScan'
@@ -14,15 +13,14 @@ export function readFormatState(
   selTo: number,
   settings: Personalization,
 ): Omit<EditorMenuRequest, 'scope' | 'x' | 'y' | 'embedSeat' | 'citeSeat' | 'resting'> {
-  const { from, to, ls, line, tokens, covering } = underSelection(scan, selFrom, selTo)
+  const { fenced, from, to, ls, line, tokens, covering } = underSelection(scan, selFrom, selTo)
   const lineFrom = from - ls
   const lineTo = to - ls
   const wraps = (kind: string): boolean => covering.some((tk) => tk.kind === kind)
   const painted = covering.find((tk): tk is TokenOf<Paint> => isPaint(tk.kind))
-  const fenced = scan.fences[lineIndexAt(scan, selFrom)] !== undefined
 
   // Heading state reads the line's INNER body so a `> # item` reports as a heading — the render layer draws it behind the `>`, and the menu must agree with what the user sees.
-  const hm = headingParts(splitPrefix(line, blockPrefix(scan, line)).body)
+  const hm = fenced ? null : headingParts(splitPrefix(scan, lineIndexAt(scan, ls)).body)
 
   return {
     bold: wraps('bold'),

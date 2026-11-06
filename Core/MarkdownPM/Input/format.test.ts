@@ -95,12 +95,6 @@ describe('toggleInline', () => {
   it('link wraps with an empty url ready for typing', () => {
     expect(apply('site', toggleInline(scanDoc('site'), 0, 4, 'link'))).toBe('[site]()')
   })
-  it('Insert Link stands down on a fenced line, as the wraps do', () => {
-    expect(editFor('link:insert', scanDoc('```\nexample.com\n```'), 4, 15, {})).toBeNull()
-    expect(apply('example.com', editFor('link:insert', scanDoc('example.com'), 0, 11, {}))).toBe(
-      '[example.com](https://example.com)',
-    )
-  })
   it('seats an empty link at its url, and an alias-first one at its text', () => {
     const url = toggleInline(scanDoc(''), 0, 0, 'link')
     expect(url?.changes.map((c) => c.insert).join('')).toBe('[]()')
@@ -144,8 +138,7 @@ describe('toggleInline', () => {
       'foo ==[[Bar]]== baz',
     )
   })
-  it('stands down on a fenced line, and inside inline code for every mark but Code', () => {
-    expect(toggleInline(scanDoc('```\n**b**\n```'), 6, 6, 'bold')).toBeNull()
+  it('stands down inside inline code for every mark but Code', () => {
     const code = scanDoc('a `code` b')
     for (const action of ['format:bold', 'format:link', 'highlight:accent', 'textColor:red'])
       expect(editFor(action, code, 3, 7, {})).toBeNull()
@@ -160,37 +153,39 @@ describe('toggleInline', () => {
 
 describe('setHeading', () => {
   it('sets a level', () => {
-    expect(apply('hello', setHeading('hello', 0, 5, 2))).toBe('## hello')
+    expect(apply('hello', setHeading(scanDoc('hello'), 0, 5, 2))).toBe('## hello')
   })
   it('level 0 clears an existing heading', () => {
-    expect(apply('## hello', setHeading('## hello', 0, 8, 0))).toBe('hello')
+    expect(apply('## hello', setHeading(scanDoc('## hello'), 0, 8, 0))).toBe('hello')
   })
   it('replaces a list marker rather than stacking', () => {
-    expect(apply('- item', setHeading('- item', 0, 6, 1))).toBe('# item')
+    expect(apply('- item', setHeading(scanDoc('- item'), 0, 6, 1))).toBe('# item')
   })
   it('heads every selected line', () => {
     const three = 'one\ntwo\nthree'
-    expect(apply(three, setHeading(three, 0, three.length, 2))).toBe('## one\n## two\n## three')
-    expect(apply(three, setHeading(three, 0, 4, 2))).toBe('## one\ntwo\nthree')
+    expect(apply(three, setHeading(scanDoc(three), 0, three.length, 2))).toBe(
+      '## one\n## two\n## three',
+    )
+    expect(apply(three, setHeading(scanDoc(three), 0, 4, 2))).toBe('## one\ntwo\nthree')
     const heads = (level: 1 | 2) => (scan: DocScan, f: number, t: number) =>
-      setHeading(scan.text, f, t, level)
+      setHeading(scan, f, t, level)
     expect(picked('one\ntwo', 1, 5, heads(1), heads(2))).toBe('## one\n## two')
   })
   it('leaves a blank line unheaded', () => {
     const gapped = 'one\n\ntwo'
-    expect(apply(gapped, setHeading(gapped, 0, gapped.length, 1))).toBe('# one\n\n# two')
+    expect(apply(gapped, setHeading(scanDoc(gapped), 0, gapped.length, 1))).toBe('# one\n\n# two')
   })
   it('heads a blank line the caret sits on', () => {
-    const edit = setHeading('', 0, 0, 2)
+    const edit = setHeading(scanDoc(''), 0, 0, 2)
     expect(apply('', edit)).toBe('## ')
     expect(edit.selection).toBe(3)
-    expect(apply('> one\n>\n> two', setHeading('> one\n>\n> two', 7, 7, 2))).toBe(
+    expect(apply('> one\n>\n> two', setHeading(scanDoc('> one\n>\n> two'), 7, 7, 2))).toBe(
       '> one\n> ## \n> two',
     )
   })
   it('returns every selected line to plain body at 0', () => {
     const heads = '# one\n## two'
-    expect(apply(heads, setHeading(heads, 0, heads.length, 0))).toBe('one\ntwo')
+    expect(apply(heads, setHeading(scanDoc(heads), 0, heads.length, 0))).toBe('one\ntwo')
   })
 })
 

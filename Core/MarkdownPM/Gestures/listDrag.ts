@@ -2,11 +2,12 @@ import type { Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import type { BlockSpan } from '../Engine/detect'
 import { docScan, docString } from '../docCache'
+import { markerIn } from '../Engine/docScan'
 import { forEachLine, shadeField, type Boundary } from './dragChrome'
 import { beginRelocateDrag, editorGestureCleanup } from './editorGesture'
 import { glyphAt, lineElementAt, textColumn } from '../lineDom'
 import { isSecondaryClick } from '@pommora/uix/Interactions/chords'
-import { subBlockAt, dropChanges, checkboxToggleChange, itemAt } from '../Engine/listModel'
+import { subBlockAt, dropChanges, checkboxToggleChange } from '../Engine/listModel'
 
 // Measured at drag start and re-measured only on scroll: the doc is static during a drag, so re-measuring per pointermove would be layout thrash.
 interface Drop {
@@ -35,10 +36,11 @@ function collectBoundaries(view: EditorView, block: BlockSpan): Boundary<Drop>[]
   const gutterRight = textColumn(view).right
   const scan = docScan(view.state)
   const out: Boundary<Drop>[] = []
-  const first = doc.lineAt(block.from).number - 1
+  const region = scan.fences[doc.lineAt(block.from).number - 1]?.from
   for (const { from, to } of view.visibleRanges) {
     forEachLine(doc, from, to, (line) => {
-      const lm = itemAt(scan, line.number - 1, first)
+      const k = line.number - 1
+      const lm = markerIn(scan, k, region)
       if (lm === null || (line.from >= block.from && line.from <= block.to)) return
       const cTop = view.coordsAtPos(line.from)
       const cEnd = view.coordsAtPos(line.to)

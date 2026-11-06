@@ -256,7 +256,7 @@ export const typedInput: Extension = EditorView.inputHandler.of((view, from, to,
   return apply(
     view,
     headingHash(scan, from, from, text) ??
-      (page ? calloutShorthand(scan.text, from, from, text, settings) : null) ??
+      (page ? calloutShorthand(scan, from, from, text, settings) : null) ??
       canonicalizeCheckbox(scan, from, from, text) ??
       autoPair(scan, from, from, text, settings) ??
       dashArrow(scan, from, from, text, settings) ??

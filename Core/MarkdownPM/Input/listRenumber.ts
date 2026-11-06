@@ -1,6 +1,6 @@
 import { type ChangeDesc, EditorState, type Extension } from '@codemirror/state'
 import { docScan, surfaceScope } from '../docCache'
-import { itemAt, readsFrom, renumberRuns, rolesAgainst, subBlockAt } from '../Engine/listModel'
+import { renumberRuns, rolesAgainst, subBlockAt } from '../Engine/listModel'
 import { applyEdits, lineIndexAt, type TextEdit } from '../Engine/markdownCode'
 import { isSequenced, type MarkdownScope } from '../Engine/detect'
 
@@ -23,7 +23,7 @@ export const listRenumber: Extension = EditorState.transactionFilter.of((tr) => 
   tr.changes.iterChanges((fromA, toA, fromB, toB) => {
     let below = -1
     for (let i = lineIndexAt(was, fromA); i <= lineIndexAt(was, toA); i++) {
-      const lm = itemAt(was, i, relist ? i : 'outside')
+      const lm = was.markers[i]
       if (lm === null || !isSequenced(lm)) continue
       const ls = was.lineStarts[i]
       const whole = fromA <= ls + lm.markerStart && toA >= ls + lm.contentStart
@@ -37,16 +37,12 @@ export const listRenumber: Extension = EditorState.transactionFilter.of((tr) => 
     if (relist)
       for (let i = lineIndexAt(scan, fromB); i <= lineIndexAt(scan, toB); i++) {
         const ls = scan.lineStarts[i]
-        const lm = itemAt(scan, i, i)
+        const lm = scan.markers[i]
         if (lm === null) continue
         at.push(ls)
         if (fromB < ls + lm.contentStart && toB >= ls) arrived.add(ls)
       }
-    else if (
-      was.text.slice(fromA, toA).includes('\n') &&
-      readsFrom(scan, lineIndexAt(scan, fromB), 'outside')
-    )
-      at.push(fromB)
+    else if (was.text.slice(fromA, toA).includes('\n')) at.push(fromB)
     if (below > 0 && below < was.text.length) runsBelow.push(below)
   })
   const repicked = new Set(mapAscending(tr.changes, rewritten))

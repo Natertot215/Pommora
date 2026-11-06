@@ -633,6 +633,18 @@ export function parseListMarkerPrefixed(line: string): ListMarker | null {
   return parseListMarker(line.slice(offset), offset)
 }
 
+/** A code block that reads lists: Markdown, and no diff, whose leading `-` and `+` are change signs. */
+export const readsListsIn = (f: FenceInfo): boolean =>
+  f.name === 'Markdown' && f.tally === undefined
+
+/** The marker a line holds where it stands. A code block that reads lists reads them from its own body, so its fence's lead is no nesting and a quoted line is no item. */
+export function lineMarker(line: string, f: FenceInfo | undefined): ListMarker | null {
+  if (f === undefined) return parseListMarkerPrefixed(line)
+  if (!readsListsIn(f)) return null
+  const body = fenceBodyStart(line, f)
+  return parseListMarker(line.slice(body), body)
+}
+
 const headingPrefilter = /^[ ]{0,3}#{1,6}([ \t]|$)/
 // A first-character test would pay a full parse for every `- item`, which is what made a bulleted page the expensive case.
 const thematicBreakPrefilter = /^[ ]{0,3}([-*_])[ \t]*(?:\1[ \t]*){2,}$/

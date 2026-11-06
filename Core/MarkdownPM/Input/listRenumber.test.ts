@@ -47,6 +47,10 @@ describe('a line deletion closes the gap', () => {
     expect(del('```\n1. a\n2. b\n3. c\n4. d\n```', 9, 14)).toBe('```\n1. a\n3. c\n4. d\n```')
   })
 
+  it('a line deletion inside a Markdown code block closes the gap', () => {
+    expect(del('```md\n1. a\n2. b\n3. c\n4. d\n```', 11, 16)).toBe('```md\n1. a\n2. c\n3. d\n```')
+  })
+
   it('a line deletion outside any run passes through', () => {
     expect(del('one\ntwo\nthree', 4, 8)).toBe('one\nthree')
   })
@@ -175,22 +179,35 @@ describe('Lists ▸ continues the run a line joins', () => {
       landEdit(doc, [{ from: 8, to: 8, insert: '5. b\n' }], editEvent({ relist: true }), 'page'),
     ).toBe('$$\n1. a\n5. b\n$$')
   })
-  it('a list-writing edit inside a code block counts within the block', () => {
-    const doc = '```\n1. a\n```'
+  it('a list-writing edit inside a Markdown code block counts within the block', () => {
+    const doc = '```md\n1. a\n```'
     expect(
-      landEdit(doc, [{ from: 9, to: 9, insert: '5. b\n' }], editEvent({ relist: true }), 'page'),
-    ).toBe('```\n1. a\n2. b\n```')
+      landEdit(doc, [{ from: 11, to: 11, insert: '5. b\n' }], editEvent({ relist: true }), 'page'),
+    ).toBe('```md\n1. a\n2. b\n```')
   })
-  it('a pick wholly inside a code block switches its own list, and nothing else reaches the code or its fences', () => {
-    const doc = '- p\n\t1. x\n\t```\n\t- y\n\t- y2\n\t```\n\t1. z'
+  it('a pick wholly inside a Markdown code block switches its own list, and nothing else reaches the code or its fences', () => {
+    const doc = '- p\n\t1. x\n\t```md\n\t- y\n\t- y2\n\t```\n\t1. z'
     const fence = doc.indexOf('```')
-    expect(listed(doc, doc.indexOf('y'))).toBe('- p\n\t1. x\n\t```\n\t1. y\n\t2. y2\n\t```\n\t1. z')
+    expect(listed(doc, doc.indexOf('y'))).toBe(
+      '- p\n\t1. x\n\t```md\n\t1. y\n\t2. y2\n\t```\n\t1. z',
+    )
     expect(listed(doc, fence, doc.indexOf('y2') + 2)).toBe(
-      '- p\n\t1. x\n\t```\n\t1. y\n\t2. y2\n\t```\n\t1. z',
+      '- p\n\t1. x\n\t```md\n\t1. y\n\t2. y2\n\t```\n\t1. z',
     )
     expect(listed(doc, fence)).toBe(doc)
     expect(listed(doc, doc.indexOf('y'), doc.length)).toBe(
-      '- p\n\t1. x\n\t```\n\t- y\n\t- y2\n\t```\n\t2. z',
+      '- p\n\t1. x\n\t```md\n\t- y\n\t- y2\n\t```\n\t2. z',
+    )
+  })
+  it('a carried Markdown block counts its own run, and the list around it counts past the block', () => {
+    const doc = '1. a\n   ```md\n   1. x\n   2. y\n   ```\n2. b'
+    const written = (at: string, insert: string): string => {
+      const from = doc.indexOf(at)
+      return landEdit(doc, [{ from, to: from, insert }], editEvent({ relist: true }), 'page')
+    }
+    expect(written('2. b', '9. n\n')).toBe('1. a\n   ```md\n   1. x\n   2. y\n   ```\n2. n\n3. b')
+    expect(written('   2. y', '   9. n\n')).toBe(
+      '1. a\n   ```md\n   1. x\n   2. n\n   3. y\n   ```\n2. b',
     )
   })
 })

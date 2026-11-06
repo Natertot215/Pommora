@@ -6,7 +6,6 @@ import { COPY_LINK_ROW } from '../../Actions/pageMenu'
 import { editFor, listKindOf, setHeading } from '../Input/format'
 import { type BlockSpan, headingParts, isBlank, webpageEmbedUrlSpan } from '../Engine/detect'
 import { type Block, blockAt } from '../Engine/blockModel'
-import { itemAt } from '../Engine/listModel'
 import { docScan, docString } from '../docCache'
 import { HEADING_LINE } from '../folding'
 import { applyEmbedZoom, embedExclusions, embedZoomAt, setWebLinkSeat } from '../Embeds/embedWidget'
@@ -54,7 +53,7 @@ export function blockDeleteSpan(doc: string, r: BlockSpan): BlockSpan {
 /** A list block's Type ▸ reads and picks as a right-click on its first item's glyph does, so Preserve List-Level Formatting decides its reach as it decides the glyph menu's; a paragraph the block opens on is that item's continuation. */
 function firstItemOf(scan: DocScan, block: BlockSpan): number {
   let k = lineIndexAt(scan, block.from)
-  while (itemAt(scan, k, 'outside') === null) k++
+  while (scan.fences[k] !== undefined || scan.markers[k] === null) k++
   return scan.lineStarts[k]
 }
 
@@ -122,7 +121,7 @@ function popHeadingMenu(view: EditorView, headingEl: HTMLElement): void {
       } else {
         // The grip addresses one block, so the range is that heading's own line — the selection belongs to the caret.
         const level = Number(action.slice('size:'.length)) as HeadingLevel
-        applyEdit(view, setHeading(doc, line.from, line.from, level))
+        applyEdit(view, setHeading(docScan(view.state), line.from, line.from, level))
         view.focus()
       }
     })
