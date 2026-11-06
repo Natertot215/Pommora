@@ -20,7 +20,7 @@
 |-------|----------|---------------------------|----------|
 | 0 · Drives and Baseline | 0 | 9,121 | 0 |
 | 1 · One Scan Per Surface | -108 (+687 / -795) | 9,127 | -91 (+740 / -831), 9,134 tests |
-| 2 · Markdown Code Blocks and Masked Markers | -39 (+838 / -877), +69 its own | 9,140 | |
+| 2 · Markdown Code Blocks and Masked Markers | -39 (+838 / -877), +69 its own | 9,140 | -31 (+894 / -925), 9,157 tests |
 | 3 · Blank Lines and Numbering | -126 (+1000 / -1126), -87 its own | 9,170 | |
 | 4 · Paste | -124 (+1002 / -1126), +2 its own | 9,177 | |
 | 5 · One Marker Grammar | -173 (+1040 / -1213), -49 its own | 9,184 | |
@@ -232,11 +232,11 @@ The order is what makes each step land once. The scan goes first, since every la
   - [x] Task 1-1 · One scan per surface
   - [x] Task 1-2 · Drive group 1
   - [x] Review Checkpoint
-- [ ] **Phase 2** — Markdown Code Blocks and Masked Markers
-  - [ ] Task 2-1 · Code blocks and masked markers
-  - [ ] Task 2-2 · Pins and delimiters
-  - [ ] Task 2-3 · Drive group 2
-  - [ ] Review Checkpoint
+- [x] **Phase 2** — Markdown Code Blocks and Masked Markers
+  - [x] Task 2-1 · Code blocks and masked markers
+  - [x] Task 2-2 · Pins and delimiters
+  - [x] Task 2-3 · Drive group 2
+  - [x] Review Checkpoint
 - [ ] **Phase 3** — Blank Lines and Numbering
   - [ ] Task 3-1 · Block move's home
   - [ ] Task 3-2 · The stale drop
@@ -375,8 +375,8 @@ The scan should mask what a line doesn't hold, and the reader, its `'outside'`, 
 
 **VERIFY**
 
-- [ ] Run the gates.
-- [ ] `git grep -n -E "readsFrom|itemAt|'outside'|blockPrefix" -- Core/MarkdownPM ':!*.test.*'` prints nothing.
+- [x] Run the gates.
+- [x] `git grep -n -E "readsFrom|itemAt|'outside'|blockPrefix" -- Core/MarkdownPM ':!*.test.*'` prints nothing.
 
 #### Task 2-2
 
@@ -388,8 +388,8 @@ C-5, C-6, and C-7 should each hold a pin, and a Blockquote or Callout on a lone 
 
 **VERIFY**
 
-- [ ] The delimiter pin reads red without the two conditions.
-- [ ] Run the gates; the count reads the Net Ledger's row.
+- [x] The delimiter pin reads red without the two conditions.
+- [x] Run the gates; the count reads the Net Ledger's row.
 
 #### Task 2-3
 
@@ -401,12 +401,12 @@ Drive group 2 should prove section C live.
 
 **VERIFY**
 
-- [ ] `node live-drive.mjs 2` reads every item passing at this task's head.
+- [x] `node live-drive.mjs 2` reads every item passing at this task's head.
 
 #### Review Checkpoint
 
-- [ ] A list in a Markdown block is reachable only from inside it, and no reader treats a line in plain code as an item; both reviewers' findings folded or recorded.
-- [ ] *§When Drives Run*'s row for Phase 2 green. Four shots read and captioned.
+- [x] A list in a Markdown block is reachable only from inside it, and no reader treats a line in plain code as an item; both reviewers' findings folded or recorded.
+- [x] *§When Drives Run*'s row for Phase 2 green. Four shots read and captioned.
 
 ---
 
@@ -928,4 +928,6 @@ None survives ratification. *Morning Report* lists the calls taken for Nathan's 
 #### Deviations
 
 - **Phase 1's Fold (`1c4888010`, `da068b25d`):** the checkpoint found three readers of cell and Text strings still reading fence-shaped lines through `codeMask` after their surfaces stopped, so a resting cell and a focused cell disagreed on a `§` run, and a Text value drew a link the index and sort couldn't see. `inlineCodeMask` joined `markdownCode.ts` and serves `sectionRunsIn`, `shownProse`, `valueLinks`, and a rename's reach into a Text value, which threads `inCode` through `rewriteConnections`, `rewriteHeadingConnections`, and `fileRewrites`. `listReach`'s `blank` returned to `splitPrefix`'s body, since Phase 1 had changed a pick on an empty callout head. Smaller folds took `cellScan`, `docScan.after(tr)`, and a required `tokenizeChunk` scope, and `citationRowMenu` became a constant. Later rows read about 17 lines, 7 tests, and 2 `scope` sites above their estimates, and every later Measured carries that offset. Phase 2a's `blank` lands as `splitPrefix`'s body rather than the patch's slice.
+- **Phase 2's Fold (`842f21193`):** the checkpoint found a row ending on a delimiter writing onto it, so ⌘A then ⌘B on a page ending in a block dissolved the block, and the refusal took one shape in `onDelimiter`. Enter on a blank line in a quoted block stopped ejecting it, `splitPrefix` reads the scan so a callout-shaped line inside a fence is code, a closer indented past its opener holds no list, and `||` and `-[] ` stay literal in display math. `pastSign` states the sign clamp once, and `setBlock`, `canonicalizeCheckbox`, and `takeMarker` read from `k`. Phases 3c, 5, 6b, 7a, and 7c land with `--3way`, keeping `role !== 'content'`, the single `from`, `fenceDelimiter(scan, k)`, `pastSign`, and the `splitPrefix` body. The running offset after Phase 2 is +8 lines and +17 tests.
+- **For the Morning:** Blockquote and Callout inside a plain code block don't write unaware as C-5's other rows do, and a partial selection reaching a delimiter can still dissolve a block. That matches the baseline, and C-7 keeps Insert ▸ as it was, so it stands until Nathan rules.
 
