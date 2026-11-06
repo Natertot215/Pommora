@@ -82,7 +82,7 @@ async function gripMenu(view: EditorView, lineText: string): Promise<void> {
   })
 }
 
-describe("a list grip's Type switch", () => {
+describe("a list grip's Format switch", () => {
   it("offers the block's current kind, and switching rewrites every marker", async () => {
     const view = await mount('- alpha\n- beta')
     nextPick = 'list:ordered'

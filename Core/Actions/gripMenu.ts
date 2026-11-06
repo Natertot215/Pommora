@@ -35,19 +35,13 @@ export const HEADING_LEVELS: readonly { level: HeadingLevel; label: string }[] =
 export const LIST_KINDS: readonly {
   kind: ListKind
   label: string
-  short: string
   icon: string
 }[] = [
-  { kind: 'bullet', label: 'Bullet List', short: 'Bulleted', icon: 'list' },
-  { kind: 'ordered', label: 'Numbered List', short: 'Numbered', icon: 'list-ordered' },
-  {
-    kind: 'alphabetical',
-    label: 'Alphabetical List',
-    short: 'Alphabetical',
-    icon: 'arrow-down-az',
-  },
-  { kind: 'checkbox', label: 'Task List', short: 'Checklist', icon: 'list-todo' },
-  { kind: 'arrow', label: 'Arrowed List', short: 'Arrowed', icon: 'arrow-right' },
+  { kind: 'bullet', label: 'Bulleted', icon: 'list' },
+  { kind: 'ordered', label: 'Numbered', icon: 'list-ordered' },
+  { kind: 'alphabetical', label: 'Alphabetical', icon: 'arrow-down-az' },
+  { kind: 'checkbox', label: 'Checklist', icon: 'list-todo' },
+  { kind: 'arrow', label: 'Arrowed', icon: 'arrow-right' },
 ]
 
 const scaleRow = (zoom: number | null): ActionItem<GripMenuAction> => ({
@@ -56,8 +50,8 @@ const scaleRow = (zoom: number | null): ActionItem<GripMenuAction> => ({
 })
 
 const listRows = (current: ListKind | null): ActionItem<GripMenuAction>[] =>
-  LIST_KINDS.map(({ kind, short }) => ({
-    label: short,
+  LIST_KINDS.map(({ kind, label }) => ({
+    label,
     action: `list:${kind}`,
     checked: current === kind,
   }))
@@ -72,7 +66,7 @@ function ownRows(ctx: GripMenuContext): ActionItem<GripMenuAction>[] {
     case 'webpage':
       return [{ label: 'Edit Link', action: 'editLink' }, scaleRow(ctx.zoom)]
     case 'list':
-      return [{ label: 'Type', submenu: listRows(ctx.current) }]
+      return [{ label: 'Format', submenu: listRows(ctx.current) }]
     case 'glyph':
       return listRows(ctx.current)
     case 'heading': {

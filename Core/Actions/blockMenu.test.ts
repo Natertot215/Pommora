@@ -16,11 +16,11 @@ describe('the block menu catalog', () => {
       'Heading 6',
     ])
     expect(seated[1].rows.map((r) => r.label)).toEqual([
-      'Bullet List',
-      'Numbered List',
-      'Alphabetical List',
-      'Task List',
-      'Arrowed List',
+      'Bulleted',
+      'Numbered',
+      'Alphabetical',
+      'Checklist',
+      'Arrowed',
     ])
     expect(seated[2].rows.map((r) => r.label)).toEqual([
       'Connection',
@@ -57,7 +57,7 @@ describe('the block menu filter', () => {
     const hea = filterBlockMenu('hea')
     expect(hea.map((s) => s.title)).toEqual(['Headings', 'Lists'])
     expect(hea[0].rows).toHaveLength(6)
-    expect(labels(hea[1])).toEqual(['Alphabetical List'])
+    expect(labels(hea[1])).toEqual(['Alphabetical'])
     expect(filterBlockMenu('HEA')).toEqual(hea)
   })
 
@@ -65,7 +65,7 @@ describe('the block menu filter', () => {
     const bl = filterBlockMenu('bl')
     expect(bl.map((s) => s.title)).toEqual(['Insert', 'Lists', 'Embed'])
     expect(labels(bl[0])).toEqual(['Blockquote', 'Code Block', 'Table'])
-    expect(labels(bl[1])).toEqual(['Bullet List', 'Numbered List', 'Alphabetical List'])
+    expect(labels(bl[1])).toEqual(['Bulleted', 'Alphabetical'])
     expect(labels(bl[2])).toEqual(['External Link', 'Internal Page'])
     expect(filterBlockMenu('hr')).toEqual([
       { title: 'Insert', rows: [expect.objectContaining({ label: 'Horizontal Rule' })] },
@@ -97,16 +97,27 @@ describe('the block menu filter', () => {
     expect(labels(embed[0])).toEqual(['External Link', 'Internal Page'])
   })
 
-  it('ranks by the name alone where the name matches, the shorter label first on a tie', () => {
+  it('ranks a name match above a section match, the shorter label first on a tie', () => {
     const list = filterBlockMenu('list')
     expect(list.map((s) => s.title)).toEqual(['Lists'])
     expect(labels(list[0])).toEqual([
-      'Task List',
-      'Arrowed List',
-      'Numbered List',
-      'Bullet List',
-      'Alphabetical List',
+      'Checklist',
+      'Arrowed',
+      'Bulleted',
+      'Numbered',
+      'Alphabetical',
     ])
+  })
+
+  it('finds a list type by its one name', () => {
+    for (const [query, label] of [
+      ['bullet', 'Bulleted'],
+      ['number', 'Numbered'],
+      ['alpha', 'Alphabetical'],
+      ['check', 'Checklist'],
+      ['arrow', 'Arrowed'],
+    ])
+      expect(filterBlockMenu(query)[0].rows[0].label).toBe(label)
   })
 
   it('lists the menu as it stands for a query of word breaks alone', () => {

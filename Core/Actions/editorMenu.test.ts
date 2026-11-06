@@ -68,7 +68,7 @@ describe('the editor’s right-click block', () => {
     )
     expect(branch('Heading').find((r) => r.checked)?.label).toBe('Heading 2')
     expect(branch('Heading')[0]).toMatchObject({ label: 'Paragraph', action: 'heading:0' })
-    expect(branch('Lists').find((r) => r.checked)?.label).toBe('Arrowed List')
+    expect(branch('Lists').find((r) => r.checked)?.label).toBe('Arrowed')
     expect(branch('Format').find((r) => r.checked)?.label).toBe('Bold')
   })
 

@@ -48,8 +48,9 @@ describe('the block grip menu', () => {
     ])
   })
 
-  it('a list offers its Type set with the current kind in force, and a glyph the same set flat, without Delete', () => {
+  it('a list offers its Format set with the current kind in force, and a glyph the same set flat, without Delete', () => {
     const items = gripMenuItems({ kind: 'list', current: 'bullet' })
+    expect(items[0].label).toBe('Format')
     expect(items[0].submenu?.map((r) => [r.label, r.action, r.checked])).toEqual([
       ['Bulleted', 'list:bullet', true],
       ['Numbered', 'list:ordered', false],
