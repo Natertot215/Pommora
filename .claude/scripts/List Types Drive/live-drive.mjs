@@ -34,11 +34,11 @@ const EXAMPLE = '- A\n\t- B\n\t\t- C\n\t\t- D\n\t- E\n- F'
 const MIXED = '- A\n\t- B\n\t\t1. C\n\t\t2. D\n\t- E\n- F'
 // Each type's own spelling, and each line as it draws: a glyph, then the item's text, with `☐` and `☑` standing for a box.
 const TYPES = [
-  { name: 'Bulleted', source: '- b1\n- b2', drawn: ['• b1', '• b2'] },
-  { name: 'Numbered', source: '1. n1\n2. n2', drawn: ['1. n1', '2. n2'] },
-  { name: 'Alphabetical', source: 'A. a1\nB. a2', drawn: ['A. a1', 'B. a2'] },
-  { name: 'Checklist', source: '- [ ] c1\n- [x] c2', drawn: ['☐ c1', '☑ c2'] },
-  { name: 'Arrowed', source: '→ r1\n→ r2', drawn: ['→ r1', '→ r2'] },
+  { name: 'Bulleted', source: '- b1\n- b2', drawn: ['• b1', '• b2'], marker: () => '- ' },
+  { name: 'Numbered', source: '1. n1\n2. n2', drawn: ['1. n1', '2. n2'], marker: (n) => `${n}. ` },
+  { name: 'Alphabetical', source: 'A. a1\nB. a2', drawn: ['A. a1', 'B. a2'], marker: (n) => `${'ABC'[n - 1]}. ` },
+  { name: 'Checklist', source: '- [ ] c1\n- [x] c2', drawn: ['☐ c1', '☑ c2'], marker: () => '- [ ] ' },
+  { name: 'Arrowed', source: '→ r1\n→ r2', drawn: ['→ r1', '→ r2'], marker: () => '→ ' },
 ]
 const docOf = (cdp) => cdp.evaluate(`${PAGE_VIEW}.state.doc.toString()`)
 async function setBody(cdp, body, tail = '\n\nTail.') {
@@ -761,6 +761,75 @@ async function group5(cdp) {
   item(5, 'B-1', "the arrow keys seat a `+` item's caret as a dash's", show(plusSeats) === show(dashSeats) && new Set(plusSeats).size > 2, show([plusSeats, dashSeats]))
 }
 
+// ── Group 6 — One Set of List Keys ──────────────────────────────────────────
+
+async function group6(cdp) {
+  const docIn = (view) => cdp.evaluate(`${view}.state.doc.toString()`)
+  const seatIn = (view, past) => cdp.evaluate(`(() => { const v = ${view}; v.focus(); v.dispatch({ selection: { anchor: v.state.doc.toString().indexOf(${show(past)}) + ${past.length} } }) })()`)
+  const onCell = async (decision, name, seed, past, key, want) => {
+    await cdp.evaluate(`(() => { const v = ${CELL_VIEW}; v.dispatch({ changes: { from: 0, to: v.state.doc.length, insert: ${show(seed)} } }) })()`)
+    await seatIn(CELL_VIEW, past)
+    await sleep(150)
+    await key(cdp)
+    const got = await docIn(CELL_VIEW)
+    item(6, decision, name, got === want, show(got))
+  }
+  const onPage = (decision, name, seed, past, key, want) => stroke(cdp, 6, decision, name, seed, past, key, want)
+
+  for (const [surface, view, run] of [['a page', PAGE_VIEW, onPage], ['a focused cell', CELL_VIEW, onCell]]) {
+    if (run === onCell) {
+      await setBody(cdp, table('zz'))
+      await enterCell(cdp, 'zz')
+    }
+    for (const { name, marker } of TYPES) {
+      const [m1, m2, m3] = [marker(1), marker(2), marker(3)]
+      const keys = (key, seed, past, press, want) => run('G-9', `${surface}, ${name}: ${key}`, seed, past, press, want)
+      const two = `${m1}ab\n${m2}cd`
+      await keys('Enter at the end', two, `${m1}ab`, ENTER, `${m1}ab\n${m2}\n${m3}cd`)
+      await keys('Enter mid-item', two, `${m1}a`, ENTER, `${m1}a\n${m2}b\n${m3}cd`)
+      await keys('Enter at the start of the text', two, m1, ENTER, `${m1}\n${m2}ab\n${m3}cd`)
+      await keys('Enter on an empty item', `${m1}ab\n${m2}`, `${m1}ab\n${m2}`, ENTER, `${m1}ab\n${m2}\n${m3}`)
+      await keys('Tab', two, `${m2}c`, TAB, `${m1}ab\n\t${m1}cd`)
+      await keys('Tab at the cap', `${m1}a\n\t${m1}b\n\t\t${m1}c\n\t\t\t${m1}d`, `\t\t\t${m1}d`, TAB, `${m1}a\n\t${m1}b\n\t\t${m1}c\n\t\t\t${m1}d`)
+      await keys('Shift-Tab', `${m1}ab\n\t${m1}cd`, `\t${m1}c`, SHIFT_TAB, two)
+      await keys('Shift-Tab at the top level', two, `${m2}c`, SHIFT_TAB, two)
+      await keys("Backspace at the marker's end", two, `ab\n${m2}`, BACKSPACE, `${m1}ab\ncd`)
+      await keys('Backspace inside the marker', two, `ab\n${m2[0]}`, BACKSPACE, `${m1}ab\ncd`)
+      await keys("Delete at an item's end joins raw", two, `${m1}ab`, DELETE, `${m1}ab${m2}cd`)
+      await keys('Delete inside the text', two, `${m1}a`, DELETE, `${m1}a\n${m2}cd`)
+      await keys('Shift-Enter above the last item', two, `${m1}ab`, SHIFT_ENTER, `${m1}ab\n\n${m2}cd`)
+      const selectLine = async (c) => { await cdp.evaluate(`(() => { const v = ${view}; const d = v.state.doc.toString(); const a = d.indexOf(${show(`${m2}cd\n`)}); v.dispatch({ selection: { anchor: a, head: a + ${`${m2}cd\n`.length} } }) })()`); await sleep(150); await BACKSPACE(c) }
+      await run('G-9', `${surface}, ${name}: a whole line's deletion`, `${m1}ab\n${m2}cd\n${m3}ef`, m1, selectLine, `${m1}ab\n${m2}ef`)
+    }
+    await run('G-9', `${surface}: Enter under a checked box writes an open one`, '- [x] ab', '- [x] ab', ENTER, '- [x] ab\n- [ ] ')
+    await run('G-9', `${surface}: Tab on a nested number recounts the run it leaves`, '1. ab\n2. cd\n3. ef', '2. c', TAB, '1. ab\n\t1. cd\n2. ef')
+    if (run === onCell) await leaveCell(cdp)
+  }
+
+  await stroke(cdp, 6, 'G-9', "a page: Shift-Enter on the last item breaks the line", '- ab\n- cd', '- cd', SHIFT_ENTER, '- ab\n- cd\n')
+  await setBody(cdp, table('- ab<br>- cd'))
+  await enterCell(cdp, 'ab')
+  await seatIn(CELL_VIEW, '- cd')
+  await sleep(150)
+  await SHIFT_ENTER(cdp)
+  await sleep(300)
+  const stayed = await cdp.evaluate(`!!${LIVE_CELL}`)
+  item(6, 'G-9', "a focused cell: Shift-Enter on the last item leaves the cell, writing nothing", !stayed && (await body(cdp)) === table('- ab<br>- cd'), show([stayed, await body(cdp)]))
+
+  await setBody(cdp, table('1. ab<br>2. cd'))
+  await enterCell(cdp, 'ab')
+  await seatIn(CELL_VIEW, '1. ab')
+  await sleep(150)
+  await ENTER(cdp)
+  await sleep(300)
+  const stays = await cdp.evaluate(`!!${LIVE_CELL}`)
+  const recounted = await docIn(CELL_VIEW)
+  await pressKey(cdp, 'z', META)
+  await sleep(300)
+  await leaveCell(cdp)
+  item(6, 'G-9', "a focused cell's Enter stays in the cell, and one ⌘Z takes its recount", stays && recounted === '1. ab\n2. \n3. cd' && (await body(cdp)) === table('1. ab<br>2. cd'), show([stays, recounted, await body(cdp)]))
+}
+
 // ── The run ─────────────────────────────────────────────────────────────────
 
 const GROUPS = {
@@ -769,6 +838,7 @@ const GROUPS = {
   3: ['Blank Lines and Numbering', group3],
   4: ['Paste', group4],
   5: ['One Marker Grammar', group5],
+  6: ['One Set of List Keys', group6],
 }
 const chosen = process.argv.slice(2).map(Number)
 if (chosen.length === 0 || chosen.some((g) => !GROUPS[g])) {

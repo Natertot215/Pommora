@@ -40,6 +40,9 @@ The drive's cases, derived from *List Consolidation — Decisions & Intention*, 
 - **Rails through wraps and the nesting cap:** `railIntents` reads lines, so a wrap is one line, and the cap writes no deeper level to draw; the elbow and join ends are read as part of each rail's reach.
 - **A paste at rest in group 4:** an empty paste at rest is E-2's, and the resting menu is Phase 9's rework; group 9 holds it.
 - **A table pasted into a list:** a table's clipboard payload reaches `tableGuard`, not the recount, and no decision names it.
+- **Enter, Tab, and Shift-Tab off an item in a cell:** they're the cell's navigation rather than a list's key, which `cellLists.test.tsx` pins; group 6 reads the keys a list claims.
+- **⌘Z after every cell key:** a cell forwards undo to the page's history, one path whatever the key, so one recount proves it.
+- **Each key in a quote or a callout:** they read the same `listKeys`, and groups 3 and 7 hold what's particular to those blocks.
 
 #### Group 1 — One Scan Per Surface
 
@@ -177,3 +180,28 @@ Every paste goes through the app's paste event with `text/plain`, and every item
 | A nested `+` list | A page, a resting cell | Outliner Lines on, measured | a rail | B-9 |
 | A caret on a `+` marker, and on its text | A page | seat | reveals, and keeps its glyph, as a dash does | B-1 |
 | The arrow keys through a `+` marker | A page | Right and Left | the same seats as a dash | B-1 |
+
+#### Group 6 — One Set of List Keys
+
+Every row runs for all five types on a page and in a focused cell, asserted against the text, with ⌘Z back to the seed on a page.
+
+| Case | Key | Expected | Decisions |
+| --- | --- | --- | --- |
+| At an item's end, mid-item, at the start of its text | Enter | the next marker writes and the run recounts | G-9 |
+| An empty item | Enter | continues | G-9 |
+| A second item | Tab | nests, numbers and letters restarting | G-9 |
+| At the cap | Tab | holds | G-9 |
+| A nested item; a top-level one | Shift-Tab | outdents; holds | G-9 |
+| At a marker's end; inside a marker | Backspace | the marker leaves | G-9 |
+| At an item's end | Delete | joins raw | G-9 |
+| Inside the text | Delete | one character | G-9 |
+| Above the last item | Shift-Enter | a plain break | G-9 |
+| A whole line | select, Backspace | the run closes up | G-9 |
+| A checked box | Enter | an open box | G-9 |
+| A middle number | Tab | the run it leaves recounts | G-9 |
+
+| Case | Surface | Key | Expected | Decisions |
+| --- | --- | --- | --- | --- |
+| The last item | A page | Shift-Enter | a plain break | G-9 |
+| The last item | A focused cell | Shift-Enter | leaves the cell, writing nothing | G-9, G-10 |
+| A numbered item | A focused cell | Enter, ⌘Z | stays in the cell and recounts; one ⌘Z takes both | G-9 |
