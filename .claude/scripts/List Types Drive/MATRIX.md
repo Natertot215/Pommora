@@ -155,3 +155,25 @@ Every paste goes through the app's paste event with `text/plain`, and every item
 | ` ```md ` | A Markdown block | an item | recounts | C-1, F-2 |
 | ` ```js `, a no-language block, display math | Each | an item | counts nothing | C-3, F-2 |
 | `1.`, `2.` | A focused cell | two items | recounts | F-2 |
+
+#### Group 5 — One Marker Grammar
+
+| Case | Surface | Operation | Expected | Decisions |
+| --- | --- | --- | --- | --- |
+| `+ x`, `+ [x] a`, `+ [ ] a` | A page, a resting and a focused cell | read | `•`, `☑`, `☐` beside the text | B-1 |
+| `- [] x` | The same | read | `•` beside `[] x` | B-1 |
+| `1. [ ] a`, `2. [x] foo` | The same | read | the number, with the box as text | B-3 |
+| `-[] x`, `-[ ] x`, `-[x] x`, `1.[ ] a` | The same | read | plain text | B-2 |
+| `* a`, `1) a` | The same | read | plain text | B-1 |
+| `+ p` | A page, a resting cell | the glyph, Lists ▸ | Bulleted checked | B-1 |
+| `- [] p` | A page | the glyph | Bulleted checked | B-1 |
+| `+ a`, `+ [ ] a` | A page | Enter | `- `, `- [ ] ` | B-4 |
+| `- [] x`, `9. a` | A page | Enter | `- `, `10. ` | B-1 |
+| `-[]`, `+[]`, `-[x]`, `  +[x]` | A page | a space | `- [ ] `, `- [ ] `, `- [x] `, `  - [x] ` | B-2 |
+| `+[]` | A focused cell | a space | `- [ ] ` | B-2 |
+| `2. [x] foo`, `1. [ ] a` | A page | Bulleted | a real box | B-3, F-1 |
+| `+ a` | A page | Bulleted | stays `+ a` | B-4 |
+| `- [] x` | A page | Checklist | `- [ ] [] x` | B-1 |
+| A nested `+` list | A page, a resting cell | Outliner Lines on, measured | a rail | B-9 |
+| A caret on a `+` marker, and on its text | A page | seat | reveals, and keeps its glyph, as a dash does | B-1 |
+| The arrow keys through a `+` marker | A page | Right and Left | the same seats as a dash | B-1 |
