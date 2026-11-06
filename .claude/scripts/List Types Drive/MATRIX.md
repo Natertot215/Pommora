@@ -38,6 +38,8 @@ The drive's cases, derived from *List Consolidation — Decisions & Intention*, 
 - **A cut at rest in group 3:** the resting menu's seat is Phase 9's rework, and a cut at rest lands through the `landEdit` a pick at rest takes; group 9 holds it.
 - **A paste in group 3:** the saved tree holds paste already, and group 4 owns the row.
 - **Rails through wraps and the nesting cap:** `railIntents` reads lines, so a wrap is one line, and the cap writes no deeper level to draw; the elbow and join ends are read as part of each rail's reach.
+- **A paste at rest in group 4:** an empty paste at rest is E-2's, and the resting menu is Phase 9's rework; group 9 holds it.
+- **A table pasted into a list:** a table's clipboard payload reaches `tableGuard`, not the recount, and no decision names it.
 
 #### Group 1 — One Scan Per Surface
 
@@ -134,3 +136,22 @@ Every drag is a real press on a glyph, or a grip, carried to a line's edge, asse
 | Outliner Lines off | A page, a resting cell | measured | no rail draws | B-9 |
 | A blank under a nested list | A page, a resting cell | measured | the rail ends at the blank | B-5 |
 | A code block, a flush line in one, a rider | A page, a resting cell | measured | the rail carries through | B-5, B-6, F-1 |
+
+#### Group 4 — Paste
+
+Every paste goes through the app's paste event with `text/plain`, and every item asserts one ⌘Z back to the seed.
+
+| Case | Surface | Paste | Expected | Decisions |
+| --- | --- | --- | --- | --- |
+| `1.`, `2.`, `3.` | A page | `9. x`, `9. y` under `2.` | 1 through 5 | F-2 |
+| A list at 5 | A page | two lines at `6.`'s start | they join and count on from 5 | F-2 |
+| A list at 5 | A page | one line with its newline, at `6.`'s start | it joins that line as text, its edge whitespace left out, and nothing recounts | F-2 |
+| Two lists a blank apart | A page | `2. b` on the blank | they join and recount | F-2 |
+| A run at 5 | A page | `9. x`, `9. y` above it | takes the pasted start | F-2 |
+| `1. a`, `3. b` | A page | a word inside an item | nothing recounts | F-2 |
+| `1.`, `2.`, `3.` | A page | a flush line | the list ends, the lower keeps its number | F-2 |
+| A quoted list | A quote | quoted items | recounts | F-2 |
+| Two lines, or an end across two items | A page | over a selection | the gap closes | F-2 |
+| ` ```md ` | A Markdown block | an item | recounts | C-1, F-2 |
+| ` ```js `, a no-language block, display math | Each | an item | counts nothing | C-3, F-2 |
+| `1.`, `2.` | A focused cell | two items | recounts | F-2 |
