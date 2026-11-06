@@ -12,6 +12,8 @@ const quoteAndIndent = (line: string): string => {
   return line.slice(0, quote + indentWidth(line.slice(quote)))
 }
 
+const blankBody = (line: string): boolean => isBlank(line.slice(quotePrefix(line).length))
+
 /** Strips the head's lead by LENGTH off each line's own lead, so it can't silently skip a descendant that mixes tabs and spaces. */
 function reindentBlock(blockLines: string[], targetIndent: string | undefined): string[] {
   if (targetIndent === undefined) return blockLines
@@ -33,7 +35,7 @@ export function rebuildMove(
   const lines = doc.split('\n')
   if (trailingNL) lines.pop()
   const starts = lineOffsetsOf(lines)
-  const blankAt = (i: number): boolean => i >= 0 && i < lines.length && isBlank(lines[i])
+  const blankAt = (i: number): boolean => i >= 0 && i < lines.length && blankBody(lines[i])
   const edgeAt = (i: number): boolean => i < 0 || i >= lines.length || blankAt(i)
 
   const bStart = starts.indexOf(range.from)
@@ -53,7 +55,7 @@ export function rebuildMove(
 
   const out: string[] = []
   const sep = (wanted: boolean): void => {
-    if (wanted && out.length && !isBlank(out[out.length - 1])) out.push('')
+    if (wanted && out.length && !blankBody(out[out.length - 1])) out.push('')
   }
   let destLine = 0
   let sourceLine = 0

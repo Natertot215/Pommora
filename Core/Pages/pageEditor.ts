@@ -50,5 +50,5 @@ export function moveHeadingSection(dragKey: string, beforeKey: string | null): v
       : heads.find((x) => x.key === beforeKey)?.from
   if (!drag || at === undefined) return
   const changes = moveRange(scan.text, blockAt(scan, drag.from)!, { at })
-  if (changes?.length) view.dispatch({ changes, userEvent: 'input' })
+  if (changes?.length) view.dispatch({ changes, userEvent: 'move.drop' })
 }

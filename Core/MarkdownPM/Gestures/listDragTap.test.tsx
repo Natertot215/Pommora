@@ -4,6 +4,8 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { act } from 'react'
 import type { EditorView } from '@codemirror/view'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '../../Testing/editorHarness'
+import { moveRange } from '../Engine/blockMove'
+import { beginRelocateDrag } from './editorGesture'
 import { firePointer, stubPointerCapture } from '@pommora/uix/Utilities/pointerHarness'
 
 stubPointerCapture()
@@ -51,6 +53,29 @@ describe('a list glyph press is a click or a drag, never both', () => {
     const view = await mountEditor({ initialBody: '- [ ] task' })
     await pressGlyph(view, 40)
     expect(view.state.doc.toString()).toBe('- [ ] task')
+  })
+})
+
+describe('a drop is a move, whatever selection stands', () => {
+  it('a list moved with lines selected elsewhere keeps its numbers', async () => {
+    const doc = 'intro\n\n1. one\n1. two\n1. three\n\nnotes\nmore'
+    const view = await mountEditor({ initialBody: doc })
+    const list = { from: doc.indexOf('1. one'), to: doc.indexOf('\n\nnotes') }
+    const carry = (e: Event): void =>
+      beginRelocateDrag(view, e as PointerEvent, list, {
+        measure: () => [{ at: 0, y: 0, slot: null }],
+        lineFor: () => null,
+        commit: ({ at }) => moveRange(doc, list, { at }),
+      })
+    await act(async () => {
+      view.dispatch({ selection: { anchor: doc.indexOf('notes'), head: doc.length } })
+      view.dom.addEventListener('pointerdown', carry, { once: true })
+      firePointer(view.dom, 'pointerdown', { x: 0, y: 0 })
+      firePointer(window, 'pointermove', { x: 40, y: 0 })
+      firePointer(window, 'pointerup', { x: 40, y: 0 })
+      await Promise.resolve()
+    })
+    expect(view.state.doc.toString()).toBe('1. one\n1. two\n1. three\n\nintro\n\nnotes\nmore')
   })
 })
 

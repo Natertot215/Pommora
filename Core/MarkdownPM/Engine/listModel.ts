@@ -55,11 +55,11 @@ function rolesAgainst(
     if (own < depth) return 'ends'
     if (own === depth && lm !== null)
       return lm.level === level ? 'sibling' : lm.level > level ? 'nested' : 'ends'
-    const body =
+    const rides =
       block === undefined
-        ? scan.lines[k]
-        : scan.lines[k].slice(fenceBodyStart(scan.lines[k], block))
-    return continuesList(body, block === undefined ? depth : 0) ? 'nested' : 'ends'
+        ? ridesList(scan, line, depth)
+        : continuesList(scan.lines[k].slice(fenceBodyStart(scan.lines[k], block)), 0)
+    return rides ? 'nested' : 'ends'
   }
 }
 
@@ -112,7 +112,7 @@ export function ownersOf(
 type Row = { k: number; lm: SequencedMarker }
 
 /** The runs of the list line `i` belongs to, read from `i`, each line of that list marked in `seen`. A shallower item closes the runs beneath it, and an item of another kind closes its own level's. */
-function runsAround(scan: DocScan, i: number, seen: Set<number>): Row[][] {
+function runsAround(scan: DocScan, i: number, seen = new Set<number>()): Row[][] {
   const role = rolesAgainst(scan, i, 0)
   const runs: Row[][] = []
   if (role(i) === 'ends') return runs
@@ -163,7 +163,7 @@ function renumberRun(scan: DocScan, rows: readonly Row[], held?: SequencedMarker
   return changes
 }
 
-/** A move permutes its run, so the run it lands in can't be read for its start afterward: the start comes from the document before it, and both recounts run against the post-move doc so the offsets are correct, then diff back onto the original as one replace. */
+/** A move permutes its run, so the run it lands in can't be read for its start afterward: the start comes from the document before it, and the one recount runs against the post-move doc so the offsets are correct, then diffs back onto the original as one replace. */
 export function dropChanges(
   scan: DocScan,
   block: BlockSpan,
@@ -173,9 +173,7 @@ export function dropChanges(
   const moved = rebuildMove(doc, block, slot, false)
   if (moved === null) return null
   const post = scanDoc(moved.doc, scan.scope)
-  const landing = runsAround(scan, slot.line, new Set()).find((rows) =>
-    rows.some(({ k }) => k === slot.line),
-  )
+  const landing = runsAround(scan, slot.line).find((rows) => rows.some(({ k }) => k === slot.line))
   const held = landing && { k: lineIndexAt(post, moved.destAt), lm: landing[0].lm }
   const finalDoc = applyEdits(moved.doc, renumberRuns(post, [moved.destAt, moved.sourceAt], held))
   return diffAsSingleReplace(doc, finalDoc)

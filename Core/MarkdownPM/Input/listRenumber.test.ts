@@ -31,7 +31,7 @@ describe('a line deletion closes the gap', () => {
     expect(del(list, 9, 14)).toBe('1. a\n2. b')
   })
 
-  it('deleting the first item renumbers from the smallest surviving digit', () => {
+  it('deleting the first item counts on from the item that now leads', () => {
     expect(del(list, 0, 5)).toBe('2. b\n3. c')
   })
 
@@ -39,7 +39,7 @@ describe('a line deletion closes the gap', () => {
     expect(del(list, 8, 9)).toBe('1. a\n2. \n3. c')
   })
 
-  it('a non-delete edit is not judged', () => {
+  it('an input edit with no selection across lines recounts nothing', () => {
     expect(del(list, 5, 10, 'input')).toBe('1. a\n3. c')
   })
 
@@ -175,6 +175,15 @@ describe('a level change recounts the run it joined and the run it left', () => 
 })
 
 describe('Enter recounts the run it splits', () => {
+  it('a nested run under the next item counts on its own', () => {
+    const doc = '1. a\n   1. x\n2. b\n   1. y'
+    expect(at(doc, doc.indexOf('\n   1. y'), continueListOnEnter)).toBe(
+      '1. a\n   1. x\n2. b\n3. \n   1. y',
+    )
+  })
+  it('a line of spaces ends a list', () => {
+    expect(at('1. a\n   \n1. b', 4, continueListOnEnter)).toBe('1. a\n2. \n   \n1. b')
+  })
   it('a caret at the start of an item’s text leaves that item’s number alone', () => {
     expect(at('5. \n6. b', 3, continueListOnEnter)).toBe('5. \n6. \n7. b')
   })

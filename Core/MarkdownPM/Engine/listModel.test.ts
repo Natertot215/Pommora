@@ -264,6 +264,12 @@ describe('drag inside a callout (prefix-aware)', () => {
     const changes = dropChanges(scanDoc(doc), block, { at: doc.length, indent: '> ', line: 2 })!
     expect(applyEdits(doc, changes)).toBe('> [!callout] head\n> - two\n> - one')
   })
+  it('an item that was its whole list heals its hole as it does outside a quote', () => {
+    const doc = '> 1. a\n>\n> - x\n>\n> 1. b'
+    const block = subBlockAt(scanDoc(doc), doc.indexOf('x'))!
+    const changes = dropChanges(scanDoc(doc), block, { at: doc.length, indent: '> ', line: 4 })!
+    expect(applyEdits(doc, changes)).toBe('> 1. a\n>\n> 1. b\n> - x')
+  })
   it('subBlockAt does NOT swallow a top-level indented sibling across the box boundary', () => {
     const doc = '> - a\n\t- x'
     const block = subBlockAt(scanDoc(doc), doc.indexOf('a'))!

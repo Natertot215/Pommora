@@ -10,6 +10,11 @@ const RELIST = 'input.list'
 
 export const editEvent = (edit: { relist?: boolean }): string => (edit.relist ? RELIST : 'input')
 
+const numbered = (s: DocScan, pos: number): boolean => {
+  const lm = s.markers[lineIndexAt(s, pos)]
+  return lm !== null && isSequenced(lm)
+}
+
 // An edit that reshapes a numbered list recounts that list, riding the same transaction so one undo takes both.
 export const listRenumber: Extension = EditorState.transactionFilter.of((tr) => {
   if (!tr.docChanged) return tr
@@ -19,10 +24,6 @@ export const listRenumber: Extension = EditorState.transactionFilter.of((tr) => 
   if (!relist && !overLines && !tr.isUserEvent('delete')) return tr
   const was = docScan(tr.startState)
   const scan = docScan.after(tr)
-  const numbered = (s: DocScan, pos: number): boolean => {
-    const lm = s.markers[lineIndexAt(s, pos)]
-    return lm !== null && isSequenced(lm)
-  }
   const at: number[] = []
   tr.changes.iterChanges((fromA, toA, fromB) => {
     const left = numbered(was, fromA)

@@ -304,7 +304,7 @@ describe('setList over a whole block', () => {
     expect(listed('- a\n  wrapped body\n- b', 'ordered')).toBe('1. a\n  wrapped body\n2. b')
   })
 
-  it('reads a code, math, or quote block and a loose paragraph under an item as that item’s', () => {
+  it('reads a code, math, or quote block and an indented line under an item as that item’s', () => {
     for (const fence of ['```', '$$']) {
       const doc = `1. Run this:\n   ${fence}\n   cmd\n\n   cmd2\n   ${fence}\n   Then check.\n2. Next`
       const bulleted = doc.replace('1. Run', '- Run').replace('2. Next', '- Next')

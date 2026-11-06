@@ -90,7 +90,7 @@ export function beginRelocateDrag<T>(
     onDrop: () => {
       if (slot === null || view.state.doc !== doc) return
       const changes = spec.commit(slot)
-      if (changes?.length) view.dispatch({ changes, userEvent: 'input' })
+      if (changes?.length) view.dispatch({ changes, userEvent: 'move.drop' })
     },
     onTap: spec.onTap,
     teardown: () => {
