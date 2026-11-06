@@ -26,7 +26,7 @@
 | 3 · Blank Lines and Numbering | -126 (+1000 / -1126), -87 its own | 9,170 | -117 (+1059 / -1176), 9,192 tests |
 | 4 · Paste | -124 (+1002 / -1126), +2 its own | 9,177 | -115 (+1061 / -1176), 9,199 tests |
 | 5 · One Marker Grammar | -173 (+1040 / -1213), -49 its own | 9,184 | -166 (+1100 / -1266), 9,211 tests |
-| 6 · One Set of List Keys, and the Scope's Name | -201 (+1108 / -1309), -28 its own | 9,185 | |
+| 6 · One Set of List Keys, and the Scope's Name | -201 (+1108 / -1309), -28 its own | 9,185 | -199 (+1164 / -1363), 9,215 tests |
 | 7 · One Definition Per Type | -260 (+1153 / -1413), -59 its own | 9,191 | |
 | 8 · The Word Rule | -307 (+1172 / -1479), -47 its own | 9,196 | |
 | 9 · Right-Click | -308 (+1386 / -1694), -1 its own | 9,204 | |
@@ -253,12 +253,12 @@ The order is what makes each step land once. The scan goes first, since every la
   - [x] Task 5-1 · One grammar
   - [x] Task 5-2 · Drive group 5
   - [x] Review Checkpoint
-- [ ] **Phase 6** — One Set of List Keys, and the Scope's Name
-  - [ ] Task 6-1 · The scope's name
-  - [ ] Task 6-2 · `listKeys`
-  - [ ] Task 6-3 · Drive group 6
-  - [ ] Review Checkpoint
-  - [ ] Compaction Checkpoint
+- [x] **Phase 6** — One Set of List Keys, and the Scope's Name
+  - [x] Task 6-1 · The scope's name
+  - [x] Task 6-2 · `listKeys`
+  - [x] Task 6-3 · Drive group 6
+  - [x] Review Checkpoint
+  - [x] Compaction Checkpoint
 - [ ] **Phase 7** — One Definition Per Type
   - [ ] Task 7-1 · The record
   - [ ] Task 7-2 · One name
@@ -554,8 +554,8 @@ The renumber filter should take a paste, so a paste that reshapes a numbered lis
 
 **VERIFY**
 
-- [ ] The embed pin reads red with `!== 'lists'`.
-- [ ] Run the gates. `git grep -n -E "scope: '(cell|text)'|'cell' \| 'text'" -- Core Desktop` prints nothing.
+- [x] The embed pin reads red with `!== 'lists'`.
+- [x] Run the gates. `git grep -n -E "scope: '(cell|text)'|'cell' \| 'text'" -- Core Desktop` prints nothing.
 
 #### Task 6-2
 
@@ -577,8 +577,8 @@ Two small differences a reader may notice: a cell's list keys scroll the caret i
 
 **VERIFY**
 
-- [ ] The page's Tab-hold pin reads red without its bindings.
-- [ ] Run the gates; the count reads the Net Ledger's row.
+- [x] The page's Tab-hold pin reads red without its bindings.
+- [x] Run the gates; the count reads the Net Ledger's row.
 
 #### Task 6-3
 
@@ -588,12 +588,12 @@ Two small differences a reader may notice: a cell's list keys scroll the caret i
 
 **VERIFY**
 
-- [ ] `node live-drive.mjs 6` reads every item passing at this task's head.
+- [x] `node live-drive.mjs 6` reads every item passing at this task's head.
 
 #### Review Checkpoint
 
-- [ ] No key is stated twice, and a cell's and a page's keymaps hold only what no list claims; both reviewers' findings folded or recorded.
-- [ ] *§When Drives Run*'s row for Phase 6 green. Four shots read and captioned.
+- [x] No key is stated twice, and a cell's and a page's keymaps hold only what no list claims; both reviewers' findings folded or recorded.
+- [x] *§When Drives Run*'s row for Phase 6 green. Four shots read and captioned.
 
 ---
 
@@ -935,8 +935,10 @@ None survives ratification. *Morning Report* lists the calls taken for Nathan's 
 - **Phase 2's Fold (`842f21193`):** the checkpoint found a row ending on a delimiter writing onto it, so ⌘A then ⌘B on a page ending in a block dissolved the block, and the refusal took one shape in `onDelimiter`. Enter on a blank line in a quoted block stopped ejecting it, `splitPrefix` reads the scan so a callout-shaped line inside a fence is code, a closer indented past its opener holds no list, and `||` and `-[] ` stay literal in display math. `pastSign` states the sign clamp once, and `setBlock`, `canonicalizeCheckbox`, and `takeMarker` read from `k`. Phases 3c, 5, 6b, 7a, and 7c land with `--3way`, keeping `role !== 'content'`, the single `from`, `fenceDelimiter(scan, k)`, `pastSign`, and the `splitPrefix` body. The running offset after Phase 2 is +8 lines and +17 tests.
 - **Phase 3's Fold (`7a34e9f8b`):** the checkpoint found a list or block drag recounting whenever lines stood selected elsewhere, since `overLines` read the selection and a drag dispatched bare `input`. Both drags now dispatch `move.drop`, CodeMirror's event for moved content, and no reader needs a move counted as typing. `rolesAgainst` reads `ridesList`, `numbered` hoisted, `runsAround`'s `seen` takes a default, and `blankBody` reads a quote's blank line as blank when a move heals its hole. Phase 4 lands with `--3way`. The running offset after Phase 3 is +9 lines and +22 tests.
 - **Phase 5's Fold (`4ca3472d2`):** `parseListMarker` dropped a capture group nothing read, and five pins joined lines nothing checked, among them a box's toggle past a document's first line. Phase 5's patch took `cellScan(text)` where it wrote `scanDoc(text, 'cell')`, so Phase 6a renames the scope once, at `cellScan`'s definition. Phase 7a keeps `const b = m.indices?.[3]` above `if (b)`. The running offset after Phase 5 is +7 lines and +27 tests.
+- **Phase 6's Fold (`db74ec96a`):** a cell's Shift-Enter took `insertNewline`, since Enter's move to it left the two keys disagreeing over a selection across items, and Enter's recount there is a third difference beyond Task 6-2's two, one that matches a page. Shift-Backspace joined `editorBase` for every surface, since a cell's eroded a marker. `seatPastMarkerNow` left: a cell's mount dispatches `select.pointer`, and `seated` inlines its seat. Phase 9a's `CellEditor` hunk keeps that event and the reworded comment, and Drive Groups 7 and 8 keep `MATRIX.md`'s new quote line. The running offset after Phase 6 is +2 lines and +30 tests.
 - **For the Morning:** Blockquote and Callout inside a plain code block don't write unaware as C-5's other rows do, and a partial selection reaching a delimiter can still dissolve a block. That matches the baseline, and C-7 keeps Insert ▸ as it was, so it stands until Nathan rules.
 - **For the Morning:** dropping an item just under another takes that item's wrapped text or carried block with it, as it does at the baseline, since the bottom boundary reads the item's own line. Reading its sub-block's end is about two lines, but it moves where a parent's drop lands, which is a drag-feel decision.
 - **For the Morning:** a code block an item carries draws flush with the page, so the rail crosses its box and text, and a flush line in a cell does the same. Both shots are in `$SHOTS/p3-list-types`. No decision names it.
 - **For the Morning:** Enter under a `+` item writes `-`, as B-4 rules, and standard Markdown reads `+ a` then `- b` as two lists, which other apps may space apart. Pommora reads one list, and NexusOS holds no `+` items outside code blocks.
+- **For the Morning:** a typed `![[Notes]]` standing alone in a Text value loses its alias when a rename gives the link a path, since `embedLine` reads the value as an embed's line while autocomplete now says only a page draws one. A picked link keeps its alias, so only the bare typed form is exposed.
 
