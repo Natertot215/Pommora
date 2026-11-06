@@ -27,7 +27,7 @@
 | 4 · Paste | -124 (+1002 / -1126), +2 its own | 9,177 | -115 (+1061 / -1176), 9,199 tests |
 | 5 · One Marker Grammar | -173 (+1040 / -1213), -49 its own | 9,184 | -166 (+1100 / -1266), 9,211 tests |
 | 6 · One Set of List Keys, and the Scope's Name | -201 (+1108 / -1309), -28 its own | 9,185 | -199 (+1164 / -1363), 9,215 tests |
-| 7 · One Definition Per Type | -260 (+1153 / -1413), -59 its own | 9,191 | |
+| 7 · One Definition Per Type | -260 (+1153 / -1413), -59 its own | 9,191 | -259 (+1223 / -1482), 9,222 tests |
 | 8 · The Word Rule | -307 (+1172 / -1479), -47 its own | 9,196 | |
 | 9 · Right-Click | -308 (+1386 / -1694), -1 its own | 9,204 | |
 | 10 · Text Properties | -286 (+1465 / -1751), +22 its own | 9,219 | |
@@ -259,13 +259,13 @@ The order is what makes each step land once. The scan goes first, since every la
   - [x] Task 6-3 · Drive group 6
   - [x] Review Checkpoint
   - [x] Compaction Checkpoint
-- [ ] **Phase 7** — One Definition Per Type
-  - [ ] Task 7-1 · The record
-  - [ ] Task 7-2 · One name
-  - [ ] Task 7-3 · The callout head
-  - [ ] Task 7-4 · Rails read the scan
-  - [ ] Task 7-5 · Drive group 7
-  - [ ] Review Checkpoint
+- [x] **Phase 7** — One Definition Per Type
+  - [x] Task 7-1 · The record
+  - [x] Task 7-2 · One name
+  - [x] Task 7-3 · The callout head
+  - [x] Task 7-4 · Rails read the scan
+  - [x] Task 7-5 · Drive group 7
+  - [x] Review Checkpoint
 - [ ] **Phase 8** — The Word Rule
   - [ ] Task 8-1 · The word rule
   - [ ] Task 8-2 · Drive group 8
@@ -611,7 +611,7 @@ Each type's written marker and rail should live in one record, `LIST_TYPES`, wit
 
 **VERIFY**
 
-- [ ] Run the gates. `git grep -n -E "BARE_MARKER|BARE_TASK|listMarkerText|railTypeClass" -- Core` prints nothing.
+- [x] Run the gates. `git grep -n -E "BARE_MARKER|BARE_TASK|listMarkerText|railTypeClass" -- Core` prints nothing.
 
 #### Task 7-2
 
@@ -623,7 +623,7 @@ Every menu should read each type's one name: Bulleted, Numbered, Alphabetical, C
 
 **VERIFY**
 
-- [ ] Run the gates. `git grep -n -E "Bullet List|Task List|Numbered List" -- Core ':!*.test.*'` prints nothing.
+- [x] Run the gates. `git grep -n -E "Bullet List|Task List|Numbered List" -- Core ':!*.test.*'` prints nothing.
 
 #### Task 7-3
 
@@ -635,7 +635,7 @@ A callout head should draw no glyph, with its `- foo` showing as text, through `
 
 **VERIFY**
 
-- [ ] Run the gates.
+- [x] Run the gates.
 
 #### Task 7-4
 
@@ -647,8 +647,8 @@ Rails should read the scan rather than arrays the drawing pass filled as a side 
 
 **VERIFY**
 
-- [ ] *an item inside a Markdown code block takes no rail* reads red with `levelAt` reading `scan.markers[i]` bare, and *a wrapped line carries the rail…*'s row on `  > - u\n> \t- r` reads red with `open || level >= 0` as the gate.
-- [ ] Run the gates; the count reads the Net Ledger's row.
+- [x] *an item inside a Markdown code block takes no rail* reads red with `levelAt` reading `scan.markers[i]` bare, and *a wrapped line carries the rail…*'s row on `  > - u\n> \t- r` reads red with `open || level >= 0` as the gate.
+- [x] Run the gates; the count reads the Net Ledger's row.
 
 #### Task 7-5
 
@@ -658,12 +658,12 @@ Rails should read the scan rather than arrays the drawing pass filled as a side 
 
 **VERIFY**
 
-- [ ] `node live-drive.mjs 7` reads every item passing at this task's head.
+- [x] `node live-drive.mjs 7` reads every item passing at this task's head.
 
 #### Review Checkpoint
 
-- [ ] A type's text and rail have one home and its wording another, and no reader names a type by hand; both reviewers' findings folded or recorded.
-- [ ] *§When Drives Run*'s row for Phase 7 green. Four shots read and captioned.
+- [x] A type's text and rail have one home and its wording another, and no reader names a type by hand; both reviewers' findings folded or recorded.
+- [x] *§When Drives Run*'s row for Phase 7 green. Four shots read and captioned.
 
 ---
 
@@ -761,7 +761,7 @@ A press left of a glyph should seat at the content in all five shapes, on a righ
 
 **AFTER**
 
-`Scouts/Planning/Phases/Phase 9e — The Marker Seat.patch`.
+`Scouts/Planning/Phases/Phase 9e — The Marker Seat.patch`. Phase 7's checkpoint settled `seatPastMarker`: its class read leaves here for `const lm = markerIn(scan, k, undefined)` and `return lm && pos >= ls + lm.markerStart && pos <= ls + lm.markerEnd ? ls + lm.contentStart : null`, with `ls` hoisted above 9e's `lead` line, proven at zero differences over 10.8M positions, and `GLYPH_CLASS` stays for its drawing readers. This phase's checkpoint weighs two seats in 9e's shape: a press in a text marker's hidden wide gap stays in the gap (`→   foo`), and a press left of the marker on `- [ ] [^1] y` seats past the footnote.
 
 **VERIFY**
 
@@ -936,6 +936,7 @@ None survives ratification. *Morning Report* lists the calls taken for Nathan's 
 - **Phase 3's Fold (`7a34e9f8b`):** the checkpoint found a list or block drag recounting whenever lines stood selected elsewhere, since `overLines` read the selection and a drag dispatched bare `input`. Both drags now dispatch `move.drop`, CodeMirror's event for moved content, and no reader needs a move counted as typing. `rolesAgainst` reads `ridesList`, `numbered` hoisted, `runsAround`'s `seen` takes a default, and `blankBody` reads a quote's blank line as blank when a move heals its hole. Phase 4 lands with `--3way`. The running offset after Phase 3 is +9 lines and +22 tests.
 - **Phase 5's Fold (`4ca3472d2`):** `parseListMarker` dropped a capture group nothing read, and five pins joined lines nothing checked, among them a box's toggle past a document's first line. Phase 5's patch took `cellScan(text)` where it wrote `scanDoc(text, 'cell')`, so Phase 6a renames the scope once, at `cellScan`'s definition. Phase 7a keeps `const b = m.indices?.[3]` above `if (b)`. The running offset after Phase 5 is +7 lines and +27 tests.
 - **Phase 6's Fold (`db74ec96a`):** a cell's Shift-Enter took `insertNewline`, since Enter's move to it left the two keys disagreeing over a selection across items, and Enter's recount there is a third difference beyond Task 6-2's two, one that matches a page. Shift-Backspace joined `editorBase` for every surface, since a cell's eroded a marker. `seatPastMarkerNow` left: a cell's mount dispatches `select.pointer`, and `seated` inlines its seat. Phase 9a's `CellEditor` hunk keeps that event and the reworded comment, and Drive Groups 7 and 8 keep `MATRIX.md`'s new quote line. The running offset after Phase 6 is +2 lines and +30 tests.
+- **Phase 7's Fold (`896ed6e9d`):** `readLine` read a marker the scan says isn't there, so Heading or Paragraph on a head like `> [!note] - foo` deleted its visible `- `, and on `$$\n- b\n$$` a formula's dash. `readLine` and `setBlock`'s callout now read `scan.markers[k]`, and `stripInnerMarkers` left. A depth-two `> > - foo` picked Callout now writes `> [!callout] foo`, which goes further than *§Behavior Changes* row 64 states, and a plain code block's `- foo` keeps its dash under Callout. `seatPastMarker`'s fold moved to Task 9-5. The running offset after Phase 7 is +1 line and +31 tests.
 - **For the Morning:** Blockquote and Callout inside a plain code block don't write unaware as C-5's other rows do, and a partial selection reaching a delimiter can still dissolve a block. That matches the baseline, and C-7 keeps Insert ▸ as it was, so it stands until Nathan rules.
 - **For the Morning:** dropping an item just under another takes that item's wrapped text or carried block with it, as it does at the baseline, since the bottom boundary reads the item's own line. Reading its sub-block's end is about two lines, but it moves where a parent's drop lands, which is a drag-feel decision.
 - **For the Morning:** a code block an item carries draws flush with the page, so the rail crosses its box and text, and a flush line in a cell does the same. Both shots are in `$SHOTS/p3-list-types`. No decision names it.
