@@ -328,6 +328,17 @@ describe('the list vocabulary inside a table cell', () => {
     expect(anyCellLive()).toBe(false)
   })
 
+  it('toggles a resting cell’s second box on its own line', async () => {
+    const view = await mountEditor({ initialBody: table('- [ ] a<br>- [ ] b') })
+    const seats = (await tableEl()).querySelectorAll('.md-list-checkbox-seat')
+    const ev = { bubbles: true, cancelable: true, button: 0, clientX: 4, clientY: 4 }
+    await act(async () => {
+      seats[1].dispatchEvent(new MouseEvent('mousedown', ev))
+      seats[1].dispatchEvent(new MouseEvent('click', { ...ev, detail: 1 }))
+    })
+    expect(view.state.doc.toString()).toBe(table('- [ ] a<br>- [x] b'))
+  })
+
   it('toggles a resting checkbox in its own table after a table is inserted above it', async () => {
     // The paragraph keeps the insert clear of the lower table, so its node is reused under a new index rather than handed to the new table.
     const view = await mountEditor({ initialBody: `intro\n\n${table('- [ ] b')}` })
@@ -359,7 +370,7 @@ describe('the list vocabulary inside a table cell', () => {
     expect(view.state.doc.toString()).toBe(body)
   })
 
-  it('continues a bullet holding an empty box, as the keys read what the glyphs draw', async () => {
+  it('continues a bullet holding an empty box', async () => {
     await mountEditor({ initialBody: table('- [] x') })
     await enterCell()
     await press('Enter')

@@ -548,7 +548,7 @@ export type ListMarker =
   | (MarkerSpan & { kind: 'bullet' | 'arrow' })
 
 // `-` and `+` are the only bullet characters: `*` and `•` stay prose.
-const LIST_MARKER_RE = /^([ \t]*)(?:(\d{1,9}|[A-Z])\.|→|[-+](?:[ \t]+(\[([ xX])\]))?)([ \t]+)/d
+const LIST_MARKER_RE = /^([ \t]*)(?:(\d{1,9}|[A-Z])\.|→|[-+](?:[ \t]+(\[([ xX])\]))?)[ \t]+/d
 
 export const isSequenced = (lm: ListMarker): lm is SequencedMarker =>
   lm.kind === 'ordered' || lm.kind === 'alphabetical'
@@ -581,14 +581,11 @@ export function listMarkerText(kind: ListKind): string {
 export function parseListMarker(line: string, offset = 0): ListMarker | null {
   if (isThematicBreakLine(line)) return null
   const m = LIST_MARKER_RE.exec(line)
-  const idx = m?.indices
-  const ws = idx?.[5]
-  if (!m || !idx || !ws) return null
+  if (!m) return null
   const indent = m[1]
   const markerStart = offset + indent.length
   const level = indentLevel(indent)
-  const contentStart = offset + ws[1]
-  const b = idx[3]
+  const contentStart = offset + m[0].length
 
   if (m[2] !== undefined) {
     return {
@@ -600,6 +597,7 @@ export function parseListMarker(line: string, offset = 0): ListMarker | null {
       contentStart,
     }
   }
+  const b = m.indices?.[3]
   if (b) {
     const box = { start: offset + b[0], end: offset + b[1] }
     return {

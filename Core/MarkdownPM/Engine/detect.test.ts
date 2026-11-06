@@ -116,6 +116,7 @@ describe('parseListMarker (single marker source)', () => {
       contentStart: 2,
     })
     expect(parseListMarker('\t→ nested')!.level).toBe(1)
+    expect(parseListMarker('\t→ a')?.kind).toBe('arrow')
   })
   it('returns null for non-list lines and markers with no trailing space', () => {
     expect(parseListMarker('plain')).toBeNull()
@@ -246,6 +247,14 @@ describe('lineMarker (lists behind a quote/callout prefix)', () => {
   })
   it('does NOT strip a `>` with no space after it (not a real quote — agrees with the renderer)', () => {
     expect(lineMarker('>- x', undefined)).toBeNull()
+  })
+  it('reads a quoted line in a Markdown code block as no item', () => {
+    const { lines, fences } = scanDoc('```md\n> - x\n```')
+    expect(lineMarker(lines[1], fences[1])).toBeNull()
+  })
+  it('reads no nesting from the lead of a block a list carries', () => {
+    const { lines, fences } = scanDoc('- a\n  ```md\n  - b\n  ```')
+    expect(lineMarker(lines[2], fences[2])?.level).toBe(0)
   })
 })
 

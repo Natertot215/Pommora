@@ -228,6 +228,13 @@ describe('click (no drag past threshold) toggles a checkbox, never reorders', ()
     const c = checkboxToggleChange(scanDoc(doc), 2)!
     expect(applyEdits(doc, [c])).toBe('- [ ] done')
   })
+  it('targets the box past the first line, behind a quote', () => {
+    expect(checkboxToggleChange(scanDoc('a\n> - [ ] b'), 6)).toEqual({
+      from: 6,
+      to: 9,
+      insert: '[x]',
+    })
+  })
   it('returns null for a bullet (no toggle) so a click just places the caret', () => {
     expect(checkboxToggleChange(scanDoc('- plain'), 0)).toBe(null)
   })

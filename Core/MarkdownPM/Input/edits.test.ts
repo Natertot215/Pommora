@@ -193,6 +193,10 @@ describe('checkbox canonicalization', () => {
     const doc = '-[x]'
     expect(apply(doc, canonicalizeCheckbox(scanDoc(doc), 4, 4, ' ')!)).toBe('- [x] ')
   })
+  it('-[X] + space → "- [x] "', () => {
+    const doc = '-[X]'
+    expect(apply(doc, canonicalizeCheckbox(scanDoc(doc), 4, 4, ' ')!)).toBe('- [x] ')
+  })
   it('writes a dash whichever bullet typed the box, keeping the indent', () => {
     for (const [doc, written] of [
       ['+[]', '- [ ] '],
