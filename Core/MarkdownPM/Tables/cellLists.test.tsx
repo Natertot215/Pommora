@@ -290,12 +290,19 @@ describe('the list vocabulary inside a table cell', () => {
     expect(liveColumn()).toBe(0)
   })
 
-  it('calls a bullet carrying an empty box prose, at rest exactly as when live', async () => {
-    expect(decorationsFor('- [] x', [], new Set(), -1, scanDoc('- [] x', 'cell'))).toHaveLength(0)
-    await mountEditor({ initialBody: table('- [] x') })
-    const cell = (await tableEl()).querySelector('tbody')!.children[0].children[0]
-    expect(cell.querySelector('.md-list-item')).toBeNull()
-    expect(cell.textContent).toContain('- [] x')
+  it('reads an empty box as a bullet’s text and a plus as a bullet, at rest exactly as when live', async () => {
+    for (const [source, text] of [
+      ['- [] x', '[] x'],
+      ['+ a', 'a'],
+    ]) {
+      const live = decorationsFor(source, [], new Set(), -1, scanDoc(source, 'cell'))
+      expect(live.some((d) => d.kind === 'widget' && d.spec.type === 'bullet')).toBe(true)
+      await mountEditor({ initialBody: table(source) })
+      const cell = (await tableEl()).querySelector('tbody')!.children[0].children[0]
+      expect(cell.querySelector('.md-list-bullet')?.textContent).toBe('•')
+      expect(cell.querySelector('.md-list-text')?.textContent).toBe(text)
+      await cleanupEditor()
+    }
   })
 
   it('hangs a grip on a list block in a cell, and on nothing else there', async () => {
@@ -352,11 +359,11 @@ describe('the list vocabulary inside a table cell', () => {
     expect(view.state.doc.toString()).toBe(body)
   })
 
-  it('treats a marker nothing draws as prose, for the keys as well as the glyphs', async () => {
+  it('continues a bullet holding an empty box, as the keys read what the glyphs draw', async () => {
     await mountEditor({ initialBody: table('- [] x') })
     await enterCell()
     await press('Enter')
-    expect(anyCellLive()).toBe(false)
+    expect(cellSource()).toBe('- [] x\n- ')
   })
 
   it('Shift-Enter writes a break over a selection, even on the final item', async () => {

@@ -208,6 +208,18 @@ describe('decoration intents', () => {
     ).toBe(true)
   })
 
+  it.each(['+ item', '+ '])('a plus item takes a dash’s • widget: %j', (t) => {
+    const intents = decorationsFor(t, tokenize(t), new Set(), 99)
+    expect(
+      intents.some(
+        (d) => d.kind === 'widget' && d.spec.type === 'bullet' && d.from === 0 && d.to === 2,
+      ),
+    ).toBe(true)
+    expect(intents.some((d) => d.kind === 'class' && d.className.includes('md-list-arrow'))).toBe(
+      false,
+    )
+  })
+
   it('every list type marks its content as the line’s one wrapping region', () => {
     for (const t of [
       '- item text',
@@ -263,17 +275,14 @@ describe('decoration intents', () => {
   it.each([
     ['ordered', '3. ', 2],
     ['arrow', '→ ', 1],
-    ['plus', '+ ', 1],
   ])('%s item with no text → the whole gap is hidden, leaving the caret a boundary', (_n, t, gap) => {
     const intents = decorationsFor(t, tokenize(t), new Set(), 99)
     expect(intents.some((d) => d.kind === 'class' && d.className === 'md-list-gap')).toBe(false)
     expect(intents.some((d) => d.kind === 'hide' && d.from === gap && d.to === t.length)).toBe(true)
   })
 
-  it.each([
-    ['arrow', '→ step'],
-    ['plus', '+ step'],
-  ])('%s list → marker kept as literal source (recolor + drag-handle class), gap kept, no widget', (_n, t) => {
+  it('arrow list → marker kept as literal source (recolor + drag-handle class), gap kept, no widget', () => {
+    const t = '→ step'
     const intents = decorationsFor(t, tokenize(t), new Set(), 99)
     expect(
       intents.some(
@@ -731,10 +740,13 @@ describe('outliner rails', () => {
     ])
   })
 
-  it('rails are scoped to bullets, checkboxes, and letters — ordered / arrow / + ancestors get none (deferred)', () => {
+  it('rails are scoped to bullets, checkboxes, and letters — ordered and arrow ancestors get none, and a plus is a bullet', () => {
     expect(rails('1. parent\n\t- child')).toHaveLength(0)
     expect(rails('→ parent\n\t- child')).toHaveLength(0)
-    expect(rails('+ parent\n\t- child')).toHaveLength(0)
+    expect(rails('+ parent\n\t- child').map((r) => r.typeClass)).toEqual([
+      'md-outline-bullet',
+      'md-outline-bullet',
+    ])
   })
 
   it('a blank line ends the rail', () => {

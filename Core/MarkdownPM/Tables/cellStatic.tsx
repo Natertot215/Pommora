@@ -11,13 +11,12 @@ import {
 import {
   contentClass,
   GLYPH_CLASS,
-  listGlyphOf,
   listLineClass,
   railClass,
   railIntents,
   railStyle,
   railTypeClass,
-  type ListGlyph,
+  textMarkerClass,
 } from '../Engine/intents'
 import { perText } from '../Engine/perText'
 import type { ListMarker } from '../Engine/detect'
@@ -245,12 +244,10 @@ export function renderCellContent(
 
 function MarkerGlyph({
   lm,
-  glyph,
   line,
   at,
 }: {
   lm: ListMarker
-  glyph: ListGlyph
   line: string
   at: number
 }): React.JSX.Element {
@@ -261,7 +258,7 @@ function MarkerGlyph({
         <span className={checkboxClass(lm.checked)}>{lm.checked && <CheckMark size={12} />}</span>
       </span>
     )
-  if (glyph === 'bullet')
+  if (lm.kind === 'bullet')
     return (
       <span className={`md-list-bullet ${GLYPH_CLASS}`} data-src={src}>
         •
@@ -269,7 +266,7 @@ function MarkerGlyph({
     )
   const text = line.slice(lm.markerStart, lm.markerEnd)
   return (
-    <span className={`md-list-${glyph} md-control ${GLYPH_CLASS}`} data-src={src}>
+    <span className={textMarkerClass(lm)} data-src={src}>
       {text}
     </span>
   )
@@ -284,33 +281,28 @@ function renderCellBody(
 ): React.ReactNode {
   const scan = cellScan(text)
   const { lines, lineStarts: starts, markers } = scan
-  // A marker nothing draws is prose here exactly as it is in the editor, so the two surfaces accept the same lines.
-  const items = markers.map((lm) => {
-    const glyph = lm && listGlyphOf(lm)
-    return lm && glyph ? { lm, glyph } : null
-  })
-  if (items.every((it) => it === null))
+  if (markers.every((lm) => lm === null))
     return renderCellContent(text, connections, { around, headingLinkStyle })
   const rails = railIntents(
     scan,
-    items.map((it) => it?.lm.level ?? -1),
-    items.map((it) => (it ? (railTypeClass(it.lm) ?? '') : '')),
+    markers.map((lm) => lm?.level ?? -1),
+    markers.map((lm) => (lm ? (railTypeClass(lm) ?? '') : '')),
     lines.map(quoteDepthOf),
   )
   return lines.map((line, i) => {
-    const it = items[i]
-    const content = it ? line.slice(it.lm.contentStart) : line
+    const lm = markers[i]
+    const content = lm ? line.slice(lm.contentStart) : line
     const rendered = renderCellContent(content, connections, {
       around,
       headingLinkStyle,
-      base: starts[i] + (it?.lm.contentStart ?? 0),
+      base: starts[i] + (lm?.contentStart ?? 0),
     })
     return (
       <div
         // biome-ignore lint/suspicious/noArrayIndexKey: a cell's lines are plain strings with no identity but their position — the index IS the key
         key={i}
-        className={it ? listLineClass(it.lm) : undefined}
-        style={it ? ({ '--list-level': it.lm.level } as React.CSSProperties) : undefined}
+        className={lm ? listLineClass(lm) : undefined}
+        style={lm ? ({ '--list-level': lm.level } as React.CSSProperties) : undefined}
         data-cell-line={i}
         data-base={starts[i]}
       >
@@ -322,8 +314,8 @@ function renderCellBody(
             aria-hidden="true"
           />
         ))}
-        {it && <MarkerGlyph lm={it.lm} glyph={it.glyph} line={line} at={starts[i]} />}
-        {it ? <span className="md-list-text">{rendered}</span> : rendered}
+        {lm && <MarkerGlyph lm={lm} line={line} at={starts[i]} />}
+        {lm ? <span className="md-list-text">{rendered}</span> : rendered}
         {content === '' && '\u200b'}
       </div>
     )
@@ -513,7 +505,7 @@ function StaticCellImpl({
   const claimCheckbox = (e: React.MouseEvent): (() => void) | null => {
     if (readOnly()) return null
     const seat = (e.target as HTMLElement | null)?.closest?.('.md-list-checkbox-seat')
-    const change = seat && checkboxToggleChange(text, srcOf(seat)![0])
+    const change = seat && checkboxToggleChange(cellScan(text), srcOf(seat)![0])
     if (!change) return null
     e.preventDefault()
     e.stopPropagation()

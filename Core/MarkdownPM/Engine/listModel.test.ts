@@ -220,16 +220,16 @@ describe('re-nesting on drop (slot.indent adopts the target depth)', () => {
 describe('click (no drag past threshold) toggles a checkbox, never reorders', () => {
   it('unchecked → checked toggle change targets the box only', () => {
     const doc = '- [ ] todo\n- [ ] next'
-    const c = checkboxToggleChange(doc, doc.indexOf('[ ]'))!
+    const c = checkboxToggleChange(scanDoc(doc), doc.indexOf('[ ]'))!
     expect(applyEdits(doc, [c])).toBe('- [x] todo\n- [ ] next')
   })
   it('checked → unchecked', () => {
     const doc = '- [x] done'
-    const c = checkboxToggleChange(doc, 2)!
+    const c = checkboxToggleChange(scanDoc(doc), 2)!
     expect(applyEdits(doc, [c])).toBe('- [ ] done')
   })
   it('returns null for a bullet (no toggle) so a click just places the caret', () => {
-    expect(checkboxToggleChange('- plain', 0)).toBe(null)
+    expect(checkboxToggleChange(scanDoc('- plain'), 0)).toBe(null)
   })
 })
 

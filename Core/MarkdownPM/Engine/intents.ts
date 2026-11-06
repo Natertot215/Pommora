@@ -13,7 +13,6 @@ import {
   type CitationEntry,
   type DiffTally,
   type FenceInfo,
-  type ListKind,
   type ListMarker,
   readsLists,
 } from './detect'
@@ -100,10 +99,10 @@ export type DecoIntent =
     }
   | RailIntent
 
-// The rail's x sits on its ANCESTOR's glyph center; ordered / arrow / `+` return null, so no rail is drawn under one.
+// The rail's x sits on its ANCESTOR's glyph center; ordered and arrow return null, so no rail is drawn under one.
 export function railTypeClass(m: ListMarker): string | null {
   if (m.kind === 'checkbox') return 'md-outline-task'
-  if (m.kind === 'bullet' && m.bullet === '-') return 'md-outline-bullet'
+  if (m.kind === 'bullet') return 'md-outline-bullet'
   if (m.kind === 'alphabetical') return 'md-outline-alpha'
   return null
 }
@@ -125,21 +124,8 @@ export const railStyle = (r: Pick<RailIntent, 'level' | 'reach'>): Record<string
   }),
 })
 
-// The form a marker is DRAWN as, the list type that form reads as — a `+` item is Arrowed — and the line class that carries it: one answer for the editor's decorations and the resting cell's DOM alike.
-// Null where the source parses as a marker but nothing draws one: a bullet holding an empty box is prose, and both renderers have to agree on that.
-export type ListGlyph = 'checkbox' | 'bullet' | 'arrow' | 'number'
-
-export function listGlyphOf(lm: ListMarker): ListGlyph | null {
-  if (lm.kind === 'checkbox') return 'checkbox'
-  if (lm.kind === 'bullet' && lm.bullet === '-' && !lm.box) return 'bullet'
-  if (lm.kind === 'arrow' || (lm.kind === 'bullet' && lm.bullet === '+' && !lm.box)) return 'arrow'
-  return isSequenced(lm) ? 'number' : null
-}
-
-export function drawnKind(lm: ListMarker): ListKind | null {
-  const glyph = listGlyphOf(lm)
-  return glyph === 'number' ? lm.kind : glyph
-}
+export const textMarkerClass = (lm: ListMarker): string =>
+  `md-list-${lm.kind === 'arrow' ? 'arrow' : 'number'} md-control ${GLYPH_CLASS}`
 
 export function listLineClass(lm: ListMarker): string {
   if (lm.kind === 'checkbox') return cx('md-list-item md-list-task', lm.checked && 'md-list-done')
@@ -638,7 +624,6 @@ function pushConstruct(
   const caretOnLine = selStart >= ls && selStart <= le
   const page = scan.scope === 'page'
   const lm = readsLists(scan.scope) ? parseListMarker(inner) : null
-  const glyph = lm && listGlyphOf(lm)
   // Only a resting caret reveals the marker: a drag's head snapping across the atomic marker would otherwise swap glyph and source under the pointer on every move.
   const onMarker =
     !ranged &&
@@ -646,7 +631,7 @@ function pushConstruct(
     selStart >= innerStart + lm.markerStart &&
     selStart <= innerStart + lm.markerEnd
 
-  const bulletAbsorbs = base > 0 && !onMarker && glyph === 'bullet'
+  const bulletAbsorbs = base > 0 && !onMarker && lm?.kind === 'bullet'
   const hrAbsorbs = base > 0 && !caretOnLine && isThematicBreakLine(inner)
   // The prefix is hidden here so a leading widget can ABSORB it: CM drops a widget-replace that merely touches one.
   pushPrefix(intents, ls, innerStart, bulletAbsorbs || hrAbsorbs)
@@ -695,7 +680,7 @@ function pushConstruct(
       })
     }
     return lm
-  } else if (lm && glyph === 'bullet') {
+  } else if (lm?.kind === 'bullet') {
     // The replace runs THROUGH the marker-content gap, so neither a source tab nor pasted gap spaces occupy the in-flow slot; the visible gap is the glyph's CSS margin.
     intents.push({ kind: 'line', from: ls, className: listLineClass(lm), level: lm.level })
     if (onMarker) pushPrefix(intents, innerStart, innerStart + lm.markerStart)
@@ -716,14 +701,14 @@ function pushConstruct(
       })
     }
     return lm
-  } else if (lm && (glyph === 'arrow' || glyph === 'number')) {
+  } else if (lm) {
     // Literal recolored source, no widget, so typing after the marker can't hit an atomic range.
     pushListLine(intents, ls, innerStart, lm)
     intents.push({
       kind: 'class',
       from: innerStart + lm.markerStart,
       to: innerStart + lm.markerEnd,
-      className: `md-list-${glyph} md-control ${GLYPH_CLASS}`,
+      className: textMarkerClass(lm),
     })
     pushMarkerGap(intents, innerStart + lm.markerEnd, innerStart + lm.contentStart, le)
     return lm

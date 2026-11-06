@@ -44,7 +44,6 @@ import {
   signSeatAt,
 } from '../Engine/docScan'
 import { ownersOf, siblingsAt, subBlockAt } from '../Engine/listModel'
-import { drawnKind } from '../Engine/intents'
 import { type Personalization, settingOf } from '../../Settings/personalization'
 import { leadOf } from './edits'
 import { isValidLink, normalizeLinkUrl } from '../../Paths/urlPath'
@@ -322,7 +321,7 @@ function selectedLines(scan: DocScan, from: number, to: number): SelectedLine[] 
     .filter((l) => from === to || !isBlank(scan.text.slice(l.ls + l.prefix.length, l.le)))
 }
 
-/** What a list-type pick reaches. A caret takes its item's group: with Preserve List-Level Formatting on, the siblings drawn as its type; off, the siblings and everything nested under them. A range takes every item it touches and turns its plain lines into items. A continuation answers for its item and a blank line for itself, a code block's lines only by a pick wholly inside it, and math, tables, a callout's head and a fence's delimiters never are. */
+/** What a list-type pick reaches. A caret takes its item's group: with Preserve List-Level Formatting on, the siblings of its type; off, the siblings and everything nested under them. A range takes every item it touches and turns its plain lines into items. A continuation answers for its item and a blank line for itself, a code block's lines only by a pick wholly inside it, and math, tables, a callout's head and a fence's delimiters never are. */
 function listReach(
   scan: DocScan,
   from: number,
@@ -342,14 +341,14 @@ function listReach(
     if (item === null || blank(anchor)) reached.add(anchor)
     else {
       const { items, last } = siblingsAt(scan, item)
-      const kind = drawnKind(markerIn(scan, item, region)!)
+      const kind = markerIn(scan, item, region)!.kind
       const preserve = settingOf(settings, 'preserveListLevels')
       const span = preserve
         ? items
         : Array.from({ length: last - items[0] + 1 }, (_, n) => items[0] + n)
       for (const k of span) {
         const lm = markerIn(scan, k, region)
-        if (lm !== null && (!preserve || drawnKind(lm) === kind)) reached.add(k)
+        if (lm !== null && (!preserve || lm.kind === kind)) reached.add(k)
       }
     }
   } else {
@@ -375,11 +374,11 @@ export function listKindOf(
   to: number,
   settings: Personalization,
 ): ListKind | null {
-  const kinds = new Set(listReach(scan, from, to, settings).map(({ lm }) => lm && drawnKind(lm)))
+  const kinds = new Set(listReach(scan, from, to, settings).map(({ lm }) => lm?.kind ?? null))
   return kinds.size === 1 ? [...kinds][0] : null
 }
 
-/** The one list-type switch. An item already drawn as the type is left alone, any other is written over, and a plain line becomes an item; the renumber filter (`listRenumber.ts`) counts what it wrote. */
+/** The one list-type switch. An item already of the type is left alone, any other is written over, and a plain line becomes an item; the renumber filter (`listRenumber.ts`) counts what it wrote. */
 export function setList(
   scan: DocScan,
   from: number,
@@ -398,7 +397,7 @@ export function setList(
       const lead = `${l.pad}${l.indent}${marker}`
       changes.push({ from: ls + l.prefix.length, to: l.le - l.inner.length, insert: lead })
       selection = ls + l.prefix.length + lead.length + l.inner.length
-    } else if (drawnKind(lm) !== kind)
+    } else if (lm.kind !== kind)
       changes.push({ from: ls + lm.markerStart, to: ls + lm.contentStart, insert: marker })
   }
   // A pick reaching one plain line keeps the caret at its end; any other pick leaves the selection where the edit maps it.

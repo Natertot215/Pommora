@@ -4,7 +4,6 @@ import {
   isSequenced,
   ordinalOf,
   ordinalText,
-  parseListMarkerPrefixed,
   type BlockSpan,
   type SequencedMarker,
 } from './detect'
@@ -15,17 +14,16 @@ import {
   lineIndexAt,
   quoteDepthOf,
   type TextEdit,
-  lineStartAt,
-  lineEndAt,
 } from './markdownCode'
 import { rebuildMove, type Slot } from './blockMove'
 import { type DocScan, fenceDelimiter, markerIn, scanDoc, sealedBlock } from './docScan'
 
 /** Shared by the extension's click handler so press-to-drag never flips the box. */
-export function checkboxToggleChange(doc: string, pos: number): TextEdit | null {
-  const ls = lineStartAt(doc, pos)
-  const lm = parseListMarkerPrefixed(doc.slice(ls, lineEndAt(doc, pos)))
+export function checkboxToggleChange(scan: DocScan, pos: number): TextEdit | null {
+  const k = lineIndexAt(scan, pos)
+  const lm = scan.markers[k]
   if (lm?.kind !== 'checkbox') return null
+  const ls = scan.lineStarts[k]
   return { from: ls + lm.box.start, to: ls + lm.box.end, insert: lm.checked ? '[ ]' : '[x]' }
 }
 

@@ -534,7 +534,7 @@ interface MarkerSpan {
   contentStart: number
 }
 
-type Box = { start: number; end: number; inner: string }
+type Box = { start: number; end: number }
 
 export type ListKind = 'ordered' | 'alphabetical' | 'bullet' | 'checkbox' | 'arrow'
 
@@ -544,13 +544,11 @@ export type SequencedMarker = MarkerSpan & { kind: SequencedKind; ordinal: strin
 
 export type ListMarker =
   | SequencedMarker
-  | (MarkerSpan & { kind: 'checkbox'; bullet: string; box: Box; checked: boolean })
-  | (MarkerSpan & { kind: 'bullet'; bullet: string; box?: Box })
-  | (MarkerSpan & { kind: 'arrow'; bullet: '→' })
+  | (MarkerSpan & { kind: 'checkbox'; box: Box; checked: boolean })
+  | (MarkerSpan & { kind: 'bullet' | 'arrow' })
 
-// `-` and `+` are the only bullet characters: `*` and `•` stay prose, or the drag layer is handed items nothing draws.
-const LIST_MARKER_RE = /^([ \t]*)(?:(\d+|[A-Z])\.|([-+]))(?:[ \t]*(\[([ xX]?)\]))?([ \t]+)(.*)$/d
-const ARROW_MARKER_RE = /^([ \t]*)→([ \t]+)/
+// `-` and `+` are the only bullet characters: `*` and `•` stay prose.
+const LIST_MARKER_RE = /^([ \t]*)(?:(\d{1,9}|[A-Z])\.|→|[-+](?:[ \t]+(\[([ xX])\]))?)([ \t]+)/d
 
 export const isSequenced = (lm: ListMarker): lm is SequencedMarker =>
   lm.kind === 'ordered' || lm.kind === 'alphabetical'
@@ -582,28 +580,15 @@ export function listMarkerText(kind: ListKind): string {
 
 export function parseListMarker(line: string, offset = 0): ListMarker | null {
   if (isThematicBreakLine(line)) return null
-  const arrow = ARROW_MARKER_RE.exec(line)
-  if (arrow) {
-    const markerStart = offset + arrow[1].length
-    return {
-      kind: 'arrow',
-      bullet: '→',
-      level: indentLevel(arrow[1]),
-      markerStart,
-      markerEnd: markerStart + 1,
-      contentStart: markerStart + 1 + arrow[2].length,
-    }
-  }
   const m = LIST_MARKER_RE.exec(line)
   const idx = m?.indices
-  const ws = idx?.[6]
+  const ws = idx?.[5]
   if (!m || !idx || !ws) return null
   const indent = m[1]
   const markerStart = offset + indent.length
   const level = indentLevel(indent)
   const contentStart = offset + ws[1]
-  const b = idx[4]
-  const box = b ? { start: offset + b[0], end: offset + b[1], inner: m[5] ?? '' } : undefined
+  const b = idx[3]
 
   if (m[2] !== undefined) {
     return {
@@ -615,33 +600,25 @@ export function parseListMarker(line: string, offset = 0): ListMarker | null {
       contentStart,
     }
   }
-  const bullet = m[3]
-  if (box && box.inner !== '') {
+  if (b) {
+    const box = { start: offset + b[0], end: offset + b[1] }
     return {
       kind: 'checkbox',
-      bullet,
       level,
       markerStart,
       markerEnd: box.end,
       contentStart,
       box,
-      checked: box.inner !== ' ',
+      checked: m[4] !== ' ',
     }
   }
   return {
-    kind: 'bullet',
-    bullet,
+    kind: line[indent.length] === '→' ? 'arrow' : 'bullet',
     level,
     markerStart,
     markerEnd: markerStart + 1,
     contentStart,
-    box,
   }
-}
-
-export function parseListMarkerPrefixed(line: string): ListMarker | null {
-  const offset = quotePrefix(line).length
-  return parseListMarker(line.slice(offset), offset)
 }
 
 /** A code block that reads lists: Markdown, and no diff, whose leading `-` and `+` are change signs. */
@@ -650,9 +627,8 @@ export const readsListsIn = (f: FenceInfo): boolean =>
 
 /** The marker a line holds where it stands. A code block that reads lists reads them from its own body, so its fence's lead is no nesting and a quoted line is no item. */
 export function lineMarker(line: string, f: FenceInfo | undefined): ListMarker | null {
-  if (f === undefined) return parseListMarkerPrefixed(line)
-  if (!readsListsIn(f)) return null
-  const body = fenceBodyStart(line, f)
+  if (f !== undefined && !readsListsIn(f)) return null
+  const body = f === undefined ? quotePrefix(line).length : fenceBodyStart(line, f)
   return parseListMarker(line.slice(body), body)
 }
 

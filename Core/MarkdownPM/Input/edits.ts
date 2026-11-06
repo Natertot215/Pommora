@@ -50,7 +50,7 @@ export interface Edit extends TextEdit {
   relist?: boolean
 }
 
-const shorthandCheckboxRe = /^([ \t]*)([-+])\[([ xX]?)\]$/
+const shorthandCheckboxRe = /^([ \t]*)[-+]\[([ xX]?)\]$/
 
 /** What stands before line `k`'s own text: inside a code block its fence's lead and any diff sign, elsewhere its quote. */
 export function leadOf(scan: DocScan, k: number): string {
@@ -247,9 +247,9 @@ export function canonicalizeCheckbox(
   const from = scan.lineStarts[k] + leadOf(scan, k).length
   const m = shorthandCheckboxRe.exec(scan.text.slice(from, selStart))
   if (m === null) return null
-  const [, ws, marker, inner] = m
-  // The trailing space is the task-list grammar's own requirement, not decoration: without it the line parses as plain text.
-  const gfm = `${ws}${marker} [${inner.toLowerCase() === 'x' ? 'x' : ' '}] `
+  const [, ws, inner] = m
+  // The trailing space is the task-list grammar's own requirement, not decoration: without it the line reads as a bullet holding `[ ]`.
+  const gfm = `${ws}- [${inner.toLowerCase() === 'x' ? 'x' : ' '}] `
   return { from, to: selStart, insert: gfm, selection: from + gfm.length }
 }
 

@@ -18,7 +18,7 @@ import { applyEdit } from '../Input/applyEdit'
 import { docLineIntentsOf, docScan } from '../docCache'
 import { lineIndexAt } from '../Engine/markdownCode'
 import type { DocScan } from '../Engine/docScan'
-import { listGlyphOf, seatPastMarker } from '../Engine/intents'
+import { seatPastMarker } from '../Engine/intents'
 import { useConnectionAutocomplete } from '../Autocomplete/useConnectionAutocomplete'
 import { AutocompletePane } from '../Autocomplete/AutocompletePane'
 import type { NavDir } from '../Engine/Tables/navigate'
@@ -50,11 +50,9 @@ const continueList = listEdit(continueListOnEnter)
 const nestList = listEdit(indentListOnTab)
 const unnestList = listEdit(outdentListOnShiftTab)
 
-// The glyph, not the parse: a marker nothing draws is prose on both surfaces, so a key that read the raw parse would act on a line showing no list at all.
 const listLineAt = (view: EditorView): ListMarker | null => {
   const scan = docScan(view.state)
-  const lm = scan.markers[lineIndexAt(scan, view.state.selection.main.from)]
-  return lm && listGlyphOf(lm) ? lm : null
+  return scan.markers[lineIndexAt(scan, view.state.selection.main.from)]
 }
 
 // A key the list holds has to be one a transform could act on. With a range selected none applies, so holding it would leave a dead key where the cell would otherwise navigate.
@@ -82,8 +80,7 @@ const joinEmptyHead = (view: EditorView): boolean => {
 const atListEnd = (view: EditorView): boolean => {
   const scan = docScan(view.state)
   for (let i = lineIndexAt(scan, view.state.selection.main.from) + 1; i < scan.lines.length; i++) {
-    const lm = scan.markers[i]
-    if (lm && listGlyphOf(lm)) return false
+    if (scan.markers[i]) return false
   }
   return true
 }

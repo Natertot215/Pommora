@@ -1,7 +1,7 @@
 import type { Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import type { BlockSpan } from '../Engine/detect'
-import { docScan, docString } from '../docCache'
+import { docScan } from '../docCache'
 import { markerIn } from '../Engine/docScan'
 import { forEachLine, shadeField, type Boundary } from './dragChrome'
 import { beginRelocateDrag, editorGestureCleanup } from './editorGesture'
@@ -60,7 +60,7 @@ function collectBoundaries(view: EditorView, block: BlockSpan): Boundary<Drop>[]
 }
 
 function clickAction(view: EditorView, pos: number): void {
-  const toggle = checkboxToggleChange(docString(view.state.doc), pos)
+  const toggle = checkboxToggleChange(docScan(view.state), pos)
   if (toggle) {
     view.dispatch({ changes: toggle, userEvent: 'input' })
     return

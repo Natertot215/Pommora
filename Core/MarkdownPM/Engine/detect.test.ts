@@ -13,7 +13,7 @@ import {
   parseListMarker,
   indentLevel,
   calloutHeadPrefixLen,
-  parseListMarkerPrefixed,
+  lineMarker,
   scanFencedCode,
   splitWithOffsets,
 } from './detect'
@@ -44,7 +44,6 @@ describe('parseListMarker (single marker source)', () => {
   it('bullet: ranges + level (2 spaces = 1 level)', () => {
     expect(parseListMarker('  - x')).toEqual({
       kind: 'bullet',
-      bullet: '-',
       level: 1,
       markerStart: 2,
       markerEnd: 3,
@@ -76,18 +75,29 @@ describe('parseListMarker (single marker source)', () => {
   it('checkbox: bracket span + checked, markerEnd at the bracket end', () => {
     expect(parseListMarker('- [x] done')).toEqual({
       kind: 'checkbox',
-      bullet: '-',
       level: 0,
       markerStart: 0,
       markerEnd: 5,
       contentStart: 6,
-      box: { start: 2, end: 5, inner: 'x' },
+      box: { start: 2, end: 5 },
       checked: true,
     })
   })
-  it('empty [] is a bullet (box present, not a checkbox); ordered "1. [ ]" stays ordered', () => {
-    expect(parseListMarker('-[] a')!.kind).toBe('bullet')
-    expect(parseListMarker('1. [ ] a')!.kind).toBe('ordered')
+  it('a box reads only after a bullet and its space, and only holding a space or an x', () => {
+    const read = (line: string) => {
+      const lm = parseListMarker(line)
+      return lm && [lm.kind, lm.contentStart]
+    }
+    expect(read('- [ ] a')).toEqual(['checkbox', 6])
+    expect(read('+ [x] a')).toEqual(['checkbox', 6])
+    expect(read('- [] x')).toEqual(['bullet', 2])
+    expect(read('1. [ ] a')).toEqual(['ordered', 3])
+    expect(read('2. [x] foo')).toEqual(['ordered', 3])
+    expect(read('→ [ ] a')).toEqual(['arrow', 2])
+  })
+  it('a box with no space ahead of it reads as plain text', () => {
+    for (const line of ['-[] x', '-[ ] x', '-[x] x', '1.[ ] a'])
+      expect(parseListMarker(line)).toBeNull()
   })
   it('only `-` and `+` bullet: `*` and `•` are prose, checkbox included', () => {
     expect(parseListMarker('- a')!.kind).toBe('bullet')
@@ -95,11 +105,11 @@ describe('parseListMarker (single marker source)', () => {
     expect(parseListMarker('* a')).toBeNull()
     expect(parseListMarker('• a')).toBeNull()
     expect(parseListMarker('* [ ] a')).toBeNull()
+    expect(parseListMarker('1) a')).toBeNull()
   })
   it('arrow: `→ ` is a list marker (the glyph IS the marker), nesting via indent', () => {
     expect(parseListMarker('→ go')).toEqual({
       kind: 'arrow',
-      bullet: '→',
       level: 0,
       markerStart: 0,
       markerEnd: 1,
@@ -121,6 +131,14 @@ describe('parseListMarker (single marker source)', () => {
     expect(indentLevel('')).toBe(0)
     expect(indentLevel('    ')).toBe(2)
     expect(indentLevel('\t\t\t\t')).toBe(3)
+  })
+  it('reads an item whatever ends its line, a carriage return or a line separator included', () => {
+    expect(parseListMarker('- a\r')?.kind).toBe('bullet')
+    expect(parseListMarker('- x\u2028y')?.kind).toBe('bullet')
+  })
+  it('reads up to nine digits as an ordinal, as standard Markdown does', () => {
+    expect(parseListMarker('123456789. a')?.kind).toBe('ordered')
+    expect(parseListMarker('1234567890. a')).toBeNull()
   })
 })
 
@@ -208,26 +226,26 @@ describe('callout detection', () => {
   })
 })
 
-describe('parseListMarkerPrefixed (lists behind a quote/callout prefix)', () => {
+describe('lineMarker (lists behind a quote/callout prefix)', () => {
   it('finds a bullet behind `> ` with full-line offsets', () => {
-    const lm = parseListMarkerPrefixed('> - item')!
+    const lm = lineMarker('> - item', undefined)!
     expect(lm.kind).toBe('bullet')
     expect(lm.markerStart).toBe(2)
     expect(lm.contentStart).toBe(4)
   })
   it('finds a checkbox behind `> ` with shifted box offsets', () => {
-    expect(parseListMarkerPrefixed('> - [x] done')).toMatchObject({
+    expect(lineMarker('> - [x] done', undefined)).toMatchObject({
       kind: 'checkbox',
       box: { start: '> - '.length },
     })
   })
   it('matches plain parseListMarker when there is no prefix', () => {
-    const lm = parseListMarkerPrefixed('1. top')!
+    const lm = lineMarker('1. top', undefined)!
     expect(lm.kind).toBe('ordered')
     expect(lm.markerStart).toBe(0)
   })
   it('does NOT strip a `>` with no space after it (not a real quote — agrees with the renderer)', () => {
-    expect(parseListMarkerPrefixed('>- x')).toBeNull()
+    expect(lineMarker('>- x', undefined)).toBeNull()
   })
 })
 

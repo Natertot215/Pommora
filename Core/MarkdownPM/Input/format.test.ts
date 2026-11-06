@@ -202,6 +202,13 @@ describe('setList', () => {
   it('switches ordered → task', () => {
     expect(listed('1. item', 'checkbox', 3, 3)).toBe('- [ ] item')
   })
+  it('keeps an ordered item’s box text, which a bullet then reads as a box', () => {
+    expect(listed('2. [x] foo', 'bullet', 4, 4)).toBe('- [x] foo')
+  })
+  it('leaves a plus as a bullet already, and a checklist pick keeps an empty box as text', () => {
+    expect(listed('+ a', 'bullet', 2, 2)).toBe('+ a')
+    expect(listed('- [] x', 'checkbox', 2, 2)).toBe('- [ ] [] x')
+  })
 
   const three = 'one\ntwo\nthree'
   it('makes every selected line its own item, and none the selection ends at the start of', () => {
@@ -273,6 +280,8 @@ describe('listKindOf', () => {
     expect(kindOf('1. a\n2. b')).toBe('ordered')
     expect(kindOf('- [x] a\n- [ ] b')).toBe('checkbox')
     expect(kindOf('→ a\n→ b')).toBe('arrow')
+    expect(kindOf('+ a\n- b')).toBe('bullet')
+    expect(kindOf('- [] x')).toBe('bullet')
   })
 
   it('is null where the markers disagree, and where there are none', () => {

@@ -70,6 +70,13 @@ describe('list continuation (Enter)', () => {
     const e = continueListOnEnter(scanDoc(doc), doc.length, doc.length)!
     expect(apply(doc, e)).toBe('- [x] done\n- [ ] ')
   })
+  it('writes a dash under a plus, whichever item it continues', () => {
+    for (const [doc, written] of [
+      ['+ a', '+ a\n- '],
+      ['+ [ ] a', '+ [ ] a\n- [ ] '],
+    ])
+      expect(apply(doc, continueListOnEnter(scanDoc(doc), doc.length, doc.length)!)).toBe(written)
+  })
   it('continues even on an empty item — no auto-exit (Enter always breeds a bullet)', () => {
     const doc = '- '
     const e = continueListOnEnter(scanDoc(doc), doc.length, doc.length)!
@@ -185,6 +192,15 @@ describe('checkbox canonicalization', () => {
   it('-[x] + space → "- [x] "', () => {
     const doc = '-[x]'
     expect(apply(doc, canonicalizeCheckbox(scanDoc(doc), 4, 4, ' ')!)).toBe('- [x] ')
+  })
+  it('writes a dash whichever bullet typed the box, keeping the indent', () => {
+    for (const [doc, written] of [
+      ['+[]', '- [ ] '],
+      ['  +[x]', '  - [x] '],
+    ])
+      expect(apply(doc, canonicalizeCheckbox(scanDoc(doc), doc.length, doc.length, ' ')!)).toBe(
+        written,
+      )
   })
   it('a fence line keeps its marker on backspace', () => {
     const doc = '```\n- [ ] \n```'
