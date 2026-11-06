@@ -24,7 +24,7 @@
 | 1 · One Scan Per Surface | -108 (+687 / -795) | 9,127 | -91 (+740 / -831), 9,134 tests |
 | 2 · Markdown Code Blocks and Masked Markers | -39 (+838 / -877), +69 its own | 9,140 | -31 (+894 / -925), 9,157 tests |
 | 3 · Blank Lines and Numbering | -126 (+1000 / -1126), -87 its own | 9,170 | -117 (+1059 / -1176), 9,192 tests |
-| 4 · Paste | -124 (+1002 / -1126), +2 its own | 9,177 | |
+| 4 · Paste | -124 (+1002 / -1126), +2 its own | 9,177 | -115 (+1061 / -1176), 9,199 tests |
 | 5 · One Marker Grammar | -173 (+1040 / -1213), -49 its own | 9,184 | |
 | 6 · One Set of List Keys, and the Scope's Name | -201 (+1108 / -1309), -28 its own | 9,185 | |
 | 7 · One Definition Per Type | -260 (+1153 / -1413), -59 its own | 9,191 | |
@@ -246,9 +246,9 @@ The order is what makes each step land once. The scan goes first, since every la
   - [x] Task 3-4 · Drive group 3
   - [x] Review Checkpoint
   - [x] Compaction Checkpoint
-- [ ] **Phase 4** — Paste
-  - [ ] Task 4-1 · Paste
-  - [ ] Task 4-2 · Drive group 4
+- [x] **Phase 4** — Paste
+  - [x] Task 4-1 · Paste
+  - [x] Task 4-2 · Drive group 4
 - [ ] **Phase 5** — One Marker Grammar
   - [ ] Task 5-1 · One grammar
   - [ ] Task 5-2 · Drive group 5
@@ -491,8 +491,8 @@ The renumber filter should take a paste, so a paste that reshapes a numbered lis
 
 **VERIFY**
 
-- [ ] `input.paste` out of the gate reads 3 red of 51, and dropping `toB` reads red on the assertion *Phase 4 — Notes* names; both restored.
-- [ ] Run the gates.
+- [x] `input.paste` out of the gate reads 3 red of 51, and dropping `toB` reads red on the assertion *Phase 4 — Notes* names; both restored.
+- [x] Run the gates.
 
 #### Task 4-2
 
@@ -502,7 +502,7 @@ The renumber filter should take a paste, so a paste that reshapes a numbered lis
 
 **VERIFY**
 
-- [ ] `node live-drive.mjs 4` reads every item passing at this task's head.
+- [x] `node live-drive.mjs 4` reads every item passing at this task's head.
 
 ---
 
