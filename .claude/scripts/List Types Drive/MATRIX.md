@@ -48,6 +48,7 @@ The drive's cases, derived from *List Consolidation — Decisions & Intention*, 
 - **The word rule's character classes past those a user types:** `𝒶'b` stays with `inlineScope.test.tsx`; a press can't land one half of an astral letter reliably.
 - **The info pane in group 9:** nothing mounts `InfoButton` today, so no surface draws one to press; `editorMenu.test.tsx` holds the bubble stop.
 - **A window tab and an embed in group 9:** both mount the unentered tile's read-only editor; the tile, the reader, and a glance cover the short menu's three routes in.
+- **A Text value's resting draw, its disk, Escape, and the × in group 10:** a Text value owns them, so the Text Property Drive holds G-3, G-4, G-7, G-8, G-11, G-12, G-13, and G-10's closes, and group 10 holds what a list does on the pane and that the field stays plain.
 
 #### Group 1 — One Scan Per Surface
 
@@ -278,3 +279,26 @@ The menu stays up between a press and its choice, so a seat's highlight is read 
 | A glyph inside and outside a selection | A page | pick | its group | D-2 |
 | A glyph, a revealed marker, blank past a line | A page | press | the caret stays; the glyph's reach; acts at the point | E-7 |
 | The Settings row | Settings | read, turn off | sits under Outliner Lines, and a pick follows without a reload | D-1 |
+
+#### Group 10 — Text Properties
+
+Group 10 holds a list on a Text value's surfaces. The value itself, at rest and on disk, is the Text Property Drive's.
+
+| Case | Surface | Operation | Expected | Decisions |
+| --- | --- | --- | --- | --- |
+| `- item` typed on the first line | The pane | type | a list | G-2 |
+| Each type | The pane | read | its glyphs and text | G-1 |
+| Group 6's whole table | The pane | key | as on a page | G-10 |
+| A plain line | The pane | Enter at its end and middle, Tab | breaks; holds | G-10 |
+| The last item | The pane | Shift-Enter | a plain break | G-10 |
+| Every key | The pane | read | it stays open | G-10 |
+| A number | The pane | Enter, ⌘Z | recounts; one ⌘Z takes both | G-10 |
+| An empty line | The pane | type `/bul` | no menu | G-10 |
+| A glyph | The pane | right-click, pick | the type menu, its group | G-10 |
+| A word in a list | The pane | right-click, Lists ▸ | Lists ▸ beside Format ▸, Bulleted checked, the pick writes | G-1 |
+| The example | The pane | a glyph, Preserve on and off | the group; the group and what nests | G-10 |
+| The grip | The pane | right-click, Format ▸, Delete | every item in its block; the block | G-10 |
+| Glyph drags, flat and numbered | The pane | drag | the item moves and recounts, and the pane stays | G-10 |
+| A grip drag | The pane | drag | the block moves over `moveRange`'s blank | G-10 |
+| A nested list | The pane | Outliner Lines off and on | no rail; a rail | G-10 |
+| `- milk`, `- eggs` | The one-line field | open | its dash, no item, glyph, or grip | G-5 |

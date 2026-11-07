@@ -234,7 +234,7 @@ const ROWS_ON_SCREEN = `(() => {
   const read = (c) => c.querySelector('.cell-checkbox')
     ? c.querySelector('.cell-checkbox').classList.contains('checkbox-checked')
     : c.querySelector('.cell-chips') ? chips(c).join('|')
-    : c.querySelector('.cell-text') ? [...c.querySelectorAll('.cell-text-line')].map((l) => l.textContent).join('\\n') : c.textContent.trim()
+    : c.querySelector('.cell-text')?.textContent ?? c.textContent.trim()
   return Object.fromEntries([...document.querySelectorAll('.data-row[data-rid]')].map((r) => [r.dataset.rid, [...r.querySelectorAll('.data-cell')].slice(1).map(read)]))
 })()`
 const SCROLLER = `(() => { let e = document.querySelector('.data-row'); while (e && !(e.scrollHeight > e.clientHeight && /auto|scroll/.test(getComputedStyle(e).overflowY))) e = e.parentElement; return e })()`
@@ -421,7 +421,7 @@ async function group2(cdp) {
     ['foo', 'foo', 'bar', 'bar'], ["'foo'", 'foo', 'bar', "'bar'"], ['"foo"', 'foo', 'bar', '"bar"'], ['foo', 'foo', 'foo', 'foo'],
     ["'foo'", 'foo', 'foo', "'foo'"], ['"foo"', 'foo', 'foo', '"foo"'], ['42', '42', '43', '"43"'], ['"42"', '42', '43', '"43"'],
     ["'it''s'", "it's", "don't", "'don''t'"], ["'x'", 'x', 'y: z', "'y: z'"], ['foo', 'foo', "'foo'", `"'foo'"`],
-    [`"'foo'"`, "'foo'", "'foo'", `"'foo'"`], ['[a, b]', '[a, b]', '[a, b]', '[a, b]'],
+    [`"'foo'"`, "'foo'", "'foo'", `"'foo'"`], ['[a, b]', '•a', '- a\n- b', '[a, b]'],
   ])
     row('Note', 'A-3', C.note, `M2 Note: ${held}`, shown, [set('text', next), `M2 Note: ${want}`])
 

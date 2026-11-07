@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process'
 import {
-  ALT, ask, boxOf, chooseNative, clicks, closePageWindow, closeSettings, createPage, hover, item, launch, META, mouseAt, must, openCollection, openPage, openSettings, PAGE_VIEW, pickNative, popNative, press, pressKey, restore, row, SHIFT, shot, sleep, sweep, SWITCH, tally, typeText, until, writeBody,
+  ALT, ask, boxOf, chooseNative, clicks, closePageWindow, closeSettings, createPage, hover, item, launch, META, mouseAt, must, openCollection, openField, openPage, openPane, openSettings, PAGE_VIEW, PANE, PANE_VIEW, pickNative, popNative, press, pressKey, restore, row, SHIFT, shot, sleep, sweep, SWITCH, tally, typeText, until, writeBody,
 } from '../drive-harness.mjs'
 
 const PORT = 9413
@@ -768,53 +768,54 @@ async function group5(cdp) {
 
 // ── Group 6 — One Set of List Keys ──────────────────────────────────────────
 
-async function group6(cdp) {
-  const docIn = (view) => cdp.evaluate(`${view}.state.doc.toString()`)
-  const seatIn = (view, past) => cdp.evaluate(`(() => { const v = ${view}; v.focus(); v.dispatch({ selection: { anchor: v.state.doc.toString().indexOf(${show(past)}) + ${past.length} } }) })()`)
-  const onCell = async (decision, name, seed, past, key, want) => {
-    await cdp.evaluate(`(() => { const v = ${CELL_VIEW}; v.dispatch({ changes: { from: 0, to: v.state.doc.length, insert: ${show(seed)} } }) })()`)
-    await seatIn(CELL_VIEW, past)
-    await sleep(150)
-    await key(cdp)
-    const got = await docIn(CELL_VIEW)
-    item(6, decision, name, got === want, show(got))
+const docIn = (cdp, view) => cdp.evaluate(`${view}.state.doc.toString()`)
+const seatIn = (cdp, view, past) => cdp.evaluate(`(() => { const v = ${view}; v.focus(); v.dispatch({ selection: { anchor: v.state.doc.toString().indexOf(${show(past)}) + ${past.length} } }) })()`)
+// `stroke`'s form for a view that outlives its seeds, a focused cell's or a pane's.
+const strokeIn = (cdp, group, view) => async (decision, name, seed, past, key, want) => {
+  await cdp.evaluate(`(() => { const v = ${view}; v.dispatch({ changes: { from: 0, to: v.state.doc.length, insert: ${show(seed)} } }) })()`)
+  await seatIn(cdp, view, past)
+  await sleep(150)
+  await key(cdp)
+  const got = await docIn(cdp, view)
+  item(group, decision, name, got === want, show(got))
+}
+// Every key a list claims, for every type, on one surface.
+async function typeKeys(cdp, decision, surface, view, run) {
+  for (const { name, marker } of TYPES) {
+    const [m1, m2, m3] = [marker(1), marker(2), marker(3)]
+    const keys = (key, seed, past, press, want) => run(decision, `${surface}, ${name}: ${key}`, seed, past, press, want)
+    const two = `${m1}ab\n${m2}cd`
+    await keys('Enter at the end', two, `${m1}ab`, ENTER, `${m1}ab\n${m2}\n${m3}cd`)
+    await keys('Enter mid-item', two, `${m1}a`, ENTER, `${m1}a\n${m2}b\n${m3}cd`)
+    await keys('Enter at the start of the text', two, m1, ENTER, `${m1}\n${m2}ab\n${m3}cd`)
+    await keys('Enter on an empty item', `${m1}ab\n${m2}`, `${m1}ab\n${m2}`, ENTER, `${m1}ab\n${m2}\n${m3}`)
+    await keys('Tab', two, `${m2}c`, TAB, `${m1}ab\n\t${m1}cd`)
+    await keys('Tab at the cap', `${m1}a\n\t${m1}b\n\t\t${m1}c\n\t\t\t${m1}d`, `\t\t\t${m1}d`, TAB, `${m1}a\n\t${m1}b\n\t\t${m1}c\n\t\t\t${m1}d`)
+    await keys('Shift-Tab', `${m1}ab\n\t${m1}cd`, `\t${m1}c`, SHIFT_TAB, two)
+    await keys('Shift-Tab at the top level', two, `${m2}c`, SHIFT_TAB, two)
+    await keys("Backspace at the marker's end", two, `ab\n${m2}`, BACKSPACE, `${m1}ab\ncd`)
+    await keys('Backspace inside the marker', two, `ab\n${m2[0]}`, BACKSPACE, `${m1}ab\ncd`)
+    await keys("Delete at an item's end joins raw", two, `${m1}ab`, DELETE, `${m1}ab${m2}cd`)
+    await keys('Delete inside the text', two, `${m1}a`, DELETE, `${m1}a\n${m2}cd`)
+    await keys('Shift-Enter above the last item', two, `${m1}ab`, SHIFT_ENTER, `${m1}ab\n\n${m2}cd`)
+    const selectLine = async (c) => { await cdp.evaluate(`(() => { const v = ${view}; const d = v.state.doc.toString(); const a = d.indexOf(${show(`${m2}cd\n`)}); v.dispatch({ selection: { anchor: a, head: a + ${`${m2}cd\n`.length} } }) })()`); await sleep(150); await BACKSPACE(c) }
+    await run(decision, `${surface}, ${name}: a whole line's deletion`, `${m1}ab\n${m2}cd\n${m3}ef`, m1, selectLine, `${m1}ab\n${m2}ef`)
   }
-  const onPage = (decision, name, seed, past, key, want) => stroke(cdp, 6, decision, name, seed, past, key, want)
+  await run(decision, `${surface}: Enter under a checked box writes an open one`, '- [x] ab', '- [x] ab', ENTER, '- [x] ab\n- [ ] ')
+  await run(decision, `${surface}: Tab on a middle number recounts the run it leaves`, '1. ab\n2. cd\n3. ef', '2. c', TAB, '1. ab\n\t1. cd\n2. ef')
+}
 
-  for (const [surface, view, run] of [['a page', PAGE_VIEW, onPage], ['a focused cell', CELL_VIEW, onCell]]) {
-    if (run === onCell) {
-      await setBody(cdp, table('zz'))
-      await enterCell(cdp, 'zz')
-    }
-    for (const { name, marker } of TYPES) {
-      const [m1, m2, m3] = [marker(1), marker(2), marker(3)]
-      const keys = (key, seed, past, press, want) => run('G-9', `${surface}, ${name}: ${key}`, seed, past, press, want)
-      const two = `${m1}ab\n${m2}cd`
-      await keys('Enter at the end', two, `${m1}ab`, ENTER, `${m1}ab\n${m2}\n${m3}cd`)
-      await keys('Enter mid-item', two, `${m1}a`, ENTER, `${m1}a\n${m2}b\n${m3}cd`)
-      await keys('Enter at the start of the text', two, m1, ENTER, `${m1}\n${m2}ab\n${m3}cd`)
-      await keys('Enter on an empty item', `${m1}ab\n${m2}`, `${m1}ab\n${m2}`, ENTER, `${m1}ab\n${m2}\n${m3}`)
-      await keys('Tab', two, `${m2}c`, TAB, `${m1}ab\n\t${m1}cd`)
-      await keys('Tab at the cap', `${m1}a\n\t${m1}b\n\t\t${m1}c\n\t\t\t${m1}d`, `\t\t\t${m1}d`, TAB, `${m1}a\n\t${m1}b\n\t\t${m1}c\n\t\t\t${m1}d`)
-      await keys('Shift-Tab', `${m1}ab\n\t${m1}cd`, `\t${m1}c`, SHIFT_TAB, two)
-      await keys('Shift-Tab at the top level', two, `${m2}c`, SHIFT_TAB, two)
-      await keys("Backspace at the marker's end", two, `ab\n${m2}`, BACKSPACE, `${m1}ab\ncd`)
-      await keys('Backspace inside the marker', two, `ab\n${m2[0]}`, BACKSPACE, `${m1}ab\ncd`)
-      await keys("Delete at an item's end joins raw", two, `${m1}ab`, DELETE, `${m1}ab${m2}cd`)
-      await keys('Delete inside the text', two, `${m1}a`, DELETE, `${m1}a\n${m2}cd`)
-      await keys('Shift-Enter above the last item', two, `${m1}ab`, SHIFT_ENTER, `${m1}ab\n\n${m2}cd`)
-      const selectLine = async (c) => { await cdp.evaluate(`(() => { const v = ${view}; const d = v.state.doc.toString(); const a = d.indexOf(${show(`${m2}cd\n`)}); v.dispatch({ selection: { anchor: a, head: a + ${`${m2}cd\n`.length} } }) })()`); await sleep(150); await BACKSPACE(c) }
-      await run('G-9', `${surface}, ${name}: a whole line's deletion`, `${m1}ab\n${m2}cd\n${m3}ef`, m1, selectLine, `${m1}ab\n${m2}ef`)
-    }
-    await run('G-9', `${surface}: Enter under a checked box writes an open one`, '- [x] ab', '- [x] ab', ENTER, '- [x] ab\n- [ ] ')
-    await run('G-9', `${surface}: Tab on a nested number recounts the run it leaves`, '1. ab\n2. cd\n3. ef', '2. c', TAB, '1. ab\n\t1. cd\n2. ef')
-    if (run === onCell) await leaveCell(cdp)
-  }
+async function group6(cdp) {
+  await typeKeys(cdp, 'G-9', 'a page', PAGE_VIEW, (decision, name, seed, past, key, want) => stroke(cdp, 6, decision, name, seed, past, key, want))
+  await setBody(cdp, table('zz'))
+  await enterCell(cdp, 'zz')
+  await typeKeys(cdp, 'G-9', 'a focused cell', CELL_VIEW, strokeIn(cdp, 6, CELL_VIEW))
+  await leaveCell(cdp)
 
   await stroke(cdp, 6, 'G-9', "a page: Shift-Enter on the last item breaks the line", '- ab\n- cd', '- cd', SHIFT_ENTER, '- ab\n- cd\n')
   await setBody(cdp, table('- ab<br>- cd'))
   await enterCell(cdp, 'ab')
-  await seatIn(CELL_VIEW, '- cd')
+  await seatIn(cdp, CELL_VIEW, '- cd')
   await sleep(150)
   await SHIFT_ENTER(cdp)
   await sleep(300)
@@ -823,12 +824,12 @@ async function group6(cdp) {
 
   await setBody(cdp, table('1. ab<br>2. cd'))
   await enterCell(cdp, 'ab')
-  await seatIn(CELL_VIEW, '1. ab')
+  await seatIn(cdp, CELL_VIEW, '1. ab')
   await sleep(150)
   await ENTER(cdp)
   await sleep(300)
   const stays = await cdp.evaluate(`!!${LIVE_CELL}`)
-  const recounted = await docIn(CELL_VIEW)
+  const recounted = await docIn(cdp, CELL_VIEW)
   await pressKey(cdp, 'z', META)
   await sleep(300)
   await leaveCell(cdp)
@@ -1356,6 +1357,121 @@ async function rightClicks(cdp, setClip, getClip) {
   await setting(cdp, true)
 }
 
+// ── Group 10 — Text Properties ──────────────────────────────────────────────
+
+async function group10(cdp) {
+  await setting(cdp, true)
+  const VALUE = 'LT Value'
+  const { created } = await must('LT Notes', ask(cdp, 'mutate', { op: 'addProperty', containerPath: 'Collection A', draft: { label: 'LT Notes', type: 'text' } }))
+  const notes = created.propertyId
+  await must('its column', ask(cdp, 'views:save', 'Collection A', 'collection', { id: VIEW_ID, name: 'LT Table', type: 'table', property_order: ['_title'], hidden_properties: [] }, { property_order: ['_title', notes] }))
+  await createPage(cdp, VALUE, { [notes]: { kind: 'text', value: 'plain' } })
+  await openCollection(cdp)
+  await until('the value row', () => cdp.evaluate(`!!${row(VALUE)}`))
+  const value = `${row(VALUE)}.querySelectorAll('.data-cell')[1]`
+  await until('the value cell', () => cdp.evaluate(`!!(${value})`))
+  const PANE_TEXT = `${PANE_VIEW}.contentDOM`
+  const paneUp = () => cdp.evaluate(`!!document.querySelector(${show(PANE)})`)
+  const seedPane = async (doc, past = doc) => {
+    await cdp.evaluate(`(() => { const v = ${PANE_VIEW}; v.dispatch({ changes: { from: 0, to: v.state.doc.length, insert: ${show(doc)} } }) })()`)
+    await seatIn(cdp, PANE_VIEW, past)
+    await sleep(300)
+  }
+  const paneDocNow = () => docIn(cdp, PANE_VIEW)
+  const paneLine = (text) => `[...${PANE_TEXT}.querySelectorAll('.cm-line')].find((l) => l.textContent.includes(${show(text)}))`
+  const paneGlyph = (text) => `(${paneLine(text)}).querySelector(${show(S.glyph)})`
+
+  await openPane(cdp, value)
+  await seedPane('', '')
+  for (const key of ['-', ' ', 'item']) await type(key)(cdp)
+  const typed = await drawnIn(cdp, PANE_TEXT)
+  item(10, 'G-2', '`- item` typed on a value\'s first line makes a list', show(typed) === show(['• item']) && (await paneDocNow()) === '- item', show([typed, await paneDocNow()]))
+  for (const t of TYPES) {
+    await seedPane(t.source)
+    const got = await drawnIn(cdp, PANE_TEXT)
+    item(10, 'G-1', `the pane draws ${t.name}'s glyphs and text`, show(got) === show(t.drawn), show(got))
+  }
+  await shot(cdp, 'g10-pane-types')
+
+  const run = strokeIn(cdp, 10, PANE_VIEW)
+  await typeKeys(cdp, 'G-10', 'the pane', PANE_VIEW, run)
+  await run('G-10', 'Enter breaks a plain line at its end', 'plain', 'plain', ENTER, 'plain\n')
+  await run('G-10', 'Enter breaks a plain line in its middle', 'plain', 'pl', ENTER, 'pl\nain')
+  await run('G-10', 'Shift-Enter stays a plain break on the last item', '- ab', '- ab', SHIFT_ENTER, '- ab\n')
+  await run('G-10', 'Tab on a plain line holds', 'plain', 'plain', TAB, 'plain')
+  item(10, 'G-10', 'the keys leave the pane open', await paneUp(), 'closed')
+  await seedPane('1. a\n2. b', '1. a')
+  await ENTER(cdp)
+  const recount = await paneDocNow()
+  await pressKey(cdp, 'z', META)
+  await sleep(300)
+  item(10, 'G-10', 'Enter recounts in the pane, and one ⌘Z takes both', recount === '1. a\n2. \n3. b' && (await paneDocNow()) === '1. a\n2. b', show([recount, await paneDocNow()]))
+
+  await seedPane('', '')
+  await typeText(cdp, '/bul')
+  await sleep(500)
+  const slash = await cdp.evaluate(`!!document.querySelector(${show(S.blockMenu)})`)
+  item(10, 'G-10', 'the / menu stays out of the pane', !slash && (await paneDocNow()) === '/bul', show([slash, await paneDocNow()]))
+
+  await seedPane('- pa\n- pb', '- pb')
+  const glyph = await pop(cdp, await boxOf(cdp, paneGlyph('pa')), ['Numbered'])
+  item(10, 'G-10', "the pane's glyph opens the type menu and acts on its group", show(flat(glyph.rows)) === show(typeRows('Bulleted')) && (await paneDocNow()) === '1. pa\n2. pb', `${seen(glyph)} · ${show(await paneDocNow())}`)
+  await seedPane('- pa\n- pb', '- pb')
+  const lists = await pop(cdp, await textAt(cdp, PANE_TEXT, 'pa'), listPath('Checklist'))
+  item(10, 'G-1', "the pane's right-click holds Lists ▸ beside Format ▸, Bulleted checked, and its pick writes", show(flat(listsRows(lists.rows))) === show(typeRows('Bulleted')) && flat(lists.rows).includes('Format ▸') && (await paneDocNow()) === '- [ ] pa\n- [ ] pb', `${seen(lists)} · ${show(await paneDocNow())}`)
+
+  await seedPane(EXAMPLE, '- F')
+  await pop(cdp, await boxOf(cdp, paneGlyph('B')), ['Numbered'])
+  item(10, 'G-10', 'Preserve on: the pane\'s glyph acts on its group', (await paneDocNow()) === '- A\n\t1. B\n\t\t- C\n\t\t- D\n\t2. E\n- F', show(await paneDocNow()))
+  await setting(cdp, false)
+  await seedPane(EXAMPLE, '- F')
+  await pop(cdp, await boxOf(cdp, paneGlyph('E')), ['Numbered'])
+  item(10, 'G-10', 'Preserve off: the pane\'s glyph reaches what nests under its group', (await paneDocNow()) === '- A\n\t1. B\n\t\t1. C\n\t\t2. D\n\t2. E\n- F', show(await paneDocNow()))
+  await setting(cdp, true)
+
+  await seedPane(EXAMPLE, '- F')
+  const handle = `${PANE_TEXT}.querySelector(${show(S.grip)})`
+  const grip = await gripPick(cdp, handle, [])
+  item(10, 'G-10', "the pane's list grip reads Format ▸ and Delete", show(flat(grip.rows)) === show(['Format ▸', '—', 'Delete']), seen(grip))
+  await gripPick(cdp, handle, gripPath('Numbered'))
+  item(10, 'G-10', "the pane's grip changes every item in its block", (await paneDocNow()) === '1. A\n\t1. B\n\t\t1. C\n\t\t2. D\n\t2. E\n2. F', show(await paneDocNow()))
+  await seedPane('- pa\n- pb\n\nplain', 'plain')
+  await gripPick(cdp, handle, ['Delete'])
+  item(10, 'G-10', "the pane's grip Delete takes its block", (await paneDocNow()).trim() === 'plain', show(await paneDocNow()))
+
+  await seedPane('- one\n- two\n- three', '- three')
+  await dragTo(cdp, paneGlyph('three'), paneLine('one'), 'above')
+  item(10, 'G-10', 'a glyph drags in the pane, and the pane stays', (await paneDocNow()) === '- three\n- one\n- two' && (await paneUp()), show(await paneDocNow()))
+  await seedPane('1. a\n2. b\n3. c', '3. c')
+  await dragTo(cdp, paneGlyph('a'), paneLine('c'), 'below')
+  item(10, 'G-10', 'a numbered drag in the pane recounts', (await paneDocNow()) === '1. b\n2. c\n3. a', show(await paneDocNow()))
+  await seedPane('- a\n\t- b\nplain\n- c', '- c')
+  const blockTop = await boxOf(cdp, paneLine('a'))
+  const lastLine = `[...${PANE_TEXT}.querySelectorAll(${show(S.grip)})].at(-1)`
+  await sweep(cdp, await gripAt(cdp, lastLine), { x: blockTop.x, y: blockTop.top + 1 }, { steps: 8 })
+  item(10, 'G-10', "a grip drags a block in the pane, seating `moveRange`'s blank, and the pane stays", (await paneDocNow()) === '- c\n\n- a\n\t- b\nplain' && (await paneUp()), show(await paneDocNow()))
+
+  const paneRails = () => cdp.evaluate(`[...${PANE_TEXT}.querySelectorAll(${show(S.rail)})].filter((r) => r.getBoundingClientRect().height > 0).length`)
+  await seedPane('- ra\n\t- rb\n\t- rc', '- rc')
+  const railsOff = await paneRails()
+  await outliner(cdp, true)
+  await sleep(400)
+  const railsOn = await paneRails()
+  await shot(cdp, 'g10-pane-rails')
+  await outliner(cdp, false)
+  item(10, 'G-10', 'rails draw in the pane with Outliner Lines on, and not off', railsOff === 0 && railsOn > 0, show([railsOff, railsOn]))
+  await seedPane('plain')
+  await pressKey(cdp, 'Escape')
+  await until('the pane closed', async () => !(await paneUp()))
+
+  await must('a list value', ask(cdp, 'mutate', { op: 'setProperty', path: `Collection A/Set Alpha/${VALUE}.md`, propertyId: notes, value: { kind: 'text', value: '- milk\n- eggs' } }))
+  await sleep(700)
+  await openField(cdp, value)
+  const plainField = await cdp.evaluate(`(() => { const c = document.querySelector('.value-field .cm-content'); return { text: c.textContent, items: c.querySelectorAll(${show(S.item)}).length, glyphs: c.querySelectorAll(${show(S.glyph)}).length, grips: c.querySelectorAll(${show(S.grip)}).length } })()`)
+  await pressKey(cdp, 'Escape')
+  item(10, 'G-5', 'the one-line field stays plain, a list value showing its dash', plainField.text === '- milk' && plainField.items === 0 && plainField.glyphs === 0 && plainField.grips === 0, show(plainField))
+}
+
 // ── The run ─────────────────────────────────────────────────────────────────
 
 const GROUPS = {
@@ -1368,6 +1484,7 @@ const GROUPS = {
   7: ['One Definition Per Type', group7],
   8: ['The Word Rule', group8],
   9: ['Right-Click', group9],
+  10: ['Text Properties', group10],
 }
 const chosen = process.argv.slice(2).map(Number)
 if (chosen.length === 0 || chosen.some((g) => !GROUPS[g])) {

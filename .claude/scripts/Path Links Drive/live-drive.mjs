@@ -358,12 +358,18 @@ async function group1(cdp) {
   }
   await shot(cdp, 'g1-table')
 
-  // A Text value: every line resting in its table cell, then in TextPane.
+  // A Text value: each case on the first line, the only line a resting cell draws, then every line in TextPane.
+  const textValue = (value) => must('the Text value', ask(cdp, 'mutate', { op: 'setProperty', path: PROSE, propertyId: props[TEXT], value: { kind: 'text', value } }))
   await home(cdp)
   for (const [tag, src, status, shown, decision, opts = {}] of CASES) {
-    const d = await cdp.evaluate(`(() => { const t = (${cellOf(PROSE, TEXT)}).querySelector('.cell-text'); const l = t && [...t.querySelectorAll('.cell-text-line')].find((l) => l.textContent.startsWith('${tag} ')); return l ? (${DRAWN})(l, '${tag}') : null })()`)
+    await textValue(`${tag} ${src}`)
+    await until(`${tag} at rest`, () => cdp.evaluate(`!!(${cellOf(PROSE, TEXT)}).querySelector('.cell-text')?.textContent.startsWith('${tag} ')`))
+    await sleep(150)
+    const d = await cdp.evaluate(`(${DRAWN})((${cellOf(PROSE, TEXT)}).querySelector('.cell-text'), '${tag}')`)
     item(1, 1, decision.split(' ')[0], `Text value (resting cell): ${src} reads ${status}, drawing "${shown}"`, drawnOk(d, status, shown, opts), show(d))
   }
+  await textValue(caseLines(CASES))
+  await sleep(500)
   await openPane(cdp, cellOf(PROSE, TEXT))
   for (const [tag, src, status, shown, decision, opts = {}] of CASES) {
     const d = await editorLine(cdp, PANE_VIEW, tag)
@@ -403,12 +409,16 @@ async function group1(cdp) {
   item(1, 1, 'A-4', 'Properties panel: [[Set Alpha/Notes]] reads ambiguous, drawing "Notes"', drawnOk(panel4, 'ambiguous', 'Notes'), show(panel4))
   await closePanel(cdp)
   await home(cdp)
+  await textValue(`c02 ${CASES[1][1]}`)
+  await sleep(500)
   await openRow(cdp, PROSE)
   await openPanel(cdp)
-  const panelText = await cdp.evaluate(`(() => { const t = (${panelRow(TEXT)})?.querySelector('.cell-text'); const l = t && [...t.querySelectorAll('.cell-text-line')].find((l) => l.textContent.startsWith('c02 ')); return l ? (${DRAWN})(l, 'c02') : null })()`)
+  const panelText = await cdp.evaluate(`(() => { const t = (${panelRow(TEXT)})?.querySelector('.cell-text'); return t ? (${DRAWN})(t, 'c02') : null })()`)
   item(1, 1, 'B-1', 'Properties panel: the Text value draws [[Collection A/Set Alpha/Notes]] as "Notes", resolved', drawnOk(panelText, 'resolved', 'Notes'), show(panelText))
   await closePanel(cdp)
   await home(cdp)
+  await textValue(caseLines(CASES))
+  await sleep(500)
 
   // Committing a Link value: a path is accepted and carries its title, a shared bare title is refused.
   for (const [typed, want, decision, name] of [

@@ -22,7 +22,9 @@ foreign number or list, the spellings each commit writes, sort, filter, and the 
 the value surfaces (live connections, the pen, the glance, and Link's own-page heading) on the
 Table, both Card formats, and the Properties panel; the index and the rename cascade reaching the
 links inside a value; and TextPane (keys, autocomplete, formatting, the native menu, every
-way it saves, and style parity with the page body). It takes the groups to run as arguments —
+way it saves, and style parity with the page body). It owns what a Text value holds, at rest and on
+disk: a list's glyph and its running-on mark, a box taking no press, and a YAML list's shape. What a
+list does inside the pane is the List Types Drive's group 10. It takes the groups to run as arguments —
 `node live-drive.mjs 1 2` — and asserts each step in the page files, the view sidecar, the DOM, or
 a channel's reply. It seeds `Collection A/Set Alpha` with its properties, views, and `Drive …` pages
 on debug port 9353.

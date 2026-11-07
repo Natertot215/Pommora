@@ -569,7 +569,7 @@ async function group3(cdp) {
   await until('the TextPane closed', () => cdp.evaluate(`!document.querySelector('${PANE}')`))
   await must('Drive Host restored', ask(cdp, 'mutate', { op: 'setProperty', path: pagePath(HOST), propertyId: ids[NOTES], value: { kind: 'text', value: 'host notes' } }))
 
-  // TextPane: Enter with the caret in an authored slot rests past the link and remembers the alias; the second Enter closes the pane.
+  // TextPane: Enter with the caret in an authored slot rests past the link and remembers the alias; the second Enter breaks the line, and Escape closes the pane.
   await openPane(cdp, cell(HOST, NOTES))
   await openStage(cdp, PANE_VIEW)
   await typeText(cdp, 'zzq')
@@ -578,8 +578,10 @@ async function group3(cdp) {
   const pastLink = `${PANE_VIEW}.state.doc.toString() === ${JSON.stringify(AUTHORED)} && ${PANE_VIEW}.state.selection.main.head === ${AUTHORED.length}`
   await step(cdp, 'group 3: TextPane: Enter with the caret in an authored slot', () => pressKey(cdp, 'Enter'), { reflect: pastLink, writes: writes1 })
   check('group 3: TextPane: Enter in an authored slot rests past the link, keeps the pane, and the alias joins the end', (await cdp.evaluate(`!!document.querySelector('${PANE}') && ${pastLink}`)) && same(aliasesOf(TARGET), [...list, 'zzq']), JSON.stringify([await docOf(cdp, PANE_VIEW), aliasesOf(TARGET)]))
-  await step(cdp, 'group 3: TextPane: a second Enter past the link', () => pressKey(cdp, 'Enter'), { reflect: `!document.querySelector('${PANE}')`, writes, window: 2000 })
-  check('group 3: TextPane: a second Enter closes the pane, the value lands, and the alias is remembered once', (await settles(async () => String(frontmatter(HOST)[NOTES]).includes(AUTHORED))) && same(aliasesOf(TARGET), [...list, 'zzq']), JSON.stringify([frontmatter(HOST)[NOTES], aliasesOf(TARGET)]))
+  await pressKey(cdp, 'Enter')
+  check('group 3: TextPane: a second Enter past the link breaks the line, and the pane stays', (await docOf(cdp, PANE_VIEW)) === `${AUTHORED}\n` && (await cdp.evaluate(`!!document.querySelector('${PANE}')`)), await docOf(cdp, PANE_VIEW))
+  await step(cdp, 'group 3: TextPane: Escape past the link', () => pressKey(cdp, 'Escape'), { reflect: `!document.querySelector('${PANE}')`, writes, window: 2000 })
+  check('group 3: TextPane: Escape closes the pane, the value lands, and the alias is remembered once', (await settles(async () => String(frontmatter(HOST)[NOTES]).includes(AUTHORED))) && same(aliasesOf(TARGET), [...list, 'zzq']), JSON.stringify([frontmatter(HOST)[NOTES], aliasesOf(TARGET)]))
   await must('forget zzq', editAliases(cdp, TARGET, { op: 'forget', alias: 'zzq' }))
   await must('Drive Host restored', ask(cdp, 'mutate', { op: 'setProperty', path: pagePath(HOST), propertyId: ids[NOTES], value: { kind: 'text', value: 'host notes' } }))
 
