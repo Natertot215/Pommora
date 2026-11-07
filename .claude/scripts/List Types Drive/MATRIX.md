@@ -176,10 +176,10 @@ Every paste goes through the app's paste event with `text/plain`, and every item
 | `* a`, `1) a` | The same | read | plain text | B-1 |
 | `+ p` | A page, a resting cell | the glyph, Lists ▸ | Bulleted checked | B-1 |
 | `- [] p` | A page | the glyph | Bulleted checked | B-1 |
-| `+ a`, `+ [ ] a` | A page | Enter | `- `, `- [ ] ` | B-4 |
+| `+ a`, `+ [x] a` | A page | Enter | `+ `, `+ [ ] ` | B-4 |
 | `- [] x`, `9. a` | A page | Enter | `- `, `10. ` | B-1 |
-| `-[]`, `+[]`, `-[x]`, `  +[x]` | A page | a space | `- [ ] `, `- [ ] `, `- [x] `, `  - [x] ` | B-2 |
-| `+[]` | A focused cell | a space | `- [ ] ` | B-2 |
+| `-[]`, `+[]`, `-[x]`, `  +[x]` | A page | a space | `- [ ] `, `+ [ ] `, `- [x] `, `  + [x] ` | B-2 |
+| `+[]` | A focused cell | a space | `+ [ ] ` | B-2 |
 | `2. [x] foo`, `1. [ ] a` | A page | Bulleted | a real box | B-3, F-1 |
 | `+ a` | A page | Bulleted | stays `+ a` | B-4 |
 | `- [] x` | A page | Checklist | `- [ ] [] x` | B-1 |

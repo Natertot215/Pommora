@@ -13,6 +13,7 @@ import {
   inCodeAt,
   inCodeNear,
   inlineRange,
+  leadOf,
   spanAt,
   type DocScan,
 } from '../Engine/docScan'
@@ -31,10 +32,8 @@ import {
 } from '../Engine/markdownCode'
 import {
   isBlank,
-  LIST_TYPES,
   MAX_NESTING_LEVEL,
   calloutHeadPrefixLen,
-  codeSeat,
   headingParts,
   fenceBodyStart,
   signedLine,
@@ -56,14 +55,7 @@ export interface Edit extends TextEdit {
   relist?: boolean
 }
 
-const shorthandCheckboxRe = /^([ \t]*)[-+]\[([ xX]?)\]$/
-
-/** What stands before line `k`'s own text: inside a code block its fence's lead and any diff sign, elsewhere its quote. */
-export function leadOf(scan: DocScan, k: number): string {
-  const line = scan.lines[k]
-  const f = scan.fences[k]
-  return f ? line.slice(0, codeSeat(line, f)) : scan.quotes[k] ? quotePrefix(line) : ''
-}
+const shorthandCheckboxRe = /^([ \t]*)([-+])\[([ xX]?)\]$/
 
 function listLineAt(
   scan: DocScan,
@@ -83,9 +75,13 @@ export function continueListOnEnter(scan: DocScan, selStart: number, selEnd: num
   const { ls, line, pfx, lm } = at
   if (selStart < ls + lm.contentStart) return null
 
-  // Enter ALWAYS continues the list, even on an empty item — the exits are Shift+Enter and Backspace on the empty marker.
+  // Enter ALWAYS continues the list, even on an empty item — the exits are Shift+Enter and Backspace on the empty marker. The new item takes the marker as written, a task's box emptied, and the renumber filter counts a sequenced one.
   const indent = line.slice(pfx.length, lm.markerStart)
-  const insert = `\n${pfx}${indent}${LIST_TYPES[lm.kind].marker}`
+  const marker =
+    lm.kind === 'checkbox'
+      ? `${line.slice(lm.markerStart, lm.boxStart)}[ ] `
+      : `${line.slice(lm.markerStart, lm.markerEnd)} `
+  const insert = `\n${pfx}${indent}${marker}`
   return { from: selStart, to: selStart, insert, selection: selStart + insert.length, relist: true }
 }
 
@@ -255,9 +251,9 @@ export function canonicalizeCheckbox(
   const from = scan.lineStarts[k] + leadOf(scan, k).length
   const m = shorthandCheckboxRe.exec(scan.text.slice(from, selStart))
   if (m === null) return null
-  const [, ws, inner] = m
+  const [, ws, bullet, inner] = m
   // The trailing space is the task-list grammar's own requirement, not decoration: without it the line reads as a bullet holding `[ ]`.
-  const gfm = `${ws}- [${inner.toLowerCase() === 'x' ? 'x' : ' '}] `
+  const gfm = `${ws}${bullet} [${inner.toLowerCase() === 'x' ? 'x' : ' '}] `
   return { from, to: selStart, insert: gfm, selection: from + gfm.length }
 }
 

@@ -150,13 +150,26 @@ describe('toggleInline', () => {
       '**plain** `code` end',
     )
   })
-  it('a selection opening on a marker writes past it and reads the mark behind it', () => {
+  it('a selection opening on a line’s prefix writes past it and reads the mark behind it', () => {
     const bold = (doc: string) => apply(doc, toggleInline(scanDoc(doc), 0, doc.length, 'bold'))
     expect(bold('- word')).toBe('- **word**')
     expect(bold('- **word**')).toBe('- word')
     expect(readFormatState(scanDoc('- **word**'), 0, 10, {}).bold).toBe(true)
     expect(bold('1. word')).toBe('1. **word**')
     expect(bold('> - word')).toBe('> - **word**')
+    expect(bold('# word')).toBe('# **word**')
+    expect(bold('> word')).toBe('> **word**')
+    expect(bold('> [!note] word')).toBe('> [!note] **word**')
+    expect(bold('[^1]: word')).toBe('[^1]: **word**')
+    const quoted = '> ```\n> word\n> ```'
+    expect(apply(quoted, toggleInline(scanDoc(quoted), 6, 12, 'bold'))).toBe(
+      '> ```\n> **word**\n> ```',
+    )
+  })
+  it('a `#` is words where the scope reads no headings', () => {
+    expect(apply('# word', toggleInline(scanDoc('# word', 'lists'), 0, 6, 'bold'))).toBe(
+      '**# word**',
+    )
   })
 })
 
@@ -428,6 +441,23 @@ describe('the rows in a code block', () => {
   it('a selection across a whole block still quotes it', () => {
     expect(row(word, 'block:quote', 0, word.length)).toBe('> ```js\n> word\n> ```')
   })
+  it('Blockquote and Callout write into a block as the other rows do: past its lead and indent, as written, and never onto a fence line the selection only reaches', () => {
+    const reaching = '```\ncode a\ncode b\n```'
+    expect(row(reaching, 'block:quote', reaching.indexOf('code b'), reaching.length)).toBe(
+      '```\ncode a\n> code b\n```',
+    )
+    const carried = '- item\n  ```\n  # code\n  ```'
+    const at = carried.indexOf('# code')
+    expect(row(carried, 'block:quote', at)).toBe('- item\n  ```\n  > # code\n  ```')
+    expect(row(carried, 'block:callout', at)).toBe('- item\n  ```\n  > [!callout] # code\n  ```')
+    const head = '```\n> [!note] x\n```'
+    expect(row(head, 'block:callout', 4)).toBe('```\n> [!callout] > [!note] x\n```')
+    const indented = '```js\n    foo\n```'
+    expect(row(indented, 'block:quote', 10)).toBe('```js\n    > foo\n```')
+    expect(row(indented, 'block:callout', 10)).toBe('```js\n    > [!callout] foo\n```')
+    const prompt = '```\n> x\n```'
+    expect(row(prompt, 'block:quote', 4)).toBe('```\n> > x\n```')
+  })
   it('a callout-shaped line in a quoted Markdown block is code, so a range pick takes it', () => {
     const doc = '> ```md\n> - a\n> [!note]\n> - b\n> ```'
     expect(row(doc, 'list:ordered', doc.indexOf('- a'), doc.indexOf('- b') + 3)).toBe(
@@ -513,6 +543,12 @@ describe('setBlock', () => {
       '> one\n> two\n> three',
     )
     expect(apply(three, setBlock(scanDoc(three), 0, 4, 'quote'))).toBe('> one\ntwo\nthree')
+  })
+  it('quotes a nested item from its line’s start, so it keeps its level inside the quote', () => {
+    const nested = '- a\n  - b'
+    expect(apply(nested, setBlock(scanDoc(nested), 0, nested.length, 'quote'))).toBe(
+      '> - a\n>   - b',
+    )
   })
   it('clears the quote only where every selected line already is one', () => {
     const all = '> one\n> two'

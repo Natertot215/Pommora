@@ -12,7 +12,7 @@ import { matchesCommand } from '../../Actions/commands'
 import { isWebAddress } from '../../Paths/urlPath'
 import { docScan } from '../docCache'
 import type { BlockSpan } from '../Engine/detect'
-import { inCodeNear, scanDoc, type DocScan } from '../Engine/docScan'
+import { inCodeNear, inlineRange, scanDoc, type DocScan } from '../Engine/docScan'
 import { linkAt, openLinkAt } from '../Input/edits'
 import { insertCitation } from '../Citations/citationActions'
 import { citationText } from '../Citations/citationEdits'
@@ -75,8 +75,11 @@ function pasteEdit(
   }
   // A link still being written takes the paste as its own text, in either syntax.
   if (how !== 'plain' && openLinkAt(scan, sel.from) !== null) return plain
-  const write = pasteAsWrite(target, how, { selection: scan.text.slice(from, to), format, title })
-  return write ? { from, to, write } : plain
+  // A link takes the words the selection holds, opening past a line's prefix as the inline rows do; text replaces whatever stands selected.
+  const [f, t] = inlineRange(scan, sel.from, sel.to)
+  const write = pasteAsWrite(target, how, { selection: scan.text.slice(f, t), format, title })
+  if (write === null) return plain
+  return write.kind === 'link' ? { from: f, to: t, write } : { from, to, write }
 }
 
 /** Re-read here rather than trusted from the menu: the document may have moved while it stood open. */

@@ -70,10 +70,10 @@ describe('list continuation (Enter)', () => {
     const e = continueListOnEnter(scanDoc(doc), doc.length, doc.length)!
     expect(apply(doc, e)).toBe('- [x] done\n- [ ] ')
   })
-  it('writes a dash under a plus, whichever item it continues', () => {
+  it('continues the marker as written, so a plus stays a plus and a plus task empties its box', () => {
     for (const [doc, written] of [
-      ['+ a', '+ a\n- '],
-      ['+ [ ] a', '+ [ ] a\n- [ ] '],
+      ['+ a', '+ a\n+ '],
+      ['+ [x] a', '+ [x] a\n+ [ ] '],
     ])
       expect(apply(doc, continueListOnEnter(scanDoc(doc), doc.length, doc.length)!)).toBe(written)
   })
@@ -197,10 +197,10 @@ describe('checkbox canonicalization', () => {
     const doc = '-[X]'
     expect(apply(doc, canonicalizeCheckbox(scanDoc(doc), 4, 4, ' ')!)).toBe('- [x] ')
   })
-  it('writes a dash whichever bullet typed the box, keeping the indent', () => {
+  it('keeps the bullet that typed the box, and its indent', () => {
     for (const [doc, written] of [
-      ['+[]', '- [ ] '],
-      ['  +[x]', '  - [x] '],
+      ['+[]', '+ [ ] '],
+      ['  +[x]', '  + [x] '],
     ])
       expect(apply(doc, canonicalizeCheckbox(scanDoc(doc), doc.length, doc.length, ' ')!)).toBe(
         written,
@@ -395,6 +395,14 @@ describe('auto-pair + auto-delete', () => {
     const spaced = wrapSelection(scanDoc(doc), 1, 7, '"', on)!
     expect(apply(doc, spaced)).toBe('a "word" b')
     expect([spaced.selection, spaced.head]).toEqual([3, 7])
+  })
+  it('Wrap Selections opens past a line’s prefix', () => {
+    const on = { wrapSelections: true }
+    for (const [doc, out] of [
+      ['# word', '# *word*'],
+      ['> word', '> *word*'],
+    ])
+      expect(apply(doc, wrapSelection(scanDoc(doc), 0, doc.length, '*', on)!)).toBe(out)
   })
   it('repeating a wrap over its own result cycles instead of compounding', () => {
     const on = { wrapSelections: true }

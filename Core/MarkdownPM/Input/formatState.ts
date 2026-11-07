@@ -1,9 +1,9 @@
 import type { TokenOf } from '../Engine/tokens'
 import { isPaint, type Paint } from '../Engine/paints'
 import { headingParts } from '../Engine/detect'
-import { isQuoteToggleable, listKindOf, splitPrefix, underSelection } from './format'
+import { isQuoteToggleable, listKindOf, underSelection } from './format'
 import type { EditorMenuRequest } from '../../Actions/editorMenu'
-import type { DocScan } from '../Engine/docScan'
+import { type DocScan, splitPrefix } from '../Engine/docScan'
 import { lineIndexAt } from '../Engine/markdownCode'
 import type { Personalization } from '../../Settings/personalization'
 

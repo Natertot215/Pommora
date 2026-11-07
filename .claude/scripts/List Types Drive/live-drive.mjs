@@ -425,6 +425,8 @@ async function group3(cdp) {
   await dragged('B-10', 'an item re-nests at the level it lands on', '- a\n- b\n\t- c', 'a', 'c', 'below', '- b\n\t- c\n\t- a')
   await dragged('B-10', 'a nested item rises to the level it lands on, with its children', '- a\n\t- b\n\t\t- c\n- d', 'b', 'd', 'below', '- a\n- d\n- b\n\t- c')
   await dragged('B-10', 'a block directly under an item rides it', '- a\n\tride\n- b', 'a', 'b', 'below', '- b\n- a\n\tride')
+  await dragged('B-10', "a drop at an item's lower edge lands under the block it carries, never inside it", '- a\n\tride\n- b\n- c', 'c', 'a', 'below', '- a\n\tride\n- c\n- b')
+  await dragged('B-10', 'a drop between a parent and its first child joins the children', '- p\n\t- c1\n- q\n- x', 'x', 'p', 'below', '- p\n\t- x\n\t- c1\n- q')
   await dragged('F-1 B-6', 'a carried block rides whole, a flush line inside it included', '- a\n\t```\nflush\n\t```\n- b', 'a', 'b', 'below', '- b\n- a\n\t```\nflush\n\t```')
   await dragged('B-5 B-6', "an item's drag leaves an indented paragraph below a blank", '- a\n\n\tpara\n\n- b', 'a', 'b', 'below', '\tpara\n\n- b\n- a')
   await dragged('B-5', 'an item drops into another list across a blank', '- a\n- b\n\n- c\n- d', 'a', 'c', 'below', '- b\n\n- c\n- a\n- d')
@@ -700,16 +702,16 @@ async function group5(cdp) {
   const atRest = await pop(cdp, await boxOf(cdp, restingGlyph('pa')), [])
   item(5, 'B-1', "a resting `+` item's glyph menu checks Bulleted", show(flat(atRest.rows)) === show(typeRows('Bulleted')), seen(atRest))
 
-  await stroke(cdp, 5, 'B-4', 'Enter under `+ a` writes `-`', '+ a', '+ a', ENTER, '+ a\n- ')
-  await stroke(cdp, 5, 'B-4', 'Enter under `+ [ ] a` writes `- [ ] `', '+ [ ] a', '+ [ ] a', ENTER, '+ [ ] a\n- [ ] ')
+  await stroke(cdp, 5, 'B-4', 'Enter under `+ a` continues with `+`', '+ a', '+ a', ENTER, '+ a\n+ ')
+  await stroke(cdp, 5, 'B-4', 'Enter under `+ [x] a` continues with `+ [ ] `', '+ [x] a', '+ [x] a', ENTER, '+ [x] a\n+ [ ] ')
   await stroke(cdp, 5, 'B-1', 'Enter under `- [] x` continues it', '- [] x', '- [] x', ENTER, '- [] x\n- ')
   await stroke(cdp, 5, 'B-1', 'Enter under `9. a` writes `10. `', '9. a', '9. a', ENTER, '9. a\n10. ')
 
   const typed = (decision, name, seed, want) => stroke(cdp, 5, decision, name, seed, seed, type(' '), want)
   await typed('B-2', '`-[]` and a space writes a checkbox', '-[]', '- [ ] ')
-  await typed('B-2', '`+[]` and a space writes a checkbox with `-`', '+[]', '- [ ] ')
+  await typed('B-2', '`+[]` and a space writes a checkbox with `+`', '+[]', '+ [ ] ')
   await typed('B-2', '`-[x]` and a space writes a checked box', '-[x]', '- [x] ')
-  await typed('B-2', 'an indented `+[x]` and a space keeps its indent', '  +[x]', '  - [x] ')
+  await typed('B-2', 'an indented `+[x]` and a space keeps its indent and its `+`', '  +[x]', '  + [x] ')
   await setBody(cdp, table('sh'))
   await enterCell(cdp, 'sh')
   await cdp.evaluate(`(() => { const v = ${CELL_VIEW}; v.dispatch({ changes: { from: 0, to: v.state.doc.length, insert: '+[]' }, selection: { anchor: 3 } }) })()`)
@@ -717,7 +719,7 @@ async function group5(cdp) {
   await type(' ')(cdp)
   const shorthand = await cdp.evaluate(`${CELL_VIEW}.state.doc.toString()`)
   await leaveCell(cdp)
-  item(5, 'B-2', 'the shorthand writes `- [ ] ` in a focused cell', shorthand === '- [ ] ', show(shorthand))
+  item(5, 'B-2', 'the shorthand writes `+ [ ] ` in a focused cell', shorthand === '+ [ ] ', show(shorthand))
 
   const picked = async (decision, name, seed, word, type, want) => {
     await setBody(cdp, seed)

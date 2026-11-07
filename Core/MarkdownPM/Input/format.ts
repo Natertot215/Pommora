@@ -8,10 +8,8 @@ import {
 } from '../Engine/tokens'
 import {
   isBlank,
-  headingParts,
   isCalloutHead,
   LIST_TYPES,
-  indentWidth,
   stripQuotePrefix,
   type ListKind,
   type ListMarker,
@@ -25,7 +23,6 @@ import {
   lineIndexAt,
   quotePrefixWidth,
   reachEnd,
-  trimmedRange,
   overlaps,
 } from '../Engine/markdownCode'
 import type { HeadingLevel } from '../../Actions/gripMenu'
@@ -34,6 +31,7 @@ import { emptyTable } from '../Engine/Tables/model'
 import { isPaint, type Paint, type PaintColor, writtenMark } from '../Engine/paints'
 import { serialize } from '../Engine/Tables/codec'
 import {
+  contentStartOf,
   type DocScan,
   fenceDelimiter,
   inCodeAt,
@@ -41,11 +39,10 @@ import {
   inlineRange,
   inSealedLine,
   markerIn,
-  signSeatAt,
+  splitPrefix,
 } from '../Engine/docScan'
 import { ownersOf, siblingsAt, subBlockAt } from '../Engine/listModel'
 import { type Personalization, settingOf } from '../../Settings/personalization'
-import { leadOf } from './edits'
 import { isValidLink, normalizeLinkUrl } from '../../Paths/urlPath'
 import { serializeLink } from '../../Connections/linkValue'
 
@@ -175,23 +172,18 @@ export function toggleInline(
   }
 }
 
-// A diff line's sign is its change, so a row writes past it.
-const pastSign = (scan: DocScan, pos: number): number => Math.max(pos, signSeatAt(scan, pos) ?? pos)
-
 export function editFor(
   action: string,
   scan: DocScan,
-  selFrom: number,
-  selTo: number,
+  from: number,
+  to: number,
   settings: Personalization,
 ): FormatEdit | null {
   const [group, value] = action.split(':')
-  const from = pastSign(scan, selFrom)
-  const to = Math.max(selTo, from)
   switch (group) {
     case 'link':
       return value === 'insert' && !onDelimiter(scan, from, to)
-        ? insertLinkEdit(scan.text, from, to)
+        ? insertLinkEdit(scan, from, to)
         : null
     case 'format':
       return toggleInline(scan, from, to, value as InlineFormat)
@@ -209,9 +201,9 @@ export function editFor(
   }
 }
 
-function insertLinkEdit(doc: string, selFrom: number, selTo: number): FormatEdit | null {
-  const [from, to] = trimmedRange(doc, selFrom, selTo)
-  const text = doc.slice(from, to)
+function insertLinkEdit(scan: DocScan, selFrom: number, selTo: number): FormatEdit | null {
+  const [from, to] = inlineRange(scan, selFrom, selTo)
+  const text = scan.text.slice(from, to)
   if (!isValidLink(text)) return null
   const insert = serializeLink(normalizeLinkUrl(text), text)
   return { changes: [{ from, to, insert }], selection: from + insert.length }
@@ -249,14 +241,6 @@ function toggleWrap(
   }
 }
 
-/** For a callout HEAD the chrome includes the hidden `[!type] ` tag. Block transforms edit from AFTER the chrome, which preserves the box and keeps the change out of the callout guard's window. */
-export function splitPrefix(scan: DocScan, k: number): { prefix: string; body: string } {
-  const line = scan.lines[k]
-  const callout = scan.callouts[k]
-  const len = callout?.first ? callout.prefixEnd : leadOf(scan, k).length
-  return { prefix: line.slice(0, len), body: line.slice(len) }
-}
-
 /** Prefix-aware: `> - item` becomes `> ## item`, never `## - item` popped out of its quote. */
 export function setHeading(
   scan: DocScan,
@@ -289,29 +273,18 @@ interface SelectedLine {
 function readLine(scan: DocScan, k: number): SelectedLine {
   const ls = scan.lineStarts[k]
   const le = lineEndOf(scan, k)
+  const line = scan.lines[k]
+  const content = contentStartOf(scan, k)
+  const inner = line.slice(content)
   if (scan.fences[k] !== undefined) {
     // A code line reads as written: a row's lead joins it past its own indent, nothing there is stripped, and a bare `>` takes a space, or the row's write stops the line reading as quoted and the fence dissolves.
-    const lead = leadOf(scan, k).length
-    const text = scan.lines[k].slice(lead)
-    const prefix = scan.lines[k].slice(0, lead + indentWidth(text))
-    const pad = prefix.endsWith('>') ? ' ' : ''
-    return { ls, le, prefix, pad, indent: '', inner: text.trimStart() }
+    const prefix = line.slice(0, content)
+    return { ls, le, prefix, pad: prefix.endsWith('>') ? ' ' : '', indent: '', inner }
   }
   const { prefix, body } = splitPrefix(scan, k)
-  const lm = scan.markers[k]
-  const stripped = lm ? scan.lines[k].slice(lm.contentStart) : stripHeading(body)
-  // An item's indent sits before its marker, a paragraph's leads its words — held apart either way, so converting a nested item keeps its level.
-  const indent = lm
-    ? scan.lines[k].slice(prefix.length, lm.markerStart)
-    : (/^[ \t]*(?=\S)/.exec(stripped)?.[0] ?? '')
-  return {
-    ls,
-    le,
-    prefix,
-    pad: prefix !== '' && !/[ \t]$/.test(prefix) ? ' ' : '',
-    indent,
-    inner: lm ? stripped : stripped.trimStart(),
-  }
+  // The indent before a line's marker or words is held apart, so converting a nested item keeps its level.
+  const indent = /^[ \t]*(?=\S)/.exec(body)?.[0] ?? ''
+  return { ls, le, prefix, pad: prefix !== '' && !/[ \t]$/.test(prefix) ? ' ' : '', indent, inner }
 }
 
 /** A selection passes over its blank lines; a caret alone on one keeps it, so the block starts there. */
@@ -435,13 +408,22 @@ export function setBlock(scan: DocScan, from: number, to: number, fmt: BlockForm
   const trail = doc.startsWith('\n\n', le) ? '' : '\n'
   switch (fmt) {
     case 'quote': {
-      // Off only where every selected line is already a quote. Toggling a callout head wraps rather than demoting it.
-      const lines = spannedLines(doc, from, to).map((l) => ({
-        ...l,
-        ls: pastSign(scan, l.ls),
-      }))
-      if (lines.length === 1 && fenceDelimiter(scan, k)) return { changes: [] }
-      const strip = lines.every(({ ls: s, le: e }) => isQuoteToggleable(doc.slice(s, e)))
+      // Off only where every selected line is already a quote. Toggling a callout head wraps rather than demoting it. A code block the selection holds whole is quoted as a block, fence lines included; one it reaches into only ever takes the quote, written where each line's words begin, and its fence lines stay as they are.
+      const spanned = spannedLines(doc, from, to)
+      const [first, last] = [spanned[0].ls, spanned[spanned.length - 1].le]
+      const lines = spanned.flatMap(({ ls: s, le: e }) => {
+        const i = lineIndexAt(scan, s)
+        const f = scan.fences[i]
+        if (f === undefined || (f.from >= first && f.to <= last))
+          return [{ ls: s, le: e, code: false }]
+        return fenceDelimiter(scan, i)
+          ? []
+          : [{ ls: s + contentStartOf(scan, i), le: e, code: true }]
+      })
+      if (lines.length === 0) return { changes: [] }
+      const strip = lines.every(
+        ({ ls: s, le: e, code }) => !code && isQuoteToggleable(doc.slice(s, e)),
+      )
       const changes: FormatEdit['changes'] = []
       let lastEnd = 0
       const blank = lines.length === 1 ? '> ' : '>'
@@ -457,13 +439,10 @@ export function setBlock(scan: DocScan, from: number, to: number, fmt: BlockForm
       return lines.length === 1 ? { changes, selection: lastEnd } : { changes }
     }
     case 'callout': {
-      if (isCalloutHead(line) || fenceDelimiter(scan, k)) return { changes: [] }
-      const at = pastSign(scan, ls)
-      const lm = scan.markers[k]
-      const body = lm
-        ? line.slice(lm.contentStart)
-        : stripHeading(stripQuotePrefix(doc.slice(at, le)))
-      const next = `> [!callout] ${body}`
+      if (scan.callouts[k]?.first || fenceDelimiter(scan, k)) return { changes: [] }
+      const content = contentStartOf(scan, k)
+      const at = ls + (scan.fences[k] === undefined ? 0 : content)
+      const next = `> [!callout] ${line.slice(content)}`
       return { changes: [{ from: at, to: le, insert: next }], selection: at + next.length }
     }
     case 'code': {
@@ -498,9 +477,4 @@ export function setBlock(scan: DocScan, from: number, to: number, fmt: BlockForm
       }
     }
   }
-}
-
-function stripHeading(body: string): string {
-  const h = headingParts(body)
-  return h ? h.indent + h.content : body
 }

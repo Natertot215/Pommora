@@ -73,6 +73,17 @@ describe('pasting an address into the editor', () => {
     expect(view.state.doc.toString()).toBe(`read the [docs](${URL}) now`)
   })
 
+  it('wraps the words of a whole selected item past its marker, where Plain Text replaces the item', async () => {
+    const view = await mountEditor({ initialBody: '- item' })
+    view.dispatch({ selection: { anchor: 0, head: 6 } })
+    await act(async () => pasteEvent(view, URL))
+    expect(view.state.doc.toString()).toBe(`- [item](${URL})`)
+    view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: '- item' } })
+    view.dispatch({ selection: { anchor: 0, head: 6 } })
+    await act(async () => paste(view, URL, 'plain'))
+    expect(view.state.doc.toString()).toBe(URL)
+  })
+
   it('leaves a non-address alone', async () => {
     const view = await mountEditor({ initialBody: '' })
     await act(async () => pasteEvent(view, 'App.tsx'))

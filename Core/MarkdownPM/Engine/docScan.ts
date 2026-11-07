@@ -4,6 +4,7 @@ import {
   isBlockquoteLine,
   lineIndexAt,
   lineStartAt,
+  quotePrefix,
   trimmedRange,
   type CodeMask,
 } from './markdownCode'
@@ -17,7 +18,9 @@ import {
   codeSeat,
   fenceBodyStart,
   fenceOpeners,
+  headingParts,
   htmlBlocks,
+  indentWidth,
   isBlank,
   isHeadingLine,
   isThematicBreakLine,
@@ -423,10 +426,38 @@ export function seatPastMarker(scan: DocScan, pos: number): number {
   return lm ? Math.max(pos, scan.lineStarts[k] + lm.contentStart) : pos
 }
 
+/** What stands before line `k`'s own text: inside a code block its fence's lead and any diff sign, elsewhere its quote. */
+export function leadOf(scan: DocScan, k: number): string {
+  const line = scan.lines[k]
+  const f = scan.fences[k]
+  return f ? line.slice(0, codeSeat(line, f)) : scan.quotes[k] ? quotePrefix(line) : ''
+}
+
+/** For a callout HEAD the chrome includes the hidden `[!type] ` tag. Block transforms edit from AFTER the chrome, which preserves the box and keeps the change out of the callout guard's window. */
+export function splitPrefix(scan: DocScan, k: number): { prefix: string; body: string } {
+  const line = scan.lines[k]
+  const callout = scan.callouts[k]
+  const len = callout?.first ? callout.prefixEnd : leadOf(scan, k).length
+  return { prefix: line.slice(0, len), body: line.slice(len) }
+}
+
+/** Where line `k`'s own words begin: past a footnote row's label or the line's chrome, then past a code line's indent, an item's marker, a page heading's hashes, or a paragraph's indent. A write opens here, where a caret's seat (`seatPastMarker`) passes a marker alone, since a caret may rest in a heading's hashes. */
+export function contentStartOf(scan: DocScan, k: number): number {
+  const entry = scan.citations.entryAt.get(k)
+  if (entry?.line === k) return entry.contentStart - scan.lineStarts[k]
+  const { prefix, body } = splitPrefix(scan, k)
+  if (scan.fences[k] !== undefined) return prefix.length + indentWidth(body)
+  const lm = scan.markers[k]
+  if (lm !== null) return lm.contentStart
+  const heading = scan.scope === 'page' ? headingParts(body) : null
+  return prefix.length + (heading?.contentStart ?? indentWidth(body))
+}
+
 export function inlineRange(scan: DocScan, from: number, to: number): [number, number] {
   const [f, t] = trimmedRange(scan.text, from, to)
-  const seat = seatPastMarker(scan, f)
-  return [seat < t ? seat : f, t]
+  const k = lineIndexAt(scan, f)
+  const seat = Math.max(f, scan.lineStarts[k] + contentStartOf(scan, k))
+  return f === t ? [seat, seat] : [seat < t ? seat : f, t]
 }
 
 export function inCalloutAt(scan: DocScan, pos: number): boolean {

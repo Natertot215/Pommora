@@ -29,7 +29,7 @@ function lineRightEdge(view: EditorView, from: number, fallback: number): number
   )
 }
 
-// Each list line offers two insertion boundaries, so a paragraph between two bullets splits to the nearer edge.
+// Each item offers two insertion boundaries, its top and the end of the block it carries, so a paragraph between two bullets splits to the nearer edge and nothing an item carries is split from it. Where a group's end meets its parent's, the slot drawn further right wins, so a drop under a last child stays a child.
 function collectBoundaries(view: EditorView, block: BlockSpan): Boundary<Drop>[] {
   const doc = view.state.doc
   const gutterRight = textColumn(view).right
@@ -42,20 +42,19 @@ function collectBoundaries(view: EditorView, block: BlockSpan): Boundary<Drop>[]
       const lm = markerIn(scan, k, region)
       if (lm === null || (line.from >= block.from && line.from <= block.to)) return
       const cTop = view.coordsAtPos(line.from)
-      const cEnd = view.coordsAtPos(line.to)
-      const cMarker = view.coordsAtPos(line.from + lm.markerStart)
-      if (cTop && cEnd) {
-        const slot = {
-          left: (cMarker ?? cTop).left,
-          right: lineRightEdge(view, line.from, gutterRight),
-          indent: line.text.slice(0, lm.markerStart),
-        }
-        out.push({ at: line.from, y: cTop.top, slot })
-        out.push({ at: line.to < doc.length ? line.to + 1 : doc.length, y: cEnd.bottom, slot })
+      if (!cTop) return
+      const slot = {
+        left: (view.coordsAtPos(line.from + lm.markerStart) ?? cTop).left,
+        right: lineRightEdge(view, line.from, gutterRight),
+        indent: line.text.slice(0, lm.markerStart),
       }
+      out.push({ at: line.from, y: cTop.top, slot })
+      const end = subBlockAt(scan, line.from).to
+      const cEnd = view.coordsAtPos(end)
+      if (cEnd) out.push({ at: end < doc.length ? end + 1 : doc.length, y: cEnd.bottom, slot })
     })
   }
-  return out
+  return out.sort((a, b) => b.slot.left - a.slot.left)
 }
 
 function clickAction(view: EditorView, pos: number): void {
