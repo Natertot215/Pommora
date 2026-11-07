@@ -266,10 +266,9 @@ describe('a text value', () => {
     headingsOf: () => undefined,
   })
 
-  it('renders every line of the value, each on its own; the one-line clip is the class, not a slice', () => {
+  it('renders the value’s first line alone', () => {
     mount(rowWith({ prop_notes: 'first line\nsecond line' }), 'prop_notes', {})
-    const lines = [...host.querySelectorAll('.cell-text > .cell-text-line')]
-    expect(lines.map((l) => l.textContent)).toEqual(['first line', 'second line'])
+    expect(host.querySelector('.cell-text')?.textContent).toBe('first line')
   })
   it('colors a link it holds through the context’s connections, as a resting table cell does', () => {
     act(() =>
@@ -285,22 +284,18 @@ describe('a text value', () => {
     expect(host.querySelector('.md-connection-resolved')?.textContent).toBe('Target')
     expect(host.querySelector('.md-connection-phantom')?.textContent).toBe('Nowhere')
   })
-  it('marks a link on a later line with its span in the whole value, the offsets every link gesture reads', () => {
-    const value = 'first\nsee [[Target]]'
+  it('draws no link a later line holds', () => {
     act(() =>
       root.render(
         <Cell
-          row={rowWith({ prop_notes: value })}
+          row={rowWith({ prop_notes: 'first\nsee [[Target]]' })}
           column={col('prop_notes')}
           ctx={{ ...ctx, connections: connectionsWith() }}
           style={dateDefaults('full')}
         />,
       ),
     )
-    const at = value.indexOf('[[')
-    expect(host.querySelector('[data-link]')?.getAttribute('data-src')).toBe(
-      `${at},${value.length}`,
-    )
+    expect(host.querySelector('[data-link]')).toBeNull()
   })
   it('opens the link menu on a right-click over a link it holds, and leaves the rest to the cell menu', () => {
     const menu = vi.fn(async () => null)

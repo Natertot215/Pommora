@@ -6,8 +6,9 @@ import { cx } from '@pommora/uix/Utilities/cx'
 import type { ConnPage } from '../../Connections/pageIndex'
 import { glanceHost } from '../../Interface/Glance/glanceAction'
 import { resolveFollow } from '../../MarkdownPM/Links/linkClicks'
-import { lineOffsetsOf } from '../../MarkdownPM/Engine/markdownCode'
-import { type CellPage, linkGestures, renderCellContent } from '../../MarkdownPM/Tables/cellStatic'
+import { parseListMarker } from '../../MarkdownPM/Engine/detect'
+import { listLineClass } from '../../MarkdownPM/Engine/intents'
+import { type CellPage, linkGestures, renderRestingLine } from '../../MarkdownPM/Tables/cellStatic'
 import { mayNameOwnHeading } from '../../Connections/connections'
 import { useSession } from '../../Session/store'
 import { openWebLink } from '../../Web/openWebLink'
@@ -28,9 +29,11 @@ export function TextCell({
   menu?: boolean
 }): React.JSX.Element {
   const hostRef = useRef<HTMLDivElement>(null)
+  const [first] = text.split('\n', 1)
+  const lm = parseListMarker(first)
   const { connections, headingLinkStyle } = ctx
   const automatic = ctx.inPageHeadingResolution === 'automatic'
-  const ownPath = holder && mayNameOwnHeading(text) ? holder.path : null
+  const ownPath = holder && mayNameOwnHeading(first) ? holder.path : null
   const headings = useSession((s) => (ownPath ? s.headings[ownPath] : undefined))
   const around: CellPage | undefined = headings && {
     ordinalOf: () => null,
@@ -38,7 +41,7 @@ export function TextCell({
     texts: automatic ? headings.texts : [],
   }
   const { linkAt, dismiss, onContextMenu, onPointerOver, onPointerOut } = linkGestures(
-    text,
+    first,
     connections,
     glanceHost,
     holder,
@@ -53,8 +56,6 @@ export function TextCell({
     e.stopPropagation()
     go()
   }
-  const lines = text.split('\n')
-  const starts = lineOffsetsOf(lines)
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: the value's keyboard route is its field; a link inside it is pointer-followed as a resting table cell's is
     <div
@@ -72,13 +73,15 @@ export function TextCell({
       }}
     >
       <div className="cell-text-clip">
-        <div className={cx('cell-text', overScrollEllipsis)}>
-          {lines.map((line, i) => (
-            <span key={starts[i]} className="cell-text-line">
-              {renderCellContent(line, connections, { base: starts[i], around, headingLinkStyle })}
-              {line === '' && '\u200b'}
-            </span>
-          ))}
+        <div
+          className={cx(
+            'cell-text',
+            overScrollEllipsis,
+            lm && listLineClass(lm),
+            text.slice(first.length).trim() !== '' && 'is-continued',
+          )}
+        >
+          {renderRestingLine(first, lm, connections, { around, headingLinkStyle })}
         </div>
       </div>
       {onPane && (

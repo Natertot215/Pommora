@@ -243,13 +243,12 @@
   flex: 1 1 auto;
   min-width: 0;
 }
-/* Every line is drawn on its own and only the first shows, so a wrapping container later shows them all; the hidden lines add no width, so the hover scroll ends where the first line does. */
 .cell-text-clip > .cell-text {
   --scroll-fade: var(--fade-base);
   white-space: pre;
 }
-.cell-text-line + .cell-text-line {
-  display: none;
+.cell-text.is-continued::after {
+  content: "…";
 }
 /* The room the pen takes while it shows: its box and one step. */
 .cell-text-host:has(> .cell-pen) {

@@ -23,6 +23,7 @@ describe('parseEditorValue', () => {
   it('text: opens on its trimmed first line, rejoins it with the lines behind, drops an emptied first line, clears a blank', () => {
     const text = (value: string) => ({ kind: 'text', value }) as const
     expect(editorText(text('first \nsecond\nthird'))).toBe('first')
+    expect(editorText(text('- milk\n- eggs'))).toBe('- milk')
     expect(editorText(text(''))).toBe('')
     expect(parseEditorValue('text', 'changed', text('first\nsecond'))).toEqual(
       text('changed\nsecond'),

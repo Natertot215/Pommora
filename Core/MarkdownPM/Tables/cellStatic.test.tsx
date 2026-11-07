@@ -4,7 +4,7 @@ import { createElement, act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { EditorView } from '@codemirror/view'
 import { MarkdownTable } from './MarkdownTable'
-import { type CellPage, renderCellContent } from './cellStatic'
+import { type CellPage, renderRestingLine } from './cellStatic'
 import { tableStubs, testHost } from '../../Testing/editorHarness'
 import type { TableModel } from '../Engine/Tables/model'
 import { followCitation } from '../Citations/citationPointer'
@@ -197,7 +197,9 @@ describe('a resting cell draws a tag whole', () => {
     container = document.createElement('div')
     document.body.appendChild(container)
     root = createRoot(container)
-    await act(async () => root.render(renderCellContent('**y** <b>x</b>', () => undefined)))
+    await act(async () =>
+      root.render(renderRestingLine('**y** <b>x</b>', null, () => undefined, {})),
+    )
     expect(container.textContent).toBe('y <b>x</b>')
     const tags = [...container.querySelectorAll('.md-html-tag')].map((el) => el.textContent)
     expect(tags).toEqual(['b', 'b'])
@@ -214,7 +216,7 @@ describe('a resting cell draws an unresolved link as an unresolved connection, w
       headingsOf: () => undefined,
       open: () => {},
     }
-    await act(async () => root.render(renderCellContent('a [x](Missing) b', () => conn)))
+    await act(async () => root.render(renderRestingLine('a [x](Missing) b', null, () => conn, {})))
     const parts = [...container.querySelectorAll('span')].map((el) => [
       el.className,
       el.textContent,
@@ -284,7 +286,7 @@ describe('a resting cell draws every token as a span, through the tokens inside 
     container = document.createElement('div')
     document.body.appendChild(container)
     root = createRoot(container)
-    await act(async () => root.render(renderCellContent(text, () => conn, { around })))
+    await act(async () => root.render(renderRestingLine(text, null, () => conn, { around })))
   }
 
   it('a connection inside bold draws inside the bold span, and both name their source', async () => {
@@ -312,7 +314,7 @@ describe('a resting cell draws every token as a span, through the tokens inside 
       ...conn,
       index: buildPageIndex([{ id: 'n', title: 'Notes', path: 'A/Notes.md' }]),
     }
-    await act(async () => root.render(renderCellContent('[[A/Notes#H]]', () => paths)))
+    await act(async () => root.render(renderRestingLine('[[A/Notes#H]]', null, () => paths, {})))
     expect(container.textContent).toBe('Notes§H')
     expect(container.querySelector('.md-heading-symbol-spaced')?.textContent).toBe('§')
   })
@@ -365,7 +367,8 @@ describe('a resting cell draws every token as a span, through the tokens inside 
     expect(container.textContent).toBe('a b]c')
   })
 
-  it('text holding no token is the bare string', () => {
-    expect(renderCellContent('plain text', () => conn)).toBe('plain text')
+  it('text holding no token is the bare string', async () => {
+    await draw('plain text')
+    expect(container.innerHTML).toBe('plain text')
   })
 })

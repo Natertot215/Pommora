@@ -90,6 +90,12 @@ describe('ValueEditor in its one-line mode', () => {
     expect(container.querySelector('.value-field.mdpm-shell')).not.toBeNull()
   })
 
+  it('reads a list’s first line as its written dash, with no grip', () => {
+    const view = mount('- milk')
+    expect(view.dom.querySelector('.md-block-handle, [class*="md-list-"]')).toBeNull()
+    expect(view.contentDOM.textContent).toBe('- milk')
+  })
+
   it('stays open and focused through StrictMode’s remount', () => {
     act(() =>
       root.render(

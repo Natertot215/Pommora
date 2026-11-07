@@ -5,7 +5,7 @@ import { createRoot } from 'react-dom/client'
 import type { EditorView } from '@codemirror/view'
 import type { ConnectionsApi } from './Links/connectionsApi'
 import { buildPageIndex, type ConnPage } from '../Connections/pageIndex'
-import { renderCellContent } from './Tables/cellStatic'
+import { renderRestingLine } from './Tables/cellStatic'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '../Testing/editorHarness'
 
 stubEditorBridge()
@@ -50,7 +50,7 @@ async function renderCell(text: string): Promise<HTMLElement> {
       createElement(
         'div',
         null,
-        renderCellContent(text, () => conn),
+        renderRestingLine(text, null, () => conn, {}),
       ),
     ),
   )

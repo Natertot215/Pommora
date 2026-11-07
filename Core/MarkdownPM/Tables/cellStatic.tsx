@@ -66,7 +66,7 @@ const cellScan = perText((text) => scanDoc(text, 'lists'), 4096)
 
 type Drawn = Token | { kind: 'section'; range: [number, number]; contentRange: [number, number] }
 
-export function renderCellContent(
+function renderCellContent(
   text: string,
   connections: () => ConnectionsApi | undefined,
   {
@@ -272,6 +272,27 @@ function MarkerGlyph({
   )
 }
 
+/** One resting line, its marker drawn as its glyph: a cell's line, and a Text value's first. */
+export function renderRestingLine(
+  line: string,
+  lm: ListMarker | null,
+  connections: () => ConnectionsApi | undefined,
+  { base = 0, ...rest }: { base?: number; around?: CellPage; headingLinkStyle?: HeadingLinkStyle },
+): React.ReactNode {
+  const content = lm ? line.slice(lm.contentStart) : line
+  const rendered = renderCellContent(content, connections, {
+    ...rest,
+    base: base + (lm?.contentStart ?? 0),
+  })
+  return (
+    <>
+      {lm && <MarkerGlyph lm={lm} line={line} at={base} />}
+      {lm ? <span className="md-list-text">{rendered}</span> : rendered}
+      {content === '' && '\u200b'}
+    </>
+  )
+}
+
 // A cell holding a list draws one block per line, so the indent, the glyph and the rails have something to sit on; a cell holding none stays a single flow, which is what pre-wrap already renders correctly.
 function renderCellBody(
   text: string,
@@ -286,12 +307,6 @@ function renderCellBody(
   const rails = railIntents(scan, lines.map(quoteDepthOf))
   return lines.map((line, i) => {
     const lm = markers[i]
-    const content = lm ? line.slice(lm.contentStart) : line
-    const rendered = renderCellContent(content, connections, {
-      around,
-      headingLinkStyle,
-      base: starts[i] + (lm?.contentStart ?? 0),
-    })
     return (
       <div
         // biome-ignore lint/suspicious/noArrayIndexKey: a cell's lines are plain strings with no identity but their position — the index IS the key
@@ -309,9 +324,7 @@ function renderCellBody(
             aria-hidden="true"
           />
         ))}
-        {lm && <MarkerGlyph lm={lm} line={line} at={starts[i]} />}
-        {lm ? <span className="md-list-text">{rendered}</span> : rendered}
-        {content === '' && '\u200b'}
+        {renderRestingLine(line, lm, connections, { base: starts[i], around, headingLinkStyle })}
       </div>
     )
   })

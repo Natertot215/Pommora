@@ -191,3 +191,65 @@ describe('a Text value draws against the page that holds it', () => {
     expect(el.querySelector('.md-connection-heading-missing')?.textContent).toBe('Nope')
   })
 })
+
+describe('a list value at rest', () => {
+  const page = { id: 'p1', title: 'Target', path: 'X/Target.md' }
+  const open = vi.fn()
+  const conn: ConnectionsApi = {
+    index: buildPageIndex([page]),
+    headingsOf: () => undefined,
+    open,
+  }
+  const draw = async (text: string): Promise<HTMLDivElement> => {
+    useSession.setState({ tree: makeTree(), headings: {} })
+    host = document.createElement('div')
+    document.body.appendChild(host)
+    root = createRoot(host)
+    await act(async () => root?.render(createElement(TextCell, { text, ctx: ctxOf(() => conn) })))
+    return host
+  }
+  const line = (el: HTMLElement): Element => el.querySelector('.cell-text') as Element
+
+  it('draws one glyph and the first item, marking what runs on', async () => {
+    const el = await draw('- milk\n- eggs')
+    expect(el.querySelectorAll('.md-list-bullet')).toHaveLength(1)
+    expect(line(el).textContent).toBe('•milk')
+    expect(line(el).classList.contains('is-continued')).toBe(true)
+  })
+
+  it('marks a plain value running on, and no value that ends in blank lines', async () => {
+    expect(line(await draw('milk\neggs')).classList.contains('is-continued')).toBe(true)
+    act(() => root?.unmount())
+    expect(line(await draw('milk\n\n')).classList.contains('is-continued')).toBe(false)
+  })
+
+  it('draws a number with its written text', async () => {
+    const el = await draw('3. milk')
+    expect(el.querySelector('.md-list-number')?.textContent).toBe('3.')
+    expect(el.querySelector('.md-list-text')?.textContent).toBe('milk')
+  })
+
+  it('draws a checked item done, and a press on its box falls through to the value', async () => {
+    const el = await draw('- [x] milk')
+    expect(line(el).classList.contains('md-list-done')).toBe(true)
+    const seen = vi.fn()
+    el.addEventListener('click', seen)
+    const box = el.querySelector('.md-list-checkbox-seat') as HTMLElement
+    await act(async () => {
+      box.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 }))
+    })
+    expect(seen.mock.calls[0][0].defaultPrevented).toBe(false)
+  })
+
+  it('marks an item’s link with its span in the whole value, and a click follows it', async () => {
+    const value = '- see [[Target]]\n- more'
+    const el = await draw(value)
+    const link = el.querySelector('[data-link]') as HTMLElement
+    const at = value.indexOf('[[')
+    expect(link.getAttribute('data-src')).toBe(`${at},${at + '[[Target]]'.length}`)
+    await act(async () => {
+      link.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 }))
+    })
+    expect(open).toHaveBeenCalledWith(page, undefined, false)
+  })
+})

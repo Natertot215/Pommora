@@ -8,7 +8,7 @@ import { activeTokenIndices, tokenize } from '../Engine/tokens'
 import type { ConnectionsApi } from './connectionsApi'
 import { readLinkText, resolveLink } from '../../Connections/linkValue'
 import { buildPageIndex, type ConnPage } from '../../Connections/pageIndex'
-import { renderCellContent } from '../Tables/cellStatic'
+import { renderRestingLine } from '../Tables/cellStatic'
 import { cleanupEditor, mountEditor, seedHost, stubEditorBridge } from '../../Testing/editorHarness'
 import { scanDoc } from '../Engine/docScan'
 
@@ -30,7 +30,7 @@ async function renderCell(text: string): Promise<HTMLDivElement> {
   cellHost = document.createElement('div')
   document.body.appendChild(cellHost)
   cellRoot = createRoot(cellHost)
-  await act(async () => cellRoot?.render(renderCellContent(text, () => conn)))
+  await act(async () => cellRoot?.render(renderRestingLine(text, null, () => conn, {})))
   return cellHost
 }
 
@@ -64,7 +64,12 @@ describe('both syntaxes and both renderers agree', () => {
     cellRoot = createRoot(cellHost)
     await act(async () =>
       cellRoot?.render(
-        renderCellContent('[[Work Notes#Gone\\|al]] [lab](Work%20Notes#Gone)', () => missing),
+        renderRestingLine(
+          '[[Work Notes#Gone\\|al]] [lab](Work%20Notes#Gone)',
+          null,
+          () => missing,
+          {},
+        ),
       ),
     )
     const shown = [...cellHost.querySelectorAll('.md-connection-heading-missing')]
@@ -125,7 +130,7 @@ describe('an unresolved markdown link looks as an unresolved connection does', (
     cellHost = document.createElement('div')
     document.body.appendChild(cellHost)
     cellRoot = createRoot(cellHost)
-    await act(async () => cellRoot?.render(renderCellContent(body, () => dups)))
+    await act(async () => cellRoot?.render(renderRestingLine(body, null, () => dups, {})))
     const label = (root: Element): string[] => {
       const el = [...root.querySelectorAll('span')].find((s) => s.textContent === 'x')
       return el ? [...el.classList] : []

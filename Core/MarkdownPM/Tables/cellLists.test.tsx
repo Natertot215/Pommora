@@ -16,7 +16,7 @@ import { blockStarts } from '../Engine/blockModel'
 import { scanDoc } from '../Engine/docScan'
 import { editFor } from '../Input/format'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { renderCellContent } from './cellStatic'
+import { renderRestingLine } from './cellStatic'
 
 stubEditorBridge()
 afterEach(cleanupEditor)
@@ -466,7 +466,7 @@ describe('a block construct spelled in a cell, which reads as its text', () => {
 
   it('draws a `§` run between fence-shaped lines at rest, as a live cell reads it', () => {
     const around = { ordinalOf: () => null, keys: [], texts: ['Setup'] }
-    const drawn = renderCellContent('```\n§Setup\n```', () => undefined, { around })
+    const drawn = renderRestingLine('```\n§Setup\n```', null, () => undefined, { around })
     expect(renderToStaticMarkup(drawn)).toContain('md-section-run')
   })
 
