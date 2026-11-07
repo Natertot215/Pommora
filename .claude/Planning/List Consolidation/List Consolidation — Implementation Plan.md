@@ -1,7 +1,7 @@
 ## List Consolidation — Implementation Plan
 
 **DATE:** 11-06-2026
-**STATUS:** Ratified 11-06-2026
+**STATUS:** Ratified 11-06-2026; Completed 11-07-2026
 **SOURCE:** *List Consolidation — Decisions & Intention* (ratified 11-05-2026, Decisions A-1 to G-13 with its *§Rejections* and *§Constraints*), *List Consolidation — Investigation*, and the phase patches and reports in `Scouts/`, all in `.claude/Planning/List Consolidation/`.
 
 **PLAN REVIEWS:** three waves, folded (*List Consolidation — Plan Reviews*): Wave One outward, 31 findings; Wave Two inward, 41; Wave Three both ways, 4; then a closing proof that replayed all 35 patches onto a clean `b7f2f17a5`.
@@ -10,13 +10,9 @@
 
 | Head | Tests | Start | End |
 |------|-------|-------|-----|
-| `7bfbdf5ab` (production as `b7f2f17a5`, where the phase patches were built) | 9,121 passed, 2 skipped (549 files); comments 3,511 | 11-06-2026 10:57 AM | |
+| `7bfbdf5ab` (production as `b7f2f17a5`, where the phase patches were built) | 9,121 passed, 2 skipped (549 files); comments 3,511 | 11-06-2026 10:57 AM | 11-07-2026 3:00 AM |
 
 **Run Start:** comments 3,511; `~/Test` hash `e5a32a5d30d6a11310cd559ee2b1b84b261c3265`.
-
-**Run State:** resume from what's ticked. The run's helpers sit in the session scratchpad's `run/`: `env.sh`, `row.sh <label> <sha> <spec…>` for a drive row, `executor-rules.md`, and `reviewer-rules.md`. The drive worktree is the scratchpad's `wt`, holding Editor Parity's `results/base`, and shots sit in its `shots/`. Each phase takes one `execution-agent` continued task by task, its checkpoint two reviewers and the row run side by side, one fold commit by the same executor, then the row again at the folded head.
-
-**Where the Run Stands:** Phases 0 to 11 and Waves One and Two closed, Wave Two's fold at `5263f5722`: -300 (+1581 / -1881), 9,255 tests, 3,506 comments, every drive whole and green at that head. Wave Three didn't run. The Neutral Gate's fold and the Own Pass closed at `c3e69a955`, with 3,507 comments, and teardown is next.
 
 **Net Ledger** (production lines from the Actionable cell of `view-delta --exclude .claude`, cumulative from the BASELINE head. Estimate is what the phase patches measured at build; Measured is filled during the run):
 
@@ -34,7 +30,7 @@
 | 9 · Right-Click | -308 (+1386 / -1694), -1 its own | 9,204 | -313 (+1461 / -1774), 9,239 tests |
 | 10 · Text Properties | -286 (+1465 / -1751), +22 its own | 9,219 | -294 (+1560 / -1854), 9,254 tests |
 | 11 · Docs and Issues | -286, ±0 its own | 9,219 | -294 (+1560 / -1854), 9,254 tests |
-| **Total** | **-286 (+1465 / -1751); one production file added, none removed** | | |
+| **Total** | **-286 (+1465 / -1751); one production file added, none removed** | 9,219 | **-300 (+1581 / -1881), 9,255 tests, at `c3e69a955`** |
 
 **Comment Ledger** (the log's command; a phase's row is its head's count, and a phase over its row corrects before it closes):
 
@@ -289,8 +285,8 @@ The order is what makes each step land once. The scan goes first, since every la
   - [x] Review Checkpoint
 - [x] **Phase 11** — Docs and Issues
   - [x] Task 11-1 · Docs and issues
-- [ ] *§Final Verification* over `<BASELINE>..HEAD`
-- [ ] `[Stop: the final report, per §Final Verification]`
+- [x] *§Final Verification* over `<BASELINE>..HEAD`
+- [x] `[Stop: the final report, per §Final Verification]`
 
 ---
 
@@ -888,10 +884,10 @@ The reviews run over `<BASELINE>..HEAD`, each wave closed before the next opens.
 - [x] **Wave Three, Only If It Helps:** run it where Wave Two's folds were structural, as a final look rather than churn for its own sake. The orchestrator states why it ran or didn't.
 - [x] **The Neutral Gate:** one `fable-high` agent given only `<BASELINE>..HEAD`, the Approach and Principles, and the intention under *§Constraints · Neutral Gate*. It answers *§Constraints · The Measure* with a yes or no, its corrections, and the strengths to keep, and is re-run after a fold.
 - [x] **The Own Pass:** the gates from a clean state and `npm run build`; the diff read once; `git diff --stat <BASELINE>..HEAD -- Core/Sync Sync` prints nothing; the comment count sits at or under 3,511; *§Completion Criteria* ticked.
-- [ ] **The Teardown:** every worktree the run cut removed with `git worktree remove --force` and `git worktree prune`; `caffeinate` stopped by its task; every scratch Nexus, userData, and script the run made removed, apart from `$SHOTS`, which the report cites.
-- [ ] **The Cold-Machine Check:** each of these prints nothing, or only what it names: `git worktree list` (the main checkout alone); `find "$TMPDIR" -maxdepth 1 -name 'pommora-drive-*'`; `ps -o pid,command -A | grep -E "electron|vitest|vite-node|node .*live-drive|caffeinate" | grep -v grep` (only Nathan's own instance); `git status --short` (nothing the run made); and the `~/Test` hash matching Run Start's.
-- [ ] **Reconciliation:** *§Reconciliation* walked; *§Deviations* ruled on; STATUS and BASELINE's End filled, and the plan commits with `--only`.
-- [ ] **The Report:** in `closeout-review`'s closeout format, with the range presented through `view-delta`, `<net> (+<added> / -<removed>)` per phase and in total, every deviation, the Cold-Machine Check's result, the screenshots' session, and the neutral gate's answer verbatim. PushNotification tells Nathan it's ready.
+- [x] **The Teardown:** every worktree the run cut removed with `git worktree remove --force` and `git worktree prune`; `caffeinate` stopped by its task; every scratch Nexus, userData, and script the run made removed, apart from `$SHOTS`, which the report cites.
+- [x] **The Cold-Machine Check:** each of these prints nothing, or only what it names: `git worktree list` (the main checkout alone); `find "$TMPDIR" -maxdepth 1 -name 'pommora-drive-*'`; `ps -o pid,command -A | grep -E "electron|vitest|vite-node|node .*live-drive|caffeinate" | grep -v grep` (only Nathan's own instance); `git status --short` (nothing the run made); and the `~/Test` hash matching Run Start's.
+- [x] **Reconciliation:** *§Reconciliation* walked; *§Deviations* ruled on; STATUS and BASELINE's End filled, and the plan commits with `--only`.
+- [x] **The Report:** in `closeout-review`'s closeout format, with the range presented through `view-delta`, `<net> (+<added> / -<removed>)` per phase and in total, every deviation, the Cold-Machine Check's result, the screenshots' session, and the neutral gate's answer verbatim. PushNotification tells Nathan it's ready.
 
 #### Reconciliation
 
@@ -933,6 +929,8 @@ None survives ratification. *Morning Report* lists the calls taken for Nathan's 
 
 #### Deviations
 
+**Ruling:** every fold below stands as landed, and each *For the Morning* item waits on the owner's call.
+
 - **Phase 1's Fold (`1c4888010`, `da068b25d`):** the checkpoint found three readers of cell and Text strings still reading fence-shaped lines through `codeMask` after their surfaces stopped, so a resting cell and a focused cell disagreed on a `§` run, and a Text value drew a link the index and sort couldn't see. `inlineCodeMask` joined `markdownCode.ts` and serves `sectionRunsIn`, `shownProse`, `valueLinks`, and a rename's reach into a Text value, which threads `inCode` through `rewriteConnections`, `rewriteHeadingConnections`, and `fileRewrites`. `listReach`'s `blank` returned to `splitPrefix`'s body, since Phase 1 had changed a pick on an empty callout head. Smaller folds took `cellScan`, `docScan.after(tr)`, and a required `tokenizeChunk` scope, and `citationRowMenu` became a constant. Later rows read about 17 lines, 7 tests, and 2 `scope` sites above their estimates, and every later Measured carries that offset. Phase 2a's `blank` lands as `splitPrefix`'s body rather than the patch's slice.
 - **Phase 2's Fold (`842f21193`):** the checkpoint found a row ending on a delimiter writing onto it, so ⌘A then ⌘B on a page ending in a block dissolved the block, and the refusal took one shape in `onDelimiter`. Enter on a blank line in a quoted block stopped ejecting it, `splitPrefix` reads the scan so a callout-shaped line inside a fence is code, a closer indented past its opener holds no list, and `||` and `-[] ` stay literal in display math. `pastSign` states the sign clamp once, and `setBlock`, `canonicalizeCheckbox`, and `takeMarker` read from `k`. Phases 3c, 5, 6b, 7a, and 7c land with `--3way`, keeping `role !== 'content'`, the single `from`, `fenceDelimiter(scan, k)`, `pastSign`, and the `splitPrefix` body. The running offset after Phase 2 is +8 lines and +17 tests.
 - **Phase 3's Fold (`7a34e9f8b`):** the checkpoint found a list or block drag recounting whenever lines stood selected elsewhere, since `overLines` read the selection and a drag dispatched bare `input`. Both drags now dispatch `move.drop`, CodeMirror's event for moved content, and no reader needs a move counted as typing. `rolesAgainst` reads `ridesList`, `numbered` hoisted, `runsAround`'s `seen` takes a default, and `blankBody` reads a quote's blank line as blank when a move heals its hole. Phase 4 lands with `--3way`. The running offset after Phase 3 is +9 lines and +22 tests.
@@ -945,6 +943,7 @@ None survives ratification. *Morning Report* lists the calls taken for Nathan's 
 - **Wave One's Fold (`a6891aeed`):** fourteen simplification fixes with behavior unchanged, at -22 lines: `seatPastMarker` moved to `docScan.ts`, `inlineCodeMask` lost its lazy table, single-reader helpers inlined or went private, and `headingLinkStyle` lost its second default. `governedRoot`'s dead function left too, outside the plan's named surface, since nothing called it. Comments read 3,506. Editor Parity's first run at this head read 124 lines from a stray `l` at Page A's start, and its rerun at the same head read the expected one. Reading a masked `scan.markers` also means a table-shaped paste onto a `- x` line in a plain code or math block lands where the baseline refused it, which *§Behavior Changes* doesn't name and "every other block stays plain code" covers.
 - **Wave Two's Fold (`caffa29b0`, `5263f5722`):** a whole-line selection wrote Bold, the other inline rows, and a typed wrap around a list marker, as the baseline did, so `inlineRange` opens past the marker whenever a selection holds more than it, and `underSelection` and `wrapSelection` both read it. A CRLF value's first line opens without its `\r`, a regression from Phase 10's fold. A page's Delete seats past a marker through one binding in `editorKeymap` that every surface reads, and Tab declines where a Markdown block's lead would absorb its tab. I-073 took ⌘], ⌘[, and the Option+Shift line copies, since `listRenumber`'s gate stays out of scope. Two named tests landed, and the fold sits +16 lines above Wave One, 6 of them an import wrapped past Biome's width. Wave Three didn't run, since these folds were five local fixes, one small function, and one moved binding, with nothing structural to look at again.
 - **The Neutral Gate's Fold (`c3e69a955`):** the gate answered yes over `5263f5722` and again over `c3e69a955`. Two of its five corrections landed: `markerIn` took the doc line its two readers need, and `literalLines`' shared empty array took one name, so comments read 3,507. Four points stand as not taken. `ListKind` isn't derived from `LIST_TYPES` nor `LIST_KINDS` from both, since Task 7-1 keeps wording in Actions, the union and the record already check each other at compile time, and the derivation ties menu order to the engine. `joinEmptyHead`'s Backspace stays in `listKeys`, since moving it adds a scope check and two exports to relabel one binding. `ridesList` doesn't take the block, since that moves a ternary without removing it. `fileRewrites`' positional tail stands as Wave One ruled. Every drive ran whole at this head, and the Own Pass's typecheck and lint ran from the main checkout at this head, since `../../.claude` resolves past the scratchpad's link from a worktree there.
+- **The Report's Delta:** the range is presented through `view-delta`'s saved Markdown rather than its viewer, since the page runs 8 MB and a generated page is read whole before it's published.
 - **For the Morning:** Blockquote and Callout inside a plain code block don't write unaware as C-5's other rows do, and a partial selection reaching a delimiter can still dissolve a block. That matches the baseline, and C-7 keeps Insert ▸ as it was, so it stands until Nathan rules.
 - **For the Morning:** dropping an item just under another takes that item's wrapped text or carried block with it, as it does at the baseline, since the bottom boundary reads the item's own line. Reading its sub-block's end is about two lines, but it moves where a parent's drop lands, which is a drag-feel decision.
 - **For the Morning:** a code block an item carries draws flush with the page, so the rail crosses its box and text, and a flush line in a cell does the same. Both shots are in `$SHOTS/p3-list-types`. No decision names it.
