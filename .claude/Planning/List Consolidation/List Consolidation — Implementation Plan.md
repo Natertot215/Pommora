@@ -16,7 +16,7 @@
 
 **Run State:** resume from what's ticked. The run's helpers sit in the session scratchpad's `run/`: `env.sh`, `row.sh <label> <sha> <spec…>` for a drive row, `executor-rules.md`, and `reviewer-rules.md`. The drive worktree is the scratchpad's `wt`, holding Editor Parity's `results/base`, and shots sit in its `shots/`. Each phase takes one `execution-agent` continued task by task, its checkpoint two reviewers and the row run side by side, one fold commit by the same executor, then the row again at the folded head.
 
-**Where the Run Stands:** Phase 10 closed at `ee5695029`: -294 (+1560 / -1854), 9,254 tests, 3,507 comments, every drive whole and green at that head. Task 11-1 is next.
+**Where the Run Stands:** Phases 0 to 11 closed, Task 11-1 at `0b0c1ddda`: -294 (+1560 / -1854), 9,254 tests, 3,507 comments, every drive whole and green at `ee5695029`, the last production head. *§Final Verification* is open, at Wave One.
 
 **Net Ledger** (production lines from the Actionable cell of `view-delta --exclude .claude`, cumulative from the BASELINE head. Estimate is what the phase patches measured at build; Measured is filled during the run):
 
@@ -33,7 +33,7 @@
 | 8 · The Word Rule | -307 (+1172 / -1479), -47 its own | 9,196 | -294 (+1254 / -1548), 9,228 tests |
 | 9 · Right-Click | -308 (+1386 / -1694), -1 its own | 9,204 | -313 (+1461 / -1774), 9,239 tests |
 | 10 · Text Properties | -286 (+1465 / -1751), +22 its own | 9,219 | -294 (+1560 / -1854), 9,254 tests |
-| 11 · Docs and Issues | -286, ±0 its own | 9,219 | |
+| 11 · Docs and Issues | -286, ±0 its own | 9,219 | -294 (+1560 / -1854), 9,254 tests |
 | **Total** | **-286 (+1465 / -1751); one production file added, none removed** | | |
 
 **Comment Ledger** (the log's command; a phase's row is its head's count, and a phase over its row corrects before it closes):
@@ -287,8 +287,8 @@ The order is what makes each step land once. The scan goes first, since every la
   - [x] Task 10-3 · YAML lists
   - [x] Task 10-4 · Drive group 10 and the drives that follow
   - [x] Review Checkpoint
-- [ ] **Phase 11** — Docs and Issues
-  - [ ] Task 11-1 · Docs and issues
+- [x] **Phase 11** — Docs and Issues
+  - [x] Task 11-1 · Docs and issues
 - [ ] *§Final Verification* over `<BASELINE>..HEAD`
 - [ ] `[Stop: the final report, per §Final Verification]`
 
@@ -862,9 +862,9 @@ Nathan's direction during the run: documents change surgically, and whether each
 
 **VERIFY**
 
-- [ ] Run the gates; `node .claude/scripts/check-atlas.mjs` exits 0.
-- [ ] `git grep -n -E "listGlyphOf|drawnKind|itemAt|readsFrom|wordGestures|joinedWords|Type ▸|Task List|Bullet List" -- .claude/Features .claude/Guidelines .claude/IssuesPM.md` prints nothing false.
-- [ ] Every cite in `.claude/IssuesPM.md` the work moved is re-read at this head.
+- [x] Run the gates; `node .claude/scripts/check-atlas.mjs` exits 0.
+- [x] `git grep -n -E "listGlyphOf|drawnKind|itemAt|readsFrom|wordGestures|joinedWords|Type ▸|Task List|Bullet List" -- .claude/Features .claude/Guidelines .claude/IssuesPM.md` prints nothing false.
+- [x] Every cite in `.claude/IssuesPM.md` the work moved is re-read at this head.
 
 ---
 
