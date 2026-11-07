@@ -16,7 +16,7 @@
 
 **Run State:** resume from what's ticked. The run's helpers sit in the session scratchpad's `run/`: `env.sh`, `row.sh <label> <sha> <spec…>` for a drive row, `executor-rules.md`, and `reviewer-rules.md`. The drive worktree is the scratchpad's `wt`, holding Editor Parity's `results/base`, and shots sit in its `shots/`. Each phase takes one `execution-agent` continued task by task, its checkpoint two reviewers and the row run side by side, one fold commit by the same executor, then the row again at the folded head.
 
-**Where the Run Stands:** Tasks 10-1 to 10-4 landed at `ac81fd7c7`, `c3c02a864`, `6cf88253d`, and `5874aacc7`: -291 (+1540 / -1831), 9,254 tests, 3,507 comments. Phase 10's checkpoint is open. Its simplification review holds no defects and six folds, in the scratchpad's `run/simp10-proposal.patch`, which passes `git apply --check` at `5874aacc7`. The adversarial review and a run of Option Picker, Archive, and Properties were in flight. Once the fold lands, *§When Drives Run*'s last row runs whole at the folded head.
+**Where the Run Stands:** Phase 10 closed at `ee5695029`: -294 (+1560 / -1854), 9,254 tests, 3,507 comments, every drive whole and green at that head. Task 11-1 is next.
 
 **Net Ledger** (production lines from the Actionable cell of `view-delta --exclude .claude`, cumulative from the BASELINE head. Estimate is what the phase patches measured at build; Measured is filled during the run):
 
@@ -32,7 +32,7 @@
 | 7 · One Definition Per Type | -260 (+1153 / -1413), -59 its own | 9,191 | -259 (+1223 / -1482), 9,222 tests |
 | 8 · The Word Rule | -307 (+1172 / -1479), -47 its own | 9,196 | -294 (+1254 / -1548), 9,228 tests |
 | 9 · Right-Click | -308 (+1386 / -1694), -1 its own | 9,204 | -313 (+1461 / -1774), 9,239 tests |
-| 10 · Text Properties | -286 (+1465 / -1751), +22 its own | 9,219 | |
+| 10 · Text Properties | -286 (+1465 / -1751), +22 its own | 9,219 | -294 (+1560 / -1854), 9,254 tests |
 | 11 · Docs and Issues | -286, ±0 its own | 9,219 | |
 | **Total** | **-286 (+1465 / -1751); one production file added, none removed** | | |
 
@@ -281,12 +281,12 @@ The order is what makes each step land once. The scan goes first, since every la
   - [x] Task 9-6 · Drive group 9
   - [x] Review Checkpoint
   - [x] Compaction Checkpoint
-- [ ] **Phase 10** — Text Properties
+- [x] **Phase 10** — Text Properties
   - [x] Task 10-1 · The pane
   - [x] Task 10-2 · At rest
   - [x] Task 10-3 · YAML lists
   - [x] Task 10-4 · Drive group 10 and the drives that follow
-  - [ ] Review Checkpoint
+  - [x] Review Checkpoint
 - [ ] **Phase 11** — Docs and Issues
   - [ ] Task 11-1 · Docs and issues
 - [ ] *§Final Verification* over `<BASELINE>..HEAD`
@@ -843,8 +843,8 @@ The List Types Drive's group 10 and the Text Property Drive's rewrite should pro
 
 #### Review Checkpoint
 
-- [ ] The pane reads what a cell reads through the same code, the field stays plain, and nothing on disk changed; both reviewers' findings folded or recorded.
-- [ ] *§When Drives Run*'s row for Phase 10 green. Four shots read and captioned.
+- [x] The pane reads what a cell reads through the same code, the field stays plain, and nothing on disk changed; both reviewers' findings folded or recorded.
+- [x] *§When Drives Run*'s row for Phase 10 green. Four shots read and captioned.
 
 ---
 
@@ -941,9 +941,11 @@ None survives ratification. *Morning Report* lists the calls taken for Nathan's 
 - **Phase 7's Fold (`896ed6e9d`):** `readLine` read a marker the scan says isn't there, so Heading or Paragraph on a head like `> [!note] - foo` deleted its visible `- `, and on `$$\n- b\n$$` a formula's dash. `readLine` and `setBlock`'s callout now read `scan.markers[k]`, and `stripInnerMarkers` left. A depth-two `> > - foo` picked Callout now writes `> [!callout] foo`, which goes further than *§Behavior Changes* row 64 states, and a plain code block's `- foo` keeps its dash under Callout. `seatPastMarker`'s fold moved to Task 9-5. The running offset after Phase 7 is +1 line and +31 tests.
 - **Phase 8's Fold (`96cd023e4`):** both reviewers found Option-arrow crossing a line break stopping inside a contraction, since CodeMirror takes one categorizer at a gesture's start and `contractions` read only that line, a regression from the joined atoms that planning's single-line differential missed. `contractions` now answers over a window from the previous text line to the next, at +12 lines, so *§Behavior Changes* row 51's quote riding crosses a break too, and row 63 reaches a neighbor word beside a contraction in a language fence. `MATRIX.md`'s two word-rule lines read true, so Drive Groups 9 and 10 keep the new wording, and Task 11-1's sentence on a fence's word characters takes that clause if it stays. The running offset after Phase 8 is +13 lines and +32 tests.
 - **Phase 9's Fold (`aa00d48b5`):** `seatPastMarker` took one rule, `Math.max(pos, content)` through `markerIn`, so `leadEnd`, its `atomics` flag, and `cached` left, and the two seats Task 9-5 flagged both seat at the content. A resting cell's point now passes through it, since a press left of a box, number, or arrow wrote Bold ahead of the marker. A footnote's gate reads `to` through `inCodeNear`, since a selection ending at a line break wrote `[^1]` in front of a fence, and `holdsLine` reads the marker's start, so ⌘⇧← on a nested or quoted item narrows as a top-level one does. Comments read 3,506, one under the ledger's row from here on. Drive Group 10 keeps `MATRIX.md`'s new word-rule lines. The running offset after Phase 9 is -5 lines and +35 tests.
+- **Phase 10's Fold (`ee5695029`):** a real YAML list's empty member reads empty, since a first-line edit wrote the word `null` to disk. The field keeps a list line's lead and marker through `fieldLine`, so editing a first line of `\t- a` no longer nests the line under it and `- ` stays a list, and a list line lands with any trailing space a plain line trims. `sharedSurface` folded into `editorBase` and `renderCellContent` took one `DrawOptions`. The running offset after Phase 10 is -8 lines and +35 tests.
 - **For the Morning:** Blockquote and Callout inside a plain code block don't write unaware as C-5's other rows do, and a partial selection reaching a delimiter can still dissolve a block. That matches the baseline, and C-7 keeps Insert ▸ as it was, so it stands until Nathan rules.
 - **For the Morning:** dropping an item just under another takes that item's wrapped text or carried block with it, as it does at the baseline, since the bottom boundary reads the item's own line. Reading its sub-block's end is about two lines, but it moves where a parent's drop lands, which is a drag-feel decision.
 - **For the Morning:** a code block an item carries draws flush with the page, so the rail crosses its box and text, and a flush line in a cell does the same. Both shots are in `$SHOTS/p3-list-types`. No decision names it.
 - **For the Morning:** Enter under a `+` item writes `-`, as B-4 rules, and standard Markdown reads `+ a` then `- b` as two lists, which other apps may space apart. Pommora reads one list, and NexusOS holds no `+` items outside code blocks.
 - **For the Morning:** a typed `![[Notes]]` standing alone in a Text value loses its alias when a rename gives the link a path, since `embedLine` reads the value as an embed's line while autocomplete now says only a page draws one. A picked link keeps its alias, so only the bare typed form is exposed.
-
+- **For the Morning:** sort and filter read a Text list's raw marker while its cell draws a glyph, so `- zebra` sorts among the dashes and `Is milk` misses a value drawn `•milk`, though Contains finds it. No decision names this. Reading through `parseListMarker` in `shownProse` is about 3 lines, and it changes where list values sort.
+- **For the Morning:** a link inside a real YAML list draws as a link but isn't indexed or renamed, as at the baseline, until the first edit turns the list into a string. Rewriting members would write into a foreign list, which reaches G-13's "keeps its shape".
