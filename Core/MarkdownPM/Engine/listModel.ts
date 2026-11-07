@@ -7,16 +7,13 @@ import {
   type SequencedMarker,
 } from './detect'
 import {
-  applyEdits,
-  diffAsSingleReplace,
   lineEndOf,
   lineIndexAt,
   quoteDepthOf,
   quotePrefixWidth,
   type TextEdit,
 } from './markdownCode'
-import { rebuildMove, type Slot } from './blockMove'
-import { type DocScan, fenceDelimiter, markerIn, scanDoc, sealedBlock } from './docScan'
+import { type DocScan, fenceDelimiter, markerIn, sealedBlock } from './docScan'
 
 /** Shared by the extension's click handler so press-to-drag never flips the box. */
 export function checkboxToggleChange(scan: DocScan, pos: number): TextEdit | null {
@@ -139,16 +136,23 @@ function runsAround(scan: DocScan, i: number, seen = new Set<number>()): Row[][]
   return runs
 }
 
-/** Recounts every run of each list holding a position in `at`: a nested run from 1, and any other from its first item, or, for the run holding `held`, from the marker it began with before a move. A position on a fence's delimiter reads from outside its block. */
-export function renumberRuns(scan: DocScan, at: readonly number[], held?: Row): TextEdit[] {
+type Hold = { k: number; lm: SequencedMarker | null }
+
+/** Recounts every run of each list holding a position in `at`: a nested run from 1, and any other from its first item, or, for a run a hold names, from the marker the hold carries, or not at all where it carries none. A position on a fence's delimiter reads from outside its block. */
+export function renumberRuns(
+  scan: DocScan,
+  at: readonly number[],
+  held: readonly Hold[] = [],
+): TextEdit[] {
   const seen = new Set<number>()
   return at.flatMap((p) => {
     let i = lineIndexAt(scan, p)
     while (fenceDelimiter(scan, i) && openerOf(scan, i) > 0) i = openerOf(scan, i) - 1
     if (seen.has(i)) return []
-    return runsAround(scan, i, seen).flatMap((rows) =>
-      renumberRun(scan, rows, rows.some(({ k }) => k === held?.k) ? held?.lm : undefined),
-    )
+    return runsAround(scan, i, seen).flatMap((rows) => {
+      const hold = held.find((h) => rows.some(({ k }) => k === h.k))
+      return hold?.lm === null ? [] : renumberRun(scan, rows, hold?.lm)
+    })
   })
 }
 
@@ -164,18 +168,26 @@ function renumberRun(scan: DocScan, rows: readonly Row[], held?: SequencedMarker
   return changes
 }
 
-/** A move permutes its run, so the run it lands in can't be read for its start afterward: the start comes from the document before it, and the one recount runs against the post-move doc so the offsets are correct, then diffs back onto the original as one replace. */
-export function dropChanges(
+const runHolding = (scan: DocScan, k: number): Row[] | undefined =>
+  runsAround(scan, k).find((rows) => rows.some((row) => row.k === k))
+
+/** A move permutes the runs it lands in, so none can be read for its start afterward: each run a move's insertion lands in counts from the start of the run that held, before the move, its first line the move didn't bring, mapped back by `back`. A run a move brought whole stays as written, and a run a move leaves counts from the item now first, as a deletion does. */
+export function moveHolds(
+  was: DocScan,
   scan: DocScan,
-  block: BlockSpan,
-  slot: Slot & { line: number },
-): TextEdit[] | null {
-  const doc = scan.text
-  const moved = rebuildMove(doc, block, slot, false)
-  if (moved === null) return null
-  const post = scanDoc(moved.doc, scan.scope)
-  const landing = runsAround(scan, slot.line).find((rows) => rows.some(({ k }) => k === slot.line))
-  const held = landing && { k: lineIndexAt(post, moved.destAt), lm: landing[0].lm }
-  const finalDoc = applyEdits(moved.doc, renumberRuns(post, [moved.destAt, moved.sourceAt], held))
-  return diffAsSingleReplace(doc, finalDoc)
+  landings: readonly { from: number; to: number }[],
+  back: (pos: number) => number,
+): Hold[] {
+  const brought = (k: number): boolean =>
+    landings.some(({ from, to }) => scan.lineStarts[k] >= from && scan.lineStarts[k] < to)
+  return landings.flatMap(({ from, to }): Hold[] => {
+    const line = lineIndexAt(scan, from)
+    const k = scan.lineStarts[line] < from && scan.lineStarts[line + 1] < to ? line + 1 : line
+    const rows = runHolding(scan, k)
+    if (!rows) return []
+    const kept = rows.find((row) => !brought(row.k))
+    if (!kept) return [{ k: rows[0].k, lm: null }]
+    const source = runHolding(was, lineIndexAt(was, back(scan.lineStarts[kept.k])))
+    return source ? [{ k: rows[0].k, lm: source[0].lm }] : []
+  })
 }

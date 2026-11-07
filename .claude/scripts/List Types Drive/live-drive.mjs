@@ -492,14 +492,15 @@ async function group3(cdp) {
   await removed('B-10', "deleting a list's first item leaves the rest their numbers", '1. a\n2. b\n3. c', '1. a\n', '2. b\n3. c')
   await removed('B-10', 'typing over a selection across items recounts the run it joins, and one ⌘Z takes both', '1. a\n2. b\n3. c', 'a\n2. ', '1. xb\n2. c', type('x'))
 
-  // A drop swallows the selection it moves past, so the next key acts on a caret and deletes nothing across lines.
-  for (const [name, key, want] of [['Enter', ENTER, '- \n- beta word\n- gamma\n- alpha\n- delta'], ['Backspace', BACKSPACE, 'beta word\n- gamma\n- alpha\n- delta']]) {
+  // A drop leaves a selection it moves past standing, so the next key acts on that selection alone.
+  for (const [name, key] of [['Enter', ENTER], ['Backspace', BACKSPACE]]) {
     await setBody(cdp, '- alpha\n- beta word\n- gamma\n- delta')
     await clicks(cdp, await textAt(cdp, PAGE_TEXT, 'word'), 2, { settle: 400 })
     await dragTo(cdp, glyphOf('alpha'), lineOf('delta'), 'above')
-    const dropped = await selection(cdp)
+    const held = (await docOf(cdp)).slice(...(await selection(cdp)))
     await key(cdp)
-    item(3, 'B-10', `${name} after a glyph dragged past a selected word acts on a caret`, show(dropped) === show([2, 2]) && (await body(cdp)) === want, show([dropped, await body(cdp)]))
+    const got = await body(cdp)
+    item(3, 'B-10', `${name} after a glyph dragged past a selected word acts on that word alone`, held === 'word' && got.startsWith('- beta') && !got.includes('word') && got.endsWith('- gamma\n- alpha\n- delta'), show([held, got]))
   }
 
   await setBody(cdp, '- a\n- b\n\t```js\n\tx\n\t```\n- c')

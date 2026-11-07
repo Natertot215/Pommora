@@ -11,6 +11,7 @@ import {
   wholeLink,
 } from './connections'
 import { inlineCodeMask } from '../MarkdownPM/Engine/markdownCode'
+import { parseListMarker } from '../MarkdownPM/Engine/detect'
 import {
   defaultLabel,
   markdownLink,
@@ -51,6 +52,27 @@ export function linkEntry(v: unknown, nesting = 1): string | null {
   let depth = 0
   for (; Array.isArray(inner) && inner.length === 1; depth++) inner = inner[0]
   return isScalar(inner) && depth >= nesting ? `[[${inner}]]` : null
+}
+
+/** Each text a value holds links in, through `f`: the whole value as `linkEntry` reads it, or else each member of a list, so a list keeps its shape. Answers the value rewritten, or undefined where `f` changed nothing. */
+export function rewriteLinkTexts(v: unknown, f: (text: string) => string): unknown {
+  const whole = linkEntry(v, 2)
+  if (whole !== null) {
+    const next = f(whole)
+    return next === whole ? undefined : next
+  }
+  if (!Array.isArray(v)) return undefined
+  const members = v.map((m) => rewriteLinkTexts(m, f) ?? m)
+  return members.some((m, i) => m !== v[i]) ? members : undefined
+}
+
+export function linkTexts(v: unknown): string[] {
+  const texts: string[] = []
+  rewriteLinkTexts(v, (text) => {
+    texts.push(text)
+    return text
+  })
+  return texts
 }
 
 const writtenPage = (
@@ -237,8 +259,12 @@ export function linkDisplayText(raw: string, display?: LinkDisplay, title?: stri
   }
 }
 
-/** A text with each connection replaced by what it shows, so a Text value sorts and filters as it reads. */
-export function shownProse(text: string): string {
+/** A text as it reads, each line past its list marker and each connection replaced by what it shows, so a Text value sorts and filters as it reads. */
+export function shownProse(value: string): string {
+  const text = value
+    .split('\n')
+    .map((line) => line.slice(parseListMarker(line)?.contentStart ?? 0))
+    .join('\n')
   if (!mayHoldLink(text)) return text
   let out = ''
   let at = 0

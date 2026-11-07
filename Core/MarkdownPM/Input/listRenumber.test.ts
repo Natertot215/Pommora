@@ -1,6 +1,15 @@
 import { describe, it, expect } from 'vitest'
-import { history, undo } from '@codemirror/commands'
-import { EditorState, type Transaction } from '@codemirror/state'
+import {
+  copyLineDown,
+  copyLineUp,
+  history,
+  indentLess,
+  indentMore,
+  moveLineDown,
+  moveLineUp,
+  undo,
+} from '@codemirror/commands'
+import { EditorState, type StateCommand, type Transaction } from '@codemirror/state'
 import { editEvent, landEdit, listRenumber } from './listRenumber'
 import { scanDoc } from '../Engine/docScan'
 import {
@@ -338,5 +347,49 @@ describe('a paste into a numbered list', () => {
     expect(view.state.doc.toString()).toBe('1. a\n2. x\n3. b')
     undo(view)
     expect(view.state.doc.toString()).toBe('1. a\n2. b')
+  })
+})
+
+describe('a move, a copy, or an indent recounts the runs it reshapes', () => {
+  const run = '5. a\n6. b\n7. c'
+  const command = (doc: string, at: number, cmd: StateCommand): string => {
+    let state = EditorState.create({ doc, selection: { anchor: at }, extensions: listRenumber })
+    cmd({
+      state,
+      dispatch: (tr) => {
+        state = tr.state
+      },
+    })
+    return state.doc.toString()
+  }
+
+  it('a moved line keeps the start of the run it lands in', () => {
+    expect(command(run, 5, moveLineUp)).toBe('5. b\n6. a\n7. c')
+    expect(command(run, 5, moveLineDown)).toBe('5. a\n6. c\n7. b')
+    expect(command('1. a\n\n5. x', 7, moveLineUp)).toBe('1. a\n2. x\n')
+    expect(command('1. a\n2. b\n\n5. x\n6. y', 5, moveLineDown)).toBe('1. a\n\n5. b\n6. x\n7. y')
+  })
+  it('a copied line counts on through the run', () => {
+    expect(command(run, 5, copyLineDown)).toBe('5. a\n6. b\n7. b\n8. c')
+    expect(command(run, 5, copyLineUp)).toBe('5. a\n6. b\n7. b\n8. c')
+  })
+  it('an indented line starts a nested run, and a dedented one rejoins its run', () => {
+    const nested = command(run, 5, indentMore)
+    expect(nested).toBe('5. a\n  1. b\n6. c')
+    expect(command(nested, 7, indentLess)).toBe(run)
+  })
+  it('dropped text keeps the start of the run it lands in', () => {
+    const moved = (from: number, to: number, at: number): string =>
+      EditorState.create({ doc: run, extensions: listRenumber })
+        .update({
+          changes: [
+            { from, to },
+            { from: at, insert: run.slice(from, to) },
+          ],
+          userEvent: 'move.drop',
+        })
+        .state.doc.toString()
+    expect(moved(5, 10, 0)).toBe('5. b\n6. a\n7. c')
+    expect(moved(9, 14, 4)).toBe('5. a\n6. c\n7. b')
   })
 })

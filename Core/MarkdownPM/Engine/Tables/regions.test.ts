@@ -1,12 +1,11 @@
 import { describe, it, expect } from 'vitest'
 import { splitWithOffsets } from '../detect'
 import { tableRegions as regionsIn, modelFromRegion } from './regions'
-import { parseTable, stream } from '../../../Testing/markdownEngine'
+import { pageCodeMask, parseTable, stream } from '../../../Testing/markdownEngine'
 import { parse } from '../parser'
-import { codeMask } from '../markdownCode'
 
 const tableRegions = (doc: string): ReturnType<typeof regionsIn> =>
-  regionsIn(splitWithOffsets(doc), codeMask(doc))
+  regionsIn(splitWithOffsets(doc), pageCodeMask(doc))
 
 describe('regions', () => {
   it('finds a top-level table and its row/pipe geometry; excludes the delimiter from rows', () => {

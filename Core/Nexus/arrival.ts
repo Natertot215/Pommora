@@ -349,7 +349,7 @@ async function refill(
   for (const link of links) {
     if (!defs.has(link.property)) continue
     held[link.page] ??= []
-    held[link.page].push({ ...link, value: rewriteConnections(link.value, own) })
+    held[link.page].push({ ...link, value: rewriteConnections(link.value, own, 'value') })
   }
   const missed = new Set<string>()
   const { taken } = await sweepRootsById(

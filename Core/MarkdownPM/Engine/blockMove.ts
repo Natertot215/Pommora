@@ -24,13 +24,13 @@ function reindentBlock(blockLines: string[], targetIndent: string | undefined): 
   })
 }
 
-/** A block stands apart, `fenced`, so a blank line seats it at the slot and heals the hole it leaves. An item drops straight into the lines at its slot, and only an item that was its whole list takes a blank with it. */
-export function rebuildMove(
+/** A block stands apart, `fenced`, so a blank line seats it at the slot and heals the hole it leaves. An item drops straight into the lines at its slot, and only an item that was its whole list takes a blank with it. The move comes back as the cut and the insertion, in the original document's offsets. */
+export function moveRange(
   doc: string,
   range: BlockSpan,
   slot: Slot,
   fenced: boolean,
-): { doc: string; sourceAt: number; destAt: number } | null {
+): TextEdit[] | null {
   const trailingNL = doc.endsWith('\n')
   const lines = doc.split('\n')
   if (trailingNL) lines.pop()
@@ -53,46 +53,47 @@ export function rebuildMove(
   if (heals && blankAt(bEnd + 1)) cutEnd = bEnd + 1
   else if (heals && blankAt(bStart - 1)) cutStart = bStart - 1
 
-  const out: string[] = []
+  const out: (number | string)[] = []
+  const textOf = (o: number | string): string => (typeof o === 'number' ? lines[o] : o)
   const sep = (wanted: boolean): void => {
-    if (wanted && out.length && !blankBody(out[out.length - 1])) out.push('')
+    if (wanted && out.length && !blankBody(textOf(out[out.length - 1]))) out.push('')
   }
-  let destLine = 0
-  let sourceLine = 0
   for (let i = 0; i < lines.length; i++) {
     if (i === tLine) {
       sep(fenced)
-      destLine = out.length
       out.push(...blockLines)
       if (fenced) out.push('')
     }
     if (i < cutStart || i > cutEnd) {
-      if (i === cutEnd + 1) {
-        sep(heals && i !== tLine)
-        sourceLine = out.length
-      }
-      out.push(lines[i])
+      if (i === cutEnd + 1) sep(heals && i !== tLine)
+      out.push(i)
     }
   }
   if (tLine === lines.length) {
     sep(fenced)
-    destLine = out.length
     out.push(...blockLines)
   }
-  if (cutEnd + 1 >= lines.length) sourceLine = out.length
 
-  const joined = out.join('\n')
-  const newDoc = joined + (trailingNL ? '\n' : '')
-  if (newDoc === doc) return null
-  const offsets = lineOffsetsOf(out)
-  return {
-    doc: newDoc,
-    sourceAt: offsets[sourceLine] ?? joined.length,
-    destAt: offsets[destLine] ?? joined.length,
+  const moved = out.map(textOf).join('\n') + (trailingNL ? '\n' : '')
+  if (moved === doc) return null
+  const changes: TextEdit[] = []
+  let a = 0
+  let b = 0
+  const gap = (toA: number, toB: number): void => {
+    for (const c of diffAsSingleReplace(doc.slice(a, toA), moved.slice(b, toB)))
+      changes.push({ from: a + c.from, to: a + c.to, insert: c.insert })
   }
-}
-
-export function moveRange(doc: string, range: BlockSpan, slot: Slot): TextEdit[] | null {
-  const moved = rebuildMove(doc, range, slot, true)
-  return moved === null ? null : diffAsSingleReplace(doc, moved.doc)
+  let at = 0
+  out.forEach((o, n) => {
+    if (typeof o === 'number') {
+      if (out[n - 1] !== o - 1) gap(starts[o], at)
+      if (out[n + 1] !== o + 1) {
+        a = starts[o] + lines[o].length
+        b = at + lines[o].length
+      }
+    }
+    at += textOf(o).length + 1
+  })
+  gap(doc.length, moved.length)
+  return changes
 }

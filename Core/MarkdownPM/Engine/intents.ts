@@ -113,10 +113,11 @@ export const railStyle = (r: Pick<RailIntent, 'level' | 'reach'>): Record<string
 export const textMarkerClass = (lm: ListMarker): string =>
   `md-list-${lm.kind === 'arrow' ? 'arrow' : 'number'} md-control ${GLYPH_CLASS}`
 
-export function listLineClass(lm: ListMarker): string {
-  if (lm.kind === 'checkbox') return cx('md-list-item md-list-task', lm.checked && 'md-list-done')
-  return isSequenced(lm) ? 'md-list-item md-list-ordered' : 'md-list-item'
-}
+const listZoneClass = (lm: ListMarker): string | undefined =>
+  lm.kind === 'checkbox' ? 'md-list-task' : isSequenced(lm) ? 'md-list-ordered' : undefined
+
+export const listLineClass = (lm: ListMarker): string =>
+  cx('md-list-item', listZoneClass(lm), lm.kind === 'checkbox' && lm.checked && 'md-list-done')
 
 type ContentKind = Exclude<TokenKind, LinkKind | 'citationRef'>
 
@@ -338,21 +339,68 @@ export function lineIntentsInto(
   if (base !== null) pushConstruct(intents, scan, i, base, selStart, ranged)
 }
 
-export function railIntents(scan: DocScan, quoteDepths: number[]): RailIntent[][] {
+/** The columns `line` spans from `from` to `to`, a tab two wide, as `indentLevel` counts it. */
+function columns(line: string, from: number, to: number): number {
+  let n = 0
+  for (let i = from; i < to; i++) n += line[i] === '\t' ? 2 : 1
+  return n
+}
+
+type ListIntent = Extract<DecoIntent, { kind: 'rail' | 'line' | 'prefix' }>
+
+/** A carried line draws from its owner's text column: a line of the list's own depth moves its words or its code box there, its lead up to the owner's content hidden as an item's indent is, and a quote or callout nested under the item moves whole. A table is a block widget no line decoration reaches. */
+function pushCarry(
+  out: ListIntent[],
+  scan: DocScan,
+  i: number,
+  ownerAt: number,
+  depth: number,
+  whole: boolean,
+): void {
+  const owner = markerIn(scan, ownerAt)!
+  const ls = scan.lineStarts[i]
+  if (spanAt(scan.tables, ls) !== undefined) return
+  out.push({
+    kind: 'line',
+    from: ls,
+    className: cx(whole ? 'md-list-carried-whole' : 'md-list-carried', listZoneClass(owner)),
+    level: owner.level,
+  })
+  if (whole || scan.fences[i] !== undefined) return
+  const item = scan.lines[ownerAt]
+  const words = columns(item, quotePrefixWidth(item, depth), owner.contentStart)
+  const line = scan.lines[i]
+  const start = quotePrefixWidth(line, depth)
+  let end = start
+  for (let col = 0; line[end] === ' ' || line[end] === '\t'; end++) {
+    col += columns(line, end, end + 1)
+    if (col > words) break
+  }
+  pushPrefix(out, ls + start, ls + end)
+}
+
+/** The intents a line draws from the list it sits in rather than from itself: its rails, and, where it rides an item, its seat at the item's words. */
+export function listIntents(scan: DocScan, quoteDepths: number[]): ListIntent[][] {
   const n = scan.lines.length
-  const rails: RailIntent[][] = new Array(n)
+  const out: ListIntent[][] = new Array(n)
   const CARRIES = -2
   const LIST_ENDS = -1
   const shown: number[] = new Array(n)
+  let ownerAt = -1
   for (let i = 0, depth = 0, open = false; i < n; i++) {
     const own = quoteDepths[i]
-    const level = markerIn(scan, i)?.level ?? -1
+    const lm = markerIn(scan, i)
+    const level = lm?.level ?? -1
     if (level >= 0 && own === depth) shown[i] = level
-    else if (open && own >= depth && ridesList(scan, i, depth)) shown[i] = CARRIES
-    else {
+    else if (open && own >= depth && ridesList(scan, i, depth)) {
+      shown[i] = CARRIES
+      out[i] = []
+      pushCarry(out[i], scan, i, ownerAt, depth, scan.quotes[i] && own > depth)
+    } else {
       shown[i] = LIST_ENDS
       if (level >= 0) depth = own
     }
+    if (shown[i] !== CARRIES && lm) ownerAt = i
     open = level >= 0 || shown[i] === CARRIES
   }
   const ahead: number[] = new Array(n)
@@ -402,17 +450,17 @@ export function railIntents(scan: DocScan, quoteDepths: number[]): RailIntent[][
       }
       if (end === 'join' && reaching) reaching.reach = { level: k, typeClass }
       if (end === 'elbow' || end === 'join') reaching = rail
-      rails[i] ??= []
-      rails[i].push(rail)
+      out[i] ??= []
+      out[i].push(rail)
     }
   }
-  return rails
+  return out
 }
 
 interface CachedLineIntents {
   perLine: DecoIntent[][]
-  /** Held apart from `perLine` because the lines a caret move re-derives would take a rail folded in there with them. */
-  rails: RailIntent[][]
+  /** Held apart from `perLine` because a line's list intents read the lines above it, which the lines a caret move re-derives don't. */
+  lists: ListIntent[][]
   quoteDepths: number[]
   fresh: [number, number][]
 }
@@ -430,10 +478,10 @@ function deriveLines(facts: LineFacts, scan: DocScan, from: number, to: number):
   }
 }
 
-function withRails(scan: DocScan, facts: LineFacts, fresh: [number, number][]): CachedLineIntents {
+function withLists(scan: DocScan, facts: LineFacts, fresh: [number, number][]): CachedLineIntents {
   return {
     ...facts,
-    rails: railIntents(scan, facts.quoteDepths),
+    lists: listIntents(scan, facts.quoteDepths),
     fresh,
   }
 }
@@ -442,7 +490,7 @@ export function docLineIntents(scan: DocScan): CachedLineIntents {
   const n = scan.lines.length
   const facts: LineFacts = { perLine: [], quoteDepths: [] }
   deriveLines(facts, scan, 0, n)
-  return withRails(scan, facts, [[0, n]])
+  return withLists(scan, facts, [[0, n]])
 }
 
 const moveIntent = (it: DecoIntent, by: number): DecoIntent =>
@@ -468,7 +516,7 @@ export function stepLineIntents(
     deriveLines(facts, scan, from, to)
     fresh.push([from, to])
   }
-  return withRails(scan, facts, fresh)
+  return withLists(scan, facts, fresh)
 }
 
 function citationLines(
@@ -523,24 +571,24 @@ export function assembleLineIntents(
     else for (const it of cached.perLine[i]) intents.push(it)
   }
   for (let i = first; i <= last; i++) {
-    const rails = cached.rails[i]
-    if (rails) for (const it of rails) intents.push(it)
+    const lists = cached.lists[i]
+    if (lists) for (const it of lists) intents.push(it)
   }
   return intents
 }
 
+const prefixFrom = (intents: readonly DecoIntent[] | undefined, end: number): number => {
+  if (intents) for (const it of intents) if (it.kind === 'prefix' && it.from === end) return it.to
+  return end
+}
+
 export function prefixEndAt(cached: CachedLineIntents, scan: DocScan, pos: number): number {
   const i = lineIndexAt(scan, pos)
-  let end = scan.lineStarts[i]
-  for (let moved = true; moved; ) {
-    moved = false
-    for (const it of cached.perLine[i])
-      if (it.kind === 'prefix' && it.from === end) {
-        end = it.to
-        moved = true
-      }
+  for (let end = scan.lineStarts[i]; ; ) {
+    const next = prefixFrom(cached.lists[i], prefixFrom(cached.perLine[i], end))
+    if (next === end) return end
+    end = next
   }
-  return end
 }
 
 function pushConstruct(

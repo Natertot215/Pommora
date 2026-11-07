@@ -2,10 +2,9 @@
 
 import { type LinkOccurrence, linkOccurrences, mayHoldLink, type PageName } from './connections'
 import { normalizeTitle } from '../Paths/caseFold'
-import { linkEntry, namedPage, readOccurrence } from './linkValue'
+import { linkTexts, namedPage, readOccurrence } from './linkValue'
 import { pageKey } from './pageIndex'
 import {
-  codeMask,
   inlineCodeMask,
   type CodeMask,
   inUrlRun,
@@ -15,6 +14,8 @@ import {
   type Span,
 } from '../MarkdownPM/Engine/markdownCode'
 import { headingParts, loneEmbedTitle } from '../MarkdownPM/Engine/detect'
+import { type DocScan, inCodeAt, scanDoc, spanAt } from '../MarkdownPM/Engine/docScan'
+import { cellLineText } from '../MarkdownPM/Engine/Tables/regions'
 
 interface SectionRun {
   from: number
@@ -80,25 +81,34 @@ const embedLine = (body: string, [from, to]: Span): boolean => {
   return loneEmbedTitle(line.replace(/\r$/, '')) !== null
 }
 
-/** The gate in front is on SYNTAX rather than any title: a substring test would break the NFC invariant `normalizeTitle` exists for, and an NFD-composed body would be skipped silently. `inCode` is resolved inside the body, never as a default parameter: a generator binds its parameters at call time, so a default would build a whole-document mask even for the calls that return at the gate. */
+/** What a text is read as: a page body, through its scan, or a value, which reads inline code alone and draws no embed, since only a page draws one. */
+export type Reading = DocScan | 'value'
+
+/** The gate in front is on SYNTAX rather than any title: a substring test would break the NFC invariant `normalizeTitle` exists for, and an NFD-composed body would be skipped silently. A page's scan is resolved inside the body, never as a default parameter: a generator binds its parameters at call time, so a default would scan the whole document even for the calls that return at the gate. A table row's `<br>` ends a line, as its cell draws one. */
 export function* linksIn(
   body: string,
   outline: readonly string[] = [],
-  inCode?: CodeMask,
+  reading?: Reading,
 ): Generator<LinkHit> {
   const runs = outline.length > 0 && body.includes('§')
   if (!mayHoldLink(body) && !runs) return
-  const mask = inCode ?? codeMask(body)
-  for (const o of linkOccurrences(body, mask)) {
+  const page = reading === 'value' ? null : (reading ?? scanDoc(body))
+  const tables = page?.tables ?? []
+  const text = cellLineText(body, tables)
+  const inRow = (p: number): boolean => spanAt(tables, p) !== undefined
+  const inline = inlineCodeMask(text)
+  const mask: CodeMask = page ? (p) => (inRow(p) ? inline(p) : inCodeAt(page, p)) : inline
+  for (const o of linkOccurrences(text, mask)) {
     const named = namedPage(readOccurrence(body, o))
     if (!named) continue
     const target = pageKey(named.title)
     const qualifier = normalizeTitle(named.heading ?? '')
     if (!names(target, named.title, qualifier)) continue
-    yield { ...o, embed: embedLine(body, o.full), named, target, qualifier }
+    const embed = page !== null && !inRow(o.full[0]) && embedLine(body, o.full)
+    yield { ...o, embed, named, target, qualifier }
   }
   if (!runs) return
-  for (const { from, to, heading } of sectionRunsIn(body, outline, mask))
+  for (const { from, to, heading } of sectionRunsIn(text, outline, mask))
     yield {
       syntax: 'section',
       embed: false,
@@ -112,14 +122,12 @@ export function* linksIn(
     }
 }
 
-/** Every link inside every frontmatter value, each under the key it sits in, read as a small body is: a whole-value `[[Page]]` (an unquoted one yaml reads as a nested list included) and a sentence holding links alike. Which keys count is the reader's question, asked with the registry in hand. */
+/** Every link inside every frontmatter value, each under the key it sits in, read as a value: a whole-value `[[Page]]` (an unquoted one yaml reads as a nested list included), a sentence holding links, and each member of a list alike. Which keys count is the reader's question, asked with the registry in hand. */
 export function* valueLinks(
   values: Record<string, unknown>,
   outline: readonly string[] = [],
 ): Generator<LinkHit & { key: string }> {
-  for (const [key, value] of Object.entries(values)) {
-    const text = linkEntry(value, 2)
-    if (text === null) continue
-    for (const hit of linksIn(text, outline, inlineCodeMask(text))) yield { ...hit, key }
-  }
+  for (const [key, value] of Object.entries(values))
+    for (const text of linkTexts(value))
+      for (const hit of linksIn(text, outline, 'value')) yield { ...hit, key }
 }

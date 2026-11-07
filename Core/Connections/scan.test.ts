@@ -1,7 +1,7 @@
 // `pageLinkPattern` has four other consumers (the rewrite, the editor's tokens, its autocomplete, and paste-as), so the ReDoS and length-cap assertions below guard all of them, not just this file.
 
 import { describe, it, expect } from 'vitest'
-import { codeMask } from '../MarkdownPM/Engine/markdownCode'
+import { pageCodeMask } from '../Testing/markdownEngine'
 import { type LinkHit, linksIn, sectionRunsIn, valueLinks } from './scan'
 
 // `extractMentions` and `extractHeadingMentions` were the index's two readers of `linksIn` until the relation rows took their place. They are kept here so the properties they pinned keep answering over the one walker that remains.
@@ -93,64 +93,66 @@ describe('extractMentions over linksIn', () => {
 describe('sectionRunsIn', () => {
   it('matches a bare `§Heading` run against the outline', () => {
     const text = 'see §Setup here'
-    const runs = sectionRunsIn(text, ['Setup'], codeMask(text))
+    const runs = sectionRunsIn(text, ['Setup'], pageCodeMask(text))
     expect(runs).toEqual([{ from: text.indexOf('§'), to: text.indexOf('§') + 6, heading: 'Setup' }])
   })
 
   it('never matches past the run into a longer word', () => {
     const text = 'see §Overviewing here'
-    expect(sectionRunsIn(text, ['Overview'], codeMask(text))).toEqual([])
+    expect(sectionRunsIn(text, ['Overview'], pageCodeMask(text))).toEqual([])
   })
 
   it('ends the run at punctuation, not just at a word boundary', () => {
     const text = '§Setup.'
-    const runs = sectionRunsIn(text, ['Setup'], codeMask(text))
+    const runs = sectionRunsIn(text, ['Setup'], pageCodeMask(text))
     expect(runs).toEqual([{ from: 0, to: 6, heading: 'Setup' }])
   })
 
   it('never matches a `§` inside a code span', () => {
     const text = 'a `§Setup` sample'
-    expect(sectionRunsIn(text, ['Setup'], codeMask(text))).toEqual([])
+    expect(sectionRunsIn(text, ['Setup'], pageCodeMask(text))).toEqual([])
   })
 
   it('picks the longer heading when one prefixes another', () => {
     const text = '§Setup Guide'
-    const runs = sectionRunsIn(text, ['Setup', 'Setup Guide'], codeMask(text))
+    const runs = sectionRunsIn(text, ['Setup', 'Setup Guide'], pageCodeMask(text))
     expect(runs).toEqual([{ from: 0, to: text.length, heading: 'Setup Guide' }])
   })
 
   it('a heading whose text opens with § is reached by §§ in prose and never by its own line', () => {
     const doc = '## §Intro\ntext §§Intro and §Intro'
-    expect(sectionRunsIn(doc, ['§Intro'], codeMask(doc))).toEqual([
+    expect(sectionRunsIn(doc, ['§Intro'], pageCodeMask(doc))).toEqual([
       { from: 15, to: 22, heading: '§Intro' },
     ])
   })
 
   it('a heading line’s own § is heading text, not a run to another heading', () => {
     const doc = '## Setup\n## §Setup'
-    expect(sectionRunsIn(doc, ['Setup', '§Setup'], codeMask(doc))).toEqual([])
+    expect(sectionRunsIn(doc, ['Setup', '§Setup'], pageCodeMask(doc))).toEqual([])
   })
 
   it('never matches a `§` inside a markdown link, its label or its URL', () => {
-    expect(sectionRunsIn('[see §Setup](https://x.com/§Setup)', ['Setup'], codeMask(''))).toEqual([])
+    expect(
+      sectionRunsIn('[see §Setup](https://x.com/§Setup)', ['Setup'], pageCodeMask('')),
+    ).toEqual([])
   })
 
   it('never matches a `§` sitting inside a wikilink', () => {
     const text = '[[Page§X]]'
-    expect(sectionRunsIn(text, ['X'], codeMask(text))).toEqual([])
+    expect(sectionRunsIn(text, ['X'], pageCodeMask(text))).toEqual([])
   })
 
   it('a § after a link that ends before it still runs, and one inside a later link never does', () => {
     const text = 'a [y](§Guide) §Intro [[x §Setup]] §Setup `§Intro`'
     expect(
-      sectionRunsIn(text, ['Setup', 'Intro', 'Guide'], codeMask(text)).map((r) => r.heading),
+      sectionRunsIn(text, ['Setup', 'Intro', 'Guide'], pageCodeMask(text)).map((r) => r.heading),
     ).toEqual(['Intro', 'Setup'])
   })
 
   it('never matches a `§` inside a bare address', () => {
     const text = 'see https://x.io/§Setup and §Setup'
     const at = text.lastIndexOf('§')
-    expect(sectionRunsIn(text, ['Setup'], codeMask(text))).toEqual([
+    expect(sectionRunsIn(text, ['Setup'], pageCodeMask(text))).toEqual([
       { from: at, to: at + 6, heading: 'Setup' },
     ])
   })
@@ -211,6 +213,13 @@ describe('valueLinks', () => {
 
   it('reads a link between fence-shaped lines, since a value holds no code block', () => {
     expect(read({ a: '```\n[[Zeta]]\n```' })).toEqual([{ key: 'a', target: 'zeta', qualifier: '' }])
+  })
+
+  it('reads each member of a list, as a Text value draws it', () => {
+    expect(read({ a: ['plain', 'see [[Zeta]]', [['Eta']]] })).toEqual([
+      { key: 'a', target: 'zeta', qualifier: '' },
+      { key: 'a', target: 'eta', qualifier: '' },
+    ])
   })
 
   it('reads a sentence’s links each under the key', () => {
@@ -313,9 +322,8 @@ describe('linksIn', () => {
     expect(hits('see §Setup', [])).toEqual([])
   })
 
-  it('honors a mask passed in rather than building its own', () => {
-    const body = 'plain [[Alpha]] and [x](Beta.md) and ![[Gamma]]'
-    expect(hits(body)).toHaveLength(3)
-    expect([...linksIn(body, [], () => true)]).toEqual([])
+  it('reads a value as a value: inline code alone, and no embed, since only a page draws one', () => {
+    expect([...linksIn('![[Gamma]]', [], 'value')].map((h) => h.embed)).toEqual([false])
+    expect([...linksIn('```\n[[Alpha]]\n```', [], 'value')]).toHaveLength(1)
   })
 })

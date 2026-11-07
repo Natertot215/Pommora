@@ -8,7 +8,7 @@ const blockAt = (doc: string, pos: number) => blockAtIn(scanDoc(doc), pos)
 
 describe('moveRange (blank-separated block move)', () => {
   const apply = (doc: string, range: { from: number; to: number }, at: number): string | null => {
-    const c = moveRange(doc, range, { at })
+    const c = moveRange(doc, range, { at }, true)
     return c ? applyEdits(doc, c) : null
   }
 
@@ -33,7 +33,7 @@ describe('moveRange (blank-separated block move)', () => {
   })
 
   it('returns null when dropping a block onto its own start', () => {
-    expect(moveRange('A\n\nB\n\nC', { from: 3, to: 4 }, { at: 3 })).toBeNull()
+    expect(moveRange('A\n\nB\n\nC', { from: 3, to: 4 }, { at: 3 }, true)).toBeNull()
   })
 
   it('preserves a trailing newline and does not double-blank on a move to EOF', () => {
@@ -45,10 +45,10 @@ describe('moveRange (blank-separated block move)', () => {
     const doc = '# A\nbody\n\n# B\nx'
     const secA = blockAt(doc, 0)
     expect(secA).not.toBeNull()
-    const moved = applyEdits(doc, moveRange(doc, secA!, { at: doc.length })!)
+    const moved = applyEdits(doc, moveRange(doc, secA!, { at: doc.length }, true)!)
     expect(moved).toBe('# B\nx\n\n# A\nbody')
     const secBack = blockAt(moved, moved.indexOf('# A'))
-    expect(applyEdits(moved, moveRange(moved, secBack!, { at: 0 })!)).toBe(doc)
+    expect(applyEdits(moved, moveRange(moved, secBack!, { at: 0 }, true)!)).toBe(doc)
   })
 
   it('snaps a blank-line drop target to the next content block', () => {
@@ -57,7 +57,7 @@ describe('moveRange (blank-separated block move)', () => {
   })
 
   it('returns null when dropping onto its own preceding blank', () => {
-    expect(moveRange('A\n\nB\n\nC', { from: 3, to: 4 }, { at: 2 })).toBeNull()
+    expect(moveRange('A\n\nB\n\nC', { from: 3, to: 4 }, { at: 2 }, true)).toBeNull()
   })
 
   it('injects a blank separator when moving within a doc that had none', () => {
@@ -65,8 +65,8 @@ describe('moveRange (blank-separated block move)', () => {
   })
 
   it('a single-block doc has no valid target', () => {
-    expect(moveRange('only', { from: 0, to: 4 }, { at: 0 })).toBeNull()
-    expect(moveRange('only', { from: 0, to: 4 }, { at: 4 })).toBeNull()
+    expect(moveRange('only', { from: 0, to: 4 }, { at: 0 }, true)).toBeNull()
+    expect(moveRange('only', { from: 0, to: 4 }, { at: 4 }, true)).toBeNull()
   })
 
   // A glue-adjacent seam (two blockStarts-distinct blocks with no blank between) must not fuse on a drop — the move has to re-blank-separate both new seams.

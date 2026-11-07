@@ -5,7 +5,8 @@ import { type EditorView, runScopeHandlers } from '@codemirror/view'
 import type { TransactionSpec } from '@codemirror/state'
 import { cleanupEditor, mountEditor, stubEditorBridge, typeInto } from '../Testing/editorHarness'
 import { docScan } from './docCache'
-import { dropChanges, subBlockAt } from './Engine/listModel'
+import { subBlockAt } from './Engine/listModel'
+import { moveRange } from './Engine/blockMove'
 import { applyEditorAction } from './Menus/menu'
 
 stubEditorBridge()
@@ -126,24 +127,20 @@ describe('the rule holds where a widget draws over the prefix, and for every way
 })
 
 describe('a selection a change or a keystroke has to answer for', () => {
-  it('a drop past a selection leaves a caret at the change, and typing lands there', async () => {
+  it('a drop past a selection leaves the selection standing, and typing replaces it', async () => {
     const doc = '- alpha\n- beta word\n- gamma\n- delta'
     const word = doc.indexOf('word')
     const view = await mountEditor({ initialBody: doc })
     await act(async () => {
       view.focus()
       view.dispatch({ selection: { anchor: word, head: word + 4 } })
-      const scan = docScan(view.state)
-      const changes = dropChanges(scan, subBlockAt(scan, 0), {
-        at: doc.indexOf('- delta'),
-        indent: '',
-        line: 3,
-      })!
+      const block = subBlockAt(docScan(view.state), 0)
+      const changes = moveRange(doc, block, { at: doc.indexOf('- delta'), indent: '' }, false)!
       view.dispatch({ changes, userEvent: 'move.drop' })
     })
-    expect(view.state.selection.main).toMatchObject({ from: 2, to: 2 })
+    expect(view.state.selection.main).toMatchObject({ from: 7, to: 11 })
     await typeInto(view, 'Z')
-    expect(view.state.doc.toString()).toBe('- Zbeta word\n- gamma\n- alpha\n- delta')
+    expect(view.state.doc.toString()).toBe('- beta Z\n- gamma\n- alpha\n- delta')
   })
 
   it('a pick replacing the marker a selection sits in leaves a caret, and typing lands there', async () => {

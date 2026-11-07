@@ -186,7 +186,7 @@ The page header's own measures — the title size and the zones the banner and h
 
 #### II. Lists & Outliner
 
-List geometry scopes to `.cm-line.md-list-item`; the outliner rail aliases the shared `--list-outline-*` width, gap and radius, reads the color directly, and adds its caps and x-position.
+List geometry scopes to `.cm-line.md-list-item` and the lines an item carries; the outliner rail aliases the shared `--list-outline-*` width, gap and radius, reads the color directly, and adds its caps and x-position.
 
 | Title | Token | Value |
 | --- | --- | --- |
@@ -195,7 +195,7 @@ List geometry scopes to `.cm-line.md-list-item`; the outliner rail aliases the s
 | Bullet / Number / Task Gutter | `--bullet-zone` / `--number-zone` / `--task-zone` | `16px` / `1.3em` / `1.8em` |
 | Bullet Glyph | `--bullet-size` | `1.25em` |
 | Inner-Gutter Origin | `--list-origin` | `0px`; `16px` in quotes; callout pad in callouts |
-| Computed Column | `--list-column` | `calc((var(--list-level, 0) + 1) * var(--list-indent))` |
+| Text Column | `--list-words` | `calc((var(--list-level, 0) + 1) * var(--list-indent) + var(--list-zone, var(--bullet-zone)))` |
 | Rail Width / Gap / Radius / Color | `--outline-width` / `--outline-gap` / `--outline-radius` | → the matching `--list-outline-*` tokens; the color is read straight from `--list-outline-color`, unaliased |
 | Rail Level | `--rail-level` | JS-set per rail element |
 

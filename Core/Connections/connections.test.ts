@@ -10,11 +10,11 @@ import {
   repeatsTarget,
   spellsAsWiki,
 } from './connections'
-import { codeMask } from '../MarkdownPM/Engine/markdownCode'
+import { pageCodeMask } from '../Testing/markdownEngine'
 import { defaultLabel, targetTitle } from './links'
 import { readLinkText } from './linkValue'
 
-const walk = (text: string) => linkOccurrences(text, codeMask(text))
+const walk = (text: string) => linkOccurrences(text, pageCodeMask(text))
 
 describe('linkOccurrences', () => {
   it('reads a connection’s slots, empty ones kept, and the cell escape off the half before the pipe', () => {

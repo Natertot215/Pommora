@@ -3,7 +3,8 @@ import { parse } from '../MarkdownPM/Engine/parser'
 import { parseDelimiter, splitRow } from '../MarkdownPM/Engine/Tables/codec'
 import { normalize, type TableModel } from '../MarkdownPM/Engine/Tables/model'
 import { isBlank } from '../MarkdownPM/Engine/detect'
-import { type DocScan, scanDoc } from '../MarkdownPM/Engine/docScan'
+import { type DocScan, inCodeAt, scanDoc } from '../MarkdownPM/Engine/docScan'
+import type { CodeMask } from '../MarkdownPM/Engine/markdownCode'
 import {
   type DecoIntent,
   docLineIntents,
@@ -11,6 +12,11 @@ import {
   tokenIntents,
 } from '../MarkdownPM/Engine/intents'
 import type { Token } from '../MarkdownPM/Engine/tokens'
+
+export function pageCodeMask(text: string): CodeMask {
+  const scan = scanDoc(text)
+  return (p) => inCodeAt(scan, p)
+}
 
 /** A seeded generator, so a property's failing seed replays. */
 export function stream(seed: number): () => number {
@@ -55,8 +61,8 @@ export function decorationsFor(
 ): DecoIntent[] {
   const intents: DecoIntent[] = tokenIntents(tokens, active)
   for (let i = 0; i < scan.lines.length; i++) lineIntentsInto(scan, i, selStart, intents)
-  for (const rails of docLineIntents(scan).rails)
-    if (rails) for (const it of rails) intents.push(it)
+  for (const lists of docLineIntents(scan).lists)
+    if (lists) for (const it of lists) intents.push(it)
   return intents
 }
 

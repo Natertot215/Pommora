@@ -3,7 +3,7 @@ import { parse } from '../parser'
 import type { CodeMask } from '../markdownCode'
 import { isBlank, isThematicBreakLine, LINE_CAP, type BlockSpan, type DocLines } from '../detect'
 import { normalize, type Column, type TableModel } from './model'
-import { splitRow, parseDelimiter } from './codec'
+import { CELL_BREAK, splitRow, parseDelimiter } from './codec'
 
 interface RowGeom {
   cells: string[]
@@ -54,6 +54,18 @@ export function tableRegions(
     i = last
   }
   return regions
+}
+
+/** `text` with each `<br>` in a table row ending a line, as its cell draws it, at its own length so every offset still names the source. */
+export function cellLineText(text: string, tables: readonly TableRegion[]): string {
+  let out = ''
+  let at = 0
+  for (const { from, to } of tables.flatMap((t) => t.rows)) {
+    const row = text.slice(from, to).replace(CELL_BREAK, (br) => `${' '.repeat(br.length - 1)}\n`)
+    out += text.slice(at, from) + row
+    at = to
+  }
+  return out + text.slice(at)
 }
 
 // Equivalent to `parseTable` on the region's source (regression-tested), without a second micromark pass.

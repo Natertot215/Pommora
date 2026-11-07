@@ -8,6 +8,16 @@ const renamed = (body: string, from: string, to: string): string =>
   rewriteConnections(body, new Map([[pageKey(from), to]]))
 
 describe('rewriteConnections', () => {
+  it('a lone ![[Notes]] in a value is a link, so gaining a path gives it the title alias', () => {
+    const names = new Map([['notes', 'Folder/Notes']])
+    expect(rewriteConnections('![[Notes]]', names, 'value')).toBe('![[Folder/Notes|Notes]]')
+  })
+
+  it('a link between fence-shaped lines in a table cell renames, as the cell draws it', () => {
+    const row = (t: string) => `| a |\n| --- |\n| \`\`\`<br>[[${t}]]<br>\`\`\` |`
+    expect(renamed(row('Old'), 'Old', 'New')).toBe(row('New'))
+  })
+
   it('rewrites a normalized-matching link to the new title', () => {
     expect(renamed('go to [[Old Page]] now', 'Old Page', 'New Page')).toBe('go to [[New Page]] now')
   })

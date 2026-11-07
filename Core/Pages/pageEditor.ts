@@ -49,6 +49,6 @@ export function moveHeadingSection(dragKey: string, beforeKey: string | null): v
       ? scan.lineStarts[scan.citations.firstLine]
       : heads.find((x) => x.key === beforeKey)?.from
   if (!drag || at === undefined) return
-  const changes = moveRange(scan.text, blockAt(scan, drag.from)!, { at })
+  const changes = moveRange(scan.text, blockAt(scan, drag.from)!, { at }, true)
   if (changes?.length) view.dispatch({ changes, userEvent: 'move.drop' })
 }

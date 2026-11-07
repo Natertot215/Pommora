@@ -24,10 +24,11 @@ const restoreTrailingItem = (display: string): string => {
 }
 
 // A cell is single-line GFM on disk, so an in-cell line break serializes as `<br>` (literal newlines would split the row); model + segments stay in raw source form.
+export const CELL_BREAK = /<br\s*\/?>/gi
 export const cellToSource = (display: string): string =>
   escapeCell(display).replace(/\r?\n/g, '<br>')
 export const cellToDisplay = (source: string): string =>
-  restoreTrailingItem(unescapeCell(source).replace(/<br\s*\/?>/gi, '\n'))
+  restoreTrailingItem(unescapeCell(source).replace(CELL_BREAK, '\n'))
 
 export function splitRow(line: string, base: number): RowSplit {
   const cuts: number[] = []

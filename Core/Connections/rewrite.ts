@@ -1,5 +1,6 @@
 import {
   carriesTitleAlias,
+  mayHoldLink,
   mayNameHeading,
   namesTarget,
   type PageName,
@@ -11,11 +12,10 @@ import {
 import { normalizeTitle } from '../Paths/caseFold'
 import { stripMarkdownExt, titleFromPath } from '../Paths/posix'
 import { encodeLinkTarget, escapeLabel, fitsSlot, unescapeLabel } from './links'
-import { applyEdits, type CodeMask, type TextEdit } from '../MarkdownPM/Engine/markdownCode'
+import { applyEdits, type TextEdit } from '../MarkdownPM/Engine/markdownCode'
 import { escapeCell } from '../MarkdownPM/Engine/Tables/codec'
-import type { TableRegion } from '../MarkdownPM/Engine/Tables/regions'
 import { scanDoc, spanAt } from '../MarkdownPM/Engine/docScan'
-import { type LinkHit, linksIn } from './scan'
+import { type LinkHit, linksIn, type Reading } from './scan'
 import { type ConnPage, type PageIndex, pathKeys } from './pageIndex'
 
 /** The one re-spell's map: every key that named a moved page in the index before, and every key that named one other page alone before which a tail of an arriving page's path now spells (a collision), mapped to how it spells that page in the index after; a key the page still answers at an unchanged tail is left out. */
@@ -51,11 +51,13 @@ export function respellings(
 export function rewriteConnections(
   body: string,
   names: ReadonlyMap<string, string>,
-  inCode?: CodeMask,
+  reading?: Reading,
 ): string {
-  const rewrite = follower(body)
+  if (!mayHoldLink(body)) return body
+  const read = reading ?? scanDoc(body)
+  const rewrite = follower(body, read)
   const edits: TextEdit[] = []
-  for (const hit of linksIn(body, [], inCode)) {
+  for (const hit of linksIn(body, [], read)) {
     const next = names.get(hit.target)
     if (next !== undefined && next !== stripMarkdownExt(hit.named.title))
       edits.push(...rewrite(hit, 'title', next))
@@ -77,11 +79,10 @@ function carry(shown: string, from: PageName, to: PageName): string {
   }
 }
 
-/** One rewrite per hit, for either arm, the hit's name as the index reads it and `part` replaced by `value`: the renamed part is edited in place (a table cell's `\|` rides through), shown text naming the old target follows it, shown text repeating the new target drops its pipe, and a wikilink whose new target it can't spell, or which gains a path and with it the title alias the writer gives one, is rewritten whole through the one writer, which falls to the markdown form where it must. Inside a table region every inserted text is escaped as the cell codec escapes, since a rename writes the row's source; the regions are read once, on the first hit. */
-function follower(body: string) {
-  let tables: TableRegion[] | undefined
+/** One rewrite per hit, for either arm, the hit's name as the index reads it and `part` replaced by `value`: the renamed part is edited in place (a table cell's `\|` rides through), shown text naming the old target follows it, shown text repeating the new target drops its pipe, and a wikilink whose new target it can't spell, or which gains a path and with it the title alias the writer gives one, is rewritten whole through the one writer, which falls to the markdown form where it must. Inside a page's table region every inserted text is escaped as the cell codec escapes, since a rename writes the row's source. */
+function follower(body: string, read: Reading) {
+  const tables = read === 'value' ? [] : read.tables
   return (hit: LinkHit, part: 'title' | 'heading', value: string): TextEdit[] => {
-    tables ??= scanDoc(body).tables
     const esc = spanAt(tables, hit.full[0]) ? escapeCell : (s: string) => s
     const markdown = hit.syntax === 'markdown'
     const from = hit.named
@@ -121,13 +122,14 @@ export function rewriteHeadingConnections(
   newHeading: string,
   own: boolean,
   outline?: readonly string[],
-  inCode?: CodeMask,
+  reading?: Reading,
 ): string {
   if (!mayNameHeading(body)) return body
   const oldKey = normalizeTitle(oldHeading)
-  const rewrite = follower(body)
+  const read = reading ?? scanDoc(body)
+  const rewrite = follower(body, read)
   const edits: TextEdit[] = []
-  for (const hit of linksIn(body, outline && [...outline, oldHeading], inCode))
+  for (const hit of linksIn(body, outline && [...outline, oldHeading], read))
     if ((hit.target === '' ? own : keys.has(hit.target)) && hit.qualifier === oldKey && hit.heading)
       edits.push(...rewrite(hit, 'heading', newHeading))
   return applyEdits(body, edits)

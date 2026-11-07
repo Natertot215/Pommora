@@ -1,6 +1,5 @@
 // Each case is a fixed break, kept here so it can't quietly return. Grouped by the seam it guards.
 import { describe, it, expect } from 'vitest'
-import { codeMask } from './Engine/markdownCode'
 import { splitRow } from './Engine/Tables/codec'
 import { tokenize } from './Engine/tokens'
 import {
@@ -18,25 +17,26 @@ import { calloutDeleteVerdict } from './Guards/calloutGuard'
 import type { GuardVerdict } from './Guards/verdictFilter'
 import { headingSections } from './Engine/headingScan'
 import { fenceOpeners } from './Engine/detect'
-import { chunksOver, type DocScan, inCodeAt, scanDoc } from './Engine/docScan'
+import { chunksOver, type DocScan, scanDoc } from './Engine/docScan'
+import { pageCodeMask } from '../Testing/markdownEngine'
 
-describe('codeMask — tilde fences + inline spans', () => {
+describe('the page code mask — tilde fences + inline spans', () => {
   it('treats ~~~ fences as code', () => {
     const doc = '~~~\n# not a heading\n~~~'
-    expect(codeMask(doc)(6)).toBe(true)
+    expect(pageCodeMask(doc)(6)).toBe(true)
   })
   it('pairs fences by marker char (a ~~~ line inside ``` is content)', () => {
     const doc = '```\n~~~\ncode\n```\nprose'
-    expect(codeMask(doc)(9)).toBe(true)
-    expect(codeMask(doc)(18)).toBe(false)
+    expect(pageCodeMask(doc)(9)).toBe(true)
+    expect(pageCodeMask(doc)(18)).toBe(false)
   })
   it('counts inline spans — including unclosed ones being typed', () => {
-    expect(codeMask('run `npm --x` now')(10)).toBe(true)
-    expect(codeMask('run `npm install --')(16)).toBe(true)
-    expect(codeMask('ab `c`')(2)).toBe(false)
+    expect(pageCodeMask('run `npm --x` now')(10)).toBe(true)
+    expect(pageCodeMask('run `npm install --')(16)).toBe(true)
+    expect(pageCodeMask('ab `c`')(2)).toBe(false)
   })
   it('treats the closing backtick as a boundary so type-over still works', () => {
-    expect(codeMask('`code`')(5)).toBe(false)
+    expect(pageCodeMask('`code`')(5)).toBe(false)
   })
 })
 
@@ -221,7 +221,7 @@ describe('calloutDeleteVerdict — repair, not cancel', () => {
   })
 })
 
-describe('renderer fence engine agrees with codeMask on ~~~ (no cross-layer split)', () => {
+describe('the fence engine pairs ~~~ by marker (no cross-layer split)', () => {
   it("a ~~~ block's opener spans to its closer", () => {
     expect(fenceOpeners(scanDoc('~~~\n[[LivePage]]\n~~~').fences)).toMatchObject([
       { from: 0, to: 20 },
@@ -242,8 +242,8 @@ describe('a longer fence holds shorter ones — both layers, one block', () => {
   })
   it('a rename can never reach a connection inside the inner block', () => {
     // The one that corrupts a file rather than a render: an under-masked line gets its [[Title]] rewritten.
-    expect(codeMask(doc)(doc.indexOf('[[LivePage]]'))).toBe(true)
-    expect(codeMask(doc)(doc.lastIndexOf('[[LivePage]]'))).toBe(false)
+    expect(pageCodeMask(doc)(doc.indexOf('[[LivePage]]'))).toBe(true)
+    expect(pageCodeMask(doc)(doc.lastIndexOf('[[LivePage]]'))).toBe(false)
   })
 })
 
@@ -300,42 +300,5 @@ describe('a token chunk opens where the parser holds no state', () => {
   it('a fence nothing closes holds nothing', () => {
     const open = scanDoc('intro **bold**\n```js\ncode **not bold**\n\nmore')
     expect(cuts(open)).toEqual([0, 4])
-  })
-})
-
-describe('inCodeAt answers exactly what codeMask answers, at every offset', () => {
-  // Every construct the two disagree about if the single-offset form stops being line-local: nested runs, tilde blocks, quoted fences, an unclosed opener, and a span left open at EOF.
-  const doc = [
-    'plain **bold** and `code` here',
-    '`````md',
-    '```js',
-    'const a = `inner`',
-    '```',
-    '`````',
-    '',
-    '> ```',
-    '> quoted code',
-    '> ```',
-    '~~~',
-    'tilde body with `span`',
-    '~~~',
-    'tail `closed` and `unclosed',
-  ].join('\n')
-
-  const agrees = (text: string): number[] => {
-    const s = scanDoc(text)
-    const mask = codeMask(text)
-    const disagreements: number[] = []
-    for (let o = -1; o <= text.length + 1; o++)
-      if (inCodeAt(s, o) !== mask(o)) disagreements.push(o)
-    return disagreements
-  }
-
-  it('agrees offset for offset', () => {
-    expect(agrees(doc)).toEqual([])
-  })
-
-  it('agrees on a CRLF body too', () => {
-    expect(agrees(doc.split('\n').join('\r\n'))).toEqual([])
   })
 })

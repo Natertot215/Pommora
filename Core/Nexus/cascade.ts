@@ -22,8 +22,8 @@ import { linkKeysOf } from '../Properties/validation'
 import { readLiveSetting } from '../Settings/settings'
 import { rewriteTileConnections, tilesLink } from '../Tiles/tilesFile'
 import type { TilesChanged } from '../Tiles/tiles'
-import { linkEntry } from '../Connections/linkValue'
-import { type CodeMask, inlineCodeMask } from '../MarkdownPM/Engine/markdownCode'
+import { rewriteLinkTexts } from '../Connections/linkValue'
+import type { Reading } from '../Connections/scan'
 import { buildPageIndex, pageKey, pathKeys } from '../Connections/pageIndex'
 import { gonePageEntry } from './governedRoot'
 import { addressable, nexusPages, type StoredNodes, storedNodes, twinned } from './heldPages'
@@ -136,7 +136,7 @@ export async function deleteCascade(root: string, strip: LinkStrip): Promise<Con
 function fileRewrites(
   root: string,
   tree: NexusTree,
-  rewrite: (text: string, own?: boolean, outlineOf?: string, inCode?: CodeMask) => string,
+  rewrite: (text: string, own?: boolean, outlineOf?: string, reading?: Reading) => string,
   { ownRel, settled = false }: { ownRel?: string; settled?: boolean } = {},
 ): {
   text: RewriteText
@@ -150,18 +150,16 @@ function fileRewrites(
     isLinkKey: (key: string) => boolean,
     own = false,
     outlineOf = '',
-  ): Record<string, string> => {
-    const patch: Record<string, string> = {}
+  ): Json => {
+    const patch: Json = {}
     for (const [key, value] of Object.entries(raw)) {
       if (!isLinkKey(key)) continue
-      // A string, or a `[[Page]]` yaml read as a nested list; a foreign one-item list stays a list.
-      const text = linkEntry(value, 2)
-      const next = text === null ? null : rewrite(text, own, outlineOf, inlineCodeMask(text))
-      if (next !== null && next !== text) patch[key] = next
+      const next = rewriteLinkTexts(value, (text) => rewrite(text, own, outlineOf, 'value'))
+      if (next !== undefined) patch[key] = next
     }
     return patch
   }
-  const withPatch = (raw: Json, patch: Record<string, string>): Json | null =>
+  const withPatch = (raw: Json, patch: Json): Json | null =>
     Object.keys(patch).length ? { ...raw, ...patch } : null
   return {
     text: (content, file, page) => {
@@ -211,9 +209,9 @@ export async function renameCascade(
     const runs =
       !('names' in change) &&
       (await readLiveSetting(root, 'inPageHeadingResolution')) === 'automatic'
-    const rewrite = (text: string, own = false, outlineOf = text, inCode?: CodeMask): string =>
+    const rewrite = (text: string, own = false, outlineOf = text, reading?: Reading): string =>
       'names' in change
-        ? rewriteConnections(text, change.names, inCode)
+        ? rewriteConnections(text, change.names, reading)
         : rewriteHeadingConnections(
             text,
             keys,
@@ -221,7 +219,7 @@ export async function renameCascade(
             change.to,
             own,
             runs && own ? headingOutline(outlineOf).map((h) => h.text) : undefined,
-            inCode,
+            reading,
           )
     const { text, spaceMoved, stashMoved, isLinkKey } = fileRewrites(root, tree, rewrite, {
       ownRel: 'names' in change ? undefined : change.path,
@@ -267,7 +265,7 @@ export async function relinkReach(root: string, e: RelinkEntry): Promise<ConfigR
     const { text, spaceMoved } = fileRewrites(
       root,
       await liveTreeOf(root),
-      (t, _own, _outlineOf, inCode) => rewriteConnections(t, names, inCode),
+      (t, _own, _outlineOf, reading) => rewriteConnections(t, names, reading),
     )
     const rekey = e.rekey && rekeyContext(...e.rekey).raw
     const raw: Rewrite = rekey

@@ -13,7 +13,7 @@ import {
   GLYPH_CLASS,
   listLineClass,
   railClass,
-  railIntents,
+  listIntents,
   railStyle,
   textMarkerClass,
 } from '../Engine/intents'
@@ -301,27 +301,39 @@ function renderCellBody(
   const { lines, lineStarts: starts, markers } = scan
   if (markers.every((lm) => lm === null))
     return renderCellContent(text, connections, { around, headingLinkStyle })
-  const rails = railIntents(scan, lines.map(quoteDepthOf))
+  const lists = listIntents(scan, lines.map(quoteDepthOf))
   return lines.map((line, i) => {
     const lm = markers[i]
+    const own = lists[i] ?? []
+    const carry = own.find((it) => it.kind === 'line')
+    const lead = (own.find((it) => it.kind === 'prefix')?.to ?? starts[i]) - starts[i]
+    const level = lm?.level ?? carry?.level
     return (
       <div
         // biome-ignore lint/suspicious/noArrayIndexKey: a cell's lines are plain strings with no identity but their position — the index IS the key
         key={i}
-        className={lm ? listLineClass(lm) : undefined}
-        style={lm ? ({ '--list-level': lm.level } as React.CSSProperties) : undefined}
+        className={lm ? listLineClass(lm) : carry?.className}
+        style={level === undefined ? undefined : ({ '--list-level': level } as React.CSSProperties)}
         data-cell-line={i}
         data-base={starts[i]}
       >
-        {rails[i]?.map((r) => (
-          <span
-            key={r.level}
-            className={railClass(r)}
-            style={railStyle(r) as React.CSSProperties}
-            aria-hidden="true"
-          />
-        ))}
-        {renderRestingLine(line, lm, connections, { base: starts[i], around, headingLinkStyle })}
+        {own.map(
+          (r) =>
+            r.kind === 'rail' && (
+              <span
+                key={r.level}
+                className={railClass(r)}
+                style={railStyle(r) as React.CSSProperties}
+                aria-hidden="true"
+              />
+            ),
+        )}
+        {lead > 0 && <span data-src={`${starts[i]},${starts[i] + lead}`} />}
+        {renderRestingLine(line.slice(lead), lm, connections, {
+          base: starts[i] + lead,
+          around,
+          headingLinkStyle,
+        })}
       </div>
     )
   })

@@ -4,7 +4,7 @@ import { normalizeTitle } from '../../Paths/caseFold'
 import { rewriteHeadingConnections } from '../../Connections/rewrite'
 import { headingParts } from '../Engine/detect'
 import { editorHost, mirrorBody } from '../api'
-import { docHeadingKeys, docOutline, docSectionHeadings, docString } from '../docCache'
+import { docHeadingKeys, docOutline, docScan, docSectionHeadings, docString } from '../docCache'
 
 interface HeldRename {
   old: string
@@ -56,7 +56,15 @@ export const headingRenameSettle = ViewPlugin.define(
             ? docSectionHeadings(now.doc)
             : undefined
         const doc = docString(now.doc)
-        const body = rewriteHeadingConnections(doc, keys, held.old, final, true, outline)
+        const body = rewriteHeadingConnections(
+          doc,
+          keys,
+          held.old,
+          final,
+          true,
+          outline,
+          docScan(now),
+        )
         mirrorBody(view, body, { echo: true })
       }
       if (defer) setTimeout(rewrite, 0)

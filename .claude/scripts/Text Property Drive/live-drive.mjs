@@ -37,7 +37,7 @@ function writeFrontLine(title, prop, line) {
 const inline = (raw) => (typeof raw === 'string' ? raw : Array.isArray(raw) ? raw.map((x) => `- ${x}`).join('\n') : stringify(raw, { collectionStyle: 'flow', flowCollectionPadding: false, lineWidth: 0 }).trimEnd())
 const collator = new Intl.Collator('en', { sensitivity: 'accent' })
 // A value as sort and filter read it: each wikilink replaced by what it shows, its alias, `Title § Heading`, or the one half it names.
-const shown = (raw) => inline(raw).replace(/\[\[([^\]|#]*)(?:#([^\]|]*))?(?:\|([^\]]*))?\]\]/g, (_, title, heading, alias) => alias ?? (title && heading ? `${title} § ${heading}` : heading || title))
+const shown = (raw) => inline(raw).replace(/^[ \t]*(?:(?:\d{1,9}|[A-Z])\.|→|[-+](?:[ \t]+\[[ xX]\])?)[ \t]+/gm, '').replace(/\[\[([^\]|#]*)(?:#([^\]|]*))?(?:\|([^\]]*))?\]\]/g, (_, title, heading, alias) => alias ?? (title && heading ? `${title} § ${heading}` : heading || title))
 const sidecar = () => JSON.parse(read('Collection A/_pagecollection.json'))
 const viewNamed = (name) => sidecar().views.find((v) => v.name === name)
 const mtime = (title) => statSync(join(NEXUS, pagePath(title))).mtimeMs

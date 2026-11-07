@@ -65,7 +65,7 @@ describe('a drop is a move, whatever selection stands', () => {
       beginRelocateDrag(view, e as PointerEvent, list, {
         measure: () => [{ at: 0, y: 0, slot: null }],
         lineFor: () => null,
-        commit: ({ at }) => moveRange(doc, list, { at }),
+        commit: ({ at }) => moveRange(doc, list, { at }, true),
       })
     await act(async () => {
       view.dispatch({ selection: { anchor: doc.indexOf('notes'), head: doc.length } })

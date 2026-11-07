@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { rewriteConnections, rewriteHeadingConnections } from './rewrite'
 import { buildPageIndex } from './pageIndex'
-import { LINK_DISPLAYS, type LinkTarget } from './linkValue'
+import { LINK_DISPLAYS, type LinkTarget, rewriteLinkTexts } from './linkValue'
 import {
   keepsShown,
   linkDisplayText,
@@ -18,6 +18,18 @@ import {
 } from './linkValue'
 
 const notes = buildPageIndex([{ id: 'mn', title: 'Meeting Notes', path: 'Meeting Notes.md' }])
+
+describe('rewriteLinkTexts', () => {
+  it('rewrites each member of a list and keeps it a list', () => {
+    const up = (t: string): string => t.replace('Old', 'New')
+    expect(rewriteLinkTexts(['a', 'see [[Old]]', [['Old']]], up)).toEqual([
+      'a',
+      'see [[New]]',
+      '[[New]]',
+    ])
+    expect(rewriteLinkTexts(['a'], up)).toBeUndefined()
+  })
+})
 
 describe('readLinkText', () => {
   it('reads a connection with its heading and alias', () => {
@@ -295,6 +307,7 @@ describe('internal links', () => {
     expect(shownProse('plain text')).toBe('plain text')
     expect(shownProse('`[[Alpha]]` stays')).toBe('`[[Alpha]]` stays')
     expect(shownProse('```\n[[Alpha|nice]]\n```')).toBe('```\nnice\n```')
+    expect(shownProse('- zebra\n\t1. [[Alpha|milk]]\n- [x] eggs')).toBe('zebra\nmilk\neggs')
   })
   it('a page rename rewrites a Link value naming the page in either syntax, and nothing else', () => {
     const rename = (value: string) =>

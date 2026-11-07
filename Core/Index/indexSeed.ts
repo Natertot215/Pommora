@@ -3,7 +3,7 @@ import { escapes } from '../Paths/pathSafety'
 import { errText } from '../Contract/result'
 import { linksIn, valueLinks } from '../Connections/scan'
 import { headingOutlineOf } from '../MarkdownPM/Engine/headingScan'
-import { inCodeAt, scanDoc } from '../MarkdownPM/Engine/docScan'
+import { scanDoc } from '../MarkdownPM/Engine/docScan'
 import { contextTitles, parseContextKey } from '../Contexts/contexts'
 import { normalizeTitle } from '../Paths/caseFold'
 import { type ParsedPage, parsePage, splitEnvelope } from '../Files/pageFile'
@@ -51,7 +51,7 @@ function extractPageIndex(content: string, page = parsePage(content)): PageIndex
   const add = (kind: RelationKind, target: string, qualifier: string, key = ''): void => {
     tally.set(`${kind}\0${target}\0${qualifier}\0${key}`, { kind, target, qualifier, key })
   }
-  for (const hit of linksIn(body, outline, (p) => inCodeAt(scan, p))) {
+  for (const hit of linksIn(body, outline, scan)) {
     add(hit.embed ? 'embed' : 'body', hit.target, hit.qualifier)
     if (hit.full[0] >= scan.lineStarts[scan.citations.firstLine])
       add('citation', hit.target, hit.qualifier)

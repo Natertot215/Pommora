@@ -123,12 +123,6 @@ export function fenceSpans(lines: string[]): FenceSpan[] {
   return spans
 }
 
-function fencedLineMask(lines: string[]): Uint8Array {
-  const mask = new Uint8Array(lines.length)
-  for (const span of fenceSpans(lines)) for (let k = span.open; k <= span.close; k++) mask[k] = 1
-  return mask
-}
-
 // Marker positions are boundaries, not interior, so the closing backtick still type-overs. An unclosed opener claims the rest of the line, which is exactly when transforms must stay out.
 export function inlineSpans(line: string): [number, number, number][] {
   const spans: [number, number, number][] = []
@@ -220,13 +214,6 @@ export function codeAt(d: LineTable, fenced: (line: number) => boolean, offset: 
   if (offset < 0 || offset > lineEndOf(d, d.lines.length - 1)) return false
   const i = lineIndexAt(d, offset)
   return fenced(i) || isInsideInlineCode(d.lines[i], offset - d.lineStarts[i])
-}
-
-export function codeMask(text: string): CodeMask {
-  const lines = text.split('\n')
-  const d = { lines, lineStarts: lineOffsetsOf(lines) }
-  const fenced = fencedLineMask(lines)
-  return (offset) => codeAt(d, (i) => fenced[i] === 1, offset)
 }
 
 export function inlineCodeMask(text: string): CodeMask {

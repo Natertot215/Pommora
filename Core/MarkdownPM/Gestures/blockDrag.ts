@@ -80,7 +80,7 @@ export function startBlockDrag(
       at === block.from || at === shape.afterBlock
         ? null
         : { left: slot.left, top: y, width: slot.right - slot.left },
-    commit: ({ at }) => moveRange(docString(view.state.doc), block, { at }),
+    commit: ({ at }) => moveRange(docString(view.state.doc), block, { at }, true),
     onDragStart: () => onDragStart?.(view, block),
     onTap: line ? () => onClick?.(view, line) : undefined,
   })

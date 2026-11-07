@@ -1,6 +1,6 @@
 ## List Types Drive — Matrix
 
-The drive's cases, derived from *List Consolidation — Decisions & Intention*, whose A-6 asks for the drive rewritten to what the log intends with no phase gate, so a failing item fails the run. Group N lands with the plan's Phase N and holds at that phase's head and every later head, so an item exists only once its phase has landed and asserts only what's true from that phase onward. Every check prints as `[g<group> <decisions>] <name>`, so a run reads against the tables below line for line. Each group's case table arrives with the group.
+The drive's cases, each tagged with the List Consolidation decisions it pins and run with no phase gate, so a failing item fails the run. Every check prints as `[g<group> <decisions>] <name>`, so a run reads against the tables below line for line.
 
 #### Groups
 

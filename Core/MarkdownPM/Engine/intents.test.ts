@@ -826,6 +826,51 @@ describe('outliner rails', () => {
   })
 })
 
+describe('lines an item carries', () => {
+  const carried = (t: string) =>
+    docLineIntents(scanDoc(t)).lists.flatMap((own, i) =>
+      (own ?? [])
+        .filter((it) => it.kind !== 'rail')
+        .map((it) =>
+          it.kind === 'line'
+            ? [i, it.className, it.level]
+            : [i, 'lead', t.slice(it.from, it.to).length],
+        ),
+    )
+
+  it('each takes its owner’s level and zone, a line of the list’s depth hides its lead up to the owner’s words, and a nested quote moves whole', () => {
+    const t = '- a\n\t1. b\n\tride\n\t\t\tdeep\n\t```\n\tx\n\t```\n  > q'
+    expect(carried(t)).toEqual([
+      [2, 'md-list-carried md-list-ordered', 1],
+      [2, 'lead', 1],
+      [3, 'md-list-carried md-list-ordered', 1],
+      [3, 'lead', 2],
+      [4, 'md-list-carried md-list-ordered', 1],
+      [5, 'md-list-carried md-list-ordered', 1],
+      [6, 'md-list-carried md-list-ordered', 1],
+      [7, 'md-list-carried-whole md-list-ordered', 1],
+    ])
+    expect(carried('1. a\n   more')).toEqual([
+      [1, 'md-list-carried md-list-ordered', 0],
+      [1, 'lead', 3],
+    ])
+  })
+
+  it('the caret seats past a hidden lead, after any quote prefix before it', () => {
+    const seat = (t: string, line: string) => {
+      const scan = scanDoc(t)
+      const ls = t.indexOf(line)
+      return prefixEndAt(docLineIntents(scan), scan, ls) - ls
+    }
+    expect(seat('- a\n\t- b\n\tride', '\tride')).toBe(1)
+    expect(seat('> - qa\n>   more', '>   more')).toBe(4)
+  })
+
+  it('a block no item carries takes none', () => {
+    expect(carried('Para.\n\n```\nx\n```')).toEqual([])
+  })
+})
+
 describe('an HTML tag', () => {
   it('an HTML tag wears its color on the name and the bracket color on its brackets, caret or not', () => {
     const tokens = tokenize('<b>')

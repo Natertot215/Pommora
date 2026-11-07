@@ -374,19 +374,44 @@
   text-indent: 0;
 }
 
+.mdpm-editor .md-list-ordered {
+  --list-zone: var(--number-zone);
+}
+.mdpm-editor .md-list-task {
+  --list-zone: var(--task-zone);
+}
+.mdpm-editor
+  :is(
+    .cm-line:is(.md-list-item, .md-list-carried, .md-list-carried-whole),
+    .mdpm-tbl-cell-static :is(.md-list-item, .md-list-carried)
+  ) {
+  --list-words: calc(
+    (var(--list-level, 0) + 1) *
+    var(--list-indent) +
+    var(--list-zone, var(--bullet-zone))
+  );
+}
 .mdpm-editor :is(.cm-line.md-list-item, .mdpm-tbl-cell-static .md-list-item) {
   white-space: pre;
   --list-origin: 0px;
+  padding-left: calc(var(--list-origin) + var(--list-words));
+  text-indent: calc(-1 * var(--list-zone, var(--bullet-zone)));
+}
 
-  --list-column: calc((var(--list-level, 0) + 1) * var(--list-indent));
-  padding-left: calc(var(--list-origin) + var(--list-column) + var(--bullet-zone));
-  text-indent: calc(-1 * var(--bullet-zone));
+/* A line an item carries starts where the item's words do: a line of the list's own depth moves its words and its box there, and a quote or callout nested under the item moves whole, its rails held where the list draws them. */
+.mdpm-editor :is(.cm-line.md-list-carried, .mdpm-tbl-cell-static .md-list-carried) {
+  --list-carry-left: calc(var(--list-origin, 0px) + var(--list-words));
+  padding-left: var(--list-carry-left);
+}
+.mdpm-editor .cm-line.md-list-carried-whole {
+  margin-left: var(--list-words);
+  --rail-origin: calc(-1 * var(--list-words));
 }
 
 .md-outline-rail {
   display: none;
 }
-.outline-lines .mdpm-editor :has(> .md-outline-rail) {
+.outline-lines .mdpm-editor :is(.cm-line, [data-cell-line]):has(.md-outline-rail) {
   position: relative;
 }
 .outline-lines .md-outline-rail {
@@ -400,7 +425,7 @@
   bottom: 0;
   --rail-left: round(
     calc(
-      var(--list-origin, 0px) +
+      var(--rail-origin, var(--list-origin, 0px)) +
       (var(--rail-level) + 1) *
       var(--list-indent) +
       var(--rail-x) -
@@ -444,7 +469,7 @@
 .outline-lines :is(.md-outline-elbow, .md-outline-join) {
   --reach-left: round(
     calc(
-      var(--list-origin, 0px) +
+      var(--rail-origin, var(--list-origin, 0px)) +
       (var(--reach-level, var(--list-level)) + 1) *
       var(--list-indent) +
       var(--reach-x, calc(var(--outline-width) / 2 - var(--outline-gap))) -
@@ -498,10 +523,6 @@
   opacity: var(--state-ghost);
 }
 
-.mdpm-editor :is(.cm-line.md-list-ordered, .mdpm-tbl-cell-static .md-list-ordered) {
-  padding-left: calc(var(--list-origin) + var(--list-column) + var(--number-zone));
-  text-indent: calc(-1 * var(--number-zone));
-}
 .md-list-number,
 .codeblock-line-number,
 .md-citation-number {
@@ -543,10 +564,6 @@
   cursor: pointer;
 }
 
-.mdpm-editor :is(.cm-line.md-list-task, .mdpm-tbl-cell-static .md-list-task) {
-  padding-left: calc(var(--list-origin) + var(--list-column) + var(--task-zone));
-  text-indent: calc(-1 * var(--task-zone));
-}
 :root.mute-checked .md-list-done .md-list-text {
   opacity: var(--state-inactive);
   text-decoration: line-through;
@@ -662,7 +679,7 @@
   padding-right: 14px;
   color: var(--label-control);
 }
-.mdpm-editor .cm-line.md-blockquote:not(.md-list-item) {
+.mdpm-editor .cm-line.md-blockquote:not(.md-list-item, .md-list-carried) {
   padding-left: 16px;
 }
 .mdpm-editor .cm-line.md-blockquote::before {
@@ -711,7 +728,7 @@
   pointer-events: none;
   z-index: -1;
 }
-.mdpm-editor .cm-line.md-callout:not(.md-list-item) {
+.mdpm-editor .cm-line.md-callout:not(.md-list-item, .md-list-carried) {
   padding-left: var(--list-origin);
 }
 .mdpm-editor .cm-line.md-callout-first::before {
@@ -814,9 +831,11 @@
   --box-gap: var(--md-box-gap);
   --box-pad: 6px;
   --codeblock-edge: calc(var(--codeblock-inset) + var(--codeblock-pad));
+  --codeblock-left: var(--list-carry-left, var(--codeblock-inset));
+  --codeblock-start: calc(var(--codeblock-left) + var(--codeblock-pad));
   --code-reach: calc(var(--codeblock-pad) - var(--codeblock-border-width));
   --codeblock-indent: calc(
-    var(--codeblock-edge) +
+    var(--codeblock-start) +
     var(--diff-zone, 0px) +
     var(--codeblock-line-zone, 0px)
   );
@@ -830,6 +849,7 @@
 
 /* The block is a run of separate lines, so its outline is drawn the way a callout draws one: sides on every line, the cap on the line that ends the run. */
 .mdpm-editor .cm-line.codeblock::after {
+  left: var(--codeblock-left);
   box-sizing: border-box;
   border-left: var(--codeblock-border);
   border-right: var(--codeblock-border);
@@ -858,7 +878,7 @@
 }
 :root.codeblock-line-count .mdpm-editor .codeblock-diff .codeblock-line-number {
   position: absolute;
-  left: calc(var(--codeblock-edge) + var(--diff-zone));
+  left: calc(var(--codeblock-start) + var(--diff-zone));
   line-height: inherit;
 }
 .mdpm-editor .md-diff-sign {
@@ -882,7 +902,7 @@
 }
 .mdpm-editor .md-diff {
   position: absolute;
-  inset: 0 var(--codeblock-edge);
+  inset: 0 var(--codeblock-edge) 0 var(--codeblock-start);
   z-index: -1;
   background: color-mix(in srgb, var(--diff-color) var(--tint-quinary), transparent);
   pointer-events: none;
@@ -1141,7 +1161,7 @@
 }
 /* With the caret in the block, a highlight spans the code's whole scroll width, held inside the border. */
 .mdpm-editor .codeblock-revealed.codeblock-diff-raw .md-diff {
-  left: calc(var(--codeblock-edge) - min(var(--code-reach), var(--code-scroll, 0px)));
+  left: calc(var(--codeblock-start) - min(var(--code-reach), var(--code-scroll, 0px)));
   right: calc(
     var(--codeblock-edge) -
     min(var(--code-reach), var(--code-overflow, 0px) - var(--code-scroll, 0px))
