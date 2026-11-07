@@ -36,8 +36,12 @@ export type ValueKind = Exclude<PropertyValue['kind'], 'null'>
 
 export const NULL_VALUE: PropertyValue = { kind: 'null' }
 
-/** A held value as text: a string as itself, an unquoted `[[x]]` as the connection it spells, anything else as the yaml that spells it. */
-export const asText = (raw: unknown): string => linkEntry(raw, 2) ?? yamlInline(raw)
+const inlineText = (raw: unknown): string => linkEntry(raw, 2) ?? yamlInline(raw)
+
+/** A held value as text: a string as itself, an unquoted `[[x]]` as the connection it spells, a list as one item's line per member, anything else as the yaml that spells it. */
+export const asText = (raw: unknown): string =>
+  linkEntry(raw, 2) ??
+  (Array.isArray(raw) ? raw.map((item) => `- ${inlineText(item)}`).join('\n') : yamlInline(raw))
 
 // An outside `- 2024` parses as a number and must still name the option "2024".
 export const optionList = (raw: unknown): string[] =>

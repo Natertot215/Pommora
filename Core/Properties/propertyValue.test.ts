@@ -52,20 +52,25 @@ const keyedSelect = def({ type: 'select', select_options: keyedOptions })
 const keyedMulti = def({ type: 'multiSelect', select_options: keyedOptions })
 
 describe('decodeValue — the declared type decides, never the shape', () => {
-  it('free text reads a string as itself, an unquoted wikilink as the connection it spells, and any other shape as the yaml that spells it', () => {
+  it('free text reads a string as itself, an unquoted wikilink as the connection it spells, a list as its items’ lines, and any other shape as the yaml that spells it', () => {
     const text = def({ type: 'text' })
     expect(decodeValue(text, 'see [[Plan]] first')).toEqual({
       kind: 'text',
       value: 'see [[Plan]] first',
     })
     expect(decodeValue(text, [])).toEqual({ kind: 'null' })
-    expect(decodeValue(text, ['a\nb', 'c'])).toEqual({ kind: 'text', value: '["a\\nb", "c"]' })
+    expect(decodeValue(text, ['a\nb', 'c'])).toEqual({ kind: 'text', value: '- a\nb\n- c' })
     expect(decodeValue(text, 42)).toEqual({ kind: 'text', value: '42' })
     expect(decodeValue(text, true)).toEqual({ kind: 'text', value: 'true' })
     expect(decodeValue(text, 3.1)).toEqual({ kind: 'text', value: '3.1' })
     expect(decodeValue(text, ['milk', 'eggs', 'bread'])).toEqual({
       kind: 'text',
-      value: '[milk, eggs, bread]',
+      value: '- milk\n- eggs\n- bread',
+    })
+    expect(decodeValue(text, ['milk'])).toEqual({ kind: 'text', value: '- milk' })
+    expect(decodeValue(text, ['a', ['b', 'c'], [['Page']]])).toEqual({
+      kind: 'text',
+      value: '- a\n- [b, c]\n- [[Page]]',
     })
     expect(decodeValue(text, { x: 1 })).toEqual({ kind: 'text', value: '{x: 1}' })
     expect(decodeValue(text, [['Page']])).toEqual({ kind: 'text', value: '[[Page]]' })

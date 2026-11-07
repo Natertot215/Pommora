@@ -275,7 +275,8 @@ describe('gonePageEntry — the entry a restore parks', () => {
 describe('writtenSpelling', () => {
   it('a string keeps a number, a list, and an unquoted wikilink the file spells when it reads as that text, and takes a typed string over anything else', () => {
     expect(writtenSpelling('42', 42)).toBe(42)
-    expect(writtenSpelling('[milk, eggs]', ['milk', 'eggs'])).toEqual(['milk', 'eggs'])
+    expect(writtenSpelling('- milk\n- eggs', ['milk', 'eggs'])).toEqual(['milk', 'eggs'])
+    expect(writtenSpelling('- milk\n- bread', ['milk', 'eggs'])).toBe('- milk\n- bread')
     // The same link a Link key decodes an unquoted `[[Page]]` to, so re-saving it leaves the file alone; a different link lands as typed.
     expect(writtenSpelling('[[Page]]', [['Page']])).toEqual([['Page']])
     expect(writtenSpelling('[[007]]', [['007']])).toEqual([['007']])
