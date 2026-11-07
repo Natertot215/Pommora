@@ -2,22 +2,25 @@ import { type PropertyValue, readNumber } from './propertyValue'
 import type { ColumnType } from './properties'
 import { linkValueFromEdit } from '../Connections/linkValue'
 import type { ConnPage, PageIndex } from '../Connections/pageIndex'
+import { parseListMarker } from '../MarkdownPM/Engine/detect'
 
 interface LinkEditContext {
   index: PageIndex | undefined
   own: ConnPage | undefined
 }
 
+const fieldLine = (line: string): string => (parseListMarker(line) ? line : line.trim())
+
 export function editorText(value?: PropertyValue | null): string {
   if (value?.kind === 'number') return String(value.value)
   if (value?.kind === 'link') return value.value
-  if (value?.kind === 'text') return value.value.split('\n', 1)[0].trim()
+  if (value?.kind === 'text') return fieldLine(value.value.split('\n', 1)[0])
   return ''
 }
 
-/** The field edits the first line alone: it lands trimmed, the lines behind it ride through untouched, and an emptied first line drops along with any blank lines under it. */
+/** The field edits the first line alone: a plain line lands trimmed, a list line keeps its lead and marker, the lines behind it ride through untouched, and an emptied first line drops along with any blank lines under it. */
 function textFromEdit(raw: string, current?: PropertyValue | null): PropertyValue | null {
-  const first = raw.trim()
+  const first = fieldLine(raw)
   const behind = current?.kind === 'text' ? current.value.split('\n').slice(1) : []
   const kept = behind.findIndex((l) => l.trim() !== '')
   const lines = first === '' ? (kept === -1 ? [] : behind.slice(kept)) : [first, ...behind]

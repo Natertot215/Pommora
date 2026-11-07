@@ -10,6 +10,7 @@
   --page-detail-scale: var(--editor-scale);
   --md-box-radius: 6px;
   --md-box-gap-base: 6px; /* KNOB — the gap at 100% zoom */
+  /* KNOBS: the list's columns, on :root since a resting value's glyph, a citation row, and a blank line a rail crosses read them outside any list line. */
   --list-indent: 20px;
   --bullet-zone: 16px;
   --list-gap: 4px;
@@ -373,7 +374,6 @@
   text-indent: 0;
 }
 
-/* KNOBS: --list-indent, --list-gap, --bullet-zone / --number-zone / --task-zone, --bullet-size. They sit above .md-list-item, on :root, so a resting value's glyph, a citation row, and a blank line a rail crosses, which sit in the same columns but aren't list lines, still get them. */
 .mdpm-editor :is(.cm-line.md-list-item, .mdpm-tbl-cell-static .md-list-item) {
   white-space: pre;
   --list-origin: 0px;
@@ -556,7 +556,7 @@
 .mdpm-editor .checkbox {
   zoom: var(--glyph-scale);
 }
-:is(.mdpm-editor, .cell-text) .checkbox {
+.md-list-checkbox-seat .checkbox {
   vertical-align: -0.18em;
 }
 .cell-text .checkbox {

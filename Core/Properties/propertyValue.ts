@@ -36,7 +36,8 @@ export type ValueKind = Exclude<PropertyValue['kind'], 'null'>
 
 export const NULL_VALUE: PropertyValue = { kind: 'null' }
 
-const inlineText = (raw: unknown): string => linkEntry(raw, 2) ?? yamlInline(raw)
+const inlineText = (raw: unknown): string =>
+  raw === null ? '' : (linkEntry(raw, 2) ?? yamlInline(raw))
 
 /** A held value as text: a string as itself, an unquoted `[[x]]` as the connection it spells, a list as one item's line per member, anything else as the yaml that spells it. */
 export const asText = (raw: unknown): string =>

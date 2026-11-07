@@ -64,16 +64,14 @@ export type CellPage = Pick<PageHeadings, 'keys' | 'texts'> & {
 const cellTokens = perText((text) => tokenize(text, 'lists'), 4096)
 const cellScan = perText((text) => scanDoc(text, 'lists'), 4096)
 
+type DrawOptions = { around?: CellPage; headingLinkStyle?: HeadingLinkStyle; base?: number }
+
 type Drawn = Token | { kind: 'section'; range: [number, number]; contentRange: [number, number] }
 
 function renderCellContent(
   text: string,
   connections: () => ConnectionsApi | undefined,
-  {
-    around,
-    headingLinkStyle = 'page-heading',
-    base = 0,
-  }: { around?: CellPage; headingLinkStyle?: HeadingLinkStyle; base?: number } = {},
+  { around, headingLinkStyle = 'page-heading', base = 0 }: DrawOptions,
 ): React.ReactNode {
   const runs =
     around && around.texts.length > 0 && text.includes('§')
@@ -277,7 +275,7 @@ export function renderRestingLine(
   line: string,
   lm: ListMarker | null,
   connections: () => ConnectionsApi | undefined,
-  { base = 0, ...rest }: { base?: number; around?: CellPage; headingLinkStyle?: HeadingLinkStyle },
+  { base = 0, ...rest }: DrawOptions,
 ): React.ReactNode {
   const content = lm ? line.slice(lm.contentStart) : line
   const rendered = renderCellContent(content, connections, {

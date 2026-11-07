@@ -127,8 +127,7 @@ export function ValueEditor({
             keymap.of(
               oneLine
                 ? [
-                    { key: 'Enter', run: leave },
-                    { key: 'Shift-Enter', run: () => true },
+                    { key: 'Enter', run: leave, shift: () => true },
                     { key: 'Mod-Enter', run: () => true },
                     { key: 'Escape', run: cancel },
                   ]

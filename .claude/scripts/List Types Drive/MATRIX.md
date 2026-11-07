@@ -44,7 +44,7 @@ The drive's cases, derived from *List Consolidation — Decisions & Intention*, 
 - **⌘Z after every cell key:** a cell forwards undo to the page's history, one path whatever the key, so one recount proves it.
 - **Each key in a quote or a callout:** a page's Enter, Backspace, and Delete come from its own chain while `listKeys` holds its Tab and Shift-Tab, and groups 3 and 7 hold what's particular to those blocks.
 - **A callout head's type menu:** a head draws no glyph (F-1), so nothing opens one, and `format.test.ts` pins what a pick writes there.
-- **Word gestures in a Text value:** a value's editor mounts the same `sharedSurface`, and `inlineScope.test.tsx` reads the rule at that scope.
+- **Word gestures in a Text value:** a value's editor mounts the same `editorBase`, and `inlineScope.test.tsx` reads the rule at that scope.
 - **The word rule's character classes past those a user types:** `𝒶'b` stays with `inlineScope.test.tsx`; a press can't land one half of an astral letter reliably.
 - **The info pane in group 9:** nothing mounts `InfoButton` today, so no surface draws one to press; `editorMenu.test.tsx` holds the bubble stop.
 - **A window tab and an embed in group 9:** both mount the unentered tile's read-only editor; the tile, the reader, and a glance cover the short menu's three routes in.

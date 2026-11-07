@@ -28,7 +28,7 @@ export function ownElements<E extends HTMLElement = HTMLElement>(
   )
 }
 
-// The band a grip answers a press in: the gutter left of the line box on a page, and, where `--grip-strip` names one, that many pixels INTO the box — a table cell has no gutter, so its grip sits in the list's own inset.
+// The band a grip answers a press in: the gutter left of the line box on a page, and, where `--grip-strip` names one, that many pixels INTO the box — a table cell and a Text pane have no gutter, so their grip sits in the list's own inset.
 function inGripStrip(e: { clientX: number }, line: HTMLElement): boolean {
   const inset = parseFloat(getComputedStyle(line).getPropertyValue('--grip-strip')) || 0
   return e.clientX < line.getBoundingClientRect().left + inset
