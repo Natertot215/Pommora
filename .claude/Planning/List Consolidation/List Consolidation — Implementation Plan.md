@@ -16,6 +16,8 @@
 
 **Run State:** resume from what's ticked. The run's helpers sit in the session scratchpad's `run/`: `env.sh`, `row.sh <label> <sha> <spec…>` for a drive row, `executor-rules.md`, and `reviewer-rules.md`. The drive worktree is the scratchpad's `wt`, holding Editor Parity's `results/base`, and shots sit in its `shots/`. Each phase takes one `execution-agent` continued task by task, its checkpoint two reviewers and the row run side by side, one fold commit by the same executor, then the row again at the folded head.
 
+**Where the Run Stands:** Tasks 10-1 to 10-4 landed at `ac81fd7c7`, `c3c02a864`, `6cf88253d`, and `5874aacc7`: -291 (+1540 / -1831), 9,254 tests, 3,507 comments. Phase 10's checkpoint is open. Its simplification review holds no defects and six folds, in the scratchpad's `run/simp10-proposal.patch`, which passes `git apply --check` at `5874aacc7`. The adversarial review and a run of Option Picker, Archive, and Properties were in flight. Once the fold lands, *§When Drives Run*'s last row runs whole at the folded head.
+
 **Net Ledger** (production lines from the Actionable cell of `view-delta --exclude .claude`, cumulative from the BASELINE head. Estimate is what the phase patches measured at build; Measured is filled during the run):
 
 | Phase | Estimate | Tests at the Phase's Head | Measured |
@@ -280,10 +282,10 @@ The order is what makes each step land once. The scan goes first, since every la
   - [x] Review Checkpoint
   - [x] Compaction Checkpoint
 - [ ] **Phase 10** — Text Properties
-  - [ ] Task 10-1 · The pane
-  - [ ] Task 10-2 · At rest
-  - [ ] Task 10-3 · YAML lists
-  - [ ] Task 10-4 · Drive group 10 and the drives that follow
+  - [x] Task 10-1 · The pane
+  - [x] Task 10-2 · At rest
+  - [x] Task 10-3 · YAML lists
+  - [x] Task 10-4 · Drive group 10 and the drives that follow
   - [ ] Review Checkpoint
 - [ ] **Phase 11** — Docs and Issues
   - [ ] Task 11-1 · Docs and issues
@@ -798,8 +800,8 @@ A Text value's pane should read the `lists` scope and the one-line field `inline
 
 **VERIFY**
 
-- [ ] Each pin's revert as *Phase 10 — Notes* names it, watched red and restored, with `TextPane.test.tsx`'s *leaves a value a tool wrote with \r\n as it was when closed untouched, and saves it as written once edited* reading red with `docText`'s replace removed, and *takes an outside write with \r\n as the document holds it, and closes with nothing to save* reading red with `mirrorBody(view, initial)`. `TextPane.test.tsx`'s named assertions changed, and *Escape commits the typed text once, then closes; a second close commits nothing*, *the × commits and closes; an unchanged document commits nothing; a blanked document commits null*, and *%s with the `[[` pane open picks its row, and the pane stays* hold.
-- [ ] Run the gates.
+- [x] Each pin's revert as *Phase 10 — Notes* names it, watched red and restored, with `TextPane.test.tsx`'s *leaves a value a tool wrote with \r\n as it was when closed untouched, and saves it as written once edited* reading red with `docText`'s replace removed, and *takes an outside write with \r\n as the document holds it, and closes with nothing to save* reading red with `mirrorBody(view, initial)`. `TextPane.test.tsx`'s named assertions changed, and *Escape commits the typed text once, then closes; a second close commits nothing*, *the × commits and closes; an unchanged document commits nothing; a blanked document commits null*, and *%s with the `[[` pane open picks its row, and the pane stays* hold.
+- [x] Run the gates.
 
 #### Task 10-2
 
@@ -811,7 +813,7 @@ A Text value should draw its first line at rest through `renderRestingLine`, mar
 
 **VERIFY**
 
-- [ ] Run the gates.
+- [x] Run the gates.
 
 #### Task 10-3
 
@@ -823,8 +825,8 @@ A real YAML list should draw as a list.
 
 **VERIFY**
 
-- [ ] `propertyValue.test.ts`' *free text reads a string as itself, an unquoted wikilink as the connection it spells, a list as its items’ lines, and any other shape as the yaml that spells it* and `governedRoot.test.ts`' *a string keeps a number, a list, and an unquoted wikilink the file spells when it reads as that text, and takes a typed string over anything else* read the new behavior.
-- [ ] Run the gates; the count reads the Net Ledger's row.
+- [x] `propertyValue.test.ts`' *free text reads a string as itself, an unquoted wikilink as the connection it spells, a list as its items’ lines, and any other shape as the yaml that spells it* and `governedRoot.test.ts`' *a string keeps a number, a list, and an unquoted wikilink the file spells when it reads as that text, and takes a typed string over anything else* read the new behavior.
+- [x] Run the gates; the count reads the Net Ledger's row.
 
 #### Task 10-4
 
@@ -836,8 +838,8 @@ The List Types Drive's group 10 and the Text Property Drive's rewrite should pro
 
 **VERIFY**
 
-- [ ] `node live-drive.mjs 10` reads every item passing at this task's head, and the Text Property Drive's four groups read 127/127 with Mute Checked Items turned on by the item that reads a checked box.
-- [ ] Alias 3 reads 122/122, Path Links 1 and 9 read 722/722, and Metadata's nine groups read 261/261. Metadata's seed timed out once at planning ("Timed out waiting for 179 seeded pages indexed") and held on two reruns with no change, so one such stop reruns once before it's read as real.
+- [x] `node live-drive.mjs 10` reads every item passing at this task's head, and the Text Property Drive's four groups read 127/127 with Mute Checked Items turned on by the item that reads a checked box.
+- [x] Alias 3 reads 122/122, Path Links 1 and 9 read 722/722, and Metadata's nine groups read 261/261. Metadata's seed timed out once at planning ("Timed out waiting for 179 seeded pages indexed") and held on two reruns with no change, so one such stop reruns once before it's read as real.
 
 #### Review Checkpoint
 
