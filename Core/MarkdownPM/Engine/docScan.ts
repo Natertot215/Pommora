@@ -73,14 +73,14 @@ type LineScan = Omit<DocScan, 'citations'>
 function literalLines(d: DocLines, scope: MarkdownScope): LineScan {
   const { lines, lineStarts } = d
   const n = lines.length
-  const fences = new Array<undefined>(n).fill(undefined)
-  const inCode: CodeMask = (p) => inCodeAt({ lines, lineStarts, fences }, p)
+  const none = new Array<undefined>(n).fill(undefined)
+  const inCode: CodeMask = (p) => inCodeAt({ lines, lineStarts, fences: none }, p)
   const no = new Array<boolean>(n).fill(false)
   return {
     ...d,
     scope,
-    fences,
-    callouts: fences,
+    fences: none,
+    callouts: none,
     headings: no,
     quotes: no,
     breaks: no,
@@ -90,7 +90,7 @@ function literalLines(d: DocLines, scope: MarkdownScope): LineScan {
     maths: [],
     embeds: [],
     webpages: [],
-    html: htmlBlocks(d, fences),
+    html: htmlBlocks(d, none),
     fenceLines: lines.flatMap((l, i) => (fenceAt(l) ? [i] : [])),
     mathOpen: -1,
     fresh: [0, n],
@@ -412,6 +412,7 @@ export const inFenceAt = (scan: DocScan, pos: number): boolean =>
 export const fenceDelimiter = (scan: DocScan, k: number): boolean =>
   (scan.fences[k]?.role ?? 'content') !== 'content'
 
+/** Line `k`'s marker as read from `region`, a block's `from`, or from outside every block when left out; `scan.markers[k]` reads it where the line stands, so a Markdown block's item continues on Enter and hands an outside reader no rail or seat. */
 export const markerIn = (scan: DocScan, k: number, region?: number): ListMarker | null =>
   scan.fences[k]?.from === region ? scan.markers[k] : null
 
