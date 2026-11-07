@@ -50,7 +50,6 @@ import {
   railClass,
   railStyle,
   prefixEndAt,
-  seatPastMarker,
   tokenIntents,
   type WidgetSpec,
 } from './Engine/intents'
@@ -60,6 +59,7 @@ import {
   chunksOver,
   codeBlockTextAt,
   inCodeAt,
+  seatPastMarker,
   shiftSpan,
   signSeatAt,
   spanAt,

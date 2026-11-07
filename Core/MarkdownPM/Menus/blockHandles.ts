@@ -8,9 +8,7 @@ import { GRIP_HOST, GRIP_LINE } from '../Engine/intents'
 import { lineElementAt, ownElements, textColumn } from '../lineDom'
 import { REVEAL_REACH, type Reach, withinReach } from '@pommora/uix/Interactions/hoverReveal'
 
-type Kind = Block['kind']
-
-const GRIP_KINDS: ReadonlySet<Kind> = new Set([
+const GRIP_KINDS: ReadonlySet<Block['kind']> = new Set([
   'paragraph',
   'code',
   'list',

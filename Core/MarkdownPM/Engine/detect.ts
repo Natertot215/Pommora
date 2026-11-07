@@ -566,10 +566,6 @@ export const ordinalOf = (lm: SequencedMarker): number =>
 export const ordinalText = (kind: SequencedKind, n: number): string =>
   kind === 'alphabetical' ? String.fromCharCode(65 + ((n - 1) % 26)) : String(n)
 
-/** Whether a line at quote depth `depth` or deeper that isn't an item there continues a list at that depth: a wrapped item's body, indented past the list's prefix, does, and a blank line ends the list. */
-export const continuesList = (line: string, depth: number): boolean =>
-  /^[ \t]+\S/.test(line.slice(quotePrefixWidth(line, depth)))
-
 export function parseListMarker(line: string, offset = 0): ListMarker | null {
   if (isThematicBreakLine(line)) return null
   const m = LIST_MARKER_RE.exec(line)

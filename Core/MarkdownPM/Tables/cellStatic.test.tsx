@@ -30,6 +30,8 @@ const numbering = (n: number): CellPage => ({
   texts: [],
 })
 
+const DRAW = { headingLinkStyle: 'page-heading' } as const
+
 let container: HTMLDivElement
 let root: Root
 const cited = (): string[] => vi.mocked(followCitation).mock.calls.map(([label]) => label)
@@ -198,7 +200,7 @@ describe('a resting cell draws a tag whole', () => {
     document.body.appendChild(container)
     root = createRoot(container)
     await act(async () =>
-      root.render(renderRestingLine('**y** <b>x</b>', null, () => undefined, {})),
+      root.render(renderRestingLine('**y** <b>x</b>', null, () => undefined, DRAW)),
     )
     expect(container.textContent).toBe('y <b>x</b>')
     const tags = [...container.querySelectorAll('.md-html-tag')].map((el) => el.textContent)
@@ -216,7 +218,9 @@ describe('a resting cell draws an unresolved link as an unresolved connection, w
       headingsOf: () => undefined,
       open: () => {},
     }
-    await act(async () => root.render(renderRestingLine('a [x](Missing) b', null, () => conn, {})))
+    await act(async () =>
+      root.render(renderRestingLine('a [x](Missing) b', null, () => conn, DRAW)),
+    )
     const parts = [...container.querySelectorAll('span')].map((el) => [
       el.className,
       el.textContent,
@@ -286,7 +290,9 @@ describe('a resting cell draws every token as a span, through the tokens inside 
     container = document.createElement('div')
     document.body.appendChild(container)
     root = createRoot(container)
-    await act(async () => root.render(renderRestingLine(text, null, () => conn, { around })))
+    await act(async () =>
+      root.render(renderRestingLine(text, null, () => conn, { ...DRAW, around })),
+    )
   }
 
   it('a connection inside bold draws inside the bold span, and both name their source', async () => {
@@ -314,7 +320,7 @@ describe('a resting cell draws every token as a span, through the tokens inside 
       ...conn,
       index: buildPageIndex([{ id: 'n', title: 'Notes', path: 'A/Notes.md' }]),
     }
-    await act(async () => root.render(renderRestingLine('[[A/Notes#H]]', null, () => paths, {})))
+    await act(async () => root.render(renderRestingLine('[[A/Notes#H]]', null, () => paths, DRAW)))
     expect(container.textContent).toBe('Notes§H')
     expect(container.querySelector('.md-heading-symbol-spaced')?.textContent).toBe('§')
   })

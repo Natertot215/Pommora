@@ -6,15 +6,9 @@ import { sidecarPath } from '../Paths/paths'
 import { listOf } from '../Contract/validators'
 import { fail, fault, ok, type Result } from '../Contract/result'
 import { isBlankRaw, landValue, memberKey, namesValue } from '../Files/rootValues'
-import { atomicWriteFile, parseJsonObject } from '../Files/atomicWrite'
+import { atomicWriteFile } from '../Files/atomicWrite'
 import { machine, statOrNull } from '../Platform/machine'
-import {
-  type Place,
-  splitFrontmatter,
-  sweepParse,
-  type SweptPage,
-  UNPARSED_FRONTMATTER,
-} from '../Files/pageFile'
+import { type Place, sweepParse, type SweptPage, UNPARSED_FRONTMATTER } from '../Files/pageFile'
 import type { Json } from '../Files/stableJson'
 import { linkEntry, readLinkText } from '../Connections/linkValue'
 import { contextKey, contextTitles } from '../Contexts/contexts'
@@ -158,10 +152,6 @@ export function writtenRoot(
   const next = landValue(reconciled, key, writtenSpelling(kept, root[key]))
   return changedKeys(root, next).length ? next : null
 }
-
-/** The root a governed file holds: a page's frontmatter, or a Space sidecar's object. */
-export const governedRoot = (file: string, text: string): Json =>
-  isMarkdownFile(file) ? splitFrontmatter(text) : (parseJsonObject(text) ?? {})
 
 const changedKeys = (root: Json, next: Json): string[] =>
   [...new Set([...Object.keys(root), ...Object.keys(next)])].filter(

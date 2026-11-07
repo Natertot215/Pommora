@@ -333,7 +333,6 @@ function listReach(
   const upTo = lineIndexAt(scan, reachEnd(scan.text, from, to))
   const own = scan.fences[anchor]?.from
   const region = scan.fences[upTo]?.from === own ? own : undefined
-  const endOf = (k: number): number => subBlockAt(scan, scan.lineStarts[k]).to
   const blank = (k: number): boolean => isBlank(splitPrefix(scan, k).body)
   const owners = ownersOf(scan, anchor, region)
   const item = owners[0]?.k ?? null
@@ -361,7 +360,8 @@ function listReach(
     const open = owners.reverse()
     for (let k = anchor; k <= upTo; k++) {
       while (open.length > 0 && open[open.length - 1].end < scan.lineStarts[k]) open.pop()
-      if (markerIn(scan, k, region) !== null && k !== item) open.push({ k, end: endOf(k) })
+      if (markerIn(scan, k, region) !== null && k !== item)
+        open.push({ k, end: subBlockAt(scan, scan.lineStarts[k]).to })
       if (!blank(k)) reached.add(open[open.length - 1]?.k ?? k)
     }
   }

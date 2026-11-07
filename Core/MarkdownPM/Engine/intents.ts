@@ -157,7 +157,7 @@ export function tokenIntents(tokens: Token[], active: Set<number>): DecoIntent[]
 
 const barred = (f: FenceInfo | undefined): boolean => signedLine(f) && f?.diff !== 'same'
 
-// Null where the line is chrome of its own and never enters the list vocabulary; otherwise the offset the list grammar starts at.
+// Null where the line is chrome of its own and never enters the list vocabulary; otherwise the offset past its quote or callout prefix.
 function lineChrome(
   scan: DocScan,
   i: number,
@@ -279,7 +279,7 @@ function lineChrome(
     return null
   }
 
-  // Display math is formula source: a `- b` term must never become a bullet with a live drag glyph inside the formula.
+  // Display math is formula source: a `# x` or `---` line must never draw as a heading or a rule inside the formula.
   if (spanAt(scan.maths, ls) !== undefined) {
     pushPrefix(intents, ls, ls + base)
     return null
@@ -340,14 +340,13 @@ export function lineIntentsInto(
 
 export function railIntents(scan: DocScan, quoteDepths: number[]): RailIntent[][] {
   const n = scan.lines.length
-  const levelAt = (i: number): number => markerIn(scan, i, undefined)?.level ?? -1
   const rails: RailIntent[][] = new Array(n)
   const CARRIES = -2
   const LIST_ENDS = -1
   const shown: number[] = new Array(n)
   for (let i = 0, depth = 0, open = false; i < n; i++) {
     const own = quoteDepths[i]
-    const level = levelAt(i)
+    const level = markerIn(scan, i)?.level ?? -1
     if (level >= 0 && own === depth) shown[i] = level
     else if (open && own >= depth && ridesList(scan, i, depth)) shown[i] = CARRIES
     else {
@@ -366,7 +365,7 @@ export function railIntents(scan: DocScan, quoteDepths: number[]): RailIntent[][
   let span = 0
   for (let i = 0; i < n; i++) {
     const carries = shown[i] === CARRIES
-    const lm = carries ? null : markerIn(scan, i, undefined)
+    const lm = carries ? null : markerIn(scan, i)
     const level = lm?.level ?? -1
     const prevSpan = span
     if (shown[i] === LIST_ENDS) railKind.length = 0
@@ -542,13 +541,6 @@ export function prefixEndAt(cached: CachedLineIntents, scan: DocScan, pos: numbe
       }
   }
   return end
-}
-
-/** The seat a marker hands the caret: anywhere left of an item's content lands at the content, where any token opening it begins. */
-export function seatPastMarker(scan: DocScan, pos: number): number {
-  const k = lineIndexAt(scan, pos)
-  const lm = markerIn(scan, k, undefined)
-  return lm ? Math.max(pos, scan.lineStarts[k] + lm.contentStart) : pos
 }
 
 function pushConstruct(

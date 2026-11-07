@@ -15,13 +15,12 @@ import {
   railClass,
   railIntents,
   railStyle,
-  seatPastMarker,
   textMarkerClass,
 } from '../Engine/intents'
 import { perText } from '../Engine/perText'
 import type { BlockSpan, ListMarker } from '../Engine/detect'
 import { checkboxToggleChange } from '../Engine/listModel'
-import { scanDoc } from '../Engine/docScan'
+import { scanDoc, seatPastMarker } from '../Engine/docScan'
 import { isPaint } from '../Engine/paints'
 import { editFor } from '../Input/format'
 import { editEvent, landEdit } from '../Input/listRenumber'
@@ -64,14 +63,14 @@ export type CellPage = Pick<PageHeadings, 'keys' | 'texts'> & {
 const cellTokens = perText((text) => tokenize(text, 'lists'), 4096)
 const cellScan = perText((text) => scanDoc(text, 'lists'), 4096)
 
-type DrawOptions = { around?: CellPage; headingLinkStyle?: HeadingLinkStyle; base?: number }
+type DrawOptions = { around?: CellPage; headingLinkStyle: HeadingLinkStyle; base?: number }
 
 type Drawn = Token | { kind: 'section'; range: [number, number]; contentRange: [number, number] }
 
 function renderCellContent(
   text: string,
   connections: () => ConnectionsApi | undefined,
-  { around, headingLinkStyle = 'page-heading', base = 0 }: DrawOptions,
+  { around, headingLinkStyle, base = 0 }: DrawOptions,
 ): React.ReactNode {
   const runs =
     around && around.texts.length > 0 && text.includes('§')
@@ -514,8 +513,8 @@ function StaticCellImpl({
   // A resting cell has no editor, so the toggle the list drag extension serves in a live one has to be offered here too.
   const claimCheckbox = (e: React.MouseEvent): (() => void) | null => {
     if (readOnly()) return null
-    const seat = (e.target as HTMLElement | null)?.closest?.('.md-list-checkbox-seat')
-    const change = seat && checkboxToggleChange(cellScan(text), srcOf(seat)![0])
+    const glyph = glyphAt(e)
+    const change = glyph && checkboxToggleChange(cellScan(text), srcOf(glyph)![0])
     if (!change) return null
     e.preventDefault()
     e.stopPropagation()

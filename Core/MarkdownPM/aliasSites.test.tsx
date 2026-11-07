@@ -50,7 +50,7 @@ async function renderCell(text: string): Promise<HTMLElement> {
       createElement(
         'div',
         null,
-        renderRestingLine(text, null, () => conn, {}),
+        renderRestingLine(text, null, () => conn, { headingLinkStyle: 'page-heading' }),
       ),
     ),
   )

@@ -787,10 +787,8 @@ export function dashArrow(
   const doc = scan.text
   const c = selStart
   if (!'-–←><'.includes(doc[c - 1])) return null
-  if (isLiteralAt(scan, c))
-    return inserted === '>' && doc[c - 1] === '-' && opensCodeList(scan, c - 1)
-      ? { from: c - 1, to: c, insert: '→', selection: c }
-      : null
+  const opensItem = inserted === '>' && doc[c - 1] === '-' && opensCodeList(scan, c - 1)
+  if (isLiteralAt(scan, c) && !opensItem) return null
   const dashes = settingOf(settings, 'transformDashes')
   const arrows = settingOf(settings, 'transformArrows')
 

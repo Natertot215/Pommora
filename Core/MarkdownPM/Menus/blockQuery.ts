@@ -5,7 +5,7 @@ import { inSealedLine, type DocScan } from '../Engine/docScan'
 import { lineIndexAt } from '../Engine/markdownCode'
 import { docScan } from '../docCache'
 
-export interface BlockQuery {
+interface BlockQuery {
   query: string
   from: number
   to: number

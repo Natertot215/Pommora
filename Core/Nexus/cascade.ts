@@ -133,7 +133,7 @@ export async function deleteCascade(root: string, strip: LinkStrip): Promise<Con
 }
 
 /** The per-file arm every cascade shares: a page's body and its link-holding values through `rewrite`, and a Space sidecar's or a stash block's values alone. `settled` says the editor of `ownRel`, a heading rename's page, already rewrote its body; its frontmatter still takes the patch. */
-export function fileRewrites(
+function fileRewrites(
   root: string,
   tree: NexusTree,
   rewrite: (text: string, own?: boolean, outlineOf?: string, inCode?: CodeMask) => string,

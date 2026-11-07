@@ -26,11 +26,13 @@ const conn: ConnectionsApi = {
 let cellRoot: Root | null = null
 let cellHost: HTMLDivElement | null = null
 
+const DRAW = { headingLinkStyle: 'page-heading' } as const
+
 async function renderCell(text: string): Promise<HTMLDivElement> {
   cellHost = document.createElement('div')
   document.body.appendChild(cellHost)
   cellRoot = createRoot(cellHost)
-  await act(async () => cellRoot?.render(renderRestingLine(text, null, () => conn, {})))
+  await act(async () => cellRoot?.render(renderRestingLine(text, null, () => conn, DRAW)))
   return cellHost
 }
 
@@ -68,7 +70,7 @@ describe('both syntaxes and both renderers agree', () => {
           '[[Work Notes#Gone\\|al]] [lab](Work%20Notes#Gone)',
           null,
           () => missing,
-          {},
+          DRAW,
         ),
       ),
     )
@@ -130,7 +132,7 @@ describe('an unresolved markdown link looks as an unresolved connection does', (
     cellHost = document.createElement('div')
     document.body.appendChild(cellHost)
     cellRoot = createRoot(cellHost)
-    await act(async () => cellRoot?.render(renderRestingLine(body, null, () => dups, {})))
+    await act(async () => cellRoot?.render(renderRestingLine(body, null, () => dups, DRAW)))
     const label = (root: Element): string[] => {
       const el = [...root.querySelectorAll('span')].find((s) => s.textContent === 'x')
       return el ? [...el.classList] : []

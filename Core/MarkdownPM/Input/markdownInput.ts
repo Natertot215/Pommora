@@ -48,13 +48,13 @@ import { applyEdit } from './applyEdit'
 import { fenceAt, lineEndOf, lineIndexAt, lineOffsetsOf } from '../Engine/markdownCode'
 import { shownEnd } from '../Links/linkEdit'
 import { embedTileRanges } from '../Embeds/embedWidget'
-import { caretInMargin, type DocScan, signSeatAt } from '../Engine/docScan'
+import { caretInMargin, type DocScan, seatPastMarker, signSeatAt } from '../Engine/docScan'
 import { type MarkdownScope, signedLine } from '../Engine/detect'
 import { blockLanguage, blockLines } from '../codeHighlight'
 import { commitCitation, seedTypedCitation } from '../Citations/citationActions'
 import { citationDeleteIntent } from '../Citations/citationEdits'
 import { docLineIntentsOf, docScan } from '../docCache'
-import { prefixEndAt, seatPastMarker } from '../Engine/intents'
+import { prefixEndAt } from '../Engine/intents'
 import { editorHost } from '../api'
 
 const settingsOf = (view: EditorView) => view.state.facet(editorHost).settings()
@@ -157,7 +157,6 @@ const diffBreak =
     return apply(view, edits[0] ?? null)
   }
 
-// Forward-delete at the end of the line above a table would join prose into the header row, so it mirrors the backspace atomic behavior instead.
 /** Dispatched rather than returned into the transform chain: removing a footnote is two disjoint sites, and the edit that chain carries is a single range. */
 const citationCascade = (view: EditorView, from: number, to: number): boolean => {
   const changes = citationDeleteIntent(docScan(view.state), from, to)
@@ -166,6 +165,7 @@ const citationCascade = (view: EditorView, from: number, to: number): boolean =>
   return true
 }
 
+// Forward-delete at the end of the line above a table would join prose into the header row, so it mirrors the backspace atomic behavior instead.
 const onForwardDelete = (view: EditorView): boolean => {
   const s = view.state.selection.main
   const scan = docScan(view.state)

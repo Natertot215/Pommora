@@ -466,7 +466,10 @@ describe('a block construct spelled in a cell, which reads as its text', () => {
 
   it('draws a `§` run between fence-shaped lines at rest, as a live cell reads it', () => {
     const around = { ordinalOf: () => null, keys: [], texts: ['Setup'] }
-    const drawn = renderRestingLine('```\n§Setup\n```', null, () => undefined, { around })
+    const drawn = renderRestingLine('```\n§Setup\n```', null, () => undefined, {
+      around,
+      headingLinkStyle: 'page-heading',
+    })
     expect(renderToStaticMarkup(drawn)).toContain('md-section-run')
   })
 

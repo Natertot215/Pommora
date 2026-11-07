@@ -43,7 +43,7 @@ function blockContext(scan: DocScan): BlockContext {
   const listMember = new Array<boolean>(n)
   for (let i = 0; i < n; i++)
     listMember[i] =
-      (quoteDepthOf(lines[i]) === 0 && markerIn(scan, i, undefined) !== null) ||
+      (quoteDepthOf(lines[i]) === 0 && markerIn(scan, i) !== null) ||
       (i > 0 && listMember[i - 1] && ridesList(scan, i, 0))
 
   const ranged = new Array<BlockKind | undefined>(n)

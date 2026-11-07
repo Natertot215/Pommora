@@ -1,5 +1,4 @@
 import {
-  continuesList,
   fenceBodyStart,
   isSequenced,
   ordinalOf,
@@ -13,6 +12,7 @@ import {
   lineEndOf,
   lineIndexAt,
   quoteDepthOf,
+  quotePrefixWidth,
   type TextEdit,
 } from './markdownCode'
 import { rebuildMove, type Slot } from './blockMove'
@@ -31,6 +31,10 @@ function openerOf(scan: DocScan, k: number): number {
   const block = sealedBlock(scan, k)
   return block === undefined ? k : lineIndexAt(scan, block.from)
 }
+
+/** Whether a line at quote depth `depth` or deeper that isn't an item there continues a list at that depth: a wrapped item's body, indented past the list's prefix, does, and a blank line ends the list. */
+const continuesList = (line: string, depth: number): boolean =>
+  /^[ \t]+\S/.test(line.slice(quotePrefixWidth(line, depth)))
 
 /** Whether line `k`, read from outside any block it sits in, rides the item above it in a list at quote depth `depth`. */
 export const ridesList = (scan: DocScan, k: number, depth: number): boolean =>

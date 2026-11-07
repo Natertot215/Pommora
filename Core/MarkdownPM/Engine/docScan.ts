@@ -411,11 +411,15 @@ export const inFenceAt = (scan: DocScan, pos: number): boolean =>
 export const fenceDelimiter = (scan: DocScan, k: number): boolean =>
   (scan.fences[k]?.role ?? 'content') !== 'content'
 
-export const markerIn = (
-  scan: DocScan,
-  k: number,
-  region: number | undefined,
-): ListMarker | null => (scan.fences[k]?.from === region ? scan.markers[k] : null)
+export const markerIn = (scan: DocScan, k: number, region?: number): ListMarker | null =>
+  scan.fences[k]?.from === region ? scan.markers[k] : null
+
+/** The seat a marker hands the caret: anywhere left of an item's content lands at the content, where any token opening it begins. */
+export function seatPastMarker(scan: DocScan, pos: number): number {
+  const k = lineIndexAt(scan, pos)
+  const lm = markerIn(scan, k)
+  return lm ? Math.max(pos, scan.lineStarts[k] + lm.contentStart) : pos
+}
 
 export function inCalloutAt(scan: DocScan, pos: number): boolean {
   if (pos < 0) return false
