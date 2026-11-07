@@ -148,6 +148,8 @@ export function shiftEnterEdit(scan: DocScan, selStart: number, selEnd: number):
 export function indentListOnTab(scan: DocScan, selStart: number, selEnd: number): Edit | null {
   const at = listLineAt(scan, selStart, selEnd)
   if (at === null || at.lm.level >= MAX_NESTING_LEVEL) return null
+  const f = scan.fences[lineIndexAt(scan, selStart)]
+  if (f && fenceBodyStart(`${at.pfx}\t`, f) > at.pfx.length) return null
   const from = at.ls + at.pfx.length
   return { from, to: from, insert: '\t', selection: selStart + 1, relist: true }
 }

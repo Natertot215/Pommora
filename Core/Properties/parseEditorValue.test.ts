@@ -24,6 +24,7 @@ describe('parseEditorValue', () => {
     const text = (value: string) => ({ kind: 'text', value }) as const
     expect(editorText(text('first \nsecond\nthird'))).toBe('first')
     expect(editorText(text('- milk\n- eggs'))).toBe('- milk')
+    expect(editorText(text('- a\r\n- b'))).toBe('- a')
     expect(editorText(text(''))).toBe('')
     expect(parseEditorValue('text', 'changed', text('first\nsecond'))).toEqual(
       text('changed\nsecond'),

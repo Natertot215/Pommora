@@ -321,6 +321,7 @@ export const markdownInput = [
       { key: 'Tab', run: () => true },
       { key: 'Shift-Tab', run: () => true },
       { key: 'Delete', run: onForwardDelete },
+      { key: 'Delete', run: seated(deleteCharForward) },
     ]),
   ),
 ]

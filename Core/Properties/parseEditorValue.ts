@@ -14,7 +14,7 @@ const fieldLine = (line: string): string => (parseListMarker(line) ? line : line
 export function editorText(value?: PropertyValue | null): string {
   if (value?.kind === 'number') return String(value.value)
   if (value?.kind === 'link') return value.value
-  if (value?.kind === 'text') return fieldLine(value.value.split('\n', 1)[0])
+  if (value?.kind === 'text') return fieldLine(value.value.split(/\r?\n/, 1)[0])
   return ''
 }
 

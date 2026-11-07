@@ -8,6 +8,7 @@ import {
   setBlock,
   type FormatEdit,
 } from './format'
+import { readFormatState } from './formatState'
 import { EditorState } from '@codemirror/state'
 import { editEvent, landEdit, listRenumber } from './listRenumber'
 import { type DocScan, scanDoc } from '../Engine/docScan'
@@ -148,6 +149,14 @@ describe('toggleInline', () => {
     expect(apply('plain `code` end', editFor('format:bold', into, 0, 5, {}))).toBe(
       '**plain** `code` end',
     )
+  })
+  it('a selection opening on a marker writes past it and reads the mark behind it', () => {
+    const bold = (doc: string) => apply(doc, toggleInline(scanDoc(doc), 0, doc.length, 'bold'))
+    expect(bold('- word')).toBe('- **word**')
+    expect(bold('- **word**')).toBe('- word')
+    expect(readFormatState(scanDoc('- **word**'), 0, 10, {}).bold).toBe(true)
+    expect(bold('1. word')).toBe('1. **word**')
+    expect(bold('> - word')).toBe('> - **word**')
   })
 })
 

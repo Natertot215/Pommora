@@ -40,6 +40,7 @@ import {
   inFenceAt,
   inSealedLine,
   markerIn,
+  seatPastMarker,
   signSeatAt,
 } from '../Engine/docScan'
 import { ownersOf, siblingsAt, subBlockAt } from '../Engine/listModel'
@@ -91,6 +92,7 @@ const MARKER_CHARS = '*_~=`'
 export function underSelection(scan: DocScan, selFrom: number, selTo: number) {
   const doc = scan.text
   let [from, to] = trimmedRange(doc, selFrom, selTo)
+  from = Math.min(to, seatPastMarker(scan, from))
   const ls = lineStartAt(doc, from)
   const line = doc.slice(ls, lineEndAt(doc, from))
   const fenced = inFenceAt(scan, from)
