@@ -38,9 +38,9 @@ import {
   fenceDelimiter,
   inCodeAt,
   inFenceAt,
+  inlineRange,
   inSealedLine,
   markerIn,
-  seatPastMarker,
   signSeatAt,
 } from '../Engine/docScan'
 import { ownersOf, siblingsAt, subBlockAt } from '../Engine/listModel'
@@ -91,8 +91,7 @@ const MARKER_CHARS = '*_~=`'
 /** Inline marks are line-local, so only the selection's line is tokenized, in line-relative coords; the marks covering it are read with the marker characters at its edges stripped, and a fenced line holds none, so a row there only ever writes. An edge inside a link widens to the whole link, so a mark wraps the link rather than splitting its syntax. */
 export function underSelection(scan: DocScan, selFrom: number, selTo: number) {
   const doc = scan.text
-  let [from, to] = trimmedRange(doc, selFrom, selTo)
-  from = Math.min(to, seatPastMarker(scan, from))
+  let [from, to] = inlineRange(scan, selFrom, selTo)
   const ls = lineStartAt(doc, from)
   const line = doc.slice(ls, lineEndAt(doc, from))
   const fenced = inFenceAt(scan, from)

@@ -8,7 +8,14 @@ import {
   mapSpans,
   mayHoldLink,
 } from '../../Connections/connections'
-import { inCalloutAt, inCodeAt, inCodeNear, spanAt, type DocScan } from '../Engine/docScan'
+import {
+  inCalloutAt,
+  inCodeAt,
+  inCodeNear,
+  inlineRange,
+  spanAt,
+  type DocScan,
+} from '../Engine/docScan'
 import {
   fenceAt,
   isBlockquoteLine,
@@ -18,7 +25,6 @@ import {
   lineIndexAt,
   lineStartAt,
   lineEndAt,
-  trimmedRange,
   quotePrefix,
   type Span,
   type TextEdit,
@@ -467,7 +473,7 @@ export function wrapSelection(
   const pair = PAIRS[open]
   if (!pair || selStart === selEnd || !settingOf(settings, 'wrapSelections')) return null
   const doc = scan.text
-  const [from, to] = trimmedRange(doc, selStart, selEnd)
+  const [from, to] = inlineRange(scan, selStart, selEnd)
   const cycle = WRAP_CYCLES[open] ?? []
   const outer =
     [...cycle].sort((a, b) => b.length - a.length).find((w) => wrappedBy(doc, from, to, w)) ?? ''

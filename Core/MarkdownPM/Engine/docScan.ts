@@ -4,6 +4,7 @@ import {
   isBlockquoteLine,
   lineIndexAt,
   lineStartAt,
+  trimmedRange,
   type CodeMask,
 } from './markdownCode'
 import {
@@ -419,6 +420,12 @@ export function seatPastMarker(scan: DocScan, pos: number): number {
   const k = lineIndexAt(scan, pos)
   const lm = markerIn(scan, k)
   return lm ? Math.max(pos, scan.lineStarts[k] + lm.contentStart) : pos
+}
+
+export function inlineRange(scan: DocScan, from: number, to: number): [number, number] {
+  const [f, t] = trimmedRange(scan.text, from, to)
+  const seat = seatPastMarker(scan, f)
+  return [seat < t ? seat : f, t]
 }
 
 export function inCalloutAt(scan: DocScan, pos: number): boolean {

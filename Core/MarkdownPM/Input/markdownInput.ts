@@ -219,7 +219,7 @@ const onItemEnter = (view: EditorView): boolean => {
   return apply(view, continueListOnEnter(scan, from, to)) || insertNewline(view)
 }
 
-// A marker the caret lands INSIDE after an edit reads as a caret that went nowhere, so it takes the seat the marker hands it — the one a pointer press already gets.
+// A caret an edit leaves in or left of a marker reads as one that went nowhere, so it takes the seat the marker hands it — the one a pointer press already gets.
 const seated =
   (command: Command): Command =>
   (view) => {
@@ -239,7 +239,7 @@ const joinEmptyHead = (view: EditorView): boolean => {
   return true
 }
 
-/** What a list holds on every surface, ahead of what each surface binds for a key no list claims, and off a page the seated deletes that keep a caret out of a marker. A page's Enter and deletes hold closers, citations, and quotes a list doesn't, so its own chain keeps them. */
+/** What a list holds on every surface, ahead of what each surface binds for a key no list claims, and off a page the seated Backspace that keeps a caret out of a marker. A page's Enter and deletes hold closers, citations, and quotes a list doesn't, so its own chain keeps them. */
 export const listKeys = (scope: MarkdownScope): KeyBinding[] => [
   { key: 'Tab', run: nest(indentListOnTab) },
   { key: 'Shift-Tab', run: nest(outdentListOnShiftTab) },
@@ -248,7 +248,6 @@ export const listKeys = (scope: MarkdownScope): KeyBinding[] => [
     : [
         { key: 'Enter', run: onItemEnter },
         { key: 'Backspace', run: seated(joinEmptyHead) },
-        { key: 'Delete', run: seated(deleteCharForward) },
       ]),
 ]
 
@@ -321,7 +320,6 @@ export const markdownInput = [
       { key: 'Tab', run: () => true },
       { key: 'Shift-Tab', run: () => true },
       { key: 'Delete', run: onForwardDelete },
-      { key: 'Delete', run: seated(deleteCharForward) },
     ]),
   ),
 ]
@@ -353,6 +351,7 @@ export function wordAt(state: EditorState, pos: number, side: -1 | 1): Selection
   return word && (side < 0 ? word.from < pos : word.to > pos) ? word : null
 }
 
-export const editorKeymap = defaultKeymap.filter(
-  (b) => b.run !== toggleComment && b.run !== toggleBlockComment,
-)
+export const editorKeymap = [
+  { key: 'Delete', run: seated(deleteCharForward) },
+  ...defaultKeymap.filter((b) => b.run !== toggleComment && b.run !== toggleBlockComment),
+]
