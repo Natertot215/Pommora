@@ -1,4 +1,4 @@
-import { style } from '@vanilla-extract/css'
+import { globalStyle, style } from '@vanilla-extract/css'
 import { duration, easing } from '../Animations/motion'
 
 const RAIL_W = 12
@@ -11,6 +11,11 @@ export const chevron = style({
 export const chevronOpen = style({ transform: 'rotate(90deg)' })
 
 export const chevronSpacer = style({ width: `${RAIL_W}px`, flex: '0 0 auto' })
+
+export const navigationTree = style({})
+globalStyle(`.hide-chevrons ${navigationTree} :is([data-chevron], [data-chevron-spacer])`, {
+  display: 'none',
+})
 
 const RAIL_CLEARANCE = 6
 

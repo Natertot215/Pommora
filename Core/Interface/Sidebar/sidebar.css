@@ -17,7 +17,6 @@
 .surface-glass {
   --ribbon-w: 46px;
   --ribbon-divider-bottom: 20px;
-  --sidebar-hidechevron-pad: 6px;
   --ribbon-hidden-inset: 10px;
   --sidebar-top: 42px;
   --ribbon-divider-top: 42px;
@@ -192,19 +191,6 @@
 }
 .row .over-scroll-ellipsis .row-icon {
   flex: none;
-}
-
-/* "Hide Chevrons" personalization (class on <html>). KNOB: --chevron-gutter — the glyph is clipped by overflow, and the negative margin cancels the row's 8px leading gap so 0 truly sits flush. */
-.hide-chevrons .row > span:has(> [data-chevron]),
-.hide-chevrons .row > span:has(> [data-chevron-spacer]) {
-  --chevron-gutter: 2px;
-  width: var(--chevron-gutter);
-  min-width: var(--chevron-gutter);
-  overflow: hidden;
-  margin-right: calc(var(--chevron-gutter) - 6px - var(--sidebar-hidechevron-pad));
-}
-.hide-chevrons .row {
-  margin-left: var(--sidebar-hidechevron-pad);
 }
 
 .sidebar .over-scroll-ellipsis {

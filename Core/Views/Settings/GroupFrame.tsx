@@ -22,6 +22,7 @@ import {
 import { type ResolvedGroup, flattenContainer } from '../viewRow'
 import { presentedKind } from '../Host/viewKinds'
 import { DisclosureRow, useDisclosureSet } from '@pommora/uix/Menus/DisclosureRow'
+import { navigationTree } from '@pommora/uix/Elements/disclosure.css'
 import { MenuRowView, pickerRow } from '@pommora/uix/Menus/MenuIndex'
 import {
   FootingItem,
@@ -52,7 +53,7 @@ import { useBandSource } from '../Bands/useBandSource'
 import { orderedChildren } from '../Bands/setIndex'
 import { EntityIcon } from '../../Assets/EntityIcon'
 import { cx } from '@pommora/uix/Utilities/cx'
-import { useDateForms, useSetting } from '../../Session/store'
+import { useDateForms } from '../../Session/store'
 import { PickerControl, type PickerOption } from '@pommora/uix/Menus/PickerControl'
 import { FILEDATA_TARGETS, NONE_OPTION, schemaTargets } from '../paneTargets'
 import {
@@ -347,7 +348,6 @@ function LocationHierarchy({
   persist: (patch: ViewPatch) => Promise<Result<unknown>>
   subControls: HideControls
 } & HideControls): React.JSX.Element {
-  const hideChevrons = useSetting('hideChevrons')
   const expanded = useDisclosureSet()
   const { painted, sets, heads } = useBandSource(source, sub, view)
   const subDef = sub?.column.def
@@ -422,7 +422,7 @@ function LocationHierarchy({
         key={s.id}
         title={s.title}
         icon={<EntityIcon kind="set" icon={s.icon} size="body" />}
-        chevron={disclosable && !hideChevrons ? 'chevron' : 'none'}
+        chevron={disclosable ? 'chevron' : 'none'}
         open={expanded.isOpen(s.id)}
         onToggle={toggle}
         onClick={disclosable ? toggle : undefined}
@@ -453,6 +453,7 @@ function LocationHierarchy({
 
   return (
     <LineZone
+      className={navigationTree}
       {...bandSpec({
         bands: model,
         disclosure: expanded,

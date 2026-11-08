@@ -12,6 +12,8 @@ import { LayoutFrame } from './LayoutFrame'
 import { GroupFrame } from './GroupFrame'
 import { SortFrame } from './SortFrame'
 import { FilterFrame } from './FilterFrame'
+import { groupPlan, orderSetTree, viewSetOrder } from '../Pipeline/group'
+import { presentedKind } from '../Host/viewKinds'
 
 export type ViewPaneId = 'visibility' | 'layout' | 'group' | 'filter' | 'sort'
 
@@ -69,11 +71,12 @@ export function ViewPane({
       return <GroupFrame {...pane} source={source} />
     case 'sort':
       return <SortFrame {...pane} />
-    case 'filter':
+    case 'filter': {
+      const order = viewSetOrder(groupPlan(view, schema, presentedKind(view.type).nests), view)
       return (
         <FilterFrame
           key={view.id}
-          locations={source.sets ?? []}
+          locations={orderSetTree(source.sets ?? [], order)}
           view={view}
           read={() => readLiveView(source.id, view)}
           schema={schema}
@@ -82,5 +85,6 @@ export function ViewPane({
           onCommit={pane.save}
         />
       )
+    }
   }
 }

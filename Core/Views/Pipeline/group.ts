@@ -68,10 +68,10 @@ export function pruneHiddenSets(tree: SetTreeNode[], hidden: ReadonlySet<string>
   )
 }
 
-export const orderSetTree = (
-  tree: SetTreeNode[],
+export const orderSetTree = <N extends { id: string; sets?: N[] }>(
+  tree: N[],
   order: readonly string[] | undefined,
-): SetTreeNode[] =>
+): N[] =>
   order?.length
     ? resolveRowOrder(tree, (node) => node.id, order).map((node) =>
         node.sets ? { ...node, sets: orderSetTree(node.sets, order) } : node,

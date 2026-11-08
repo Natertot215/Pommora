@@ -261,7 +261,7 @@ export const FRAMES = roster([
             kind: 'toggle',
             key: 'hideChevrons',
             label: 'Hide Disclosure Chevrons',
-            caption: "Collapse the sidebar's chevron gutter.",
+            caption: "Collapse the sidebar's and Grouping pane's chevron gutter.",
           },
           {
             kind: 'toggle',

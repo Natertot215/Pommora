@@ -19,6 +19,7 @@ import { LineRow, useLineEl } from '@pommora/uix/Interactions/drag'
 import type { IconName } from '@pommora/uix/Symbols'
 import { entityIcon } from '../../Assets/entityIconPolicy'
 import { cx } from '@pommora/uix/Utilities/cx'
+import { navigationTree } from '@pommora/uix/Elements/disclosure.css'
 import { contextDirRel } from '../../Paths/nexusPaths'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import type {
@@ -381,7 +382,7 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
   return (
     <SidebarGhost.Provider value={ghostValue}>
       <SidebarGhostApi.Provider value={sidebarGhostApi}>
-        <nav ref={navRef} className="sidebar scroll-fade">
+        <nav ref={navRef} className={cx('sidebar scroll-fade', navigationTree)}>
           <div className="sidebar-mode-stage">
             {exit && (
               <div

@@ -64,7 +64,7 @@ function LocationTree({
           ref={active ? keepInView : undefined}
           title={n.title}
           icon={<EntityIcon kind={n.kind} icon={n.icon} size="body" />}
-          chevron={kids.length > 0 ? 'chevron' : 'spacer'}
+          chevron={kids.length > 0 ? 'chevron' : 'none'}
           open={disclosure.isOpen(n.id)}
           onToggle={() => disclosure.toggle(n.id)}
           onClick={() => onPick(n.id)}
