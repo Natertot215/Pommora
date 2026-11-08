@@ -28,8 +28,14 @@ import { glanceShown, hoverGlance, leaveGlance } from '../../Interface/Glance/gl
 import { showPageMenu } from '../../Interface/Menus/pageMenuActions'
 import { type SeatHost, useValueSeat, type ValueSeatApi } from '../../Properties/Pickers/ValueSeat'
 import { holderOf } from '../../Properties/valueContext'
-import { type BandNode, memberDepth, nodeLabel, springsInto } from '../Bands/bandModel'
-import { bandRouting, bucketValueAt } from '../Bands/bandRouter'
+import {
+  type BandNode,
+  bucketValueAt,
+  memberIndent,
+  nodeLabel,
+  springsInto,
+} from '../Bands/bandModel'
+import { bandRouting } from '../Bands/bandRouter'
 import { bucketKey } from '../Pipeline/group'
 import { groupKeyToValue, reassignable } from '../valueKinds'
 import { type BandView, bandSpec } from '../Bands/GroupBand'
@@ -399,7 +405,7 @@ export function useViewInteractions<Own extends StableHandlers>(
         commit: (id, slot) => onDrop(id, slot.lane, slot.before),
         line: (slot, s) => {
           const node = bands.byKey.get(slot.lane)!
-          return rowLine(slot, s, indent(memberDepth(node.kind, node.depth)))
+          return rowLine(slot, s, memberIndent(node.kind, node.depth))
         },
         step: (slot, s) => rowStep(slot, s, bands.byKey.get(slot.lane)?.kind !== 'tail'),
         label: (id) => rowById.get(id)?.title ?? '',

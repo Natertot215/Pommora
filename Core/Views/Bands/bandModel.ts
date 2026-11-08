@@ -1,22 +1,24 @@
-import type { CollectionNode, SetNode } from '../../Nexus/tree'
-import type { ColumnStyle } from '../../Properties/columnStyles'
+import type { SetNode } from '../../Nexus/tree'
+import { isTopContainer } from '../../Nexus/treePatch'
+import type { ColumnStyle, DateFormat } from '../../Properties/columnStyles'
+import { dateFmt, formatDate, NUMERIC_FORMATS } from '../../Properties/formatValue'
 import type { ColumnType, PropertyDefinition } from '../../Properties/properties'
 import { findOption, optionLabel } from '../../Properties/propertyValue'
 import { isEmptyBand, type ResolvedGroup } from '../viewRow'
-import { granularityOf, type SavedView, type SubGroupConfig, viewOption } from '../views'
+import {
+  type DateGranularity,
+  type DateSeparator,
+  granularityOf,
+  type SavedView,
+  type SubGroupConfig,
+  viewOption,
+} from '../views'
 import type { StepPart } from '@pommora/uix/Interactions/keyboard'
 import { type Geometry, INTO_EDGE, rank, walksTo } from '@pommora/uix/Interactions/reorderModel'
 import { asRenderableIcon } from '@pommora/uix/Symbols'
+import { rowIndent } from '@pommora/uix/Table/rowIndent'
 import type { OptionChipData } from '../../Properties/Cells/OptionChip'
-import {
-  type BandDrop,
-  type BandRef,
-  type BucketRef,
-  bucketValueAt,
-  type SetRef,
-} from './bandRouter'
-import type { SetIndex } from '../Pipeline/setIndex'
-import { formatBucketLabel } from '../Pipeline/group'
+import type { SetIndex } from './setIndex'
 import type { Grouping } from '../Pipeline/group'
 
 // ── Nodes ───────────────────────────────────────────────────────────────────
@@ -30,6 +32,20 @@ type BucketFace =
     }
   | { kind: 'date'; icon: string | undefined }
 
+type SetRef = { kind: 'set'; key: string; depth: number; parentKey: string | null }
+export type BucketRef = {
+  kind: 'bucket'
+  key: string
+  depth: number
+  parentKey: string | null
+  value: string
+}
+export type BandRef = SetRef | BucketRef
+
+export type BandDrop =
+  | { kind: 'before'; beforeKey: string | null; parentKey: string | null }
+  | { kind: 'into'; parentKey: string }
+
 export type SetBand = SetRef & { set: SetNode; opens: boolean; empty: boolean }
 export type BucketBand = BucketRef & { label: string; face: BucketFace; empty: boolean }
 type TailBand = { kind: 'tail'; key: string; depth: number; parentKey: string | null }
@@ -42,9 +58,39 @@ export interface BandModel {
 
 interface HeadContext {
   sets: SetIndex
-  opensTop: boolean
   foldersOpen: boolean
   bucket: (value: string) => Pick<BucketBand, 'label' | 'face'>
+}
+
+export function formatBucketLabel(
+  key: string,
+  granularity: DateGranularity,
+  dateFormat: DateFormat,
+  separator: DateSeparator,
+): string {
+  const numeric = NUMERIC_FORMATS.has(dateFormat)
+  const sep = separator === 'slash' ? '/' : '-'
+  switch (granularity) {
+    case 'year':
+      return key
+    case 'week': {
+      const m = /^(\d{4})-W(\d{2})$/.exec(key)
+      if (!m) return key
+      return numeric ? `W${m[2]}${sep}${m[1]}` : `Week ${Number(m[2])}, ${m[1]}`
+    }
+    case 'month': {
+      const m = /^(\d{4})-(\d{2})$/.exec(key)
+      if (!m) return key
+      if (numeric) return `${m[2]}${sep}${m[1]}`
+      const month = dateFmt({ month: 'long' }).format(new Date(`${key}-01T00:00:00`))
+      return `${month} ${m[1]}`
+    }
+    case 'day': {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(key)) return key
+      const out = formatDate(key, dateFormat, 'none')
+      return numeric && separator === 'dash' ? out.replaceAll('/', '-') : out
+    }
+  }
 }
 
 export function dateLabeller(
@@ -58,7 +104,6 @@ export function dateLabeller(
 }
 
 export function headContextOf(
-  source: CollectionNode | SetNode,
   sets: SetIndex,
   grouping: Grouping | undefined,
   view: SavedView,
@@ -71,7 +116,6 @@ export function headContextOf(
   const icon = asRenderableIcon(def?.icon)
   return {
     sets,
-    opensTop: source.kind === 'collection',
     foldersOpen,
     bucket: (value) =>
       date
@@ -101,7 +145,7 @@ function bandNodeOf(
     case 'set': {
       const set = heads.sets.node.get(key)
       if (!set) return null
-      const opens = heads.foldersOpen || (heads.opensTop && parentKey === null)
+      const opens = heads.foldersOpen || isTopContainer(set)
       return { kind: 'set', key, depth, parentKey, set, opens, empty: isEmptyBand(group) }
     }
     case 'bucket':
@@ -155,6 +199,18 @@ export function draggable(node: BandNode): node is SetBand | BucketBand {
 
 export const memberDepth = (kind: BandNode['kind'], depth: number): number =>
   kind === 'tail' ? depth : depth + 1
+
+export const memberIndent = (kind: BandNode['kind'], depth: number): string =>
+  kind === 'tail'
+    ? `calc(var(--loose-inset) + ${rowIndent(depth)})`
+    : rowIndent(memberDepth(kind, depth))
+
+export const bucketValueAt =
+  (byKey: ReadonlyMap<string, BandNode | BandRef>) =>
+  (key: string | null): string | null => {
+    const node = key === null ? undefined : byKey.get(key)
+    return node?.kind === 'bucket' ? node.value : null
+  }
 
 export const bandBox = (key: string): string => `${key}#box`
 

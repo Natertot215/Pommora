@@ -1,14 +1,14 @@
 import { useMemo } from 'react'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import type { SavedView } from '../views'
-import { headContextOf } from '../Bands/bandModel'
+import { headContextOf } from './bandModel'
 import type { Grouping } from '../Pipeline/group'
-import { setIndexOf } from '../Pipeline/setIndex'
-import { usePainted } from './paintAhead'
+import { setIndexOf } from './setIndex'
+import { usePainted } from '../Host/paintAhead'
 import { styleFor } from '../../Properties/columnStyles'
 import { useDateForms, useSetting } from '../../Session/store'
 
-export function useBandHeads(
+export function useBandSource(
   source: CollectionNode | SetNode,
   grouping: Grouping | undefined,
   view: SavedView,
@@ -20,14 +20,13 @@ export function useBandHeads(
   const heads = useMemo(
     () =>
       headContextOf(
-        painted,
         sets,
         grouping,
         view,
         grouping && styleFor(grouping.column, view, forms).date_format,
         foldersOpen,
       ),
-    [painted, sets, grouping, view, forms, foldersOpen],
+    [sets, grouping, view, forms, foldersOpen],
   )
-  return { painted, sets, forms, heads }
+  return { painted, sets, heads }
 }

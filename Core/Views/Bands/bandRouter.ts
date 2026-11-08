@@ -4,24 +4,14 @@ import { nextOrder, resolveRowOrder } from '@pommora/uix/Utilities/moveItem'
 import type { OrderRequest } from '../../Nexus/mutateRequest'
 import { sameItems } from '@pommora/uix/Utilities/same'
 import { bucketGroupingOf, type GroupPlan, liveBucketOrder, setOrderOf } from '../Pipeline/group'
-import type { SetIndex } from '../Pipeline/setIndex'
-
-export type SetRef = { kind: 'set'; key: string; depth: number; parentKey: string | null }
-export type BucketRef = {
-  kind: 'bucket'
-  key: string
-  depth: number
-  parentKey: string | null
-  value: string
-}
-export type BandRef = SetRef | BucketRef
-
-type BandItem = BandRef | { kind: 'tail' }
-type BandList = { nodes: readonly BandItem[]; byKey: ReadonlyMap<string, BandItem> }
-
-export type BandDrop =
-  | { kind: 'before'; beforeKey: string | null; parentKey: string | null }
-  | { kind: 'into'; parentKey: string }
+import type { SetIndex } from './setIndex'
+import {
+  type BandDrop,
+  type BandModel,
+  type BandRef,
+  type BucketRef,
+  bucketValueAt,
+} from './bandModel'
 
 export interface BandScope {
   view: SavedView
@@ -146,31 +136,12 @@ export async function runBandEffect(effect: BandEffect | null, io: BandIO): Prom
   }
 }
 
-function bucketValue(node: BandItem | undefined): string | null {
-  switch (node?.kind) {
-    case 'bucket':
-      return node.value
-    case 'set':
-    case 'tail':
-    case undefined:
-      return null
-  }
-}
-
-export const bucketValueAt =
-  (byKey: ReadonlyMap<string, BandItem>) =>
-  (key: string | null): string | null =>
-    key === null ? null : bucketValue(byKey.get(key))
-
 type BandBase = Omit<BandScope, 'valueAt' | 'shown'>
 
-const bandScopeOf = (bands: BandList, base: BandBase): BandScope => ({
+const bandScopeOf = (bands: BandModel, base: BandBase): BandScope => ({
   ...base,
   valueAt: bucketValueAt(bands.byKey),
-  shown: bands.nodes.flatMap((n) => {
-    const value = bucketValue(n)
-    return value === null ? [] : [value]
-  }),
+  shown: bands.nodes.flatMap((n) => (n.kind === 'bucket' ? [n.value] : [])),
 })
 
 export interface BandRouting {
@@ -179,7 +150,7 @@ export interface BandRouting {
 }
 
 export function bandRouting(
-  bands: BandList,
+  bands: BandModel,
   base: BandBase,
   io: (dragged: BandRef) => BandIO,
 ): BandRouting {

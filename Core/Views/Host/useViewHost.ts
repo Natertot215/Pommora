@@ -6,7 +6,7 @@ import type { PropertyValue } from '../../Properties/propertyValue'
 import { assignValue, useValueWriter } from '../../Properties/assignValue'
 import { patchOverride } from '../../Properties/valueOverride'
 import type { Result } from '../../Contract/result'
-import { useSession } from '../../Session/store'
+import { useDateForms, useSession } from '../../Session/store'
 import { useContentHost } from '../../Interface/contentHost'
 import { useViewTileScope } from '../ViewTileScope'
 import { identityOf } from '../../Contexts/contextIdentity'
@@ -20,7 +20,7 @@ import { matchQuery } from '../../Paths/caseFold'
 import { resolvedSortCount } from '../Pipeline/sort'
 import { useActiveView, useSaveView, type ViewWriteOpts } from './liveView'
 import { presentedKind } from './viewKinds'
-import { useBandHeads } from './useBandHeads'
+import { useBandSource } from '../Bands/useBandSource'
 import { useContainerValues } from './useContainerValues'
 import { columnStylePatch, styleFor } from '../../Properties/columnStyles'
 import type { ViewPatch } from '../views'
@@ -59,7 +59,8 @@ export function useViewHost(source: CollectionNode | SetNode) {
   const pageOrder = pageOrderOf(plan, view, sortKeys)
   const grouping = bucketGroupingOf(plan)
   const groupPropId = grouping?.config.property_id
-  const { painted, sets, forms, heads } = useBandHeads(source, grouping, view)
+  const { painted, sets, heads } = useBandSource(source, grouping, view)
+  const forms = useDateForms()
   const groupPropType = grouping?.column.type
   const canReassign = reassignable(groupPropType)
   const canRelocate = plan.kind === 'sets' && plan.sub === undefined

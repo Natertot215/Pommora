@@ -10,8 +10,8 @@ import { firePointer, pressEscape, stubRect } from '@pommora/uix/Utilities/point
 import { mountEachTest, settle } from '../../Testing/viewHarness'
 import { type BandView, GroupBand, bandSpec } from './GroupBand'
 import { type BandModel, bandModelOf, headContextOf } from './bandModel'
-import type { BandDrop } from './bandRouter'
-import { setIndexOf } from '../Pipeline/setIndex'
+import type { BandDrop } from './bandModel'
+import { setIndexOf } from './setIndex'
 
 const setNode = (id: string, sets: SetNode[] = []): SetNode =>
   ({ kind: 'set', id, title: id, path: `Col/${id}`, sets, pages: [] }) as unknown as SetNode
@@ -39,7 +39,7 @@ const leaf = (key: string, children?: ResolvedGroup[]): ResolvedGroup => ({
   ...(children ? { children } : {}),
 })
 const modelOf = (groups: ResolvedGroup[]): BandModel =>
-  bandModelOf(groups, headContextOf(source, setIndexOf(source), undefined, view, undefined, false))
+  bandModelOf(groups, headContextOf(setIndexOf(source), undefined, view, undefined, false))
 const BANDS = modelOf([leaf('A', [leaf('A1')]), leaf('B')])
 
 let host: HTMLDivElement

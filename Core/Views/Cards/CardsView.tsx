@@ -40,7 +40,7 @@ import { GHOST_TRAVEL_HOLD_MS } from '@pommora/uix/Interactions/ghostCreate'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { columnLabel } from '../../Properties/columnDisplay'
 import { GroupBand } from '../Bands/GroupBand'
-import { orderedChildren } from '../Pipeline/group'
+import { orderedChildren } from '../Bands/setIndex'
 import {
   type ItemApi,
   rowHover,

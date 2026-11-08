@@ -3,8 +3,9 @@ import { ok, fault } from '../../Contract/result'
 import type { SetNode } from '../../Nexus/tree'
 import type { PropertyDefinition } from '../../Properties/properties'
 import type { SavedView } from '../views'
-import { type BandScope, type BucketRef, routeBandDrop, runBandEffect } from './bandRouter'
-import { setIndexOf } from '../Pipeline/setIndex'
+import { type BandScope, routeBandDrop, runBandEffect } from './bandRouter'
+import type { BucketRef } from './bandModel'
+import { setIndexOf } from './setIndex'
 import { groupPlan } from '../Pipeline/group'
 
 const set = (id: string, path: string, sets: SetNode[] = []): SetNode => ({

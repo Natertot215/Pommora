@@ -35,7 +35,7 @@ function buildCriterion(
   }
 }
 
-/** TableView's drag/manual-order gates read this, never the raw array length, so a dead criterion can't retire row reorder. */
+/** The host's drag/manual-order gates read this, never the raw array length, so a dead criterion can't retire row reorder. */
 export function resolvedSortCount(
   sort: SortCriterion[] | undefined,
   schema: PropertyDefinition[],

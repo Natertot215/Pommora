@@ -1,4 +1,7 @@
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
+import type { SavedView } from '../views'
+import { type GroupPlan, viewSetOrder } from '../Pipeline/group'
+import { resolveRowOrder } from '@pommora/uix/Utilities/moveItem'
 
 export interface SetIndex {
   node: ReadonlyMap<string, SetNode>
@@ -33,3 +36,11 @@ export function setIndexOf(source: CollectionNode | SetNode): SetIndex {
   cache.set(source, index)
   return index
 }
+
+export const orderedChildren = (
+  sets: SetIndex,
+  parentKey: string | null,
+  plan: GroupPlan,
+  view: SavedView,
+): string[] =>
+  resolveRowOrder(sets.children.get(parentKey) ?? [], (id) => id, viewSetOrder(plan, view))

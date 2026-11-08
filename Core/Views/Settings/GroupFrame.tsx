@@ -41,7 +41,6 @@ import {
   type Grouping,
   groupPlan,
   liveBucketOrder,
-  orderedChildren,
   type PropertyGroup,
 } from '../Pipeline/group'
 import { NUMERIC_FORMATS } from '../../Properties/formatValue'
@@ -49,7 +48,8 @@ import { bandModelOf, dateLabeller, nodeLabel, springsInto } from '../Bands/band
 import { bandRouting } from '../Bands/bandRouter'
 import { bandSpec } from '../Bands/GroupBand'
 import { dropIO } from '../Host/liveView'
-import { useBandHeads } from '../Host/useBandHeads'
+import { useBandSource } from '../Bands/useBandSource'
+import { orderedChildren } from '../Bands/setIndex'
 import { EntityIcon } from '../../Assets/EntityIcon'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { useDateForms, useSetting } from '../../Session/store'
@@ -349,7 +349,7 @@ function LocationHierarchy({
 } & HideControls): React.JSX.Element {
   const hideChevrons = useSetting('hideChevrons')
   const expanded = useDisclosureSet()
-  const { painted, sets, heads } = useBandHeads(source, sub, view)
+  const { painted, sets, heads } = useBandSource(source, sub, view)
   const subDef = sub?.column.def
 
   const subChips = useMemo(() => {

@@ -1,6 +1,15 @@
-import { describe, it, expect } from 'vitest'
+// @vitest-environment jsdom
+import { beforeEach, describe, it, expect, vi } from 'vitest'
+import { act } from 'react'
+import type { Root } from 'react-dom/client'
 import { FILEDATA, type PropertyDefinition } from '../../Properties/properties'
+import type { CollectionNode } from '../../Nexus/tree'
 import { savedView, type SavedView } from '../views'
+import { firePointer } from '@pommora/uix/Utilities/pointerHarness'
+import { mountEachTest, renderView, settle } from '../../Testing/viewHarness'
+import { useSession } from '../../Session/store'
+import { valuesReply } from '../../Testing/pageValues'
+import { stubDialer } from '../../vitest.setup'
 import { alignFor, clampWidth, COLUMN_LAYOUT, minWidthFor } from './useColumns'
 import { resolveColumn } from '../Pipeline/columns'
 
@@ -115,5 +124,105 @@ describe('column alignment', () => {
       expect(alignFor(col('prop_status'), v)).toBe('left')
       expect(alignFor(col('prop_n'), v)).toBe('right')
     })
+  })
+})
+
+describe('column width', () => {
+  const statusDef: PropertyDefinition = {
+    id: 'prop_status',
+    label: 'Status',
+    key: 'Status',
+    type: 'status',
+  }
+  const source = (view?: Partial<SavedView>): CollectionNode =>
+    ({
+      kind: 'collection',
+      id: 'col1',
+      title: 'Col',
+      path: 'Col',
+      sets: [
+        {
+          kind: 'set',
+          id: 'sA',
+          title: 'A',
+          path: 'Col/A',
+          pages: [{ kind: 'page', id: 'pA', title: 'In A', path: 'Col/A/In A.md' }],
+          sets: [],
+        },
+      ],
+      pages: [{ kind: 'page', id: 'pLoose', title: 'Loose', path: 'Col/Loose.md' }],
+      propertyIds: [statusDef.id],
+      views: [
+        {
+          id: 'view_1',
+          name: 'Table',
+          type: 'table',
+          property_order: ['_title', 'prop_status'],
+          hidden_properties: [],
+          group: { kind: 'structural' },
+          ...view,
+        },
+      ],
+    }) as unknown as CollectionNode
+
+  let host: HTMLDivElement
+  let root: Root
+  mountEachTest((h, r) => {
+    host = h
+    root = r
+  })
+  let saveSpy: ReturnType<typeof vi.fn>
+  beforeEach(() => {
+    saveSpy = vi.fn(async () => ({ ok: true, value: { id: 'v1' } }))
+    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+      'view:loadValues': async () => valuesReply({}),
+      'views:save': saveSpy,
+    })
+    useSession.setState({
+      tree: {
+        collections: [],
+        contexts: [],
+        config: { personalization: {}, registry: [statusDef] },
+      } as never,
+      selection: { kind: 'none' } as never,
+      renamingPath: null,
+    })
+  })
+
+  const mountTable = (over?: Partial<SavedView>): Promise<void> => renderView(root, source(over))
+  const lastSavedView = (): SavedView => saveSpy.mock.calls.at(-1)?.[2] as SavedView
+  const resize = async (by: number): Promise<void> => {
+    const grip = host.querySelectorAll('.col-resizer')[1]
+    vi.spyOn(grip.parentElement!, 'getBoundingClientRect').mockReturnValue({
+      width: 120,
+    } as DOMRect)
+    await act(async () => firePointer(grip, 'pointerdown', { x: 100, y: 5 }))
+    await act(async () => firePointer(window, 'pointermove', { x: 100 + by, y: 5 }))
+    await act(async () => firePointer(window, 'pointerup'))
+    await settle()
+  }
+  const cols = (): string =>
+    (host.querySelector('.table-grid') as HTMLElement).style.getPropertyValue('--cols')
+
+  it("a resized column's staged width drops once the stored view carries it", async () => {
+    await mountTable()
+    expect(cols()).toBe('minmax(280px, 1fr) 120px')
+    await resize(40)
+    expect(lastSavedView().column_widths).toEqual({ prop_status: 160 })
+    expect(cols()).toBe('minmax(280px, 1fr) 160px')
+    await mountTable({ column_widths: { prop_status: 160 } })
+    await mountTable()
+    expect(cols()).toBe('minmax(280px, 1fr) 120px')
+  })
+
+  it('a width the walker cleared is not written back by the next persist', async () => {
+    await mountTable()
+    await resize(40)
+    await mountTable({ column_widths: { prop_status: 160 } })
+    await mountTable()
+    const outline = host.querySelectorAll('.group-band-drop-outline')[0]
+    await act(async () => (outline as HTMLElement).click())
+    expect(lastSavedView().collapsed_groups).toEqual(['sA'])
+    expect(lastSavedView().column_widths?.prop_status).toBeUndefined()
   })
 })

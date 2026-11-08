@@ -21,7 +21,7 @@ import { EntityIcon } from '../../Assets/EntityIcon'
 import { GroupBand } from '../Bands/GroupBand'
 import { rowIndent } from '@pommora/uix/Table/rowIndent'
 import { RowRail } from '@pommora/uix/Table/RowRail'
-import { memberDepth } from '../Bands/bandModel'
+import { memberDepth, memberIndent } from '../Bands/bandModel'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { columnIcon, columnLabel } from '../../Properties/columnDisplay'
 import { type ColumnDrag, gapShift, useColumns } from './useColumns'
@@ -100,9 +100,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
 
   // ── The render ────────────────────────────────────────────────────────────
 
-  const indent = (depth: number): string =>
-    depth > 0 ? `calc(var(--loose-inset) + ${rowIndent(depth)})` : 'var(--loose-inset)'
-
   const hideIcon = viewOption(view, 'hide_page_icons')
   const ghostRowProps = {
     columns,
@@ -115,7 +112,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     const isCollapsed = collapsed.has(g.key)
     const itemsVisible = visible && !isCollapsed
     const itemDepth = memberDepth(g.kind, depth)
-    const memberIndent = g.kind === 'tail' ? indent : rowIndent
     const members: React.JSX.Element[] = [
       ...g.items.flatMap((row, i) => {
         const lead = i === 0 && (g.kind !== 'tail' || !renderedAnyRow)
@@ -126,7 +122,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
             row={row}
             columns={columns}
             ctx={ctx}
-            padLeft={memberIndent(itemDepth)}
+            padLeft={memberIndent(g.kind, depth)}
             dragShift={dragShift}
             alignByCol={alignByCol}
             styleByCol={styleByCol}
@@ -145,7 +141,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
           rendered.push(
             <GhostRow
               key={`ghost-${row.id}`}
-              padLeft={memberIndent(itemDepth)}
+              padLeft={memberIndent(g.kind, depth)}
               closing={interactions.ghostClosing}
               {...ghostRowProps}
             />,
@@ -203,7 +199,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
           </div>
           {groups.flatMap((g) => renderRows(g, 0, true))}
           {interactions.ghostStanding && (
-            <GhostRow padLeft={indent(0)} closing={false} {...ghostRowProps} />
+            <GhostRow padLeft={memberIndent('tail', 0)} closing={false} {...ghostRowProps} />
           )}
         </div>
       </LineZone>

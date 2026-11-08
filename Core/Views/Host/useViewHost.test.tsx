@@ -277,6 +277,13 @@ describe('the persist fold', () => {
     await mount(collection({ collapsed_groups: ['g1', 'g2'] }))
     expect([...(api?.collapsed ?? [])]).toEqual(['g1', 'g2'])
   })
+
+  it('expanding the last collapsed band drops collapsed_groups rather than writing it empty', async () => {
+    await mount(collection({ collapsed_groups: ['g1'] }))
+    act(() => api?.toggleCollapse('g1'))
+    expect(saveSpy).toHaveBeenCalledOnce()
+    expect(lastSavedView().collapsed_groups).toBeUndefined()
+  })
 })
 
 describe('the style map', () => {
