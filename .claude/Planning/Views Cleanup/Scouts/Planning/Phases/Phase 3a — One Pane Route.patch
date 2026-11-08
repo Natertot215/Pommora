@@ -1,0 +1,1249 @@
+diff --git a/Core/Views/Cards/cardsKind.ts b/Core/Views/Cards/cardsKind.ts
+index db39e6a0f..f3d15f5ff 100644
+--- a/Core/Views/Cards/cardsKind.ts
++++ b/Core/Views/Cards/cardsKind.ts
+@@ -23,6 +23,7 @@ export const CARDS_KIND: ViewKindRecord = {
+   Renderer: CardsView,
+   nests: false,
+   layout: {
++    leaf: 'switches',
+     switches: [
+       { icon: 'map', label: 'Hide Location', key: 'hide_location' },
+       { icon: 'wrap-text', label: 'Wrap Titles', key: 'wrap_titles' },
+diff --git a/Core/Views/Host/liveView.test.tsx b/Core/Views/Host/liveView.test.tsx
+index 740db2a88..d0e566fc5 100644
+--- a/Core/Views/Host/liveView.test.tsx
++++ b/Core/Views/Host/liveView.test.tsx
+@@ -11,7 +11,7 @@ import { fault, ok } from '../../Contract/result'
+ import { useSession } from '../../Session/store'
+ import { stubDialer } from '../../vitest.setup'
+ import { ViewTileScopeProvider, type ViewTileScopeValue } from '../ViewTileScope'
+-import { GroupFrame } from '../Settings/GroupFrame'
++import { ViewPane } from '../Settings/ViewPane'
+ import { SettingsFrame } from '../Settings/SettingsFrame'
+ 
+ const base = (over: Partial<SavedView> = {}): SavedView =>
+@@ -470,7 +470,8 @@ describe('useSaveView', () => {
+   it('a locked tile drops nothing to the source container either', async () => {
+     await render(
+       <ViewTileScopeProvider value={scope(true)}>
+-        <GroupFrame
++        <ViewPane
++          id="group"
+           source={source}
+           view={view}
+           schema={[statusDef]}
+diff --git a/Core/Views/Host/viewKinds.ts b/Core/Views/Host/viewKinds.ts
+index fc8f551f1..0c39b5941 100644
+--- a/Core/Views/Host/viewKinds.ts
++++ b/Core/Views/Host/viewKinds.ts
+@@ -16,6 +16,7 @@ export interface ViewKindRecord {
+   Renderer: (p: { host: ViewHostApi }) => React.JSX.Element
+   nests: boolean
+   layout: {
++    leaf: 'visibility' | 'switches'
+     switches: SwitchEntry[]
+     rows?: (view: SavedView, write: ViewWriter) => MenuRow[]
+   }
+diff --git a/Core/Views/Settings/GroupFrame.test.tsx b/Core/Views/Settings/GroupFrame.test.tsx
+index 23f612704..5ac46902c 100644
+--- a/Core/Views/Settings/GroupFrame.test.tsx
++++ b/Core/Views/Settings/GroupFrame.test.tsx
+@@ -7,7 +7,7 @@ import type { PropertyDefinition } from '../../Properties/properties'
+ import type { SavedView } from '../views'
+ import { firePointer, stubRect } from '@pommora/uix/Utilities/pointerHarness'
+ import { useSession } from '../../Session/store'
+-import { GroupFrame } from './GroupFrame'
++import { ViewPane } from './ViewPane'
+ import * as group from '../Pipeline/group'
+ import { stubDialer } from '../../vitest.setup'
+ import { MenuDoorHost } from '../../Testing/MenuDoorHost'
+@@ -69,7 +69,8 @@ const mount = async (v: SavedView): Promise<void> => {
+   await act(async () => {
+     root.render(
+       <MenuDoorHost>
+-        <GroupFrame
++        <ViewPane
++          id="group"
+           source={source}
+           view={v}
+           schema={schema}
+@@ -180,7 +181,8 @@ describe('GroupFrame rows', () => {
+     await act(async () => {
+       root.render(
+         <MenuDoorHost>
+-          <GroupFrame
++          <ViewPane
++            id="group"
+             source={nested}
+             view={view()}
+             schema={[statusDef, dateDef]}
+@@ -202,7 +204,8 @@ describe('GroupFrame rows', () => {
+     await act(async () => {
+       root.render(
+         <MenuDoorHost>
+-          <GroupFrame
++          <ViewPane
++            id="group"
+             source={nested}
+             view={view({ sub_group: { property_id: 'prop_status', order_mode: 'configured' } })}
+             schema={[statusDef, dateDef]}
+@@ -382,7 +385,8 @@ describe('GroupFrame lists — dragging in the pane', () => {
+     act(async () => {
+       root.render(
+         <MenuDoorHost>
+-          <GroupFrame
++          <ViewPane
++            id="group"
+             source={src}
+             view={v}
+             schema={[twoStatus, dateDef]}
+diff --git a/Core/Views/Settings/GroupFrame.tsx b/Core/Views/Settings/GroupFrame.tsx
+index 0509277dd..58f5b8c86 100644
+--- a/Core/Views/Settings/GroupFrame.tsx
++++ b/Core/Views/Settings/GroupFrame.tsx
+@@ -26,7 +26,6 @@ import { MenuRowView, pickerRow } from '@pommora/uix/Menus/MenuIndex'
+ import {
+   FootingItem,
+   MenuSeparator,
+-  type MenuBack,
+   MenuTopRow,
+   MenuScrollFrame,
+   MenuFooting,
+@@ -51,7 +50,7 @@ import { NUMERIC_FORMATS } from '../../Properties/formatValue'
+ import { bandModelOf, dateLabeller, nodeLabel, springsInto } from '../Bands/bandModel'
+ import { bandRouting } from '../Bands/bandRouter'
+ import { bandSpec } from '../Bands/GroupBand'
+-import { dropIO, useSaveView } from '../Host/liveView'
++import { dropIO } from '../Host/liveView'
+ import { useBandHeads } from '../Host/useBandHeads'
+ import { EntityIcon } from '../../Assets/EntityIcon'
+ import { cx } from '@pommora/uix/Utilities/cx'
+@@ -72,6 +71,7 @@ import { type HideControls, orderOptions, rowEye, SUB_LOOK } from './paneRows'
+ import { OptionChip } from '../../Properties/Cells/OptionChip'
+ import { styleFor } from '../../Properties/columnStyles'
+ import { groupable } from '../valueKinds'
++import type { PaneProps } from './ViewPane'
+ 
+ const STRUCTURAL_ORDER: PickerOption<StructuralOrderMode>[] = [
+   { value: 'custom', label: 'Custom' },
+@@ -110,16 +110,10 @@ export function GroupFrame({
+   view,
+   schema,
+   back,
+-}: {
+-  source: CollectionNode | SetNode
+-  view: SavedView
+-  schema: PropertyDefinition[]
+-  back: MenuBack
+-}): React.JSX.Element {
++  save,
++}: PaneProps & { source: CollectionNode | SetNode }): React.JSX.Element {
+   const forms = useDateForms()
+-  const saveView = useSaveView(source)
+-  const save = (patch: Partial<SavedView>): void => void saveView(view, patch)
+-  const saveGroup = (group: GroupConfig): void => save({ group })
++  const saveGroup = (group: GroupConfig): void => void save({ group })
+ 
+   const held = view.hidden_groups ?? []
+   const hidden = new Set(held)
+@@ -174,7 +168,7 @@ export function GroupFrame({
+     ...propertyOptions,
+   ]
+ 
+-  const saveSub = (sub: SubGroupConfig | undefined): void => save({ sub_group: sub })
++  const saveSub = (sub: SubGroupConfig | undefined): void => void save({ sub_group: sub })
+ 
+   const footings = (
+     <MenuFooting>
+@@ -324,7 +318,7 @@ export function GroupFrame({
+             view={view}
+             plan={plan}
+             sub={sub}
+-            persist={(patch) => saveView(view, patch)}
++            persist={save}
+             {...setControls}
+             subControls={subDef ? bucketControls('sub', subDef.id) : {}}
+           />
+diff --git a/Core/Views/Settings/LayoutFrame.tsx b/Core/Views/Settings/LayoutFrame.tsx
+index a2c7facea..0fccea723 100644
+--- a/Core/Views/Settings/LayoutFrame.tsx
++++ b/Core/Views/Settings/LayoutFrame.tsx
+@@ -1,96 +1,22 @@
+-import { useState } from 'react'
+-import type { CollectionNode, SetNode } from '../../Nexus/tree'
+-import type { PropertyDefinition } from '../../Properties/properties'
+ import { type SavedView, VIEW_KINDS, VIEW_TYPES, type ViewType, type ViewWriter } from '../views'
+-import { Icon, type IconName } from '@pommora/uix/Symbols'
++import { Icon } from '@pommora/uix/Symbols'
+ import { MenuIndex } from '@pommora/uix/Menus/MenuIndex'
+-import {
+-  AccessoryButton,
+-  type MenuBack,
+-  MenuSeparator,
+-  MenuTopRow,
+-  MenuScrollFrame,
+-} from '@pommora/uix/Menus/MenuRows'
+-import { ICON, SETTINGS_PANE_FLOOR, SETTINGS_PANE_MAX_HEIGHT } from '@pommora/uix/Menus/frames.css'
+-import { useSaveView } from '../Host/liveView'
+-import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
+-import { useIconChoice } from '../../Assets/IdentityChoice'
+-import { VisibilityFrame } from './VisibilityFrame'
++import { MenuSeparator, MenuTopRow, MenuScrollFrame } from '@pommora/uix/Menus/MenuRows'
++import { SETTINGS_PANE_MAX_HEIGHT } from '@pommora/uix/Menus/frames.css'
+ import { switchRows } from './switchRows'
+-import { ViewLeaf, type ViewLeafId } from './ViewLeaf'
+-import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
+-import { iconForTypeSwitch, viewGlyph } from '../viewIcon'
++import { iconForTypeSwitch } from '../viewIcon'
+ import { cx } from '@pommora/uix/Utilities/cx'
+ import * as vs from './layout-frame.css'
+-import { BUILT_KINDS, presentedKind, type SwitchEntry } from '../Host/viewKinds'
+-import { TABLE_KIND } from '../Table/tableKind'
++import { BUILT_KINDS, presentedKind } from '../Host/viewKinds'
++import type { PaneProps } from './ViewPane'
+ 
+-function ViewSwitches({
+-  source,
+-  view,
+-  switches,
+-  separated,
+-}: {
+-  source: CollectionNode | SetNode
+-  view: SavedView
+-  switches: SwitchEntry[]
+-  separated?: boolean
+-}): React.JSX.Element {
+-  const saveView = useSaveView(source)
+-  return (
+-    <>
+-      {separated ? <MenuSeparator flush /> : null}
+-      <MenuIndex
+-        sections={[{ rows: switchRows(switches, view, (patch) => void saveView(view, patch)) }]}
+-      />
+-    </>
+-  )
+-}
+-
+-export type ViewRowId = 'layout' | ViewLeafId
+-export interface ViewRow<Id extends string = ViewRowId> {
+-  id: Id
+-  label: string
+-  icon: IconName
+-}
+-
+-export const VIEW_ROWS: ViewRow[] = [
+-  { id: 'layout', label: 'Layout', icon: 'layout-dashboard' },
+-  { id: 'group', label: 'Group', icon: 'layers' },
+-  { id: 'filter', label: 'Filter', icon: 'list-filter' },
+-  { id: 'sort', label: 'Sort', icon: 'arrow-up-down' },
+-]
+-
+-export function LayoutFrame(
+-  props: {
+-    source: CollectionNode | SetNode
+-    view: SavedView
+-    back: MenuBack
+-  } & (
+-    | { door: 'flat' }
+-    | { door: 'full'; schema: PropertyDefinition[]; onMenu: (trigger: HTMLElement) => void }
+-  ),
+-): React.JSX.Element {
+-  const { source, view, back } = props
+-  const [frame, setFrame] = useState<ViewRowId | null>(null)
+-  const saveView = useSaveView(source)
+-  const write: ViewWriter = (patch) => saveView(view, patch)
+-  const iconChoice = useIconChoice(view.icon, (icon) => write({ icon }))
+-  const kind = presentedKind(view.type)
++export function typeGrid(view: SavedView, save: ViewWriter): React.JSX.Element {
+   const setType = (type: ViewType): void => {
+     if (type === view.type) return
+     const icon = iconForTypeSwitch(view, type)
+-    write(icon ? { type, icon } : { type })
++    void save(icon ? { type, icon } : { type })
+   }
+-
+-  const kindRows = kind.layout.rows ? (
+-    <>
+-      <MenuSeparator flush />
+-      <MenuIndex sections={[{ rows: kind.layout.rows(view, write) }]} />
+-    </>
+-  ) : null
+-
+-  const grid = (
++  return (
+     <div className={vs.grid}>
+       {VIEW_TYPES.map((t) => (
+         <button
+@@ -105,97 +31,34 @@ export function LayoutFrame(
+       ))}
+     </div>
+   )
++}
+ 
+-  if (props.door === 'flat')
+-    return (
+-      <MenuScrollFrame
+-        header={<MenuTopRow {...back} current="Layout" />}
+-        footer={kindRows}
+-        maxHeight={SETTINGS_PANE_MAX_HEIGHT}
+-      >
+-        {grid}
+-        <ViewSwitches source={source} view={view} switches={kind.layout.switches} separated />
+-      </MenuScrollFrame>
+-    )
++export const kindSwitches = (view: SavedView, save: ViewWriter): React.JSX.Element => (
++  <MenuIndex
++    sections={[{ rows: switchRows(presentedKind(view.type).layout.switches, view, save) }]}
++  />
++)
+ 
+-  const rename = (name: string): void => {
+-    if (name && name !== view.name) write({ name })
+-  }
+-  const toView: MenuBack = { label: 'Views', onBack: () => setFrame(null) }
+-  const leafFor = (id: ViewRowId): React.JSX.Element => {
+-    if (id !== 'layout')
+-      return <ViewLeaf id={id} source={source} view={view} schema={props.schema} back={toView} />
+-    if (kind !== TABLE_KIND)
+-      return (
+-        <MenuScrollFrame
+-          header={<MenuTopRow {...toView} current="Layout" />}
+-          maxHeight={SETTINGS_PANE_MAX_HEIGHT}
+-        >
+-          <ViewSwitches source={source} view={view} switches={kind.layout.switches} />
+-        </MenuScrollFrame>
+-      )
+-    return (
+-      <VisibilityFrame
+-        source={source}
+-        schema={props.schema}
+-        view={view}
+-        back={toView}
+-        current="Layout"
+-        footer={
+-          <ViewSwitches source={source} view={view} switches={kind.layout.switches} separated />
+-        }
+-      />
+-    )
+-  }
++export function kindRows(view: SavedView, save: ViewWriter): React.JSX.Element | null {
++  const rows = presentedKind(view.type).layout.rows
++  return rows ? (
++    <>
++      <MenuSeparator flush />
++      <MenuIndex sections={[{ rows: rows(view, save) }]} />
++    </>
++  ) : null
++}
+ 
+-  const mainFrame = (
++export function LayoutFrame({ view, back, save }: PaneProps): React.JSX.Element {
++  return (
+     <MenuScrollFrame
+-      header={
+-        <MenuTopRow
+-          {...back}
+-          trailing={
+-            <AccessoryButton
+-              icon="ellipsis-vertical"
+-              size={ICON.editorMenu}
+-              ariaLabel="View Menu"
+-              onClick={(e) => props.onMenu(e.currentTarget)}
+-            />
+-          }
+-        />
+-      }
+-      footer={kindRows}
++      header={<MenuTopRow {...back} current="Layout" />}
++      footer={kindRows(view, save)}
+       maxHeight={SETTINGS_PANE_MAX_HEIGHT}
+     >
+-      <InlineEditHeader
+-        value={view.name}
+-        icon={viewGlyph(view)}
+-        onCommit={rename}
+-        {...iconChoice}
+-      />
++      {typeGrid(view, save)}
+       <MenuSeparator flush />
+-      {grid}
+-      <MenuIndex
+-        sections={[
+-          {
+-            rows: VIEW_ROWS.map((r) => ({
+-              kind: 'item',
+-              icon: <Icon name={r.icon} size={ICON.rootEntry} />,
+-              label: r.label,
+-              trailing: { kind: 'chevron' },
+-              onSelect: () => setFrame(r.id),
+-            })),
+-          },
+-        ]}
+-      />
++      {kindSwitches(view, save)}
+     </MenuScrollFrame>
+   )
+-
+-  return (
+-    <FrameSlide
+-      {...SETTINGS_PANE_FLOOR}
+-      open={frame !== null}
+-      root={mainFrame}
+-      detail={frame && leafFor(frame)}
+-    />
+-  )
+ }
+diff --git a/Core/Views/Settings/SettingsFrame.test.tsx b/Core/Views/Settings/SettingsFrame.test.tsx
+new file mode 100644
+index 000000000..f3e2422f5
+--- /dev/null
++++ b/Core/Views/Settings/SettingsFrame.test.tsx
+@@ -0,0 +1,84 @@
++// @vitest-environment jsdom
++import { beforeEach, describe, expect, it, vi } from 'vitest'
++import { act } from 'react'
++import type { Root } from 'react-dom/client'
++import type { CollectionNode } from '../../Nexus/tree'
++import type { SavedView } from '../views'
++import { mountEachTest } from '../../Testing/viewHarness'
++import { useSession } from '../../Session/store'
++import { ViewTileScopeProvider } from '../ViewTileScope'
++import { presentedKind } from '../Host/viewKinds'
++import { makeTree } from '../../Testing/testTree'
++import { SettingsFrame } from './SettingsFrame'
++
++const view: SavedView = {
++  id: 'view_a',
++  name: 'Board',
++  type: 'cards',
++  property_order: ['_title'],
++  hidden_properties: [],
++}
++const source = {
++  kind: 'collection',
++  id: 'col1',
++  title: 'Col',
++  path: 'Col',
++  sets: [],
++  pages: [],
++  propertyIds: [],
++  views: [view],
++} as unknown as CollectionNode
++
++let host: HTMLDivElement
++let root: Root
++mountEachTest((h, r) => {
++  host = h
++  root = r
++})
++
++beforeEach(() => {
++  useSession.setState({ tree: { ...makeTree(), collections: [source] } })
++})
++
++const mount = (): Promise<void> =>
++  act(async () => {
++    root.render(
++      <ViewTileScopeProvider
++        value={{ source, view, persist: vi.fn(), locked: false, setLocked: vi.fn() }}
++      >
++        <SettingsFrame />
++      </ViewTileScopeProvider>,
++    )
++  })
++const open = async (entry: string): Promise<void> => {
++  await mount()
++  const row = [...host.querySelectorAll('[role="button"], button')].find(
++    (e) => e.textContent === entry,
++  )
++  await act(async () => (row as HTMLElement).click())
++}
++const has = (label: string): boolean => host.querySelector(`[aria-label="${label}"]`) !== null
++const switches = presentedKind(view.type).layout.switches.map((s) => s.label)
++
++describe('SettingsFrame — the panes Settings reaches', () => {
++  it('lists Properties and every view pane, Visibility and Layout apart', async () => {
++    await mount()
++    const labels = [...host.querySelectorAll('[role="button"]')].map((e) => e.textContent)
++    expect(labels).toEqual(
++      expect.arrayContaining(['Properties', 'Visibility', 'Layout', 'Group', 'Filter', 'Sort']),
++    )
++  })
++
++  it('Visibility is the list alone', async () => {
++    await open('Visibility')
++    expect(has('Always Shown')).toBe(true)
++    expect(switches.some(has)).toBe(false)
++  })
++
++  it('Layout is the type grid and the kind’s switches, without the list', async () => {
++    await open('Layout')
++    expect(has('Table')).toBe(true)
++    expect(switches.every(has)).toBe(true)
++    expect(has('Always Shown')).toBe(false)
++  })
++})
+diff --git a/Core/Views/Settings/SettingsFrame.tsx b/Core/Views/Settings/SettingsFrame.tsx
+index 7bb29d6d0..242828917 100644
+--- a/Core/Views/Settings/SettingsFrame.tsx
++++ b/Core/Views/Settings/SettingsFrame.tsx
+@@ -1,19 +1,16 @@
+ import { useState } from 'react'
+ import { ZOOM } from '../../Settings/personalization'
+ import type { CollectionNode, SetNode } from '../../Nexus/tree'
+-import { Icon } from '@pommora/uix/Symbols'
+ import { entityIcon } from '../../Assets/entityIconPolicy'
+ import { NavTrail } from '@pommora/uix/Elements/NavTrail'
+ import { trailOf, findCollection, findSet } from '../../Nexus/treeIndex'
+-import { ICON, SETTINGS_PANE_FLOOR } from '@pommora/uix/Menus/frames.css'
++import { SETTINGS_PANE_FLOOR } from '@pommora/uix/Menus/frames.css'
+ import { useSession } from '../../Session/store'
+ import { personalizationOf } from '../../Session/configSlice'
+ import { containerSchema, owningCollection } from '../../Nexus/treePatch'
+ import { viewGlyph } from '../viewIcon'
+ import { PropertyFrame } from '../../Properties/Schema/PropertyFrame'
+-import { VisibilityFrame } from './VisibilityFrame'
+-import { LayoutFrame, VIEW_ROWS, type ViewRow, type ViewRowId } from './LayoutFrame'
+-import { ViewLeaf } from './ViewLeaf'
++import { chevronRows, type SettingsPane, VIEW_PANES, ViewPane, type ViewPaneId } from './ViewPane'
+ import { ScalePicker } from '../../Settings/ScalePicker'
+ import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
+ import { MenuIndex } from '@pommora/uix/Menus/MenuIndex'
+@@ -31,12 +28,11 @@ import { useViewTileScope } from '../ViewTileScope'
+ import { useActiveView, useSaveView } from '../Host/liveView'
+ import { lockLabel } from '../../Actions/toggleLabels'
+ 
+-type FrameId = 'properties' | 'visibility' | ViewRowId
++type PaneId = 'properties' | ViewPaneId
+ 
+-const ENTRIES: ViewRow<FrameId>[] = [
++const ENTRIES: SettingsPane<PaneId>[] = [
+   { id: 'properties', label: 'Properties', icon: 'server' },
+-  { id: 'visibility', label: 'Visibility', icon: 'eye' },
+-  ...VIEW_ROWS,
++  ...VIEW_PANES,
+ ]
+ 
+ export function SettingsFrame(): React.JSX.Element | null {
+@@ -66,7 +62,7 @@ function ContainerSettings({
+   const tree = useSession((st) => st.tree)
+   const submitRename = useSession((st) => st.submitRename)
+   const mutate = useSession((st) => st.mutate)
+-  const [pane, setPane] = useState<FrameId | 'root'>('root')
++  const [pane, setPane] = useState<PaneId | 'root'>('root')
+   const scope = useViewTileScope()
+   const saveView = useSaveView(node)
+ 
+@@ -77,7 +73,7 @@ function ContainerSettings({
+     else void mutate({ op: 'setIcon', path: node.path, kind: node.kind, icon })
+   })
+   const configLocked = scope?.locked ?? false
+-  const frozen = (id: FrameId): boolean => configLocked && id !== 'properties'
++  const frozen = (id: PaneId): boolean => configLocked && id !== 'properties'
+ 
+   const toRoot: MenuBack = { label: 'Settings', onBack: () => setPane('root') }
+   const detailPane = pane === 'root' || frozen(pane) ? null : pane
+@@ -102,20 +98,7 @@ function ContainerSettings({
+         }}
+       />
+       <MenuSeparator flush />
+-      <MenuIndex
+-        sections={[
+-          {
+-            rows: ENTRIES.map((e) => ({
+-              kind: 'item',
+-              icon: <Icon name={e.icon} size={ICON.rootEntry} />,
+-              label: e.label,
+-              trailing: { kind: 'chevron' },
+-              disabled: frozen(e.id),
+-              onSelect: () => setPane(e.id),
+-            })),
+-          },
+-        ]}
+-      />
++      <MenuIndex sections={[{ rows: chevronRows(ENTRIES, setPane, frozen) }]} />
+     </>
+   )
+ 
+@@ -150,33 +133,17 @@ function ContainerSettings({
+     </MenuScrollFrame>
+   )
+ 
+-  const detailFor = (id: FrameId): React.JSX.Element => {
+-    switch (id) {
+-      case 'properties':
+-        return (
+-          <PropertyFrame
+-            collectionPath={schemaCollection.path}
+-            schema={schema}
+-            back={toRoot}
+-            source={node}
+-          />
+-        )
+-      case 'visibility':
+-        return (
+-          <VisibilityFrame
+-            source={node}
+-            schema={schema}
+-            view={view}
+-            back={toRoot}
+-            current="Visibility"
+-          />
+-        )
+-      case 'layout':
+-        return <LayoutFrame door="flat" source={node} view={view} back={toRoot} />
+-      default:
+-        return <ViewLeaf id={id} source={node} view={view} schema={schema} back={toRoot} />
+-    }
+-  }
++  const detailFor = (id: PaneId): React.JSX.Element =>
++    id === 'properties' ? (
++      <PropertyFrame
++        collectionPath={schemaCollection.path}
++        schema={schema}
++        back={toRoot}
++        source={node}
++      />
++    ) : (
++      <ViewPane id={id} source={node} view={view} schema={schema} back={toRoot} />
++    )
+ 
+   return (
+     <FrameSlide
+diff --git a/Core/Views/Settings/SortFrame.test.tsx b/Core/Views/Settings/SortFrame.test.tsx
+index c033bb52a..1d878ce73 100644
+--- a/Core/Views/Settings/SortFrame.test.tsx
++++ b/Core/Views/Settings/SortFrame.test.tsx
+@@ -6,7 +6,7 @@ import type { CollectionNode } from '../../Nexus/tree'
+ import type { PropertyDefinition } from '../../Properties/properties'
+ import { LOCATION_SORT, type SavedView } from '../views'
+ import { useSession } from '../../Session/store'
+-import { SortFrame } from './SortFrame'
++import { ViewPane } from './ViewPane'
+ import { stubDialer } from '../../vitest.setup'
+ import { MenuDoorHost } from '../../Testing/MenuDoorHost'
+ import { mountEachTest } from '../../Testing/viewHarness'
+@@ -79,7 +79,8 @@ const mount = async (v: SavedView): Promise<void> => {
+   await act(async () => {
+     root.render(
+       <MenuDoorHost>
+-        <SortFrame
++        <ViewPane
++          id="sort"
+           source={source}
+           view={v}
+           schema={schema}
+diff --git a/Core/Views/Settings/SortFrame.tsx b/Core/Views/Settings/SortFrame.tsx
+index 396c34a32..9853c766e 100644
+--- a/Core/Views/Settings/SortFrame.tsx
++++ b/Core/Views/Settings/SortFrame.tsx
+@@ -1,15 +1,7 @@
+-import type { CollectionNode, SetNode } from '../../Nexus/tree'
+-import type { PropertyDefinition } from '../../Properties/properties'
+-import { LOCATION_SORT, type SavedView, type SortCriterion, viewOption } from '../views'
++import { LOCATION_SORT, type SortCriterion, viewOption } from '../views'
+ import { presentedKind } from '../Host/viewKinds'
+ import { MenuRowView, pickerRow } from '@pommora/uix/Menus/MenuIndex'
+-import {
+-  type MenuBack,
+-  MenuScrollFrame,
+-  MenuTopRow,
+-  MenuSeparator,
+-} from '@pommora/uix/Menus/MenuRows'
+-import { useSaveView } from '../Host/liveView'
++import { MenuScrollFrame, MenuTopRow, MenuSeparator } from '@pommora/uix/Menus/MenuRows'
+ import { resolveColumn } from '../Pipeline/columns'
+ import { contextIdsOf } from '../../Contexts/contextIdentity'
+ import { useSession } from '../../Session/store'
+@@ -20,6 +12,7 @@ import { liveBucketOrder } from '../Pipeline/group'
+ import { FILEDATA_TARGETS, schemaTargets } from '../paneTargets'
+ import { chipRegion, middleRegion, SETTINGS_PANE_MAX_HEIGHT } from '@pommora/uix/Menus/frames.css'
+ import { viewSpecOf } from '../valueKinds'
++import type { PaneProps } from './ViewPane'
+ 
+ type OrderChoice = SortCriterion['direction'] | 'custom'
+ const LOCATION_ORDERS: PickerOption<'location' | 'custom'>[] = [
+@@ -27,20 +20,9 @@ const LOCATION_ORDERS: PickerOption<'location' | 'custom'>[] = [
+   { value: 'custom', label: 'Custom' },
+ ]
+ 
+-export function SortFrame({
+-  source,
+-  view,
+-  schema,
+-  back,
+-}: {
+-  source: CollectionNode | SetNode
+-  view: SavedView
+-  schema: PropertyDefinition[]
+-  back: MenuBack
+-}): React.JSX.Element {
+-  const saveView = useSaveView(source)
++export function SortFrame({ view, schema, back, save }: PaneProps): React.JSX.Element {
+   const contextIds = contextIdsOf(useSession((st) => st.tree))
+-  const save = (sort: SortCriterion[] | undefined): void => void saveView(view, { sort })
++  const saveSort = (sort: SortCriterion[] | undefined): void => void save({ sort })
+ 
+   const primary = view.sort?.[0]
+   const sub = view.sort?.[1]
+@@ -53,31 +35,31 @@ export function SortFrame({
+ 
+   const pickPrimary = (id: string | null): void => {
+     if (id === null) {
+-      if (primary) save(undefined)
++      if (primary) saveSort(undefined)
+       return
+     }
+     if (primary?.property_id === id) return
+     const fresh: SortCriterion = { property_id: id, direction: 'ascending' }
+     const next = sub && sub.property_id !== id ? [fresh, sub] : [fresh]
+-    if (id === LOCATION_SORT) void saveView(view, { sort: next, location_order_mode: 'location' })
+-    else save(next)
++    if (id === LOCATION_SORT) void save({ sort: next, location_order_mode: 'location' })
++    else saveSort(next)
+   }
+ 
+   const pickSub = (id: string | null): void => {
+     if (!primary) return
+     if (id === null) {
+-      if (sub) save([primary])
++      if (sub) saveSort([primary])
+       return
+     }
+     if (sub?.property_id === id) return
+-    save([primary, { property_id: id, direction: 'ascending' }])
++    saveSort([primary, { property_id: id, direction: 'ascending' }])
+   }
+ 
+   const primaryColumn = primary && resolveColumn(primary.property_id, schema, contextIds)
+   const finiteDef =
+     viewSpecOf(primaryColumn?.type)?.directions === 'option' ? primaryColumn?.def : undefined
+ 
+-  const savePrimary = (next: SortCriterion): void => save(sub ? [next, sub] : [next])
++  const savePrimary = (next: SortCriterion): void => saveSort(sub ? [next, sub] : [next])
+   const ordering = primary?.order
+     ? { order_mode: 'manual' as const, order: primary.order }
+     : {
+@@ -128,7 +110,7 @@ export function SortFrame({
+                 'Order',
+                 viewOption(view, 'location_order_mode'),
+                 LOCATION_ORDERS,
+-                (v) => void saveView(view, { location_order_mode: v }),
++                (v) => void save({ location_order_mode: v }),
+                 sub ? SUB_LOOK : undefined,
+               )}
+             />
+@@ -168,7 +150,7 @@ export function SortFrame({
+                   'ascending',
+                   'descending',
+                 ]),
+-                (d) => save([primary, { ...sub, direction: d }]),
++                (d) => saveSort([primary, { ...sub, direction: d }]),
+                 SUB_LOOK,
+               )}
+             />
+diff --git a/Core/Views/Settings/ViewFrame.test.tsx b/Core/Views/Settings/ViewFrame.test.tsx
+index 1107e7ca8..49ef9b083 100644
+--- a/Core/Views/Settings/ViewFrame.test.tsx
++++ b/Core/Views/Settings/ViewFrame.test.tsx
+@@ -17,6 +17,7 @@ import { stubDialer } from '../../vitest.setup'
+ import { mountEachTest } from '../../Testing/viewHarness'
+ import { firePointer, stubRect } from '@pommora/uix/Utilities/pointerHarness'
+ import { itemPicked } from '@pommora/uix/Menus/menu-row.css'
++import { presentedKind } from '../Host/viewKinds'
+ 
+ const schema: PropertyDefinition[] = [
+   { id: 'prop_status', label: 'Status', key: 'Status', type: 'status' },
+@@ -284,6 +285,35 @@ describe('ViewFrame — the view editor’s menu', () => {
+   })
+ })
+ 
++describe('ViewFrame — the panes the editor reaches', () => {
++  const press = async (label: string): Promise<void> => {
++    const el = [...document.querySelectorAll('[role="button"], button')]
++      .filter((e) => e.textContent === label)
++      .at(-1)
++    await act(async () => (el as HTMLElement).click())
++  }
++
++  it.each([
++    { type: 'table', list: true, shape: 'with the Visibility list above them' },
++    { type: 'cards', list: false, shape: 'without the Visibility list' },
++  ] as const)('a $type view’s Layout row opens the kind’s switches $shape', async ({
++    type,
++    list,
++  }) => {
++    useSession.setState({
++      tree: { contexts: [], collections: [], config: { personalization: {} } } as never,
++    })
++    await mount(source([view('view_a', 'Table'), { ...view('view_b', 'Board'), type }]))
++    await act(async () => {
++      ;(document.querySelector('[aria-label="Edit Board"]') as HTMLElement).click()
++    })
++    await press('Layout')
++    expect(document.querySelector('[aria-label="Always Shown"]') !== null).toBe(list)
++    for (const { label } of presentedKind(type).layout.switches)
++      expect(document.querySelector(`[aria-label="${label}"]`)).not.toBeNull()
++  })
++})
++
+ describe('ViewFrame — a row’s right-click', () => {
+   it.each([
+     'icon',
+diff --git a/Core/Views/Settings/ViewFrame.tsx b/Core/Views/Settings/ViewFrame.tsx
+index 875c36f04..cf9ace333 100644
+--- a/Core/Views/Settings/ViewFrame.tsx
++++ b/Core/Views/Settings/ViewFrame.tsx
+@@ -1,7 +1,7 @@
+ import { useState } from 'react'
+ import type { CollectionNode, SetNode } from '../../Nexus/tree'
+ import type { PropertyDefinition } from '../../Properties/properties'
+-import { DEFAULT_VIEW_ID, mintNewView, pickView, type SavedView } from '../views'
++import { DEFAULT_VIEW_ID, mintNewView, pickView, type SavedView, type ViewWriter } from '../views'
+ import { notifyDeleted, reportRefusal } from '../../Interface/Notifications/notifications'
+ import { askDeleteView } from '../../Interface/Confirm/confirmations'
+ import { viewGlyph } from '../viewIcon'
+@@ -13,19 +13,25 @@ import {
+   MenuSeparator,
+   MenuFooting,
+   MenuScrollFrame,
++  MenuTopRow,
++  type MenuBack,
+   AccessoryButton,
+   FootingCreate,
+   menuDropLine,
+ } from '@pommora/uix/Menus/MenuRows'
++import { MenuIndex } from '@pommora/uix/Menus/MenuIndex'
++import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
+ import { titleInput } from '@pommora/uix/Menus/menu-row.css'
+ import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
+-import { LayoutFrame } from './LayoutFrame'
++import { kindRows, kindSwitches, typeGrid } from './LayoutFrame'
++import { chevronRows, VIEW_PANES, ViewPane, type ViewPaneId } from './ViewPane'
++import { presentedKind } from '../Host/viewKinds'
+ import { LineRow, LineZone, lineList } from '@pommora/uix/Interactions/drag'
+ import { moveBefore } from '@pommora/uix/Utilities/moveItem'
+ import * as s from '@pommora/uix/Menus/frames.css'
+ import { useLiveView, useSaveView } from '../Host/liveView'
+ import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
+-import { chooseColor, chooseIcon } from '../../Assets/IdentityChoice'
++import { chooseColor, chooseIcon, useIconChoice } from '../../Assets/IdentityChoice'
+ import { ARCHIVE_ICON, ARCHIVE_TITLE } from '../../Archive/archiveLabel'
+ import { useSession } from '../../Session/store'
+ import * as vd from '../../Interface/Toolbar/toolbar-menu.css'
+@@ -47,6 +53,84 @@ async function deleteViewWithUndo(
+   return true
+ }
+ 
++const EDITOR_PANES = VIEW_PANES.filter((p) => p.id !== 'visibility')
++
++function ViewEditor({
++  source,
++  view,
++  schema,
++  back,
++  onMenu,
++}: {
++  source: CollectionNode | SetNode
++  view: SavedView
++  schema: PropertyDefinition[]
++  back: MenuBack
++  onMenu: (trigger: HTMLElement) => void
++}): React.JSX.Element {
++  const [pane, setPane] = useState<ViewPaneId | null>(null)
++  const saveView = useSaveView(source)
++  const save: ViewWriter = (patch) => saveView(view, patch)
++  const iconChoice = useIconChoice(view.icon, (icon) => void save({ icon }))
++
++  const root = (
++    <MenuScrollFrame
++      header={
++        <MenuTopRow
++          {...back}
++          trailing={
++            <AccessoryButton
++              icon="ellipsis-vertical"
++              size={s.ICON.editorMenu}
++              ariaLabel="View Menu"
++              onClick={(e) => onMenu(e.currentTarget)}
++            />
++          }
++        />
++      }
++      footer={kindRows(view, save)}
++      maxHeight={s.SETTINGS_PANE_MAX_HEIGHT}
++    >
++      <InlineEditHeader
++        value={view.name}
++        icon={viewGlyph(view)}
++        onCommit={(name) => {
++          if (name && name !== view.name) void save({ name })
++        }}
++        {...iconChoice}
++      />
++      <MenuSeparator flush />
++      {typeGrid(view, save)}
++      <MenuIndex sections={[{ rows: chevronRows(EDITOR_PANES, setPane) }]} />
++    </MenuScrollFrame>
++  )
++
++  const toViews: MenuBack = { label: 'Views', onBack: () => setPane(null) }
++  const detail =
++    pane === 'layout' && presentedKind(view.type).layout.leaf === 'switches' ? (
++      <MenuScrollFrame
++        header={<MenuTopRow {...toViews} current="Layout" />}
++        maxHeight={s.SETTINGS_PANE_MAX_HEIGHT}
++      >
++        {kindSwitches(view, save)}
++      </MenuScrollFrame>
++    ) : (
++      pane && (
++        <ViewPane
++          {...(pane === 'layout'
++            ? { id: 'visibility', current: 'Layout', switches: true }
++            : { id: pane })}
++          source={source}
++          view={view}
++          schema={schema}
++          back={toViews}
++        />
++      )
++    )
++
++  return <FrameSlide {...s.SETTINGS_PANE_FLOOR} open={pane !== null} root={root} detail={detail} />
++}
++
+ export function ViewFrame({
+   node,
+   schema,
+@@ -214,8 +298,7 @@ export function ViewFrame({
+   )
+ 
+   const detail = editing ? (
+-    <LayoutFrame
+-      door="full"
++    <ViewEditor
+       source={node}
+       view={editingLive}
+       schema={schema}
+diff --git a/Core/Views/Settings/ViewLeaf.tsx b/Core/Views/Settings/ViewLeaf.tsx
+deleted file mode 100644
+index cfcdbaf54..000000000
+--- a/Core/Views/Settings/ViewLeaf.tsx
++++ /dev/null
+@@ -1,47 +0,0 @@
+-import type { CollectionNode, SetNode } from '../../Nexus/tree'
+-import type { PropertyDefinition } from '../../Properties/properties'
+-import type { SavedView } from '../views'
+-import { useSession } from '../../Session/store'
+-import { readLiveView, useSaveView } from '../Host/liveView'
+-import { GroupFrame } from './GroupFrame'
+-import { SortFrame } from './SortFrame'
+-import { FilterFrame } from './FilterFrame'
+-import type { MenuBack } from '@pommora/uix/Menus/MenuRows'
+-
+-export type ViewLeafId = 'group' | 'filter' | 'sort'
+-
+-export function ViewLeaf({
+-  id,
+-  source,
+-  view,
+-  schema,
+-  back,
+-}: {
+-  id: ViewLeafId
+-  source: CollectionNode | SetNode
+-  view: SavedView
+-  schema: PropertyDefinition[]
+-  back: MenuBack
+-}): React.JSX.Element {
+-  const tree = useSession((st) => st.tree)
+-  const saveView = useSaveView(source)
+-  switch (id) {
+-    case 'group':
+-      return <GroupFrame source={source} view={view} schema={schema} back={back} />
+-    case 'sort':
+-      return <SortFrame source={source} view={view} schema={schema} back={back} />
+-    case 'filter':
+-      return (
+-        <FilterFrame
+-          key={view.id}
+-          locations={source.sets ?? []}
+-          view={view}
+-          read={() => readLiveView(source.id, view)}
+-          schema={schema}
+-          tree={tree}
+-          back={back}
+-          onCommit={(patch) => void saveView(view, patch)}
+-        />
+-      )
+-  }
+-}
+diff --git a/Core/Views/Settings/ViewPane.tsx b/Core/Views/Settings/ViewPane.tsx
+new file mode 100644
+index 000000000..87781b7f6
+--- /dev/null
++++ b/Core/Views/Settings/ViewPane.tsx
+@@ -0,0 +1,109 @@
++import type { CollectionNode, SetNode } from '../../Nexus/tree'
++import type { PropertyDefinition } from '../../Properties/properties'
++import type { SavedView, ViewWriter } from '../views'
++import { useSession } from '../../Session/store'
++import { readLiveView, useSaveView } from '../Host/liveView'
++import { Icon, type IconName } from '@pommora/uix/Symbols'
++import type { MenuRow } from '@pommora/uix/Menus/MenuIndex'
++import { type MenuBack, MenuSeparator } from '@pommora/uix/Menus/MenuRows'
++import { ICON } from '@pommora/uix/Menus/frames.css'
++import { VisibilityFrame } from './VisibilityFrame'
++import { kindSwitches, LayoutFrame } from './LayoutFrame'
++import { GroupFrame } from './GroupFrame'
++import { SortFrame } from './SortFrame'
++import { FilterFrame } from './FilterFrame'
++
++export type ViewPaneId = 'visibility' | 'layout' | 'group' | 'filter' | 'sort'
++
++export interface SettingsPane<Id extends string = ViewPaneId> {
++  id: Id
++  label: string
++  icon: IconName
++}
++
++export const VIEW_PANES: SettingsPane[] = [
++  { id: 'visibility', label: 'Visibility', icon: 'eye' },
++  { id: 'layout', label: 'Layout', icon: 'layout-dashboard' },
++  { id: 'group', label: 'Group', icon: 'layers' },
++  { id: 'filter', label: 'Filter', icon: 'list-filter' },
++  { id: 'sort', label: 'Sort', icon: 'arrow-up-down' },
++]
++
++export const chevronRows = <Id extends string>(
++  panes: SettingsPane<Id>[],
++  open: (id: Id) => void,
++  frozen?: (id: Id) => boolean,
++): MenuRow[] =>
++  panes.map((p) => ({
++    kind: 'item',
++    icon: <Icon name={p.icon} size={ICON.rootEntry} />,
++    label: p.label,
++    trailing: { kind: 'chevron' },
++    disabled: frozen?.(p.id),
++    onSelect: () => open(p.id),
++  }))
++
++export interface PaneProps {
++  view: SavedView
++  schema: PropertyDefinition[]
++  back: MenuBack
++  save: ViewWriter
++}
++
++export function ViewPane({
++  id,
++  source,
++  view,
++  schema,
++  back,
++  current,
++  switches = false,
++}: {
++  id: ViewPaneId
++  source: CollectionNode | SetNode
++  view: SavedView
++  schema: PropertyDefinition[]
++  back: MenuBack
++  current?: string
++  switches?: boolean
++}): React.JSX.Element {
++  const tree = useSession((st) => st.tree)
++  const saveView = useSaveView(source)
++  const pane: PaneProps = { view, schema, back, save: (patch) => saveView(view, patch) }
++  switch (id) {
++    case 'visibility':
++      return (
++        <VisibilityFrame
++          {...pane}
++          current={current}
++          footer={
++            switches ? (
++              <>
++                <MenuSeparator flush />
++                {kindSwitches(view, pane.save)}
++              </>
++            ) : undefined
++          }
++        />
++      )
++    case 'layout':
++      return <LayoutFrame {...pane} />
++    case 'group':
++      return <GroupFrame {...pane} source={source} />
++    case 'sort':
++      return <SortFrame {...pane} />
++    case 'filter':
++      return (
++        <FilterFrame
++          key={view.id}
++          locations={source.sets ?? []}
++          view={view}
++          read={() => readLiveView(source.id, view)}
++          schema={schema}
++          tree={tree}
++          back={back}
++          onCommit={pane.save}
++        />
++      )
++  }
++}
+diff --git a/Core/Views/Settings/VisibilityFrame.test.tsx b/Core/Views/Settings/VisibilityFrame.test.tsx
+index 4ddf2fd00..aa9efd1a6 100644
+--- a/Core/Views/Settings/VisibilityFrame.test.tsx
++++ b/Core/Views/Settings/VisibilityFrame.test.tsx
+@@ -2,7 +2,6 @@
+ import { describe, expect, it, vi } from 'vitest'
+ import { act } from 'react'
+ import type { Root } from 'react-dom/client'
+-import type { CollectionNode } from '../../Nexus/tree'
+ import type { PropertyDefinition } from '../../Properties/properties'
+ import type { SavedView } from '../views'
+ import { firePointer, stubRect } from '@pommora/uix/Utilities/pointerHarness'
+@@ -10,8 +9,7 @@ import { useSession } from '../../Session/store'
+ import { mountEachTest } from '../../Testing/viewHarness'
+ import { VisibilityFrame } from './VisibilityFrame'
+ 
+-const save = vi.hoisted(() => vi.fn())
+-vi.mock('../Host/liveView', () => ({ useSaveView: () => save }))
++const save = vi.fn()
+ 
+ const schema: PropertyDefinition[] = [
+   { id: 'prop_a', label: 'Alpha', key: 'Alpha', type: 'number' },
+@@ -25,7 +23,6 @@ const view: SavedView = {
+   property_order: ['_title', 'prop_a', 'prop_b'],
+   hidden_properties: ['prop_c'],
+ }
+-const source = { kind: 'collection', id: 'col1', path: 'Col', views: [view] } as never
+ 
+ let root: Root
+ mountEachTest((_h, r) => {
+@@ -47,11 +44,10 @@ const drag = async (name: string, from: number, ...to: number[]): Promise<void>
+   await act(async () => {
+     root.render(
+       <VisibilityFrame
+-        source={source as CollectionNode}
+         schema={schema}
+         view={view}
+         back={{ label: 'Settings', onBack: () => {} }}
+-        current="Visibility"
++        save={save}
+       />,
+     )
+   })
+@@ -74,7 +70,7 @@ const drag = async (name: string, from: number, ...to: number[]): Promise<void>
+ describe('VisibilityFrame — the pane drag', () => {
+   it('reorders a shown property at the slot', async () => {
+     await drag('Beta', 50, 35, 22)
+-    expect(save).toHaveBeenCalledExactlyOnceWith(view, {
++    expect(save).toHaveBeenCalledExactlyOnceWith({
+       property_order: ['_title', 'prop_b', 'prop_a'],
+       hidden_properties: ['prop_c'],
+     })
+@@ -83,7 +79,7 @@ describe('VisibilityFrame — the pane drag', () => {
+   it('hides a shown property dropped in the hidden zone', async () => {
+     await drag('Alpha', 30, 50, 90)
+     expect(save).toHaveBeenCalledOnce()
+-    expect(save.mock.calls[0][1].hidden_properties).toContain('prop_a')
++    expect(save.mock.calls[0][0].hidden_properties).toContain('prop_a')
+   })
+ 
+   it('a release on its own slot writes nothing', async () => {
+@@ -104,11 +100,10 @@ describe('VisibilityFrame — the rows', () => {
+     await act(async () => {
+       root.render(
+         <VisibilityFrame
+-          source={source as CollectionNode}
+           schema={schema}
+           view={{ ...view, property_order: [...(view.property_order ?? []), 'ctx_areas'] }}
+           back={{ label: 'Settings', onBack: () => {} }}
+-          current="Visibility"
++          save={save}
+         />,
+       )
+     })
+diff --git a/Core/Views/Settings/VisibilityFrame.tsx b/Core/Views/Settings/VisibilityFrame.tsx
+index 3980a7f29..2ad49c654 100644
+--- a/Core/Views/Settings/VisibilityFrame.tsx
++++ b/Core/Views/Settings/VisibilityFrame.tsx
+@@ -1,10 +1,8 @@
+ import type { ReactNode } from 'react'
+-import type { CollectionNode, SetNode } from '../../Nexus/tree'
+-import { FILEDATA, type PropertyDefinition } from '../../Properties/properties'
+-import type { SavedView } from '../views'
++import { FILEDATA } from '../../Properties/properties'
+ import { useSession } from '../../Session/store'
+ import { MenuRowView } from '@pommora/uix/Menus/MenuIndex'
+-import { type MenuBack, MenuTopRow, MenuScrollFrame } from '@pommora/uix/Menus/MenuRows'
++import { MenuTopRow, MenuScrollFrame } from '@pommora/uix/Menus/MenuRows'
+ import {
+   hiddenListIds,
+   hideShown,
+@@ -13,7 +11,6 @@ import {
+   resolveColumns,
+   unhide,
+ } from '../Pipeline/columns'
+-import { useSaveView } from '../Host/liveView'
+ import { LineGroup, LineRow, LineZone } from '@pommora/uix/Interactions/drag'
+ import { PaneRestGroup, type PaneDrop, paneSpec } from '@pommora/uix/Menus/paneDrop'
+ import { contextIdsOf, contextsByIdOf } from '../../Contexts/contextIdentity'
+@@ -21,6 +18,7 @@ import { EyeToggle } from '@pommora/uix/Elements/EyeToggle'
+ import { columnIcon, columnLabel } from '../../Properties/columnDisplay'
+ import { Icon } from '@pommora/uix/Symbols'
+ import * as s from '@pommora/uix/Menus/frames.css'
++import type { PaneProps } from './ViewPane'
+ 
+ function VisibilityGroups({
+   shownIds,
+@@ -81,21 +79,13 @@ function VisibilityGroups({
+ }
+ 
+ export function VisibilityFrame({
+-  source,
+   schema,
+   view,
+   back,
++  save,
+   footer,
+-  current,
+-}: {
+-  source: CollectionNode | SetNode
+-  schema: PropertyDefinition[]
+-  view: SavedView
+-  back: MenuBack
+-  footer?: ReactNode
+-  current: string
+-}): React.JSX.Element | null {
+-  const saveView = useSaveView(source)
++  current = 'Visibility',
++}: PaneProps & { footer?: ReactNode; current?: string }): React.JSX.Element | null {
+   const tree = useSession((st) => st.tree)
+   if (!tree) return null
+ 
+@@ -108,7 +98,6 @@ export function VisibilityFrame({
+   const nameFor = (id: string): string => columnLabel(columnOf(id), contextsByIdOf(tree))
+   const iconFor = (id: string): string => columnIcon(columnOf(id), contextsByIdOf(tree))
+ 
+-  const save = (patch: Partial<SavedView>): void => void saveView(view, patch)
+   // The hidden list holds no order (`ordersRest: false`), so no drop reorders it.
+   const handleDrop = (drop: PaneDrop): void => {
+     switch (drop.kind) {
+diff --git a/Core/Views/Table/tableKind.ts b/Core/Views/Table/tableKind.ts
+index 530187da9..10e69c0bf 100644
+--- a/Core/Views/Table/tableKind.ts
++++ b/Core/Views/Table/tableKind.ts
+@@ -5,6 +5,7 @@ export const TABLE_KIND: ViewKindRecord = {
+   Renderer: TableView,
+   nests: true,
+   layout: {
++    leaf: 'visibility',
+     switches: [
+       { icon: 'columns-3-cog', label: 'Column Icons', key: 'hide_column_icons', invert: true },
+       { icon: 'view-table', label: 'Hide Borders', key: 'hide_borders' },

@@ -1,0 +1,259 @@
+diff --git a/Core/Tiles/Surfaces/ViewTile.tsx b/Core/Tiles/Surfaces/ViewTile.tsx
+index 96edbed05..985a2e0c6 100644
+--- a/Core/Tiles/Surfaces/ViewTile.tsx
++++ b/Core/Tiles/Surfaces/ViewTile.tsx
+@@ -64,18 +64,13 @@ const STRIP_LOCK_LINGER_MS = 2000
+ 
+ type PeekAnchor =
+   | { kind: 'zone'; el: Element }
+-  | { kind: 'row'; first: HTMLElement; lead: Element | null; cols: number }
++  | { kind: 'row'; first: HTMLElement; before: Element | null; cols: number }
+   | null
+ 
+-// A table reveals from its heading row; cards, which have none, from the first group band ahead of the first card, else the first row of cards.
+ function resolvePeekAnchor(body: Element): PeekAnchor {
+-  const head = body.querySelector('.table-head')
+-  if (head) return { kind: 'zone', el: head }
+-  const first = body.querySelector<HTMLElement>('.cards-view .card')
++  const first = body.querySelector<HTMLElement>('[data-view-lead]')
+   if (!first) return null
+-  const band = body.querySelector('.group-band-row')
+-  if (band && band.compareDocumentPosition(first) & Node.DOCUMENT_POSITION_FOLLOWING)
+-    return { kind: 'zone', el: band }
++  if (first.dataset.viewLead !== 'row') return { kind: 'zone', el: first }
+   // The row is counted once by offsetTop, which a scroll leaves alone, so hovering tests position alone; a width change is counted on the next entry.
+   let cols = 1
+   for (
+@@ -84,13 +79,15 @@ function resolvePeekAnchor(body: Element): PeekAnchor {
+     n = n.nextElementSibling
+   )
+     cols++
+-  return { kind: 'row', first, lead: first.previousElementSibling, cols }
++  return { kind: 'row', first, before: first.previousElementSibling, cols }
+ }
+ 
+ function inPeekAnchor(anchor: PeekAnchor, target: EventTarget): boolean {
+   if (!anchor || !(target instanceof Element)) return false
+   if (anchor.kind === 'zone') return anchor.el.contains(target)
+-  let n = target.closest('.card')
++  const row = anchor.first.parentElement
++  let n: Element | null = target
++  while (n && n.parentElement !== row) n = n.parentElement
+   for (let i = 0; n && i < anchor.cols; i++, n = n.previousElementSibling)
+     if (n === anchor.first) return true
+   return false
+@@ -231,7 +228,7 @@ export function ViewTile({
+             !a ||
+             (a.kind === 'zone'
+               ? !a.el.isConnected
+-              : !a.first.isConnected || a.first.previousElementSibling !== a.lead)
++              : !a.first.isConnected || a.first.previousElementSibling !== a.before)
+           if (stale) peekAnchor.current = resolvePeekAnchor(e.currentTarget)
+           reveal.hover(inPeekAnchor(peekAnchor.current, e.target))
+         },
+diff --git a/Core/Tiles/Surfaces/view-tile.css.ts b/Core/Tiles/Surfaces/view-tile.css.ts
+index 933cef6f9..052634212 100644
+--- a/Core/Tiles/Surfaces/view-tile.css.ts
++++ b/Core/Tiles/Surfaces/view-tile.css.ts
+@@ -6,7 +6,6 @@ import { duration, easing } from '@pommora/uix/Animations/motion'
+ import { accessoryButton } from '@pommora/uix/Menus/menu-row.css'
+ import { REVEAL_FADE, revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
+ import { VIEW_PILL_H, viewStrip } from '@pommora/uix/Elements/view-strip.css'
+-import { SETTING_DEFAULTS, embedZoom, viewEmbedZoom } from '../../Settings/personalization'
+ 
+ const c = colorVars.color
+ 
+@@ -128,7 +127,7 @@ export const body = style({
+   marginTop: `calc(-1 * ${FADE_RISE})`,
+   paddingTop: FADE_RISE,
+   transition: `margin-top ${stripReveal}, padding-top ${stripReveal}`,
+-  vars: { '--scroll-fade': FADE_RISE },
++  vars: { '--scroll-fade': FADE_RISE, '--tile-inset-l': HEAD_PAD_L, '--tile-inset-r': HEAD_PAD_R },
+ })
+ 
+ export const bodyFlush = style({
+@@ -137,26 +136,11 @@ export const bodyFlush = style({
+   vars: { '--scroll-fade': STRIP_PAD_Y },
+ })
+ 
+-globalStyle(`${body} .table-shell`, {
+-  vars: { '--zoom': `var(--view-embed-zoom, ${viewEmbedZoom(SETTING_DEFAULTS.embedScale)})` },
+-})
+-
+-globalStyle(`${body} .cards-view`, {
+-  vars: { '--zoom': `var(--embed-zoom, ${embedZoom(SETTING_DEFAULTS.embedScale)})` },
+-  paddingBottom: 'var(--band-clearance)',
+-})
++const headLead = `${body} [data-view-lead="head"]`
+ 
+-globalStyle(`${body} .cards-view .cards-grid, ${body} .cards-view .set-cards-row`, {
+-  paddingLeft: `calc(${HEAD_PAD_L} / (var(--zoom, 1) * var(--tile-zoom, 1)))`,
+-  paddingRight: `calc(${HEAD_PAD_R} / (var(--zoom, 1) * var(--tile-zoom, 1)))`,
+-})
+-
+-globalStyle(`${body} .cards-view .group-band-row`, {
+-  paddingLeft: `calc(var(--rail-inset) / (var(--zoom, 1) * var(--tile-zoom, 1)) - (12px + var(--cell-icon-gap, 6px)))`,
+-})
+-globalStyle(`${body} .table`, { vars: { '--heading-fill': 'none', '--heading-divider': 'none' } })
++globalStyle(headLead, { vars: { '--heading-fill': 'none', '--heading-divider': 'none' } })
+ 
+-globalStyle(`${body} .col-header:first-child`, { overflow: 'visible' })
+-globalStyle(`${body} .col-header:first-child::before`, {
++globalStyle(`${headLead} > :first-child`, { overflow: 'visible' })
++globalStyle(`${headLead} > :first-child::before`, {
+   left: `calc((${HEAD_PAD_L} / (var(--zoom, 1) * var(--tile-zoom, 1))) - var(--rail-inset))`,
+ })
+diff --git a/Core/Views/Bands/GroupBand.tsx b/Core/Views/Bands/GroupBand.tsx
+index 2fcb8fe91..6a5028ce6 100644
+--- a/Core/Views/Bands/GroupBand.tsx
++++ b/Core/Views/Bands/GroupBand.tsx
+@@ -147,6 +147,7 @@ function HeadedBand({
+       <div
+         ref={springRow}
+         className="group-band-row"
++        data-view-lead="band"
+         data-collapsed={open ? undefined : ''}
+         data-empty={node.empty ? '' : undefined}
+         style={indent ? { paddingLeft: indent } : undefined}
+diff --git a/Core/Views/Cards/CardsView.tsx b/Core/Views/Cards/CardsView.tsx
+index fb1e5f47d..6d72b5ec9 100644
+--- a/Core/Views/Cards/CardsView.tsx
++++ b/Core/Views/Cards/CardsView.tsx
+@@ -126,6 +126,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
+     [host.sets, host.plan, view],
+   )
+   const showSetCards = viewOption(view, 'set_cards') && sets.length > 0
++  const leadId = showSetCards ? sets[0].id : groups.find((g) => g.items.length > 0)?.items[0].id
+ 
+   // ── Interactions ──────────────────────────────────────────────────────────
+ 
+@@ -322,7 +323,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
+           >
+             <DropSlot />
+             {sets.map((s) => (
+-              <SetCard key={s.id} set={s} api={item} />
++              <SetCard key={s.id} set={s} api={item} lead={s.id === leadId} />
+             ))}
+           </SortableZone>
+         </div>
+@@ -349,6 +350,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
+                   <PageCard
+                     key={row.id}
+                     row={row}
++                    lead={row.id === leadId}
+                     view={view}
+                     banner={banner}
+                     nexusId={nexusId}
+@@ -447,13 +449,19 @@ function GhostCard({
+ 
+ interface SetCardProps {
+   set: SetNode
++  lead: boolean
+   api: Pick<CardItem, 'openSet' | 'banner'>
+ }
+ 
+-function SetCard({ set, api }: SetCardProps): React.JSX.Element {
++function SetCard({ set, lead, api }: SetCardProps): React.JSX.Element {
+   const drag = useDragItem(set.id, { open: () => api.openSet(set, false) })
+   return (
+-    <CardRoot drag={drag} locked onClick={(e) => api.openSet(set, isCmd(e))}>
++    <CardRoot
++      drag={drag}
++      locked
++      data-view-lead={lead ? 'row' : undefined}
++      onClick={(e) => api.openSet(set, isCmd(e))}
++    >
+       <SetFace
+         set={set}
+         onThumbMenu={(e) => {
+@@ -499,6 +507,7 @@ function SetFace({
+ 
+ interface PageCardProps {
+   row: ViewRow
++  lead: boolean
+   view: SavedView
+   banner: CardBanner
+   nexusId: string
+@@ -749,6 +758,7 @@ function OverlayFace({
+ 
+ const PageCard = memo(function PageCard({
+   row,
++  lead,
+   view,
+   banner,
+   nexusId,
+@@ -804,6 +814,7 @@ const PageCard = memo(function PageCard({
+       drag={drag}
+       active={active}
+       data-rid={row.id}
++      data-view-lead={lead ? 'row' : undefined}
+       {...rowHover(row, api.hover)}
+       onClick={(e) => {
+         if (naming) return
+diff --git a/Core/Views/Cards/cards-view.css b/Core/Views/Cards/cards-view.css
+index 1d96a4359..9fe19ce90 100644
+--- a/Core/Views/Cards/cards-view.css
++++ b/Core/Views/Cards/cards-view.css
+@@ -11,6 +11,22 @@
+   zoom: calc(var(--zoom, 1) * var(--tile-zoom, 1));
+   padding-top: var(--band-clearance);
+ }
++[data-view-embed] .cards-view {
++  --zoom: var(--embed-zoom);
++  padding-bottom: var(--band-clearance);
++}
++[data-view-embed] .cards-view .cards-grid,
++[data-view-embed] .cards-view .set-cards-row {
++  padding-left: calc(var(--tile-inset-l) / (var(--zoom, 1) * var(--tile-zoom, 1)));
++  padding-right: calc(var(--tile-inset-r) / (var(--zoom, 1) * var(--tile-zoom, 1)));
++}
++[data-view-embed] .cards-view .group-band-row {
++  padding-left: calc(
++    var(--rail-inset) /
++    (var(--zoom, 1) * var(--tile-zoom, 1)) -
++    (12px + var(--cell-icon-gap, 6px))
++  );
++}
+ .cards-view.is-compact {
+   --card-row-h: 16px; /* KNOB — a compact property-value row */
+   --card-min-rows: 2;
+diff --git a/Core/Views/Host/ViewHost.tsx b/Core/Views/Host/ViewHost.tsx
+index c0cd2b237..04eaf7cd5 100644
+--- a/Core/Views/Host/ViewHost.tsx
++++ b/Core/Views/Host/ViewHost.tsx
+@@ -15,7 +15,7 @@ export function ViewHost({ source }: { source: CollectionNode | SetNode }): Reac
+   // An embedded tile states its own size, so in a tile scope the factor stays 1 and never compounds with the embed zoom.
+   const scale = tile ? ZOOM.default : (host.view.view_scale ?? ZOOM.default)
+   return (
+-    <div style={scale === 1 ? undefined : { zoom: scale }}>
++    <div data-view-embed={tile ? '' : undefined} style={scale === 1 ? undefined : { zoom: scale }}>
+       <Renderer host={host} />
+     </div>
+   )
+diff --git a/Core/Views/Table/TableView.tsx b/Core/Views/Table/TableView.tsx
+index 56ffc4a1d..f0d6a308d 100644
+--- a/Core/Views/Table/TableView.tsx
++++ b/Core/Views/Table/TableView.tsx
+@@ -176,7 +176,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
+           )}
+           style={{ minWidth: reflowWidth, '--cols': cols } as React.CSSProperties}
+         >
+-          <div className="table-head" onTransitionEnd={onTrackTransitionEnd}>
++          <div className="table-head" data-view-lead="head" onTransitionEnd={onTrackTransitionEnd}>
+             {columns.map((c, i) => (
+               // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
+               <div
+diff --git a/Core/Views/Table/table-view.css b/Core/Views/Table/table-view.css
+index 6c8d1ae5c..642718fbc 100644
+--- a/Core/Views/Table/table-view.css
++++ b/Core/Views/Table/table-view.css
+@@ -26,6 +26,9 @@
+   width: 100%;
+   zoom: calc(var(--zoom) * var(--tile-zoom, 1));
+ }
++[data-view-embed] .table-shell {
++  --zoom: var(--view-embed-zoom);
++}
+ 
+ /* Scoped to the Hide / style-slide beats only, so a drag resize stays instant. */
+ .table-grid.col-hiding .table-head,

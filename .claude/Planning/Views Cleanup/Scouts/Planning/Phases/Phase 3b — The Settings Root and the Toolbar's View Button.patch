@@ -1,0 +1,693 @@
+diff --git a/Core/Actions/identityMenus.ts b/Core/Actions/identityMenus.ts
+index 8faa10aad..44ad86f3f 100644
+--- a/Core/Actions/identityMenus.ts
++++ b/Core/Actions/identityMenus.ts
+@@ -1,5 +1,5 @@
+ import { type ActionItem, joinGroups } from './menuModel'
+-import { iconLabel } from './toggleLabels'
++import { shownLabel } from './toggleLabels'
+ 
+ export type NexusIconAction = 'editIcon' | 'addPhoto' | 'editPhoto' | 'resetIcon'
+ 
+@@ -68,7 +68,7 @@ export function titleMenuItems<A = never>(
+     ...(opts.iconRows ?? [{ label: 'Edit Icon', action: 'editIcon' as const }]),
+     ...(opts.iconHidden === undefined
+       ? []
+-      : [{ label: iconLabel(!opts.iconHidden), action: 'toggleIcon' as const }]),
++      : [{ label: shownLabel(!opts.iconHidden, 'Icon'), action: 'toggleIcon' as const }]),
+   ]
+ }
+ 
+diff --git a/Core/Actions/toggleLabels.ts b/Core/Actions/toggleLabels.ts
+index 58c284094..81397505a 100644
+--- a/Core/Actions/toggleLabels.ts
++++ b/Core/Actions/toggleLabels.ts
+@@ -4,17 +4,10 @@ export const openLabel = (alreadyOpen?: boolean): string => (alreadyOpen ? 'Open
+ 
+ export const pinLabel = (pinned?: boolean): string => (pinned ? 'Unpin' : 'Pin')
+ 
+-export const iconLabel = (iconShown: boolean): string => (iconShown ? 'Hide Icon' : 'Show Icon')
+-
+-export const viewsLabel = (viewsShown: boolean): string =>
+-  viewsShown ? 'Hide Views' : 'Show Views'
++export const shownLabel = (shown: boolean, noun: string): string =>
++  `${shown ? 'Hide' : 'Show'} ${noun}`
+ 
+ export const lockLabel = (locked: boolean, noun?: string): string => {
+   const verb = locked ? 'Unlock' : 'Lock'
+   return noun ? `${verb} ${noun}` : verb
+ }
+-
+-export const footerLabel = (shown: boolean): string => (shown ? 'Hide Footer' : 'Show Footer')
+-
+-export const citationsLabel = (shown: boolean): string =>
+-  shown ? 'Hide Footnotes' : 'Show Footnotes'
+diff --git a/Core/Actions/viewMenus.test.ts b/Core/Actions/viewMenus.test.ts
+index cc9e9c0a6..4c2c67bea 100644
+--- a/Core/Actions/viewMenus.test.ts
++++ b/Core/Actions/viewMenus.test.ts
+@@ -1,5 +1,11 @@
+ import { describe, expect, it } from 'vitest'
+-import { embedAreaMenuItems, embedTitleMenuItems, viewButtonMenuItems } from './viewMenus'
++import {
++  embedAreaMenuItems,
++  embedTitleMenuItems,
++  viewButtonMenuItems,
++  viewItemMenuItems,
++  viewRowMenuItems,
++} from './viewMenus'
+ 
+ const labels = (rows: { label: string }[]): string[] => rows.map((r) => r.label)
+ 
+@@ -72,3 +78,74 @@ describe('the view button’s menu', () => {
+     expect(labels(viewButtonMenuItems({ viewButton: 'icon' }))).toContain('Show Title')
+   })
+ })
++
++const rowLabels = (ctx: Parameters<typeof viewRowMenuItems>[0]): string[] =>
++  labels(viewRowMenuItems(ctx))
++
++describe('a saved view row’s menu', () => {
++  it('offers the rows every host can perform', () => {
++    expect(rowLabels({ deletable: true, duplicable: true })).toEqual([
++      'Rename',
++      'Edit Icon',
++      'Edit Color',
++      'Duplicate',
++      'Delete',
++    ])
++  })
++
++  it('names the titles toggle after what it does', () => {
++    expect(rowLabels({ titlesShown: true, deletable: true, duplicable: true })).toContain(
++      'Hide Titles',
++    )
++    expect(rowLabels({ titlesShown: false, deletable: true, duplicable: true })).toContain(
++      'Show Titles',
++    )
++  })
++
++  it('separates the rows that make and unmake a view from those that edit one', () => {
++    const rows = viewRowMenuItems({ deletable: true, duplicable: true })
++    expect(rows.filter((r) => r.separatorBefore).map((r) => r.action)).toEqual(['duplicate'])
++  })
++
++  it('keeps Delete on a container’s last view, refused rather than absent', () => {
++    const last = viewRowMenuItems({ deletable: false, duplicable: true }).find(
++      (r) => r.action === 'delete',
++    )
++    expect(last?.disabled).toBe(true)
++    expect(
++      viewRowMenuItems({ deletable: true, duplicable: true }).find((r) => r.action === 'delete')
++        ?.disabled,
++    ).toBe(false)
++  })
++
++  it('keeps Duplicate on a row with no stored view, refused rather than absent', () => {
++    const row = viewRowMenuItems({ deletable: false, duplicable: false }).find(
++      (r) => r.action === 'duplicate',
++    )
++    expect(row?.disabled).toBe(true)
++  })
++})
++
++describe('the view editor’s ⋮ menu', () => {
++  it('offers Duplicate and Delete with their glyphs', () => {
++    expect(
++      viewItemMenuItems({ deletable: true, duplicable: true }).map((r) => [r.label, r.icon]),
++    ).toEqual([
++      ['Duplicate', 'copy'],
++      ['Delete', 'trash'],
++    ])
++  })
++
++  it('refuses rather than drops what the view can’t do', () => {
++    const rows = viewItemMenuItems({ deletable: false, duplicable: false })
++    expect(rows.map((r) => [r.action, r.disabled])).toEqual([
++      ['duplicate', true],
++      ['delete', true],
++    ])
++  })
++
++  it('separates Delete from Duplicate, with nothing before Duplicate', () => {
++    const rows = viewItemMenuItems({ deletable: true, duplicable: true })
++    expect(rows.map((r) => r.separatorBefore === true)).toEqual([false, true])
++  })
++})
+diff --git a/Core/Actions/viewMenus.ts b/Core/Actions/viewMenus.ts
+index be6de1982..d0b06026a 100644
+--- a/Core/Actions/viewMenus.ts
++++ b/Core/Actions/viewMenus.ts
+@@ -1,6 +1,6 @@
+-import type { ActionItem } from './menuModel'
++import { type ActionItem, joinGroups } from './menuModel'
+ import type { ViewButton, ViewStyle } from '../Nexus/schemas'
+-import { iconLabel, viewsLabel } from './toggleLabels'
++import { shownLabel } from './toggleLabels'
+ 
+ type ViewStyleAction = 'style-dropdown' | 'style-toolbar'
+ 
+@@ -15,6 +15,14 @@ type EmbedTitleMenuAction =
+ 
+ type EmbedAreaMenuAction = 'show-title' | 'new-view' | 'toggle-views' | ViewStyleAction
+ 
++type ViewRowAction = 'rename' | 'icon' | 'color' | 'titles' | 'duplicate' | 'delete'
++
++interface ViewRowMenuContext {
++  titlesShown?: boolean
++  deletable: boolean
++  duplicable: boolean
++}
++
+ const EMBED_TITLE_SIZES = [1, 2, 3, 4, 5, 6] as const
+ 
+ const VIEW_STYLE_ROWS: readonly { label: string; style: ViewStyle }[] = [
+@@ -41,7 +49,7 @@ export function embedTitleMenuItems(
+ ): ActionItem<EmbedTitleMenuAction>[] {
+   return [
+     { label: 'Edit Icon', action: 'change-icon' },
+-    { label: iconLabel(iconShown), action: 'toggle-icon' },
++    { label: shownLabel(iconShown, 'Icon'), action: 'toggle-icon' },
+     {
+       label: 'Title Size',
+       submenu: EMBED_TITLE_SIZES.map((n) => ({
+@@ -51,7 +59,7 @@ export function embedTitleMenuItems(
+       })),
+     },
+     { label: 'Hide Title', action: 'hide-title', separatorBefore: true },
+-    { label: viewsLabel(viewsShown), action: 'toggle-views' },
++    { label: shownLabel(viewsShown, 'Views'), action: 'toggle-views' },
+   ]
+ }
+ 
+@@ -63,7 +71,7 @@ export function embedAreaMenuItems(current: {
+   return [
+     ...(current.titleShown ? [] : [{ label: 'Show Title', action: 'show-title' as const }]),
+     { label: 'New View', action: 'new-view' },
+-    { label: viewsLabel(current.viewsShown), action: 'toggle-views' },
++    { label: shownLabel(current.viewsShown, 'Views'), action: 'toggle-views' },
+     styleRow(current.viewStyle),
+   ]
+ }
+@@ -71,10 +79,32 @@ export function embedAreaMenuItems(current: {
+ export function viewButtonMenuItems(current: {
+   viewButton: ViewButton
+ }): ActionItem<ViewButtonMenuAction>[] {
+-  return [
+-    {
+-      label: current.viewButton === 'labeled' ? 'Hide Title' : 'Show Title',
+-      action: 'toggle-title',
+-    },
+-  ]
++  return [{ label: shownLabel(current.viewButton === 'labeled', 'Title'), action: 'toggle-title' }]
++}
++
++const itemRows = (ctx: ViewRowMenuContext, glyphs = false): ActionItem<ViewRowAction>[] => [
++  {
++    label: 'Duplicate',
++    action: 'duplicate',
++    disabled: !ctx.duplicable,
++    ...(glyphs && { icon: 'copy' }),
++  },
++  { label: 'Delete', action: 'delete', disabled: !ctx.deletable, ...(glyphs && { icon: 'trash' }) },
++]
++
++export const viewItemMenuItems = (ctx: ViewRowMenuContext): ActionItem<ViewRowAction>[] =>
++  joinGroups(itemRows(ctx, true).map((row) => [row]))
++
++export function viewRowMenuItems(ctx: ViewRowMenuContext): ActionItem<ViewRowAction>[] {
++  return joinGroups<ViewRowAction>([
++    [
++      { label: 'Rename', action: 'rename' },
++      { label: 'Edit Icon', action: 'icon' },
++      { label: 'Edit Color', action: 'color' },
++      ...(ctx.titlesShown === undefined
++        ? []
++        : [{ label: shownLabel(ctx.titlesShown, 'Titles'), action: 'titles' as const }]),
++    ],
++    itemRows(ctx),
++  ])
+ }
+diff --git a/Core/Actions/viewRowMenu.test.ts b/Core/Actions/viewRowMenu.test.ts
+deleted file mode 100644
+index 140a0fb23..000000000
+--- a/Core/Actions/viewRowMenu.test.ts
++++ /dev/null
+@@ -1,73 +0,0 @@
+-import { describe, it, expect } from 'vitest'
+-import { viewItemMenuItems, viewRowMenuItems } from './viewRowMenu'
+-
+-const labels = (ctx: Parameters<typeof viewRowMenuItems>[0]): string[] =>
+-  viewRowMenuItems(ctx).map((r) => r.label)
+-
+-describe('a saved view row’s menu', () => {
+-  it('offers the rows every host can perform', () => {
+-    expect(labels({ deletable: true, duplicable: true })).toEqual([
+-      'Rename',
+-      'Edit Icon',
+-      'Edit Color',
+-      'Duplicate',
+-      'Delete',
+-    ])
+-  })
+-
+-  it('names the titles toggle after what it does', () => {
+-    expect(labels({ titlesShown: true, deletable: true, duplicable: true })).toContain(
+-      'Hide Titles',
+-    )
+-    expect(labels({ titlesShown: false, deletable: true, duplicable: true })).toContain(
+-      'Show Titles',
+-    )
+-  })
+-
+-  it('separates the rows that make and unmake a view from those that edit one', () => {
+-    const rows = viewRowMenuItems({ deletable: true, duplicable: true })
+-    expect(rows.filter((r) => r.separatorBefore).map((r) => r.action)).toEqual(['duplicate'])
+-  })
+-
+-  it('keeps Delete on a container’s last view, refused rather than absent', () => {
+-    const last = viewRowMenuItems({ deletable: false, duplicable: true }).find(
+-      (r) => r.action === 'delete',
+-    )
+-    expect(last?.disabled).toBe(true)
+-    expect(
+-      viewRowMenuItems({ deletable: true, duplicable: true }).find((r) => r.action === 'delete')
+-        ?.disabled,
+-    ).toBe(false)
+-  })
+-
+-  it('keeps Duplicate on a row with no stored view, refused rather than absent', () => {
+-    const row = viewRowMenuItems({ deletable: false, duplicable: false }).find(
+-      (r) => r.action === 'duplicate',
+-    )
+-    expect(row?.disabled).toBe(true)
+-  })
+-})
+-
+-describe('the view editor’s ⋮ menu', () => {
+-  it('offers Duplicate and Delete with their glyphs', () => {
+-    expect(
+-      viewItemMenuItems({ deletable: true, duplicable: true }).map((r) => [r.label, r.icon]),
+-    ).toEqual([
+-      ['Duplicate', 'copy'],
+-      ['Delete', 'trash'],
+-    ])
+-  })
+-
+-  it('refuses rather than drops what the view can’t do', () => {
+-    const rows = viewItemMenuItems({ deletable: false, duplicable: false })
+-    expect(rows.map((r) => [r.action, r.disabled])).toEqual([
+-      ['duplicate', true],
+-      ['delete', true],
+-    ])
+-  })
+-
+-  it('separates Delete from Duplicate, with nothing before Duplicate', () => {
+-    const rows = viewItemMenuItems({ deletable: true, duplicable: true })
+-    expect(rows.map((r) => r.separatorBefore === true)).toEqual([false, true])
+-  })
+-})
+diff --git a/Core/Actions/viewRowMenu.ts b/Core/Actions/viewRowMenu.ts
+deleted file mode 100644
+index 2021a0f00..000000000
+--- a/Core/Actions/viewRowMenu.ts
++++ /dev/null
+@@ -1,36 +0,0 @@
+-import { type ActionItem, joinGroups } from './menuModel'
+-
+-type ViewRowAction = 'rename' | 'icon' | 'color' | 'titles' | 'duplicate' | 'delete'
+-
+-interface ViewRowMenuContext {
+-  titlesShown?: boolean
+-  deletable: boolean
+-  duplicable: boolean
+-}
+-
+-const itemRows = (ctx: ViewRowMenuContext, glyphs = false): ActionItem<ViewRowAction>[] => [
+-  {
+-    label: 'Duplicate',
+-    action: 'duplicate',
+-    disabled: !ctx.duplicable,
+-    ...(glyphs && { icon: 'copy' }),
+-  },
+-  { label: 'Delete', action: 'delete', disabled: !ctx.deletable, ...(glyphs && { icon: 'trash' }) },
+-]
+-
+-export const viewItemMenuItems = (ctx: ViewRowMenuContext): ActionItem<ViewRowAction>[] =>
+-  joinGroups(itemRows(ctx, true).map((row) => [row]))
+-
+-export function viewRowMenuItems(ctx: ViewRowMenuContext): ActionItem<ViewRowAction>[] {
+-  return joinGroups<ViewRowAction>([
+-    [
+-      { label: 'Rename', action: 'rename' },
+-      { label: 'Edit Icon', action: 'icon' },
+-      { label: 'Edit Color', action: 'color' },
+-      ...(ctx.titlesShown === undefined
+-        ? []
+-        : [{ label: ctx.titlesShown ? 'Hide Titles' : 'Show Titles', action: 'titles' as const }]),
+-    ],
+-    itemRows(ctx),
+-  ])
+-}
+diff --git a/Core/Interface/ContentView.tsx b/Core/Interface/ContentView.tsx
+index e30145c30..1af5a7a1c 100644
+--- a/Core/Interface/ContentView.tsx
++++ b/Core/Interface/ContentView.tsx
+@@ -26,7 +26,7 @@ import { MatrixView } from '../Matrix/MatrixView'
+ import { isOpenInTabs } from '../Navigation/tabsModel'
+ import { Subfield } from './Subfield/Subfield'
+ import { type SubfieldPage, ViewTypeItem } from './Subfield/subfieldItems'
+-import { footerLabel } from '../Actions/toggleLabels'
++import { shownLabel } from '../Actions/toggleLabels'
+ import { CitationsToggle } from './Subfield/CitationsToggle'
+ import { publishChromePart } from './chromeParts'
+ import { type ContentHost, ContentHostContext } from './contentHost'
+@@ -231,7 +231,7 @@ function ContentFooter({
+         className="subfield-toggle"
+         open={expanded}
+         onOpenChange={onExpandedChange}
+-        label={footerLabel(expanded)}
++        label={shownLabel(expanded, 'Footer')}
+       />
+       <CitationsToggle page={page} />
+       <div className="subfield-reveal reveal-bar">
+diff --git a/Core/Interface/Subfield/CitationsToggle.tsx b/Core/Interface/Subfield/CitationsToggle.tsx
+index 18dff96bb..588b895c1 100644
+--- a/Core/Interface/Subfield/CitationsToggle.tsx
++++ b/Core/Interface/Subfield/CitationsToggle.tsx
+@@ -1,4 +1,4 @@
+-import { citationsLabel } from '../../Actions/toggleLabels'
++import { shownLabel } from '../../Actions/toggleLabels'
+ import { text } from '@pommora/uix/Theme/typography.css'
+ import { onActivateClick } from '@pommora/uix/Interactions/activate'
+ import { citationsVisible, useSession } from '../../Session/store'
+@@ -11,7 +11,7 @@ export function CitationsToggle({ page }: { page: SubfieldPage | null }): React.
+   const shown = useSession((s) => citationsVisible(s, target?.id))
+   const toggle = useSession((s) => s.toggleCitations)
+   if (stats.citations === 0 || !target) return null
+-  const label = citationsLabel(shown)
++  const label = shownLabel(shown, 'Footnotes')
+   return (
+     <button
+       type="button"
+diff --git a/Core/Interface/Toolbar/Toolbar.tsx b/Core/Interface/Toolbar/Toolbar.tsx
+index c30cde296..d23c3bcc2 100644
+--- a/Core/Interface/Toolbar/Toolbar.tsx
++++ b/Core/Interface/Toolbar/Toolbar.tsx
+@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
+ import { Segmented, type Segment } from '@pommora/uix/Buttons/Button'
+ import { useDismissal } from '@pommora/uix/Interactions/dismissalStack'
+ import { ToolbarTrio } from './ToolbarTrio'
+-import { ViewMenu } from '../../Views/Settings/ViewMenu'
++import { ViewMenu } from './ViewMenu'
+ import { OutlineMenu } from './OutlineMenu'
+ import { TabBar } from '../../Navigation/TabBar'
+ import { activeUnpinnedTab } from '../../Navigation/tabsModel'
+diff --git a/Core/Views/Settings/ViewMenu.tsx b/Core/Interface/Toolbar/ViewMenu.tsx
+similarity index 88%
+rename from Core/Views/Settings/ViewMenu.tsx
+rename to Core/Interface/Toolbar/ViewMenu.tsx
+index b9c381e97..c81563e73 100644
+--- a/Core/Views/Settings/ViewMenu.tsx
++++ b/Core/Interface/Toolbar/ViewMenu.tsx
+@@ -3,10 +3,10 @@ import { MenuDropdown } from '@pommora/uix/Menus/MenuDropdown'
+ import { useSession } from '../../Session/store'
+ import { containerSchema, topContainerOf } from '../../Nexus/treePatch'
+ import { namesContainer } from '../../Nexus/entities'
+-import { pickView } from '../views'
+-import { ViewFrame } from './ViewFrame'
+-import { viewGlyph } from '../viewIcon'
+-import * as s from '../../Interface/Toolbar/toolbar-menu.css'
++import { useActiveView } from '../../Views/Host/liveView'
++import { ViewFrame } from '../../Views/Settings/ViewFrame'
++import { viewGlyph } from '../../Views/viewIcon'
++import * as s from './toolbar-menu.css'
+ import { popMenu } from '../../Actions/menuActions'
+ import { viewButtonMenuItems } from '../../Actions/viewMenus'
+ 
+@@ -25,7 +25,7 @@ function ViewMenuInner({ node }: { node: CollectionNode | SetNode }): React.JSX.
+   const labeled = (node.viewButton ?? 'icon') === 'labeled'
+ 
+   const schema = containerSchema(tree, node)
+-  const view = pickView(node)
++  const view = useActiveView(node)
+ 
+   const onContextMenu = async (e: React.MouseEvent): Promise<void> => {
+     e.preventDefault()
+diff --git a/Core/Interface/Toolbar/toolbar-menu.css.ts b/Core/Interface/Toolbar/toolbar-menu.css.ts
+index bc57d838c..261ceb906 100644
+--- a/Core/Interface/Toolbar/toolbar-menu.css.ts
++++ b/Core/Interface/Toolbar/toolbar-menu.css.ts
+@@ -1,7 +1,6 @@
+ import { globalStyle, style } from '@vanilla-extract/css'
+ import { menuAnchor } from '@pommora/uix/Menus/menuAnchor'
+ import { stack } from '@pommora/uix/Theme/stack'
+-import { vars } from '@pommora/uix/Theme/color.css'
+ 
+ // ── KNOBS — the toolbar menu button geometry (tune here) ──
+ const BUTTON = {
+@@ -28,11 +27,3 @@ globalStyle(`${button} button`, { gap: 0 })
+ export const buttonSlot = style({ display: 'contents' })
+ 
+ export const chrome = { wrapper, button, anchor }
+-
+-export const chevronButton = style({ color: vars.color.label.secondary })
+-
+-/** The views list's closing row, below every view and outside their reorder: its text reads as a view's chevron does, its glyph and lock a step quieter. */
+-export const archiveRow = style({ color: vars.color.label.secondary })
+-export const archiveGlyph = style({ color: vars.color.label.tertiary })
+-export const archiveDivider = style({})
+-globalStyle(`${archiveDivider} > *`, { background: vars.color.border.light })
+diff --git a/Core/Interface/Windows/NavWindow.tsx b/Core/Interface/Windows/NavWindow.tsx
+index 08eefc643..045b63ac1 100644
+--- a/Core/Interface/Windows/NavWindow.tsx
++++ b/Core/Interface/Windows/NavWindow.tsx
+@@ -18,7 +18,7 @@ import { useWindowTabBody } from './WindowTabBody'
+ import { useWindowGeometry } from './useWindowGeometry'
+ import { useWindowTabSlide } from './useWindowTabSlide'
+ import { Subfield } from '../Subfield/Subfield'
+-import { footerLabel } from '../../Actions/toggleLabels'
++import { shownLabel } from '../../Actions/toggleLabels'
+ import './nav-window.css'
+ 
+ const RAIL = { min: 120, default: 200, max: 320 }
+@@ -110,7 +110,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
+         bar: footer ?? <Subfield page={null} count={nav.count} selection={{ kind: 'none' }} />,
+         open: footerOpen,
+         onOpenChange: setFooterOpen,
+-        label: footerLabel,
++        label: (shown) => shownLabel(shown, 'Footer'),
+         lead: footerLead,
+       }}
+       className={cx('navwindow', target !== null && 'is-page-tab')}
+diff --git a/Core/Interface/Windows/PageWindow.tsx b/Core/Interface/Windows/PageWindow.tsx
+index 172ed0006..88af2705f 100644
+--- a/Core/Interface/Windows/PageWindow.tsx
++++ b/Core/Interface/Windows/PageWindow.tsx
+@@ -1,5 +1,5 @@
+ import { useEffect, useRef } from 'react'
+-import { footerLabel } from '../../Actions/toggleLabels'
++import { shownLabel } from '../../Actions/toggleLabels'
+ import type { WindowTarget } from '../../Navigation/navRef'
+ import { cx } from '@pommora/uix/Utilities/cx'
+ import { BASE_FEEL } from '@pommora/uix/Animations/feel'
+@@ -112,7 +112,7 @@ function PageWindowBody({
+               bar: footer,
+               open: footerOpen,
+               onOpenChange: setFooterOpen,
+-              label: footerLabel,
++              label: (shown) => shownLabel(shown, 'Footer'),
+               lead: footerLead,
+             }
+           : undefined
+diff --git a/Core/Matrix/MatrixWindow.tsx b/Core/Matrix/MatrixWindow.tsx
+index 8806c68e3..73ac73e48 100644
+--- a/Core/Matrix/MatrixWindow.tsx
++++ b/Core/Matrix/MatrixWindow.tsx
+@@ -1,6 +1,6 @@
+ import { useExitPresence } from '@pommora/uix/Animations/useExitPresence'
+ import { WindowBase } from '@pommora/uix/Windows/WindowBase'
+-import { footerLabel } from '../Actions/toggleLabels'
++import { shownLabel } from '../Actions/toggleLabels'
+ import { Subfield } from '../Interface/Subfield/Subfield'
+ import { shellRegion, useWindowGeometry } from '../Interface/Windows/useWindowGeometry'
+ import { useFold, useSession } from '../Session/store'
+@@ -40,7 +40,7 @@ function MatrixWindowBody({ closing }: { closing: boolean }): React.JSX.Element
+         bar: <Subfield page={null} count={count} selection={MATRIX_REF} />,
+         open: footerOpen,
+         onOpenChange: setFooterOpen,
+-        label: footerLabel,
++        label: (shown) => shownLabel(shown, 'Footer'),
+       }}
+     >
+       <MatrixView />
+diff --git a/Core/Tiles/Surfaces/ViewTile.tsx b/Core/Tiles/Surfaces/ViewTile.tsx
+index 27460957e..7e0879c61 100644
+--- a/Core/Tiles/Surfaces/ViewTile.tsx
++++ b/Core/Tiles/Surfaces/ViewTile.tsx
+@@ -58,9 +58,8 @@ import {
+ } from '@pommora/uix/Elements/view-strip.css'
+ import * as s from './view-tile.css'
+ import { popMenu } from '../../Actions/menuActions'
+-import { viewsLabel } from '../../Actions/toggleLabels'
+-import { embedAreaMenuItems, embedTitleMenuItems } from '../../Actions/viewMenus'
+-import { viewRowMenuItems } from '../../Actions/viewRowMenu'
++import { shownLabel } from '../../Actions/toggleLabels'
++import { embedAreaMenuItems, embedTitleMenuItems, viewRowMenuItems } from '../../Actions/viewMenus'
+ import { useLatest, useStableApi } from '@pommora/uix/Utilities/stableApi'
+ 
+ function coerceEmbeddedView(raw: unknown, id: string): SavedView {
+@@ -519,7 +518,7 @@ export function ViewTile({
+       <button
+         type="button"
+         className={settingsBtn}
+-        aria-label={viewsLabel(viewsShown)}
++        aria-label={shownLabel(viewsShown, 'Views')}
+         onClick={() => {
+           reveal.press()
+           toggleViews()
+diff --git a/Core/Views/Settings/SettingsFrame.tsx b/Core/Views/Settings/SettingsFrame.tsx
+index 242828917..bbf71c9ae 100644
+--- a/Core/Views/Settings/SettingsFrame.tsx
++++ b/Core/Views/Settings/SettingsFrame.tsx
+@@ -3,11 +3,12 @@ import { ZOOM } from '../../Settings/personalization'
+ import type { CollectionNode, SetNode } from '../../Nexus/tree'
+ import { entityIcon } from '../../Assets/entityIconPolicy'
+ import { NavTrail } from '@pommora/uix/Elements/NavTrail'
+-import { trailOf, findCollection, findSet } from '../../Nexus/treeIndex'
++import { trailOf } from '../../Nexus/treeIndex'
+ import { SETTINGS_PANE_FLOOR } from '@pommora/uix/Menus/frames.css'
+ import { useSession } from '../../Session/store'
+ import { personalizationOf } from '../../Session/configSlice'
+-import { containerSchema, owningCollection } from '../../Nexus/treePatch'
++import { containerSchema, findContainerById, owningCollection } from '../../Nexus/treePatch'
++import { isContainer } from '../../Nexus/entities'
+ import { viewGlyph } from '../viewIcon'
+ import { PropertyFrame } from '../../Properties/Schema/PropertyFrame'
+ import { chevronRows, type SettingsPane, VIEW_PANES, ViewPane, type ViewPaneId } from './ViewPane'
+@@ -39,13 +40,8 @@ export function SettingsFrame(): React.JSX.Element | null {
+   const selection = useSession((st) => st.selection)
+   const tree = useSession((st) => st.tree)
+   const scope = useViewTileScope()
+-  const selectionNode =
+-    selection.kind === 'collection'
+-      ? findCollection(tree, selection.id)
+-      : selection.kind === 'set'
+-        ? findSet(tree, selection.id)
+-        : undefined
+-  const node = scope?.source ?? selectionNode
++  const node =
++    scope?.source ?? (tree && isContainer(selection) ? findContainerById(tree, selection.id) : null)
+   const schemaCollection = node && owningCollection(tree, node)
+   if (!node || !schemaCollection) return null
+   return <ContainerSettings node={node} schemaCollection={schemaCollection} />
+@@ -83,8 +79,28 @@ function ContainerSettings({
+     void saveView(view, { view_scale: f === ZOOM.default ? undefined : f })
+   }
+ 
++  const footing = scope ? (
++    <MenuFooting
++      leading={
++        <FooterLockButton
++          ariaLabel={lockLabel(scope.locked, 'View Configuration')}
++          locked={scope.locked}
++          onToggle={() => scope.setLocked(!scope.locked)}
++        />
++      }
++      trailing={<NavTrail segments={trailOf(tree, node)} iconSize="control" overScroll={false} />}
++    />
++  ) : (
++    <MenuFooting
++      leading={<ScalePicker ariaLabel="View Scale" value={viewScale} onPick={setViewScale} />}
++      trailing={
++        <FooterIconButton icon="ellipsis" ariaLabel="More actions" onClick={() => {}} disabled />
++      }
++    />
++  )
++
+   const root = (
+-    <>
++    <MenuScrollFrame footer={footing}>
+       <InlineEditHeader
+         value={scope ? view.name : node.title}
+         readOnly={configLocked}
+@@ -99,37 +115,6 @@ function ContainerSettings({
+       />
+       <MenuSeparator flush />
+       <MenuIndex sections={[{ rows: chevronRows(ENTRIES, setPane, frozen) }]} />
+-    </>
+-  )
+-
+-  const footing = (
+-    <MenuFooting
+-      leading={<ScalePicker ariaLabel="View Scale" value={viewScale} onPick={setViewScale} />}
+-      trailing={
+-        <FooterIconButton icon="ellipsis" ariaLabel="More actions" onClick={() => {}} disabled />
+-      }
+-    />
+-  )
+-  const plainRoot = <MenuScrollFrame footer={footing}>{root}</MenuScrollFrame>
+-
+-  const scopedRoot = scope && (
+-    <MenuScrollFrame
+-      footer={
+-        <MenuFooting
+-          leading={
+-            <FooterLockButton
+-              ariaLabel={lockLabel(scope.locked, 'View Configuration')}
+-              locked={scope.locked}
+-              onToggle={() => scope.setLocked(!scope.locked)}
+-            />
+-          }
+-          trailing={
+-            <NavTrail segments={trailOf(tree, node)} iconSize="control" overScroll={false} />
+-          }
+-        />
+-      }
+-    >
+-      {root}
+     </MenuScrollFrame>
+   )
+ 
+@@ -149,7 +134,7 @@ function ContainerSettings({
+     <FrameSlide
+       {...SETTINGS_PANE_FLOOR}
+       open={detailPane !== null}
+-      root={scopedRoot || plainRoot}
++      root={root}
+       detail={detailPane && detailFor(detailPane)}
+     />
+   )
+diff --git a/Core/Views/Settings/ViewFrame.tsx b/Core/Views/Settings/ViewFrame.tsx
+index cf9ace333..fca64e347 100644
+--- a/Core/Views/Settings/ViewFrame.tsx
++++ b/Core/Views/Settings/ViewFrame.tsx
+@@ -34,10 +34,10 @@ import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
+ import { chooseColor, chooseIcon, useIconChoice } from '../../Assets/IdentityChoice'
+ import { ARCHIVE_ICON, ARCHIVE_TITLE } from '../../Archive/archiveLabel'
+ import { useSession } from '../../Session/store'
+-import * as vd from '../../Interface/Toolbar/toolbar-menu.css'
++import * as vd from './view-frame.css'
+ import { dialer } from '../../Platform/dialer'
+ import { EDITOR_MENU, popMenu } from '../../Actions/menuActions'
+-import { viewItemMenuItems, viewRowMenuItems } from '../../Actions/viewRowMenu'
++import { viewItemMenuItems, viewRowMenuItems } from '../../Actions/viewMenus'
+ import { selectTargetOf } from '../../Navigation/navRef'
+ 
+ async function deleteViewWithUndo(
+diff --git a/Core/Views/Settings/view-frame.css.ts b/Core/Views/Settings/view-frame.css.ts
+new file mode 100644
+index 000000000..b4626e39d
+--- /dev/null
++++ b/Core/Views/Settings/view-frame.css.ts
+@@ -0,0 +1,10 @@
++import { globalStyle, style } from '@vanilla-extract/css'
++import { vars } from '@pommora/uix/Theme/color.css'
++
++export const chevronButton = style({ color: vars.color.label.secondary })
++
++/** The views list's closing row, below every view and outside their reorder: its text reads as a view's chevron does, its glyph and lock a step quieter. */
++export const archiveRow = style({ color: vars.color.label.secondary })
++export const archiveGlyph = style({ color: vars.color.label.tertiary })
++export const archiveDivider = style({})
++globalStyle(`${archiveDivider} > *`, { background: vars.color.border.light })

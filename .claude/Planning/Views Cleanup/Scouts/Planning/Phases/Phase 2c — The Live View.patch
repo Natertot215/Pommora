@@ -1,0 +1,2223 @@
+diff --git a/Core/Nexus/treePatch.ts b/Core/Nexus/treePatch.ts
+index 698add4ad..e32e7cd1d 100644
+--- a/Core/Nexus/treePatch.ts
++++ b/Core/Nexus/treePatch.ts
+@@ -14,6 +14,7 @@ import type { StoredReach } from './heldPages'
+ import { basename, isAtOrUnder, relDirname, relJoin, titleFromPath } from '../Paths/posix'
+ import { ARCHIVE_DIR_REL, CONTEXTS_DIR_REL, contextDirRel } from '../Paths/nexusPaths'
+ import { asStringArray } from './coerce'
++import type { OrderRequest } from './mutateRequest'
+ import { resolveOrder } from './order'
+ import { type ContainerKind, isContainer, isContainerKind } from './entities'
+ import { isPlainObject } from '../Contract/validators'
+@@ -326,3 +327,28 @@ export const damagedFolders = (
+   listed: readonly Unreadable[] = [],
+ ): (Unreadable & { kind: ContainerKind })[] =>
+   listed.filter((u) => u.reason === 'unparsed').filter(isContainer)
++
++function withChildOrder(
++  tree: NexusTree,
++  parentPath: string,
++  key: 'pageOrder' | 'setOrder',
++  order: string[],
++): NexusTree | null {
++  return updateNodeInTree(tree, parentPath, (parent) => {
++    if (!isContainer(parent)) return parent
++    return key === 'pageOrder'
++      ? { ...parent, pageOrder: order, pages: resolveOrder(parent.pages, order) }
++      : { ...parent, setOrder: order, sets: resolveOrder(parent.sets ?? [], order) }
++  })
++}
++
++// A drag's order as the tree holds it once the drag's write lands, shown before then.
++export function orderInTree(tree: NexusTree, req: OrderRequest): NexusTree | null {
++  if (req.op === 'reorderChildren')
++    return withChildOrder(tree, req.parentPath, 'setOrder', req.order)
++  const to = relJoin(req.newParentPath, basename(req.path))
++  const moved = to === req.path ? tree : moveNodeInTree(tree, req.path, to)
++  if (!moved || !req.order) return moved
++  const key = req.op === 'movePage' ? 'pageOrder' : 'setOrder'
++  return withChildOrder(moved, req.newParentPath, key, req.order)
++}
+diff --git a/Core/Properties/Schema/PropertyFrame.tsx b/Core/Properties/Schema/PropertyFrame.tsx
+index 42c1c28f0..a089055fc 100644
+--- a/Core/Properties/Schema/PropertyFrame.tsx
++++ b/Core/Properties/Schema/PropertyFrame.tsx
+@@ -13,8 +13,7 @@ import { formatRows } from './formatRows'
+ import { type ColumnStyle, LOOKS, lookIn } from '../columnStyles'
+ import { lookOptions } from '../displayLabels'
+ import type { CollectionNode, SetNode } from '../../Nexus/tree'
+-import { useActiveView } from '../../Views/Host/useActiveView'
+-import { useSaveView } from '../../Views/viewWrite'
++import { useActiveView, useSaveView } from '../../Views/Host/liveView'
+ import { columnStylePatch, styleFor } from '../columnStyles'
+ import { propertyColumn } from '../../Views/Pipeline/columns'
+ import { DropOutline } from '@pommora/uix/Menus/DisclosureRow'
+diff --git a/Core/Views/Host/liveView.test.tsx b/Core/Views/Host/liveView.test.tsx
+new file mode 100644
+index 000000000..740db2a88
+--- /dev/null
++++ b/Core/Views/Host/liveView.test.tsx
+@@ -0,0 +1,507 @@
++// @vitest-environment jsdom
++import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest'
++import { act } from 'react'
++import type { Root } from 'react-dom/client'
++import type { CollectionNode } from '../../Nexus/tree'
++import type { PropertyDefinition } from '../../Properties/properties'
++import { DEFAULT_VIEW_ID, type SavedView, foldView, slotsOf, type ViewPatch } from '../views'
++import { mountEachTest } from '../../Testing/viewHarness'
++import { dropIO, useActiveView, useLiveView, useSaveView, type ViewWriteOpts } from './liveView'
++import { fault, ok } from '../../Contract/result'
++import { useSession } from '../../Session/store'
++import { stubDialer } from '../../vitest.setup'
++import { ViewTileScopeProvider, type ViewTileScopeValue } from '../ViewTileScope'
++import { GroupFrame } from '../Settings/GroupFrame'
++import { SettingsFrame } from '../Settings/SettingsFrame'
++
++const base = (over: Partial<SavedView> = {}): SavedView =>
++  ({
++    id: 'view_1',
++    name: 'Table',
++    type: 'table',
++    property_order: ['_title'],
++    hidden_properties: [],
++    ...over,
++  }) as SavedView
++
++let host: HTMLDivElement
++let root: Root
++mountEachTest((h, r) => {
++  host = h
++  root = r
++})
++
++const render = (node: React.ReactNode): Promise<void> =>
++  act(async () => {
++    root.render(node)
++  })
++
++const containerOf = (id: string): CollectionNode =>
++  ({
++    kind: 'collection',
++    id,
++    title: 'Col',
++    path: 'Col',
++    sets: [],
++    pages: [],
++  }) as unknown as CollectionNode
++
++let live: SavedView
++let stage: (patch: ViewPatch) => void
++let renders = 0
++
++function Probe({ view, sourceId }: { view: SavedView; sourceId: string }): null {
++  live = useLiveView(sourceId, view)
++  const save = useSaveView(containerOf(sourceId))
++  stage = (patch) => void save(view, patch)
++  renders++
++  return null
++}
++
++const show = (view: SavedView, sourceId = 'k'): Promise<void> =>
++  render(
++    <ViewTileScopeProvider
++      value={{
++        source: containerOf(sourceId),
++        view,
++        persist: () => {},
++        locked: false,
++        setLocked: () => {},
++      }}
++    >
++      <Probe view={view} sourceId={sourceId} />
++    </ViewTileScopeProvider>,
++  )
++const put = (patch: ViewPatch): Promise<void> => act(async () => stage(patch))
++
++beforeEach(() => {
++  renders = 0
++})
++
++describe('a whole field', () => {
++  it('drops when the stored value becomes the staged one', async () => {
++    await show(base())
++    await put({ collapsed_groups: ['a'] })
++    await show(base({ collapsed_groups: ['a'] }))
++    await show(base({ collapsed_groups: ['b'] }))
++    expect(live.collapsed_groups).toEqual(['b'])
++  })
++
++  it('a stage captured before the view changed stages over the view as it is now', async () => {
++    await show(base())
++    const captured = stage
++    await show(base({ collapsed_groups: ['x'] }))
++    await act(async () => captured({ collapsed_groups: ['a'] }))
++    await show(base({ collapsed_groups: ['x'] }))
++    expect(live.collapsed_groups).toEqual(['a'])
++  })
++
++  it('stays while the stored value is its base', async () => {
++    await show(base({ collapsed_groups: ['x'] }))
++    await put({ collapsed_groups: ['a'] })
++    await show(base({ collapsed_groups: ['x'] }))
++    expect(live.collapsed_groups).toEqual(['a'])
++  })
++
++  it('drops when the stored value becomes a third value', async () => {
++    await show(base())
++    await put({ collapsed_groups: ['a'] })
++    await show(base({ collapsed_groups: ['walker'] }))
++    expect(live.collapsed_groups).toEqual(['walker'])
++  })
++
++  it('a second stage before the first lands survives the first landing and drops on its own', async () => {
++    await show(base())
++    await put({ collapsed_groups: ['a'] })
++    await put({ collapsed_groups: ['a', 'b'] })
++    await show(base({ collapsed_groups: ['a'] }))
++    expect(live.collapsed_groups).toEqual(['a', 'b'])
++    await show(base({ collapsed_groups: ['a', 'b'] }))
++    await show(base({ collapsed_groups: ['c'] }))
++    expect(live.collapsed_groups).toEqual(['c'])
++  })
++
++  it('a staged clear paints the field cleared, entries included, until the clear lands', async () => {
++    await show(base({ column_widths: { a: 100 }, hide_borders: true }))
++    await put({ column_widths: { a: 150 } })
++    await put({ column_widths: undefined, hide_borders: undefined })
++    expect(live.column_widths).toBeUndefined()
++    expect(live.hide_borders).toBeUndefined()
++    await show(base())
++    await show(base({ hide_borders: true }))
++    expect(live.hide_borders).toBe(true)
++  })
++
++  it('a run back to its start settles when the start lands and never masks a later write', async () => {
++    await show(base({ collapsed_groups: [] }))
++    await put({ collapsed_groups: ['a'] })
++    await put({ collapsed_groups: [] })
++    await show(base({ collapsed_groups: ['a'] }))
++    expect(live.collapsed_groups).toEqual([])
++    await show(base({ collapsed_groups: [] }))
++    await show(base({ collapsed_groups: ['a'] }))
++    expect(live.collapsed_groups).toEqual(['a'])
++  })
++
++  it('a take-back removes its own stage alone, so a stage made over it keeps painting', async () => {
++    await show(base())
++    const riding = (patch: ViewPatch) => {
++      let land: (landed: boolean) => void = () => {}
++      const io = dropIO(
++        { id: 'a', name: 'Row' },
++        { source: { id: 'k' }, view: base(), persistView: vi.fn() },
++      )
++      io.persistAfter(
++        patch,
++        new Promise((resolve) => {
++          land = resolve
++        }),
++      )
++      return () => act(async () => land(false))
++    }
++    let refuseFirst = async (): Promise<void> => {}
++    let refuseSecond = async (): Promise<void> => {}
++    await act(async () => {
++      refuseFirst = riding({ collapsed_groups: ['a'] })
++    })
++    await act(async () => {
++      refuseSecond = riding({ collapsed_groups: ['a', 'b'] })
++    })
++    await refuseFirst()
++    expect(live.collapsed_groups).toEqual(['a', 'b'])
++    await refuseSecond()
++    expect(live.collapsed_groups).toBeUndefined()
++  })
++
++  it('three toggles paint the last through every landing, in order', async () => {
++    await show(base({ collapsed_groups: [] }))
++    await put({ collapsed_groups: ['a'] })
++    await put({ collapsed_groups: [] })
++    await put({ collapsed_groups: ['a'] })
++    for (const landed of [['a'], [], ['a']]) {
++      await show(base({ collapsed_groups: landed }))
++      expect(live.collapsed_groups).toEqual(['a'])
++    }
++    await show(base({ collapsed_groups: ['z'] }))
++    expect(live.collapsed_groups).toEqual(['z'])
++  })
++})
++
++describe('the column records', () => {
++  it('settle per entry: one column landing leaves the other staged', async () => {
++    await show(base())
++    await put({ column_widths: { a: 100 } })
++    await put({ column_widths: { b: 200 } })
++    await show(base({ column_widths: { b: 200 } }))
++    expect(live.column_widths).toEqual({ a: 100, b: 200 })
++    await show(base({ column_widths: { a: 100, b: 200 } }))
++    await show(base({ column_widths: { a: 90, b: 180 } }))
++    expect(live.column_widths).toEqual({ a: 90, b: 180 })
++  })
++
++  it('a column_styles entry folds as a whole entry', async () => {
++    await show(base({ column_styles: { a: { look: 'compact', date_format: 'short' }, b: {} } }))
++    await put({ column_styles: { a: { look: 'compact', date_format: 'full' } } })
++    expect(live.column_styles).toEqual({ a: { look: 'compact', date_format: 'full' }, b: {} })
++  })
++
++  it("a persist of one column's width carries every other column's stored width", () => {
++    const view = base({ column_widths: { a: 100, b: 200 } })
++    const saved = foldView(view, slotsOf({ column_widths: { a: 150 } }))
++    expect(saved.column_widths).toEqual({ a: 150, b: 200 })
++  })
++})
++
++describe('the hook', () => {
++  it('a change of source drops every slot', async () => {
++    await show(base())
++    await put({ collapsed_groups: ['a'], column_widths: { a: 100 } })
++    await show(base(), 'other')
++    expect(live.collapsed_groups).toBeUndefined()
++    expect(live.column_widths).toBeUndefined()
++  })
++
++  it('an unchanged settle keeps the record, so it schedules no second render', async () => {
++    await show(base())
++    await put({ collapsed_groups: ['a'] })
++    renders = 0
++    await show(base())
++    expect(renders).toBe(1)
++    expect(live.collapsed_groups).toEqual(['a'])
++  })
++})
++
++describe("a view patch riding a drop's write", () => {
++  const ride = async (saves: boolean) => {
++    let land: (landed: boolean) => void = () => {}
++    const persistView = vi.fn(async () => (saves ? ok({}) : fault('Refused.')))
++    await show(base())
++    const io = dropIO({ id: 'a', name: 'Row' }, { source: { id: 'k' }, view: base(), persistView })
++    await act(async () =>
++      io.persistAfter(
++        { group_order: ['a'] },
++        new Promise((resolve) => {
++          land = resolve
++        }),
++      ),
++    )
++    return { land: (landed: boolean) => act(async () => land(landed)), persistView }
++  }
++
++  it('paints with the ask and saves once the write lands', async () => {
++    const { land, persistView } = await ride(true)
++    expect(live.group_order).toEqual(['a'])
++    expect(persistView).not.toHaveBeenCalled()
++    await land(true)
++    expect(persistView).toHaveBeenCalledWith({ group_order: ['a'] }, undefined)
++    expect(live.group_order).toEqual(['a'])
++  })
++
++  it('a refused write takes the paint back unsaved', async () => {
++    const { land, persistView } = await ride(true)
++    await land(false)
++    expect(persistView).not.toHaveBeenCalled()
++    expect(live.group_order).toBeUndefined()
++  })
++
++  it('a refused save takes the paint back', async () => {
++    const { land } = await ride(false)
++    await land(true)
++    expect(live.group_order).toBeUndefined()
++  })
++
++  it('saves the order as the view shows it at landing, keeping a write composed on it since', async () => {
++    const { land, persistView } = await ride(true)
++    await put({ group_order: ['a', 'b'] })
++    await land(true)
++    expect(persistView).toHaveBeenCalledWith({ group_order: ['a', 'b'] }, undefined)
++    expect(live.group_order).toEqual(['a', 'b'])
++  })
++
++  it('a refused drop that a later write composed over returns its row to its prior slot', async () => {
++    const prior = base({ group_order: ['a', 'b', 'c'] })
++    let land: (landed: boolean) => void = () => {}
++    const persistView = vi.fn(async () => ok({}))
++    await show(prior)
++    const io = dropIO({ id: 'c', name: 'Row' }, { source: { id: 'k' }, view: prior, persistView })
++    await act(async () =>
++      io.persistAfter(
++        { group_order: ['c', 'a', 'b'] },
++        new Promise((resolve) => {
++          land = resolve
++        }),
++      ),
++    )
++    await put({ group_order: ['c', 'b', 'a'] })
++    await act(async () => land(false))
++    expect(persistView).toHaveBeenCalledWith({ group_order: ['b', 'a', 'c'] }, undefined)
++  })
++})
++
++describe('useActiveView', () => {
++  const view = (id: string): SavedView => base({ id, name: id })
++  let seen: SavedView
++  function Active({ node }: { node: CollectionNode }): null {
++    seen = useActiveView(node)
++    return null
++  }
++  const mount = (over: Partial<CollectionNode>): Promise<void> =>
++    render(<Active node={{ ...containerOf('col1'), ...over }} />)
++
++  it("takes the sidecar's active view when it names a saved view", async () => {
++    await mount({ views: [view('view_a'), view('view_b')], activeView: 'view_b' })
++    expect(seen.id).toBe('view_b')
++  })
++
++  it('falls back to the first saved view when the active view names none', async () => {
++    await mount({ views: [view('view_a'), view('view_b')], activeView: 'view_gone' })
++    expect(seen.id).toBe('view_a')
++  })
++
++  it('falls back to the first saved view when the sidecar names none', async () => {
++    await mount({ views: [view('view_a'), view('view_b')] })
++    expect(seen.id).toBe('view_a')
++  })
++
++  it('yields the sentinel for a container holding no views', async () => {
++    await mount({ views: undefined })
++    expect(seen.id).toBe(DEFAULT_VIEW_ID)
++  })
++})
++
++describe('useSaveView', () => {
++  const statusDef: PropertyDefinition = {
++    id: 'prop_status',
++    label: 'Status',
++    key: 'Status',
++    type: 'status',
++    status_groups: [
++      {
++        id: 'g1',
++        label: 'Open',
++        color: 'gray',
++        options: [{ id: 'opt_todo', key: 'todo', label: 'todo' }],
++      },
++    ],
++  }
++  const source = { ...containerOf('col1'), propertyIds: [statusDef.id] } as CollectionNode
++  const view: SavedView = {
++    id: 'view_01J0000000000000000000000A',
++    name: 'Tile View',
++    type: 'table',
++    property_order: ['_title'],
++    hidden_properties: [],
++    group: { kind: 'structural' },
++  }
++  let persist: Mock<(patch: Partial<SavedView>) => void>
++  let sourceSave: Mock
++  const scope = (locked: boolean): ViewTileScopeValue => ({
++    source,
++    view,
++    persist,
++    locked,
++    setLocked: vi.fn(),
++  })
++  let save: ReturnType<typeof useSaveView>
++  function Saver(): null {
++    save = useSaveView(source)
++    return null
++  }
++  const saveIn = async (
++    scoped: ViewTileScopeValue | null,
++    patch: ViewPatch,
++    opts?: ViewWriteOpts,
++  ): Promise<unknown> => {
++    await render(
++      scoped ? (
++        <ViewTileScopeProvider value={scoped}>
++          <Saver />
++        </ViewTileScopeProvider>
++      ) : (
++        <Saver />
++      ),
++    )
++    let result: unknown
++    await act(async () => {
++      result = await save(view, patch, opts)
++    })
++    return result
++  }
++  const texts = (): string => host.textContent ?? ''
++  const clickRow = (label: string, which: 'first' | 'last' = 'first'): Promise<void> => {
++    const matches = [...host.querySelectorAll('*')].filter((el) => el.textContent === label)
++    const el = which === 'last' ? matches.at(-1) : matches[0]
++    return act(async () => {
++      ;(el?.closest('[class]') as HTMLElement | null)?.click()
++    })
++  }
++
++  beforeEach(() => {
++    persist = vi.fn()
++    sourceSave = vi.fn(async () => ({ ok: true, value: { id: view.id } }))
++    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({ 'views:save': sourceSave })
++    useSession.setState({ load: vi.fn(async () => {}) as never })
++  })
++
++  it('a locked tile answers a config write with a refusal and writes nothing', async () => {
++    expect(await saveIn(scope(true), { name: 'Renamed' })).toMatchObject({ ok: false })
++    expect(persist).not.toHaveBeenCalled()
++    expect(sourceSave).not.toHaveBeenCalled()
++  })
++
++  it('an unlocked tile lands the write on its payload, never the source', async () => {
++    expect(await saveIn(scope(false), { name: 'Renamed' })).toEqual(ok({ id: view.id }))
++    expect(persist).toHaveBeenCalledWith({ name: 'Renamed' })
++    expect(sourceSave).not.toHaveBeenCalled()
++  })
++
++  it('a locked tile folds a state write narrowed to its state keys, manual order beside collapse', async () => {
++    const patch = {
++      name: 'Renamed',
++      collapsed_groups: ['Done'],
++      manual_order: ['p2', 'p1'],
++      column_widths: { _title: 420 },
++    }
++    expect(await saveIn(scope(true), patch, { viewState: true })).toEqual(ok({ id: view.id }))
++    expect(persist.mock.calls).toEqual([
++      [{ collapsed_groups: ['Done'], manual_order: ['p2', 'p1'] }],
++    ])
++  })
++
++  it('a refused write paints nothing on the locked tile', async () => {
++    let shown: SavedView = view
++    function Shown(): null {
++      shown = useActiveView(source)
++      save = useSaveView(source)
++      return null
++    }
++    await render(
++      <ViewTileScopeProvider value={scope(true)}>
++        <Shown />
++      </ViewTileScopeProvider>,
++    )
++    await act(async () => {
++      await save(view, { name: 'Renamed' })
++    })
++    expect(shown.name).toBe(view.name)
++  })
++
++  it('falls through to the source when nothing scopes it', async () => {
++    await saveIn(null, { name: 'Renamed' })
++    expect(sourceSave).toHaveBeenCalled()
++    expect(persist).not.toHaveBeenCalled()
++  })
++
++  it('a second write before the first lands carries the first, whatever view its caller drew', async () => {
++    const held = { ...source, views: [view] } as CollectionNode
++    function Shown(): null {
++      useActiveView(held)
++      save = useSaveView(held)
++      return null
++    }
++    await render(<Shown />)
++    await act(async () => {
++      await save(view, { name: 'Renamed' })
++      await save(view, { type: 'cards' })
++    })
++    expect(sourceSave.mock.calls.at(-1)?.[2]).toMatchObject({ name: 'Renamed', type: 'cards' })
++  })
++
++  it('a locked tile drops nothing to the source container either', async () => {
++    await render(
++      <ViewTileScopeProvider value={scope(true)}>
++        <GroupFrame
++          source={source}
++          view={view}
++          schema={[statusDef]}
++          back={{ label: 'Settings', onBack: () => {} }}
++        />
++      </ViewTileScopeProvider>,
++    )
++    await clickRow('Group By')
++    await clickRow('Status', 'last')
++    expect(persist).not.toHaveBeenCalled()
++    expect(sourceSave).not.toHaveBeenCalled()
++  })
++
++  it('a locked tile closes the config leaves in the settings pane, so there is nothing to author into', async () => {
++    await render(
++      <ViewTileScopeProvider value={scope(true)}>
++        <SettingsFrame />
++      </ViewTileScopeProvider>,
++    )
++    await clickRow('Group')
++    expect(texts()).not.toContain('Group By')
++  })
++
++  it('an unlocked tile opens them, Filter among them', async () => {
++    await render(
++      <ViewTileScopeProvider value={scope(false)}>
++        <SettingsFrame />
++      </ViewTileScopeProvider>,
++    )
++    expect(texts()).toContain('Filter')
++    await clickRow('Group')
++    expect(texts()).toContain('Group By')
++  })
++})
+diff --git a/Core/Views/Host/pendingView.ts b/Core/Views/Host/liveView.ts
+similarity index 57%
+rename from Core/Views/Host/pendingView.ts
+rename to Core/Views/Host/liveView.ts
+index 25b8376e2..a209d35e3 100644
+--- a/Core/Views/Host/pendingView.ts
++++ b/Core/Views/Host/liveView.ts
+@@ -3,23 +3,23 @@ import {
+   applyViewPatch,
+   type EntryKey,
+   foldView,
++  pickView,
+   type SavedView,
+   slotsOf,
+   type ViewPatch,
+-  type ViewWriteOpts,
+ } from '../views'
+ import { same } from '../../Files/stableJson'
+-import type { Result } from '../../Contract/result'
++import { fault, ok, type Result } from '../../Contract/result'
+ import { useLatest } from '@pommora/uix/Utilities/stableApi'
+-import type { CollectionNode, NexusTree, SetNode } from '../../Nexus/tree'
+-import { isContainer } from '../../Nexus/entities'
+-import { announceDrag } from '@pommora/uix/Interactions/a11y'
+-import { channel, emitter } from '@pommora/uix/Utilities/subscribable'
++import { nextOrder } from '@pommora/uix/Utilities/moveItem'
++import { sameItems } from '@pommora/uix/Utilities/same'
++import type { CollectionNode, SetNode } from '../../Nexus/tree'
++import { emitter } from '@pommora/uix/Utilities/subscribable'
+ import type { OrderRequest } from '../../Nexus/mutateRequest'
+-import { resolveOrder } from '../../Nexus/order'
+-import { containerAt, moveNodeInTree, updateNodeInTree } from '../../Nexus/treePatch'
+-import { basename, relJoin } from '../../Paths/posix'
+-import { useSession } from '../../Session/store'
++import { reportRefusal } from '../../Interface/Notifications/notifications'
++import { dialer } from '../../Platform/dialer'
++import { useViewTileScope } from '../ViewTileScope'
++import { mutateAhead, refusedDrop } from './paintAhead'
+ 
+ interface Slot {
+   value: unknown
+@@ -107,7 +107,7 @@ export function readLiveView(sourceId: string, view: SavedView): SavedView {
+   return entry ? foldStaged(entry.base, entry.staged) : view
+ }
+ 
+-export function stageView(sourceId: string, view: SavedView, patch: ViewPatch): SavedView {
++function stageView(sourceId: string, view: SavedView, patch: ViewPatch): SavedView {
+   const live = readLiveView(sourceId, view)
+   const entry = pending.get(keyOf(sourceId, view.id))
+   if (entry) restage(entry, stageOver(entry.staged, entry.base, patch))
+@@ -115,7 +115,7 @@ export function stageView(sourceId: string, view: SavedView, patch: ViewPatch):
+ }
+ 
+ /** Takes back this patch's own stage alone, so a stage made over it since keeps painting. */
+-export function unstageView(sourceId: string, viewId: string, patch: ViewPatch): void {
++function unstageView(sourceId: string, viewId: string, patch: ViewPatch): void {
+   const entry = pending.get(keyOf(sourceId, viewId))
+   if (!entry) return
+   const next = { ...entry.staged }
+@@ -131,75 +131,63 @@ export function unstageView(sourceId: string, viewId: string, patch: ViewPatch):
+   restage(entry, next)
+ }
+ 
+-// ── Orders painted ahead ────────────────────────────────────────────────────
+-
+-function withChildOrder(
+-  tree: NexusTree,
+-  parentPath: string,
+-  key: 'pageOrder' | 'setOrder',
+-  order: string[],
+-): NexusTree | null {
+-  return updateNodeInTree(tree, parentPath, (parent) => {
+-    if (!isContainer(parent)) return parent
+-    return key === 'pageOrder'
+-      ? { ...parent, pageOrder: order, pages: resolveOrder(parent.pages, order) }
+-      : { ...parent, setOrder: order, sets: resolveOrder(parent.sets ?? [], order) }
+-  })
++export function useActiveView(source: CollectionNode | SetNode): SavedView {
++  // Inside a view embed the tile payload IS the view; the container's own choice doesn't reach it.
++  const scope = useViewTileScope()
++  return useLiveView(source.id, scope ? scope.view : pickView(source))
+ }
+ 
+-// A drag's order as the tree holds it once the drag's write lands, shown before then.
+-function orderInTree(tree: NexusTree, req: OrderRequest): NexusTree | null {
+-  if (req.op === 'reorderChildren')
+-    return withChildOrder(tree, req.parentPath, 'setOrder', req.order)
+-  const to = relJoin(req.newParentPath, basename(req.path))
+-  const moved = to === req.path ? tree : moveNodeInTree(tree, req.path, to)
+-  if (!moved || !req.order) return moved
+-  const key = req.op === 'movePage' ? 'pageOrder' : 'setOrder'
+-  return withChildOrder(moved, req.newParentPath, key, req.order)
+-}
++const VIEW_STATE_KEYS = ['collapsed_groups', 'manual_order'] as const
+ 
+-const ahead = channel<readonly OrderRequest[]>([])
+-
+-export function usePainted(source: CollectionNode | SetNode): CollectionNode | SetNode {
+-  const tree = useSession((s) => s.tree)
+-  const orders = useSyncExternalStore(ahead.subscribe, ahead.get)
+-  return useMemo(
+-    () =>
+-      tree && orders.length > 0
+-        ? (containerAt(
+-            orders.reduce((t, req) => orderInTree(t, req) ?? t, tree),
+-            source.path,
+-          ) ?? source)
+-        : source,
+-    [tree, source, orders],
+-  )
+-}
++export type ViewWriteOpts = { viewState?: boolean }
+ 
+-export function refusedDrop(landed: boolean, name: string): boolean {
+-  if (!landed) announceDrag('return', name)
+-  return landed
++const pickViewState = (patch: ViewPatch): ViewPatch =>
++  Object.fromEntries(VIEW_STATE_KEYS.filter((k) => k in patch).map((k) => [k, patch[k]]))
++
++const VIEW_CONFIG_LOCKED = 'The view configuration is locked on this embed.'
++
++export function useSaveView(
++  source: CollectionNode | SetNode,
++): (view: SavedView, patch: ViewPatch, opts?: ViewWriteOpts) => Promise<Result<{ id: string }>> {
++  const scope = useViewTileScope()
++  const write = async (
++    view: SavedView,
++    patch: ViewPatch,
++    opts?: ViewWriteOpts,
++  ): Promise<Result<{ id: string }>> => {
++    if (!scope) {
++      const base = stageView(source.id, view, patch)
++      const r = await dialer().ask('views:save', source.path, source.kind, base, patch)
++      if (!r.ok) unstageView(source.id, view.id, patch)
++      return r
++    }
++    // A locked tile refuses a config write but still folds a state-only one, so a refused config override can't ride in on the state it's allowed.
++    const allowed = !scope.locked ? patch : opts?.viewState ? pickViewState(patch) : null
++    if (!allowed) return fault(VIEW_CONFIG_LOCKED)
++    stageView(source.id, view, allowed)
++    scope.persist(allowed)
++    return ok({ id: view.id })
++  }
++  // A refusal reaches the user here, so no caller reports it again.
++  return (view, patch, opts) =>
++    write(view, patch, opts).then((r) => {
++      reportRefusal(r)
++      return r
++    })
+ }
+ 
+-export function mutateAhead(
+-  req: OrderRequest,
+-  name: string,
+-  after?: Promise<boolean>,
+-): Promise<boolean> {
+-  ahead.set([...ahead.get(), req])
+-  const write = (): Promise<boolean> =>
+-    useSession
+-      .getState()
+-      .mutate(req)
+-      .then((outcome) => refusedDrop(outcome !== null, name))
+-  return (after ? after.then((ok) => ok && write()) : write()).finally(() =>
+-    ahead.set(ahead.get().filter((r) => r !== req)),
+-  )
++const priorSlotOf = (prior: unknown, now: unknown, id: string): string[] | undefined => {
++  if (!Array.isArray(prior) || !Array.isArray(now)) return undefined
++  const at = prior.indexOf(id)
++  if (at < 0) return undefined
++  const placed = nextOrder(now, id, prior.slice(at + 1).find((x) => now.includes(x)) ?? null)
++  return sameItems(placed, now) ? undefined : placed
+ }
+ 
+ type Persist = (patch: ViewPatch, opts?: ViewWriteOpts) => Promise<Result<unknown>>
+ 
+ export function dropIO(
+-  name: string,
++  { id, name }: { id: string; name: string },
+   {
+     source,
+     view,
+@@ -208,7 +196,7 @@ export function dropIO(
+ ): {
+   persistView: Persist
+   mutate: (req: OrderRequest) => Promise<boolean>
+-  /** Painted at once, saved once `landed` as the view then shows it, so a write composed on it since stands, and taken back on a refusal of either. */
++  /** Painted at once, saved once `landed` as the view then shows it, so a write composed on it since stands; a refusal of either takes the stage back, and returns the row to its prior slot where a write composed over the stage had carried it. */
+   persistAfter: (patch: ViewPatch, landed: Promise<boolean>, opts?: ViewWriteOpts) => void
+ } {
+   const persistView: Persist = (patch, opts) =>
+@@ -221,12 +209,21 @@ export function dropIO(
+     mutate: (req) => mutateAhead(req, name),
+     persistAfter: (patch, landed, opts) => {
+       stageView(source.id, view, patch)
+-      void landed.then(async (ok) => {
++      void landed.then(async (wrote) => {
+         const live = readLiveView(source.id, view)
+         const shown = Object.fromEntries(
+           Object.keys(patch).map((k) => [k, live[k as keyof SavedView]]),
+         )
+-        if (!(ok && (await persistView(shown, opts)).ok)) unstageView(source.id, view.id, patch)
++        if (wrote && (await persistView(shown, opts)).ok) return
++        unstageView(source.id, view.id, patch)
++        const after = readLiveView(source.id, view)
++        const back = Object.fromEntries(
++          Object.keys(patch).flatMap((k) => {
++            const slot = priorSlotOf(view[k as keyof SavedView], after[k as keyof SavedView], id)
++            return slot ? [[k, slot]] : []
++          }),
++        )
++        if (Object.keys(back).length) void persist(back, opts)
+       })
+     },
+   }
+diff --git a/Core/Views/Host/paintAhead.test.ts b/Core/Views/Host/paintAhead.test.ts
+new file mode 100644
+index 000000000..d20fd95ec
+--- /dev/null
++++ b/Core/Views/Host/paintAhead.test.ts
+@@ -0,0 +1,126 @@
++// @vitest-environment jsdom
++import { afterEach, describe, expect, it } from 'vitest'
++import { act, createElement } from 'react'
++import type { Root } from 'react-dom/client'
++import { mountEachTest } from '../../Testing/viewHarness'
++import { mutateAhead, usePainted } from './paintAhead'
++import { useSession } from '../../Session/store'
++import type { CollectionNode, NexusTree, SetNode } from '../../Nexus/tree'
++import type { MutateOutcome, OrderRequest } from '../../Nexus/mutateRequest'
++
++let root: Root
++mountEachTest((_h, r) => {
++  root = r
++})
++
++// The reorder transforms the window paints a drag with, ahead of the drag's write.
++describe('a drag painted ahead of its write', () => {
++  const notes = (): CollectionNode => ({
++    kind: 'collection',
++    propertyIds: [],
++    id: 'c1',
++    title: 'Notes',
++    path: 'Notes',
++    sets: [
++      {
++        kind: 'set',
++        id: 's1',
++        title: 'Sub',
++        path: 'Notes/Sub',
++        sets: [],
++        pages: [{ kind: 'page', id: 'p2', title: 'B', path: 'Notes/Sub/B.md' }],
++      },
++    ],
++    pages: [{ kind: 'page', id: 'p1', title: 'A', path: 'Notes/A.md' }],
++  })
++  const work = (): CollectionNode => ({
++    kind: 'collection',
++    propertyIds: [],
++    id: 'c2',
++    title: 'Work',
++    path: 'Work',
++    sets: [],
++    pages: [],
++  })
++  const treeOf = (...collections: CollectionNode[]): NexusTree =>
++    ({
++      nexus: { id: 'nx', rootPath: '/x', name: 'x' },
++      contexts: [],
++      collections,
++    }) as unknown as NexusTree
++
++  let painted: CollectionNode | SetNode
++  const landings: (() => void)[] = []
++  function Painted({ source }: { source: CollectionNode | SetNode }): null {
++    painted = usePainted(source)
++    return null
++  }
++  const paint = async (tree: NexusTree, source: string, req: OrderRequest): Promise<void> => {
++    const held = tree.collections.find((c) => c.path === source)
++    if (!held) throw new Error('no source')
++    useSession.setState({
++      tree,
++      mutate: () => new Promise<MutateOutcome | null>((land) => landings.push(() => land({}))),
++    })
++    await act(async () => root.render(createElement(Painted, { source: held })))
++    await act(async () => void mutateAhead(req, 'Row'))
++  }
++  afterEach(async () => {
++    await act(async () => {
++      for (const land of landings.splice(0)) land()
++    })
++  })
++
++  it("reorderChildren reorders a collection's sets", async () => {
++    const base = notes()
++    base.sets.push({ kind: 'set', id: 's2', title: 'Z', path: 'Notes/Z', sets: [], pages: [] })
++    await paint(treeOf(base, work()), 'Notes', {
++      op: 'reorderChildren',
++      parentPath: 'Notes',
++      key: 'set_order',
++      order: ['s2', 's1'],
++    })
++    expect(painted.sets?.map((s) => s.id)).toEqual(['s2', 's1'])
++  })
++
++  it('a moved page lands at the slot its order names, not appended', async () => {
++    const dest = work()
++    dest.pages.push({ kind: 'page', id: 'p9', title: 'Z', path: 'Work/Z.md' })
++    await paint(treeOf(notes(), dest), 'Work', {
++      op: 'movePage',
++      path: 'Notes/A.md',
++      newParentPath: 'Work',
++      order: ['p1', 'p9'],
++    })
++    expect(painted.pages.map((p) => p.id)).toEqual(['p1', 'p9'])
++  })
++
++  it('a moved page with no order is appended', async () => {
++    await paint(treeOf(notes(), work()), 'Work', {
++      op: 'movePage',
++      path: 'Notes/A.md',
++      newParentPath: 'Work',
++    })
++    expect(painted.pages.map((p) => p.id)).toEqual(['p1'])
++  })
++
++  it('a same-parent move is its order alone, and a move of nothing paints nothing', async () => {
++    const base = notes()
++    base.sets.push({ kind: 'set', id: 's2', title: 'Z', path: 'Notes/Z', sets: [], pages: [] })
++    await paint(treeOf(base, work()), 'Notes', {
++      op: 'moveSet',
++      path: 'Notes/Z',
++      newParentPath: 'Notes',
++      order: ['s2', 's1'],
++    })
++    expect(painted.sets?.map((s) => s.id)).toEqual(['s2', 's1'])
++    const held = work()
++    await paint(treeOf(notes(), held), 'Work', {
++      op: 'moveSet',
++      path: 'Notes/Ghost',
++      newParentPath: 'Work',
++      order: [],
++    })
++    expect(painted).toBe(held)
++  })
++})
+diff --git a/Core/Views/Host/paintAhead.ts b/Core/Views/Host/paintAhead.ts
+new file mode 100644
+index 000000000..bd5140e7d
+--- /dev/null
++++ b/Core/Views/Host/paintAhead.ts
+@@ -0,0 +1,47 @@
++// A drag's tree order, painted ahead of its write and taken back when the write is refused.
++
++import { useMemo, useSyncExternalStore } from 'react'
++import { announceDrag } from '@pommora/uix/Interactions/a11y'
++import { channel } from '@pommora/uix/Utilities/subscribable'
++import type { CollectionNode, SetNode } from '../../Nexus/tree'
++import type { OrderRequest } from '../../Nexus/mutateRequest'
++import { containerAt, orderInTree } from '../../Nexus/treePatch'
++import { useSession } from '../../Session/store'
++
++const ahead = channel<readonly OrderRequest[]>([])
++
++export function usePainted(source: CollectionNode | SetNode): CollectionNode | SetNode {
++  const tree = useSession((s) => s.tree)
++  const orders = useSyncExternalStore(ahead.subscribe, ahead.get)
++  return useMemo(
++    () =>
++      tree && orders.length > 0
++        ? (containerAt(
++            orders.reduce((t, req) => orderInTree(t, req) ?? t, tree),
++            source.path,
++          ) ?? source)
++        : source,
++    [tree, source, orders],
++  )
++}
++
++export function refusedDrop(landed: boolean, name: string): boolean {
++  if (!landed) announceDrag('return', name)
++  return landed
++}
++
++export function mutateAhead(
++  req: OrderRequest,
++  name: string,
++  after?: Promise<boolean>,
++): Promise<boolean> {
++  ahead.set([...ahead.get(), req])
++  const write = (): Promise<boolean> =>
++    useSession
++      .getState()
++      .mutate(req)
++      .then((outcome) => refusedDrop(outcome !== null, name))
++  return (after ? after.then((ok) => ok && write()) : write()).finally(() =>
++    ahead.set(ahead.get().filter((r) => r !== req)),
++  )
++}
+diff --git a/Core/Views/Host/pendingView.test.ts b/Core/Views/Host/pendingView.test.ts
+deleted file mode 100644
+index b82c8315d..000000000
+--- a/Core/Views/Host/pendingView.test.ts
++++ /dev/null
+@@ -1,339 +0,0 @@
+-// @vitest-environment jsdom
+-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+-import { act, createElement } from 'react'
+-import type { Root } from 'react-dom/client'
+-import { type SavedView, foldView, slotsOf, type ViewPatch } from '../views'
+-import { mountEachTest } from '../../Testing/viewHarness'
+-import { dropIO, mutateAhead, stageView, unstageView, useLiveView, usePainted } from './pendingView'
+-import { fault, ok } from '../../Contract/result'
+-import { useSession } from '../../Session/store'
+-import type { CollectionNode, NexusTree, SetNode } from '../../Nexus/tree'
+-import type { MutateOutcome, OrderRequest } from '../../Nexus/mutateRequest'
+-
+-const base = (over: Partial<SavedView> = {}): SavedView =>
+-  ({
+-    id: 'view_1',
+-    name: 'Table',
+-    type: 'table',
+-    property_order: ['_title'],
+-    hidden_properties: [],
+-    ...over,
+-  }) as SavedView
+-
+-let root: Root
+-mountEachTest((_h, r) => {
+-  root = r
+-})
+-
+-let live: SavedView
+-let stage: (patch: ViewPatch) => void
+-let renders = 0
+-
+-function Probe({ view, sourceId }: { view: SavedView; sourceId: string }): null {
+-  live = useLiveView(sourceId, view)
+-  stage = (patch) => stageView(sourceId, view, patch)
+-  renders++
+-  return null
+-}
+-
+-const show = (view: SavedView, sourceId = 'k'): Promise<void> =>
+-  act(async () => root.render(createElement(Probe, { view, sourceId })))
+-const put = (patch: ViewPatch): Promise<void> => act(async () => stage(patch))
+-
+-beforeEach(() => {
+-  renders = 0
+-})
+-
+-describe('a whole field', () => {
+-  it('drops when the stored value becomes the staged one', async () => {
+-    await show(base())
+-    await put({ collapsed_groups: ['a'] })
+-    await show(base({ collapsed_groups: ['a'] }))
+-    await show(base({ collapsed_groups: ['b'] }))
+-    expect(live.collapsed_groups).toEqual(['b'])
+-  })
+-
+-  it('a stage captured before the view changed stages over the view as it is now', async () => {
+-    await show(base())
+-    const captured = stage
+-    await show(base({ collapsed_groups: ['x'] }))
+-    await act(async () => captured({ collapsed_groups: ['a'] }))
+-    await show(base({ collapsed_groups: ['x'] }))
+-    expect(live.collapsed_groups).toEqual(['a'])
+-  })
+-
+-  it('stays while the stored value is its base', async () => {
+-    await show(base({ collapsed_groups: ['x'] }))
+-    await put({ collapsed_groups: ['a'] })
+-    await show(base({ collapsed_groups: ['x'] }))
+-    expect(live.collapsed_groups).toEqual(['a'])
+-  })
+-
+-  it('drops when the stored value becomes a third value', async () => {
+-    await show(base())
+-    await put({ collapsed_groups: ['a'] })
+-    await show(base({ collapsed_groups: ['walker'] }))
+-    expect(live.collapsed_groups).toEqual(['walker'])
+-  })
+-
+-  it('a second stage before the first lands survives the first landing and drops on its own', async () => {
+-    await show(base())
+-    await put({ collapsed_groups: ['a'] })
+-    await put({ collapsed_groups: ['a', 'b'] })
+-    await show(base({ collapsed_groups: ['a'] }))
+-    expect(live.collapsed_groups).toEqual(['a', 'b'])
+-    await show(base({ collapsed_groups: ['a', 'b'] }))
+-    await show(base({ collapsed_groups: ['c'] }))
+-    expect(live.collapsed_groups).toEqual(['c'])
+-  })
+-
+-  it('a staged clear paints the field cleared, entries included, until the clear lands', async () => {
+-    await show(base({ column_widths: { a: 100 }, hide_borders: true }))
+-    await put({ column_widths: { a: 150 } })
+-    await put({ column_widths: undefined, hide_borders: undefined })
+-    expect(live.column_widths).toBeUndefined()
+-    expect(live.hide_borders).toBeUndefined()
+-    await show(base())
+-    await show(base({ hide_borders: true }))
+-    expect(live.hide_borders).toBe(true)
+-  })
+-
+-  it('a run back to its start settles when the start lands and never masks a later write', async () => {
+-    await show(base({ collapsed_groups: [] }))
+-    await put({ collapsed_groups: ['a'] })
+-    await put({ collapsed_groups: [] })
+-    await show(base({ collapsed_groups: ['a'] }))
+-    expect(live.collapsed_groups).toEqual([])
+-    await show(base({ collapsed_groups: [] }))
+-    await show(base({ collapsed_groups: ['a'] }))
+-    expect(live.collapsed_groups).toEqual(['a'])
+-  })
+-
+-  it('a take-back removes its own stage alone, so a stage made over it keeps painting', async () => {
+-    await show(base())
+-    const first = { collapsed_groups: ['a'] }
+-    await put(first)
+-    await put({ collapsed_groups: ['a', 'b'] })
+-    await act(async () => unstageView('k', 'view_1', first))
+-    expect(live.collapsed_groups).toEqual(['a', 'b'])
+-    await act(async () => unstageView('k', 'view_1', { collapsed_groups: ['a', 'b'] }))
+-    expect(live.collapsed_groups).toBeUndefined()
+-  })
+-
+-  it('three toggles paint the last through every landing, in order', async () => {
+-    await show(base({ collapsed_groups: [] }))
+-    await put({ collapsed_groups: ['a'] })
+-    await put({ collapsed_groups: [] })
+-    await put({ collapsed_groups: ['a'] })
+-    for (const landed of [['a'], [], ['a']]) {
+-      await show(base({ collapsed_groups: landed }))
+-      expect(live.collapsed_groups).toEqual(['a'])
+-    }
+-    await show(base({ collapsed_groups: ['z'] }))
+-    expect(live.collapsed_groups).toEqual(['z'])
+-  })
+-})
+-
+-describe('the column records', () => {
+-  it('settle per entry: one column landing leaves the other staged', async () => {
+-    await show(base())
+-    await put({ column_widths: { a: 100 } })
+-    await put({ column_widths: { b: 200 } })
+-    await show(base({ column_widths: { b: 200 } }))
+-    expect(live.column_widths).toEqual({ a: 100, b: 200 })
+-    await show(base({ column_widths: { a: 100, b: 200 } }))
+-    await show(base({ column_widths: { a: 90, b: 180 } }))
+-    expect(live.column_widths).toEqual({ a: 90, b: 180 })
+-  })
+-
+-  it('a column_styles entry folds as a whole entry', async () => {
+-    await show(base({ column_styles: { a: { look: 'compact', date_format: 'short' }, b: {} } }))
+-    await put({ column_styles: { a: { look: 'compact', date_format: 'full' } } })
+-    expect(live.column_styles).toEqual({ a: { look: 'compact', date_format: 'full' }, b: {} })
+-  })
+-
+-  it("a persist of one column's width carries every other column's stored width", () => {
+-    const view = base({ column_widths: { a: 100, b: 200 } })
+-    const saved = foldView(view, slotsOf({ column_widths: { a: 150 } }))
+-    expect(saved.column_widths).toEqual({ a: 150, b: 200 })
+-  })
+-})
+-
+-describe('the hook', () => {
+-  it('a change of source drops every slot', async () => {
+-    await show(base())
+-    await put({ collapsed_groups: ['a'], column_widths: { a: 100 } })
+-    await show(base(), 'other')
+-    expect(live.collapsed_groups).toBeUndefined()
+-    expect(live.column_widths).toBeUndefined()
+-  })
+-
+-  it('an unchanged settle keeps the record, so it schedules no second render', async () => {
+-    await show(base())
+-    await put({ collapsed_groups: ['a'] })
+-    renders = 0
+-    await show(base())
+-    expect(renders).toBe(1)
+-    expect(live.collapsed_groups).toEqual(['a'])
+-  })
+-})
+-
+-describe("a view patch riding a drop's write", () => {
+-  const ride = async (saves: boolean) => {
+-    let land: (landed: boolean) => void = () => {}
+-    const persistView = vi.fn(async () => (saves ? ok({}) : fault('Refused.')))
+-    await show(base())
+-    const io = dropIO('Row', { source: { id: 'k' }, view: base(), persistView })
+-    await act(async () =>
+-      io.persistAfter(
+-        { group_order: ['a'] },
+-        new Promise((resolve) => {
+-          land = resolve
+-        }),
+-      ),
+-    )
+-    return { land: (landed: boolean) => act(async () => land(landed)), persistView }
+-  }
+-
+-  it('paints with the ask and saves once the write lands', async () => {
+-    const { land, persistView } = await ride(true)
+-    expect(live.group_order).toEqual(['a'])
+-    expect(persistView).not.toHaveBeenCalled()
+-    await land(true)
+-    expect(persistView).toHaveBeenCalledWith({ group_order: ['a'] }, undefined)
+-    expect(live.group_order).toEqual(['a'])
+-  })
+-
+-  it('a refused write takes the paint back unsaved', async () => {
+-    const { land, persistView } = await ride(true)
+-    await land(false)
+-    expect(persistView).not.toHaveBeenCalled()
+-    expect(live.group_order).toBeUndefined()
+-  })
+-
+-  it('a refused save takes the paint back', async () => {
+-    const { land } = await ride(false)
+-    await land(true)
+-    expect(live.group_order).toBeUndefined()
+-  })
+-
+-  it('saves the order as the view shows it at landing, keeping a write composed on it since', async () => {
+-    const { land, persistView } = await ride(true)
+-    await put({ group_order: ['a', 'b'] })
+-    await land(true)
+-    expect(persistView).toHaveBeenCalledWith({ group_order: ['a', 'b'] }, undefined)
+-    expect(live.group_order).toEqual(['a', 'b'])
+-  })
+-})
+-
+-// The reorder transforms the window paints a drag with, ahead of the drag's write.
+-describe('a drag painted ahead of its write', () => {
+-  const notes = (): CollectionNode => ({
+-    kind: 'collection',
+-    propertyIds: [],
+-    id: 'c1',
+-    title: 'Notes',
+-    path: 'Notes',
+-    sets: [
+-      {
+-        kind: 'set',
+-        id: 's1',
+-        title: 'Sub',
+-        path: 'Notes/Sub',
+-        sets: [],
+-        pages: [{ kind: 'page', id: 'p2', title: 'B', path: 'Notes/Sub/B.md' }],
+-      },
+-    ],
+-    pages: [{ kind: 'page', id: 'p1', title: 'A', path: 'Notes/A.md' }],
+-  })
+-  const work = (): CollectionNode => ({
+-    kind: 'collection',
+-    propertyIds: [],
+-    id: 'c2',
+-    title: 'Work',
+-    path: 'Work',
+-    sets: [],
+-    pages: [],
+-  })
+-  const treeOf = (...collections: CollectionNode[]): NexusTree =>
+-    ({
+-      nexus: { id: 'nx', rootPath: '/x', name: 'x' },
+-      contexts: [],
+-      collections,
+-    }) as unknown as NexusTree
+-
+-  let painted: CollectionNode | SetNode
+-  const landings: (() => void)[] = []
+-  function Painted({ source }: { source: CollectionNode | SetNode }): null {
+-    painted = usePainted(source)
+-    return null
+-  }
+-  const paint = async (tree: NexusTree, source: string, req: OrderRequest): Promise<void> => {
+-    const held = tree.collections.find((c) => c.path === source)
+-    if (!held) throw new Error('no source')
+-    useSession.setState({
+-      tree,
+-      mutate: () => new Promise<MutateOutcome | null>((land) => landings.push(() => land({}))),
+-    })
+-    await act(async () => root.render(createElement(Painted, { source: held })))
+-    await act(async () => void mutateAhead(req, 'Row'))
+-  }
+-  afterEach(async () => {
+-    await act(async () => {
+-      for (const land of landings.splice(0)) land()
+-    })
+-  })
+-
+-  it("reorderChildren reorders a collection's sets", async () => {
+-    const base = notes()
+-    base.sets.push({ kind: 'set', id: 's2', title: 'Z', path: 'Notes/Z', sets: [], pages: [] })
+-    await paint(treeOf(base, work()), 'Notes', {
+-      op: 'reorderChildren',
+-      parentPath: 'Notes',
+-      key: 'set_order',
+-      order: ['s2', 's1'],
+-    })
+-    expect(painted.sets?.map((s) => s.id)).toEqual(['s2', 's1'])
+-  })
+-
+-  it('a moved page lands at the slot its order names, not appended', async () => {
+-    const dest = work()
+-    dest.pages.push({ kind: 'page', id: 'p9', title: 'Z', path: 'Work/Z.md' })
+-    await paint(treeOf(notes(), dest), 'Work', {
+-      op: 'movePage',
+-      path: 'Notes/A.md',
+-      newParentPath: 'Work',
+-      order: ['p1', 'p9'],
+-    })
+-    expect(painted.pages.map((p) => p.id)).toEqual(['p1', 'p9'])
+-  })
+-
+-  it('a moved page with no order is appended', async () => {
+-    await paint(treeOf(notes(), work()), 'Work', {
+-      op: 'movePage',
+-      path: 'Notes/A.md',
+-      newParentPath: 'Work',
+-    })
+-    expect(painted.pages.map((p) => p.id)).toEqual(['p1'])
+-  })
+-
+-  it('a same-parent move is its order alone, and a move of nothing paints nothing', async () => {
+-    const base = notes()
+-    base.sets.push({ kind: 'set', id: 's2', title: 'Z', path: 'Notes/Z', sets: [], pages: [] })
+-    await paint(treeOf(base, work()), 'Notes', {
+-      op: 'moveSet',
+-      path: 'Notes/Z',
+-      newParentPath: 'Notes',
+-      order: ['s2', 's1'],
+-    })
+-    expect(painted.sets?.map((s) => s.id)).toEqual(['s2', 's1'])
+-    const held = work()
+-    await paint(treeOf(notes(), held), 'Work', {
+-      op: 'moveSet',
+-      path: 'Notes/Ghost',
+-      newParentPath: 'Work',
+-      order: [],
+-    })
+-    expect(painted).toBe(held)
+-  })
+-})
+diff --git a/Core/Views/Host/useActiveView.test.tsx b/Core/Views/Host/useActiveView.test.tsx
+deleted file mode 100644
+index a9c32a8ea..000000000
+--- a/Core/Views/Host/useActiveView.test.tsx
++++ /dev/null
+@@ -1,70 +0,0 @@
+-// @vitest-environment jsdom
+-import { describe, expect, it } from 'vitest'
+-import { act } from 'react'
+-import type { Root } from 'react-dom/client'
+-import type { CollectionNode } from '../../Nexus/tree'
+-import type { PropertyDefinition } from '../../Properties/properties'
+-import { DEFAULT_VIEW_ID, type SavedView } from '../views'
+-import { useActiveView } from './useActiveView'
+-import { mountEachTest } from '../../Testing/viewHarness'
+-
+-const schema: PropertyDefinition[] = [
+-  { id: 'prop_status', label: 'Status', key: 'Status', type: 'status' },
+-]
+-
+-const view = (id: string): SavedView => ({
+-  id,
+-  name: id,
+-  type: 'table',
+-  property_order: ['_title'],
+-  hidden_properties: [],
+-})
+-
+-const source = (over: Partial<CollectionNode>): CollectionNode =>
+-  ({
+-    kind: 'collection',
+-    id: 'col1',
+-    title: 'Col',
+-    path: 'Col',
+-    sets: [],
+-    pages: [],
+-    properties: schema,
+-    ...over,
+-  }) as unknown as CollectionNode
+-
+-let root: Root
+-mountEachTest((_h, r) => {
+-  root = r
+-})
+-let seen: ReturnType<typeof useActiveView>
+-
+-function Probe({ node }: { node: CollectionNode }): null {
+-  seen = useActiveView(node)
+-  return null
+-}
+-
+-const mount = (node: CollectionNode): void => {
+-  act(() => root.render(<Probe node={node} />))
+-}
+-
+-describe('useActiveView', () => {
+-  it("takes the sidecar's active view when it names a saved view", () => {
+-    mount(source({ views: [view('view_a'), view('view_b')], activeView: 'view_b' }))
+-    expect(seen.id).toBe('view_b')
+-  })
+-
+-  it('falls back to the first saved view when the active view names none', () => {
+-    mount(source({ views: [view('view_a'), view('view_b')], activeView: 'view_gone' }))
+-    expect(seen.id).toBe('view_a')
+-  })
+-
+-  it('falls back to the first saved view when the sidecar names none', () => {
+-    mount(source({ views: [view('view_a'), view('view_b')] }))
+-    expect(seen.id).toBe('view_a')
+-  })
+-
+-  it('yields the sentinel for a container holding no views', () => {
+-    mount(source({ views: undefined }))
+-    expect(seen.id).toBe(DEFAULT_VIEW_ID)
+-  })
+-})
+diff --git a/Core/Views/Host/useActiveView.ts b/Core/Views/Host/useActiveView.ts
+deleted file mode 100644
+index b3cfc4917..000000000
+--- a/Core/Views/Host/useActiveView.ts
++++ /dev/null
+@@ -1,10 +0,0 @@
+-import type { CollectionNode, SetNode } from '../../Nexus/tree'
+-import { pickView, type SavedView } from '../views'
+-import { useViewTileScope } from '../ViewTileScope'
+-import { useLiveView } from './pendingView'
+-
+-export function useActiveView(source: CollectionNode | SetNode): SavedView {
+-  // Inside a view embed the tile payload IS the view; the container's own choice doesn't reach it.
+-  const scope = useViewTileScope()
+-  return useLiveView(source.id, scope ? scope.view : pickView(source))
+-}
+diff --git a/Core/Views/Host/useBandHeads.ts b/Core/Views/Host/useBandHeads.ts
+index bdabb0a82..5a7553e20 100644
+--- a/Core/Views/Host/useBandHeads.ts
++++ b/Core/Views/Host/useBandHeads.ts
+@@ -4,7 +4,7 @@ import type { SavedView } from '../views'
+ import { headContextOf } from '../Bands/bandModel'
+ import type { Grouping } from '../Pipeline/group'
+ import { setIndexOf } from '../Pipeline/setIndex'
+-import { usePainted } from './pendingView'
++import { usePainted } from './paintAhead'
+ import { styleFor } from '../../Properties/columnStyles'
+ import { useDateForms, useSetting } from '../../Session/store'
+ 
+diff --git a/Core/Views/Host/useViewHost.test.tsx b/Core/Views/Host/useViewHost.test.tsx
+index 96426392f..a2e1501d8 100644
+--- a/Core/Views/Host/useViewHost.test.tsx
++++ b/Core/Views/Host/useViewHost.test.tsx
+@@ -9,7 +9,7 @@ import { ContentHostContext } from '../../Interface/contentHost'
+ import { useSession } from '../../Session/store'
+ import { useViewHost, type ViewHostApi } from './useViewHost'
+ import { contextColumn, propertyColumn } from '../Pipeline/columns'
+-import { mutateAhead } from './pendingView'
++import { mutateAhead } from './paintAhead'
+ import type { OrderRequest } from '../../Nexus/mutateRequest'
+ import { useContainerValues, useValuesEpoch } from './useContainerValues'
+ import { useViewCreation } from './useViewCreation'
+diff --git a/Core/Views/Host/useViewHost.ts b/Core/Views/Host/useViewHost.ts
+index 3c48864d3..24de120ec 100644
+--- a/Core/Views/Host/useViewHost.ts
++++ b/Core/Views/Host/useViewHost.ts
+@@ -8,7 +8,6 @@ import type { Result } from '../../Contract/result'
+ import { useSession } from '../../Session/store'
+ import { useContentHost } from '../../Interface/contentHost'
+ import { useViewTileScope } from '../ViewTileScope'
+-import { useSaveView } from '../viewWrite'
+ import { identityOf } from '../../Contexts/contextIdentity'
+ import { holderOf, useValueContext } from '../../Properties/valueContext'
+ import { bandModelOf } from '../Bands/bandModel'
+@@ -18,12 +17,12 @@ import { resolveView } from '../Pipeline/resolveView'
+ import { searchGroups, searchKeysOf } from '../Pipeline/search'
+ import { matchQuery } from '../../Paths/caseFold'
+ import { resolvedSortCount } from '../Pipeline/sort'
+-import { useActiveView } from './useActiveView'
++import { useActiveView, useSaveView, type ViewWriteOpts } from './liveView'
+ import { presentedKind } from './viewKinds'
+ import { useBandHeads } from './useBandHeads'
+ import { useContainerValues } from './useContainerValues'
+ import { columnStylePatch, styleFor } from '../../Properties/columnStyles'
+-import type { ViewPatch, ViewWriteOpts } from '../views'
++import type { ViewPatch } from '../views'
+ import { groupKeyToValue, reassignable } from '../valueKinds'
+ import { hideShown, resolveColumn, unhide } from '../Pipeline/columns'
+ import type { SeatHost } from '../../Properties/Pickers/ValueSeat'
+diff --git a/Core/Views/Host/useViewInteractions.tsx b/Core/Views/Host/useViewInteractions.tsx
+index 295edb639..7bb813e2f 100644
+--- a/Core/Views/Host/useViewInteractions.tsx
++++ b/Core/Views/Host/useViewInteractions.tsx
+@@ -34,7 +34,8 @@ import { sameItems } from '@pommora/uix/Utilities/same'
+ import { useViewTileScope } from '../ViewTileScope'
+ import type { ViewHostApi } from './useViewHost'
+ import { type CreateFlight, tieOrderWith, useViewCreation } from './useViewCreation'
+-import { dropIO, mutateAhead, refusedDrop } from './pendingView'
++import { dropIO } from './liveView'
++import { mutateAhead, refusedDrop } from './paintAhead'
+ 
+ interface ViewInteractionPolicy {
+   ghost: {
+@@ -148,7 +149,7 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
+     const node = bands.byKey.get(dragged.key)
+     const name = node ? nodeLabel(node) : (sets.node.get(dragged.key)?.title ?? '')
+     return {
+-      ...dropIO(name, host),
++      ...dropIO({ id: dragged.key, name }, host),
+       switched: ({ propertyId, prior }) =>
+         notify(
+           `Switched to custom ${columnLabel(resolveColumn(propertyId, schema, identity.contextIds)!, ctx.contexts)} order`,
+@@ -226,7 +227,7 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
+         'above',
+       ),
+     }
+-    const io = dropIO(row.title, host)
++    const io = dropIO({ id: row.id, name: row.title }, host)
+     if (landed) io.persistAfter(patch, landed, { viewState: true })
+     else void io.persistView(patch, { viewState: true })
+   }
+diff --git a/Core/Views/Settings/GroupFrame.tsx b/Core/Views/Settings/GroupFrame.tsx
+index e98ec5bfd..0509277dd 100644
+--- a/Core/Views/Settings/GroupFrame.tsx
++++ b/Core/Views/Settings/GroupFrame.tsx
+@@ -36,7 +36,6 @@ import { LineRow, LineZone } from '@pommora/uix/Interactions/drag'
+ import { EyeToggle } from '@pommora/uix/Elements/EyeToggle'
+ import { revealDim } from '@pommora/uix/Interactions/hover-reveal.css'
+ import { DualSwitch } from '@pommora/uix/Controls/DualSwitch'
+-import { useSaveView } from '../viewWrite'
+ import { useContainerValues } from '../Host/useContainerValues'
+ import {
+   bucketKey,
+@@ -52,7 +51,7 @@ import { NUMERIC_FORMATS } from '../../Properties/formatValue'
+ import { bandModelOf, dateLabeller, nodeLabel, springsInto } from '../Bands/bandModel'
+ import { bandRouting } from '../Bands/bandRouter'
+ import { bandSpec } from '../Bands/GroupBand'
+-import { dropIO } from '../Host/pendingView'
++import { dropIO, useSaveView } from '../Host/liveView'
+ import { useBandHeads } from '../Host/useBandHeads'
+ import { EntityIcon } from '../../Assets/EntityIcon'
+ import { cx } from '@pommora/uix/Utilities/cx'
+@@ -393,7 +392,10 @@ function LocationHierarchy({
+ 
+   const base = { view, plan, sets, sourcePath: painted.path }
+   const routing = bandRouting(model, base, (dragged) =>
+-    dropIO(nodeLabel(model.byKey.get(dragged.key)), { source, view, persistView: persist }),
++    dropIO(
++      { id: dragged.key, name: nodeLabel(model.byKey.get(dragged.key)) },
++      { source, view, persistView: persist },
++    ),
+   )
+ 
+   const subChipRow = (
+diff --git a/Core/Views/Settings/LayoutFrame.tsx b/Core/Views/Settings/LayoutFrame.tsx
+index d98fec067..a2c7facea 100644
+--- a/Core/Views/Settings/LayoutFrame.tsx
++++ b/Core/Views/Settings/LayoutFrame.tsx
+@@ -12,7 +12,7 @@ import {
+   MenuScrollFrame,
+ } from '@pommora/uix/Menus/MenuRows'
+ import { ICON, SETTINGS_PANE_FLOOR, SETTINGS_PANE_MAX_HEIGHT } from '@pommora/uix/Menus/frames.css'
+-import { useSaveView } from '../viewWrite'
++import { useSaveView } from '../Host/liveView'
+ import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
+ import { useIconChoice } from '../../Assets/IdentityChoice'
+ import { VisibilityFrame } from './VisibilityFrame'
+diff --git a/Core/Views/Settings/SettingsFrame.tsx b/Core/Views/Settings/SettingsFrame.tsx
+index b397ace33..7bb29d6d0 100644
+--- a/Core/Views/Settings/SettingsFrame.tsx
++++ b/Core/Views/Settings/SettingsFrame.tsx
+@@ -28,8 +28,7 @@ import {
+ import { useIconChoice } from '../../Assets/IdentityChoice'
+ import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
+ import { useViewTileScope } from '../ViewTileScope'
+-import { useSaveView } from '../viewWrite'
+-import { useActiveView } from '../Host/useActiveView'
++import { useActiveView, useSaveView } from '../Host/liveView'
+ import { lockLabel } from '../../Actions/toggleLabels'
+ 
+ type FrameId = 'properties' | 'visibility' | ViewRowId
+diff --git a/Core/Views/Settings/SortFrame.tsx b/Core/Views/Settings/SortFrame.tsx
+index 6a818399d..396c34a32 100644
+--- a/Core/Views/Settings/SortFrame.tsx
++++ b/Core/Views/Settings/SortFrame.tsx
+@@ -9,7 +9,7 @@ import {
+   MenuTopRow,
+   MenuSeparator,
+ } from '@pommora/uix/Menus/MenuRows'
+-import { useSaveView } from '../viewWrite'
++import { useSaveView } from '../Host/liveView'
+ import { resolveColumn } from '../Pipeline/columns'
+ import { contextIdsOf } from '../../Contexts/contextIdentity'
+ import { useSession } from '../../Session/store'
+diff --git a/Core/Views/Settings/ViewFrame.test.tsx b/Core/Views/Settings/ViewFrame.test.tsx
+index ce8f9a358..1107e7ca8 100644
+--- a/Core/Views/Settings/ViewFrame.test.tsx
++++ b/Core/Views/Settings/ViewFrame.test.tsx
+@@ -4,7 +4,12 @@ import { act } from 'react'
+ import type { Root } from 'react-dom/client'
+ import type { CollectionNode } from '../../Nexus/tree'
+ import type { PropertyDefinition } from '../../Properties/properties'
+-import type { SavedView } from '../views'
++import type { RemovedView, SavedView } from '../views'
++import { rm, writeFile } from 'node:fs/promises'
++import { join } from '../../Paths/posix'
++import { readJsonAt, tempRoot } from '../../Testing/hostFs'
++import { deleteView, restoreView } from '../viewsFile'
++import { currentNotification } from '../../Interface/Notifications/notifications'
+ import { useSession } from '../../Session/store'
+ import type { ChromeSlice } from '../../Session/chromeSlice'
+ import { ViewFrame } from './ViewFrame'
+@@ -223,6 +228,50 @@ describe('ViewFrame — the view editor’s menu', () => {
+     expect(onClose).toHaveBeenCalledTimes(confirmed ? 1 : 0)
+   })
+ 
++  it("the delete notice's Undo seats the view back in its place and re-selects it", async () => {
++    const folder = tempRoot('pom-view-undo-')
++    await writeFile(
++      join(folder, '_pagecollection.json'),
++      JSON.stringify({
++        id: 'col1',
++        views: [view('view_a', 'Table'), view('view_b', 'Board')],
++        active_view: 'view_b',
++      }),
++    )
++    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
++      'views:delete': (_p: string, _k: string, id: string) => deleteView(folder, 'collection', id),
++      'views:restore': (_p: string, _k: string, removed: RemovedView) =>
++        restoreView(folder, 'collection', removed),
++    })
++    useSession.setState({
++      devicePrefs: {},
++      presentMenu: vi.fn<ChromeSlice['presentMenu']>(async () => 'delete'),
++      askConfirm: vi.fn(async () => true) as never,
++    })
++    const sidecar = async () =>
++      (await readJsonAt(join(folder, '_pagecollection.json'))) as {
++        views: SavedView[]
++        active_view?: string
++      }
++    await mount(source([view('view_a', 'Table'), view('view_b', 'Board')]))
++    await act(async () => {
++      ;(document.querySelector('[aria-label="Edit Board"]') as HTMLElement).click()
++    })
++    await act(async () =>
++      (document.querySelector('[aria-label="View Menu"]') as HTMLElement).click(),
++    )
++    await vi.waitFor(async () =>
++      expect((await sidecar()).views.map((v) => v.id)).toEqual(['view_a']),
++    )
++    currentNotification()?.action?.run()
++    await vi.waitFor(async () => {
++      const back = await sidecar()
++      expect(back.views.map((v) => v.id)).toEqual(['view_a', 'view_b'])
++      expect(back.active_view).toBe('view_b')
++    })
++    await rm(folder, { recursive: true, force: true })
++  })
++
+   it("the editor's header icon requests the view's icon choice at itself", async () => {
+     await mount(source([view('view_a', 'Table'), { ...view('view_b', 'Board'), icon: 'star' }]))
+     await act(async () => {
+diff --git a/Core/Views/Settings/ViewFrame.tsx b/Core/Views/Settings/ViewFrame.tsx
+index 136270af2..875c36f04 100644
+--- a/Core/Views/Settings/ViewFrame.tsx
++++ b/Core/Views/Settings/ViewFrame.tsx
+@@ -2,8 +2,8 @@ import { useState } from 'react'
+ import type { CollectionNode, SetNode } from '../../Nexus/tree'
+ import type { PropertyDefinition } from '../../Properties/properties'
+ import { DEFAULT_VIEW_ID, mintNewView, pickView, type SavedView } from '../views'
+-import { reportRefusal } from '../../Interface/Notifications/notifications'
+-import { deleteViewWithUndo } from '../deleteViewWithUndo'
++import { notifyDeleted, reportRefusal } from '../../Interface/Notifications/notifications'
++import { askDeleteView } from '../../Interface/Confirm/confirmations'
+ import { viewGlyph } from '../viewIcon'
+ import { Button } from '@pommora/uix/Buttons/Button'
+ import { Icon } from '@pommora/uix/Symbols'
+@@ -23,8 +23,7 @@ import { LayoutFrame } from './LayoutFrame'
+ import { LineRow, LineZone, lineList } from '@pommora/uix/Interactions/drag'
+ import { moveBefore } from '@pommora/uix/Utilities/moveItem'
+ import * as s from '@pommora/uix/Menus/frames.css'
+-import { useSaveView } from '../viewWrite'
+-import { useLiveView } from '../Host/pendingView'
++import { useLiveView, useSaveView } from '../Host/liveView'
+ import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
+ import { chooseColor, chooseIcon } from '../../Assets/IdentityChoice'
+ import { ARCHIVE_ICON, ARCHIVE_TITLE } from '../../Archive/archiveLabel'
+@@ -35,6 +34,19 @@ import { EDITOR_MENU, popMenu } from '../../Actions/menuActions'
+ import { viewItemMenuItems, viewRowMenuItems } from '../../Actions/viewRowMenu'
+ import { selectTargetOf } from '../../Navigation/navRef'
+ 
++async function deleteViewWithUndo(
++  source: CollectionNode | SetNode,
++  view: SavedView,
++): Promise<boolean> {
++  if (!(await askDeleteView())) return false
++  const res = await dialer().ask('views:delete', source.path, source.kind, view.id)
++  if (!reportRefusal(res)) return false
++  notifyDeleted(view.name, async () => {
++    reportRefusal(await dialer().ask('views:restore', source.path, source.kind, res.value))
++  })
++  return true
++}
++
+ export function ViewFrame({
+   node,
+   schema,
+diff --git a/Core/Views/Settings/ViewLeaf.tsx b/Core/Views/Settings/ViewLeaf.tsx
+index 8a289582c..cfcdbaf54 100644
+--- a/Core/Views/Settings/ViewLeaf.tsx
++++ b/Core/Views/Settings/ViewLeaf.tsx
+@@ -2,8 +2,7 @@ import type { CollectionNode, SetNode } from '../../Nexus/tree'
+ import type { PropertyDefinition } from '../../Properties/properties'
+ import type { SavedView } from '../views'
+ import { useSession } from '../../Session/store'
+-import { useSaveView } from '../viewWrite'
+-import { readLiveView } from '../Host/pendingView'
++import { readLiveView, useSaveView } from '../Host/liveView'
+ import { GroupFrame } from './GroupFrame'
+ import { SortFrame } from './SortFrame'
+ import { FilterFrame } from './FilterFrame'
+diff --git a/Core/Views/Settings/VisibilityFrame.test.tsx b/Core/Views/Settings/VisibilityFrame.test.tsx
+index 834153198..4ddf2fd00 100644
+--- a/Core/Views/Settings/VisibilityFrame.test.tsx
++++ b/Core/Views/Settings/VisibilityFrame.test.tsx
+@@ -11,7 +11,7 @@ import { mountEachTest } from '../../Testing/viewHarness'
+ import { VisibilityFrame } from './VisibilityFrame'
+ 
+ const save = vi.hoisted(() => vi.fn())
+-vi.mock('../viewWrite', () => ({ useSaveView: () => save }))
++vi.mock('../Host/liveView', () => ({ useSaveView: () => save }))
+ 
+ const schema: PropertyDefinition[] = [
+   { id: 'prop_a', label: 'Alpha', key: 'Alpha', type: 'number' },
+diff --git a/Core/Views/Settings/VisibilityFrame.tsx b/Core/Views/Settings/VisibilityFrame.tsx
+index 99e975f56..3980a7f29 100644
+--- a/Core/Views/Settings/VisibilityFrame.tsx
++++ b/Core/Views/Settings/VisibilityFrame.tsx
+@@ -13,7 +13,7 @@ import {
+   resolveColumns,
+   unhide,
+ } from '../Pipeline/columns'
+-import { useSaveView } from '../viewWrite'
++import { useSaveView } from '../Host/liveView'
+ import { LineGroup, LineRow, LineZone } from '@pommora/uix/Interactions/drag'
+ import { PaneRestGroup, type PaneDrop, paneSpec } from '@pommora/uix/Menus/paneDrop'
+ import { contextIdsOf, contextsByIdOf } from '../../Contexts/contextIdentity'
+diff --git a/Core/Views/ViewTileScope.tsx b/Core/Views/ViewTileScope.ts
+similarity index 100%
+rename from Core/Views/ViewTileScope.tsx
+rename to Core/Views/ViewTileScope.ts
+diff --git a/Core/Views/deleteViewWithUndo.test.ts b/Core/Views/deleteViewWithUndo.test.ts
+deleted file mode 100644
+index 939df9ef8..000000000
+--- a/Core/Views/deleteViewWithUndo.test.ts
++++ /dev/null
+@@ -1,64 +0,0 @@
+-// @vitest-environment jsdom
+-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+-import { rm, writeFile } from 'node:fs/promises'
+-import { join } from '../Paths/posix'
+-import { readJsonAt, tempRoot } from '../Testing/hostFs'
+-import type { CollectionNode } from '../Nexus/tree'
+-import type { RemovedView, SavedView } from './views'
+-import { deleteView, restoreView } from './viewsFile'
+-import { deleteViewWithUndo } from './deleteViewWithUndo'
+-import { currentNotification } from '../Interface/Notifications/notifications'
+-import { useSession } from '../Session/store'
+-import { stubDialer } from '../vitest.setup'
+-
+-const view = (id: string): SavedView => ({
+-  id,
+-  name: id.toUpperCase(),
+-  type: 'table',
+-  property_order: [],
+-  hidden_properties: [],
+-})
+-
+-let folder: string
+-beforeEach(async () => {
+-  folder = tempRoot('pom-view-undo-')
+-  await writeFile(
+-    join(folder, '_pagecollection.json'),
+-    JSON.stringify({ id: 'col', views: [view('view_a'), view('view_b')], active_view: 'view_a' }),
+-  )
+-  ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+-    'views:delete': (_p: string, _k: string, id: string) => deleteView(folder, 'collection', id),
+-    'views:restore': (_p: string, _k: string, removed: RemovedView) =>
+-      restoreView(folder, 'collection', removed),
+-  })
+-  useSession.setState({ askConfirm: vi.fn(async () => true) as never })
+-})
+-afterEach(async () => {
+-  await rm(folder, { recursive: true, force: true })
+-})
+-
+-const source = { kind: 'collection', id: 'col', path: 'Col' } as CollectionNode
+-const sidecar = async () =>
+-  (await readJsonAt(join(folder, '_pagecollection.json'))) as {
+-    views: SavedView[]
+-    active_view?: string
+-  }
+-
+-describe('deleteViewWithUndo', () => {
+-  it("the notice's Undo seats the view back in its place and re-selects it", async () => {
+-    expect(await deleteViewWithUndo(source, view('view_a'))).toBe(true)
+-    expect((await sidecar()).views.map((v) => v.id)).toEqual(['view_b'])
+-    currentNotification()?.action?.run()
+-    await vi.waitFor(async () => {
+-      const back = await sidecar()
+-      expect(back.views.map((v) => v.id)).toEqual(['view_a', 'view_b'])
+-      expect(back.active_view).toBe('view_a')
+-    })
+-  })
+-
+-  it('deletes nothing when the confirmation is declined', async () => {
+-    useSession.setState({ askConfirm: vi.fn(async () => false) as never })
+-    expect(await deleteViewWithUndo(source, view('view_a'))).toBe(false)
+-    expect((await sidecar()).views).toHaveLength(2)
+-  })
+-})
+diff --git a/Core/Views/deleteViewWithUndo.ts b/Core/Views/deleteViewWithUndo.ts
+deleted file mode 100644
+index 14ec1a51e..000000000
+--- a/Core/Views/deleteViewWithUndo.ts
++++ /dev/null
+@@ -1,18 +0,0 @@
+-import type { CollectionNode, SetNode } from '../Nexus/tree'
+-import type { SavedView } from './views'
+-import { askDeleteView } from '../Interface/Confirm/confirmations'
+-import { notifyDeleted, reportRefusal } from '../Interface/Notifications/notifications'
+-import { dialer } from '../Platform/dialer'
+-
+-export async function deleteViewWithUndo(
+-  source: CollectionNode | SetNode,
+-  view: SavedView,
+-): Promise<boolean> {
+-  if (!(await askDeleteView())) return false
+-  const res = await dialer().ask('views:delete', source.path, source.kind, view.id)
+-  if (!reportRefusal(res)) return false
+-  notifyDeleted(view.name, async () => {
+-    reportRefusal(await dialer().ask('views:restore', source.path, source.kind, res.value))
+-  })
+-  return true
+-}
+diff --git a/Core/Views/viewWrite.test.tsx b/Core/Views/viewWrite.test.tsx
+deleted file mode 100644
+index b23ceec7e..000000000
+--- a/Core/Views/viewWrite.test.tsx
++++ /dev/null
+@@ -1,284 +0,0 @@
+-// @vitest-environment jsdom
+-import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest'
+-import { act, useEffect } from 'react'
+-import type { Root } from 'react-dom/client'
+-import type { CollectionNode } from '../Nexus/tree'
+-import type { PropertyDefinition } from '../Properties/properties'
+-import type { SavedView } from './views'
+-import { useSession } from '../Session/store'
+-import { GroupFrame } from './Settings/GroupFrame'
+-import { SettingsFrame } from './Settings/SettingsFrame'
+-import { ViewTileScopeProvider, type ViewTileScopeValue } from './ViewTileScope'
+-import { resolveViewWrite, saveViewIn, useSaveView, VIEW_CONFIG_LOCKED } from './viewWrite'
+-import { stubDialer } from '../vitest.setup'
+-import { mountEachTest } from '../Testing/viewHarness'
+-import { useActiveView } from './Host/useActiveView'
+-
+-const statusDef: PropertyDefinition = {
+-  id: 'prop_status',
+-  label: 'Status',
+-  key: 'Status',
+-  type: 'status',
+-  status_groups: [
+-    {
+-      id: 'g1',
+-      label: 'Open',
+-      color: 'gray',
+-      options: [{ id: 'opt_todo', key: 'todo', label: 'todo' }],
+-    },
+-  ],
+-}
+-
+-const source = {
+-  kind: 'collection',
+-  id: 'col1',
+-  title: 'Col',
+-  path: 'Col',
+-  sets: [],
+-  pages: [],
+-  propertyIds: [statusDef.id],
+-} as unknown as CollectionNode
+-
+-const view: SavedView = {
+-  id: 'view_01J0000000000000000000000A',
+-  name: 'Tile View',
+-  type: 'table',
+-  property_order: ['_title'],
+-  hidden_properties: [],
+-  group: { kind: 'structural' },
+-}
+-
+-let host: HTMLDivElement
+-let root: Root
+-mountEachTest((h, r) => {
+-  host = h
+-  root = r
+-})
+-let persist: Mock<(patch: Partial<SavedView>) => void>
+-let sourceSave: Mock
+-
+-const scope = (locked: boolean): ViewTileScopeValue => ({
+-  source,
+-  view,
+-  persist,
+-  locked,
+-  setLocked: vi.fn(),
+-})
+-
+-const render = (node: React.ReactNode): Promise<void> =>
+-  act(async () => {
+-    root.render(node)
+-  })
+-
+-const texts = (): string => host.textContent ?? ''
+-const clickRow = (label: string, which: 'first' | 'last' = 'first'): Promise<void> => {
+-  const matches = [...host.querySelectorAll('*')].filter((el) => el.textContent === label)
+-  const el = which === 'last' ? matches.at(-1) : matches[0]
+-  return act(async () => {
+-    ;(el?.closest('[class]') as HTMLElement | null)?.click()
+-  })
+-}
+-
+-beforeEach(() => {
+-  persist = vi.fn()
+-  sourceSave = vi.fn(async () => ({ ok: true, value: { id: view.id } }))
+-  ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+-    'views:save': sourceSave,
+-  })
+-  useSession.setState({ load: vi.fn(async () => {}) as never })
+-})
+-
+-function Probe({ onResult }: { onResult: (r: unknown) => void }): null {
+-  const save = useSaveView(source)
+-  useEffect(() => {
+-    void save(view, { name: 'Renamed' }).then(onResult)
+-  }, [save, onResult])
+-  return null
+-}
+-
+-function StateProbe({ onResult }: { onResult: (r: unknown) => void }): null {
+-  const save = useSaveView(source)
+-  useEffect(() => {
+-    void save(
+-      view,
+-      { collapsed_groups: ['Done'], column_widths: { _title: 420 } },
+-      { viewState: true },
+-    ).then(onResult)
+-  }, [save, onResult])
+-  return null
+-}
+-
+-describe('a locked view-embed scope', () => {
+-  it('answers the write with a refusal instead of a fake success', async () => {
+-    const results: unknown[] = []
+-    await render(
+-      <ViewTileScopeProvider value={scope(true)}>
+-        <Probe onResult={(r) => results.push(r)} />
+-      </ViewTileScopeProvider>,
+-    )
+-    expect(results).toEqual([
+-      { ok: false, error: { code: 'operation-failed', message: VIEW_CONFIG_LOCKED } },
+-    ])
+-    expect(persist).not.toHaveBeenCalled()
+-  })
+-
+-  it('persists through the payload writer when unlocked', async () => {
+-    const results: unknown[] = []
+-    await render(
+-      <ViewTileScopeProvider value={scope(false)}>
+-        <Probe onResult={(r) => results.push(r)} />
+-      </ViewTileScopeProvider>,
+-    )
+-    expect(results).toEqual([{ ok: true, value: { id: view.id } }])
+-    expect(persist).toHaveBeenCalledWith({ name: 'Renamed' })
+-  })
+-
+-  it('lets a collapse through — the lock freezes config, not how you are reading the tile', async () => {
+-    const results: unknown[] = []
+-    await render(
+-      <ViewTileScopeProvider value={scope(true)}>
+-        <StateProbe onResult={(r) => results.push(r)} />
+-      </ViewTileScopeProvider>,
+-    )
+-    expect(results).toEqual([{ ok: true, value: { id: view.id } }])
+-    expect(persist).toHaveBeenCalledWith({ collapsed_groups: ['Done'] })
+-  })
+-
+-  it('narrows a state write to the state keys, so a refused override cannot ride along', async () => {
+-    await render(
+-      <ViewTileScopeProvider value={scope(true)}>
+-        <StateProbe onResult={() => {}} />
+-      </ViewTileScopeProvider>,
+-    )
+-    expect(persist.mock.calls).toEqual([[{ collapsed_groups: ['Done'] }]])
+-  })
+-
+-  it('drops nothing to the source container either', async () => {
+-    await render(
+-      <ViewTileScopeProvider value={scope(true)}>
+-        <GroupFrame
+-          source={source}
+-          view={view}
+-          schema={[statusDef]}
+-          back={{ label: 'Settings', onBack: () => {} }}
+-        />
+-      </ViewTileScopeProvider>,
+-    )
+-    await clickRow('Group By')
+-    await clickRow('Status', 'last')
+-    expect(persist).not.toHaveBeenCalled()
+-    expect(sourceSave).not.toHaveBeenCalled()
+-  })
+-
+-  it('closes the config leaves in the settings pane, so there is nothing to author into', async () => {
+-    await render(
+-      <ViewTileScopeProvider value={scope(true)}>
+-        <SettingsFrame />
+-      </ViewTileScopeProvider>,
+-    )
+-    await clickRow('Group')
+-    expect(texts()).not.toContain('Group By')
+-  })
+-
+-  it('opens them when unlocked', async () => {
+-    await render(
+-      <ViewTileScopeProvider value={scope(false)}>
+-        <SettingsFrame />
+-      </ViewTileScopeProvider>,
+-    )
+-    await clickRow('Group')
+-    expect(texts()).toContain('Group By')
+-  })
+-
+-  it('offers Filter, whose rules belong to the view the tile carries', async () => {
+-    await render(
+-      <ViewTileScopeProvider value={scope(false)}>
+-        <SettingsFrame />
+-      </ViewTileScopeProvider>,
+-    )
+-    expect(texts()).toContain('Filter')
+-  })
+-})
+-
+-describe('saveViewIn — the write every settings frame routes through', () => {
+-  it('lands a scoped write on the tile payload, never the source', async () => {
+-    const res = await saveViewIn(scope(false), source, view, { name: 'Renamed' })
+-    expect(res).toEqual({ ok: true, value: { id: view.id } })
+-    expect(persist).toHaveBeenCalledWith({ name: 'Renamed' })
+-    expect(sourceSave).not.toHaveBeenCalled()
+-  })
+-
+-  it('refuses a scoped write while the tile is locked', async () => {
+-    const res = await saveViewIn(scope(true), source, view, { name: 'Renamed' })
+-    expect(res).toEqual({
+-      ok: false,
+-      error: { code: 'operation-failed', message: VIEW_CONFIG_LOCKED },
+-    })
+-    expect(persist).not.toHaveBeenCalled()
+-    expect(sourceSave).not.toHaveBeenCalled()
+-  })
+-
+-  it('a refused write paints nothing on the locked tile', async () => {
+-    let live: SavedView = view
+-    function Shown(): null {
+-      live = useActiveView(source)
+-      return null
+-    }
+-    await render(
+-      <ViewTileScopeProvider value={scope(true)}>
+-        <Shown />
+-      </ViewTileScopeProvider>,
+-    )
+-    await act(async () => {
+-      await saveViewIn(scope(true), source, view, { name: 'Renamed' })
+-    })
+-    expect(live.name).toBe(view.name)
+-  })
+-
+-  it('falls through to the source when nothing scopes it', async () => {
+-    await saveViewIn(null, source, view, { name: 'Renamed' })
+-    expect(sourceSave).toHaveBeenCalled()
+-    expect(persist).not.toHaveBeenCalled()
+-  })
+-
+-  it('a second write before the first lands carries the first, whatever view its caller drew', async () => {
+-    const shown = { ...source, views: [view] } as CollectionNode
+-    let save: ReturnType<typeof useSaveView> = async () => ({ ok: true, value: { id: '' } })
+-    function Shown(): null {
+-      useActiveView(shown)
+-      save = useSaveView(shown)
+-      return null
+-    }
+-    await render(<Shown />)
+-    await act(async () => {
+-      await save(view, { name: 'Renamed' })
+-      await save(view, { type: 'cards' })
+-    })
+-    expect(sourceSave.mock.calls.at(-1)?.[2]).toMatchObject({ name: 'Renamed', type: 'cards' })
+-  })
+-})
+-
+-describe('resolveViewWrite — the one lock-write gate', () => {
+-  it('writes the whole patch when unlocked', () => {
+-    expect(resolveViewWrite(false, { name: 'Renamed' })).toEqual({ name: 'Renamed' })
+-  })
+-  it('refuses a config write while locked', () => {
+-    expect(resolveViewWrite(true, { name: 'Renamed' })).toBeNull()
+-  })
+-  it('folds a state-only write while locked, dropping config keys like name', () => {
+-    const write = resolveViewWrite(
+-      true,
+-      { name: 'Renamed', collapsed_groups: ['Done'] },
+-      { viewState: true },
+-    )
+-    expect(write).toEqual({ collapsed_groups: ['Done'] })
+-  })
+-  it('a locked tile still carries a manual order through the state-only write', () => {
+-    const write = resolveViewWrite(
+-      true,
+-      { name: 'Renamed', manual_order: ['p2', 'p1'] },
+-      { viewState: true },
+-    )
+-    expect(write).toEqual({ manual_order: ['p2', 'p1'] })
+-  })
+-})
+diff --git a/Core/Views/viewWrite.ts b/Core/Views/viewWrite.ts
+deleted file mode 100644
+index 23364bef9..000000000
+--- a/Core/Views/viewWrite.ts
++++ /dev/null
+@@ -1,59 +0,0 @@
+-import type { CollectionNode, SetNode } from '../Nexus/tree'
+-import { ok, type Result, fault } from '../Contract/result'
+-import { pickViewState, type SavedView, type ViewPatch, type ViewWriteOpts } from './views'
+-import { stageView, unstageView } from './Host/pendingView'
+-import { useViewTileScope, type ViewTileScopeValue } from './ViewTileScope'
+-import { reportRefusal } from '../Interface/Notifications/notifications'
+-import { dialer } from '../Platform/dialer'
+-
+-export const VIEW_CONFIG_LOCKED = 'The view configuration is locked on this embed.'
+-
+-/** A locked tile refuses a config write but still folds a state-only one, so a refused config override can't ride in on the state it's allowed. */
+-export function resolveViewWrite(
+-  locked: boolean,
+-  patch: ViewPatch,
+-  opts?: ViewWriteOpts,
+-): ViewPatch | null {
+-  if (!locked) return patch
+-  return opts?.viewState ? pickViewState(patch) : null
+-}
+-
+-/** A refusal reaches the user here, so no caller reports it again. */
+-export async function saveViewIn(
+-  scope: ViewTileScopeValue | null,
+-  source: CollectionNode | SetNode,
+-  view: SavedView,
+-  patch: ViewPatch,
+-  opts?: ViewWriteOpts,
+-): Promise<Result<{ id: string }>> {
+-  const r = await writeView(scope, source, view, patch, opts)
+-  reportRefusal(r)
+-  return r
+-}
+-
+-async function writeView(
+-  scope: ViewTileScopeValue | null,
+-  source: CollectionNode | SetNode,
+-  view: SavedView,
+-  patch: ViewPatch,
+-  opts?: ViewWriteOpts,
+-): Promise<Result<{ id: string }>> {
+-  if (!scope) {
+-    const base = stageView(source.id, view, patch)
+-    const r = await dialer().ask('views:save', source.path, source.kind, base, patch)
+-    if (!r.ok) unstageView(source.id, view.id, patch)
+-    return r
+-  }
+-  const write = resolveViewWrite(scope.locked, patch, opts)
+-  if (!write) return fault(VIEW_CONFIG_LOCKED)
+-  stageView(source.id, view, write)
+-  scope.persist(write)
+-  return ok({ id: view.id })
+-}
+-
+-export function useSaveView(
+-  source: CollectionNode | SetNode,
+-): (view: SavedView, patch: ViewPatch, opts?: ViewWriteOpts) => Promise<Result<{ id: string }>> {
+-  const scope = useViewTileScope()
+-  return (view, patch, opts) => saveViewIn(scope, source, view, patch, opts)
+-}
+diff --git a/Core/Views/views.test.ts b/Core/Views/views.test.ts
+index 394d3b1d3..358d2f2d5 100644
+--- a/Core/Views/views.test.ts
++++ b/Core/Views/views.test.ts
+@@ -9,7 +9,6 @@ import {
+   mintDefaultView,
+   mintNewView,
+   pickView,
+-  pickViewState,
+   mapTiles,
+   mapViews,
+   bandKey,
+@@ -127,22 +126,6 @@ describe('SavedView decode', () => {
+     expect(savedView.parse({ ...base, manual_order: 'nonsense' }).manual_order).toEqual([])
+     expect(savedView.parse(base).manual_order).toBeUndefined()
+   })
+-
+-  it('pickViewState carries manual_order beside collapsed_groups', () => {
+-    const view: SavedView = {
+-      id: 'view_m',
+-      name: 'M',
+-      type: 'table',
+-      property_order: [],
+-      hidden_properties: [],
+-      collapsed_groups: ['g1'],
+-      manual_order: ['p2', 'p1'],
+-    }
+-    expect(pickViewState(view)).toEqual({
+-      collapsed_groups: ['g1'],
+-      manual_order: ['p2', 'p1'],
+-    })
+-  })
+ })
+ 
+ describe('column styles on write', () => {
+diff --git a/Core/Views/views.ts b/Core/Views/views.ts
+index 2562764df..cdc711440 100644
+--- a/Core/Views/views.ts
++++ b/Core/Views/views.ts
+@@ -111,14 +111,6 @@ export function mapTiles(doc: Json, fn: (tile: Json) => Json | null): Json | nul
+ const GROUP_ORDER_MODE_SET = new Set<string>(GROUP_ORDER_MODES)
+ const DATE_GRANULARITY_SET = new Set<string>(DATE_GRANULARITIES)
+ 
+-const VIEW_STATE_KEYS = ['collapsed_groups', 'manual_order'] as const
+-
+-export type ViewWriteOpts = { viewState?: boolean }
+-
+-export function pickViewState(view: Partial<SavedView>): Partial<SavedView> {
+-  return Object.fromEntries(VIEW_STATE_KEYS.filter((k) => k in view).map((k) => [k, view[k]]))
+-}
+-
+ function asEnum<T extends string>(value: unknown, allowed: ReadonlySet<string>): T | undefined {
+   return typeof value === 'string' && allowed.has(value) ? (value as T) : undefined
+ }

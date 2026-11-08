@@ -1,0 +1,654 @@
+diff --git a/Core/Interface/Sidebar/Sidebar.tsx b/Core/Interface/Sidebar/Sidebar.tsx
+index 6dbfa4b28..7a2f50e0a 100644
+--- a/Core/Interface/Sidebar/Sidebar.tsx
++++ b/Core/Interface/Sidebar/Sidebar.tsx
+@@ -10,6 +10,7 @@ import {
+ } from 'react'
+ import {
+   type GhostAnchor,
++  ghostRootProps,
+   useClearStrandedGhost,
+   useGhostAnchor,
+ } from '@pommora/uix/Interactions/ghostCreate'
+@@ -175,10 +176,8 @@ function GhostLeaf({
+     <Reveal open={!closing} enterOnMount onCollapsed={api?.closed}>
+       {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a hover-born affordance wearing the row's own chrome — keyboard creation lives in the menus */}
+       <div
+-        data-ghost-root
++        {...(api && ghostRootProps(api))}
+         className="ghost-leaf ghost-worn"
+-        onPointerEnter={api?.onGhostEnter}
+-        onPointerLeave={api?.onGhostLeave}
+         onClick={api?.create}
+         onContextMenu={(e) => {
+           e.preventDefault()
+diff --git a/Core/Properties/PropertyPanel.tsx b/Core/Properties/PropertyPanel.tsx
+index 5e30807e4..d88b353cb 100644
+--- a/Core/Properties/PropertyPanel.tsx
++++ b/Core/Properties/PropertyPanel.tsx
+@@ -4,7 +4,11 @@ import { Icon } from '@pommora/uix/Symbols'
+ import { AccessoryButton, MenuItem, MenuSeparator, menuDropLine } from '@pommora/uix/Menus/MenuRows'
+ import { heading } from '@pommora/uix/Menus/menu-row.css'
+ import { ICON } from '@pommora/uix/Menus/frames.css'
+-import { ghostAnchorProps, useGhostAnchor } from '@pommora/uix/Interactions/ghostCreate'
++import {
++  ghostAnchorProps,
++  ghostRootProps,
++  useGhostAnchor,
++} from '@pommora/uix/Interactions/ghostCreate'
+ import { LineRow, LineZone, lineList } from '@pommora/uix/Interactions/drag'
+ import { fullOrderIndex, moveItem } from '@pommora/uix/Utilities/moveItem'
+ import { cx } from '@pommora/uix/Utilities/cx'
+@@ -329,11 +333,9 @@ export function PropertyPanel({
+                         onCollapsed={ghostApi.closed}
+                       >
+                         <div
+-                          data-ghost-root
++                          {...ghostRootProps(ghostApi)}
+                           data-reveal-held={rowOpened || undefined}
+                           className={cx(s.addSlot, 'ghost-worn')}
+-                          onPointerEnter={ghostApi.onGhostEnter}
+-                          onPointerLeave={ghostApi.onGhostLeave}
+                         >
+                           <MenuItem
+                             className={s.row}
+diff --git a/Core/Properties/Schema/GhostOptionChip.tsx b/Core/Properties/Schema/GhostOptionChip.tsx
+index 2865afd76..72ba0c703 100644
+--- a/Core/Properties/Schema/GhostOptionChip.tsx
++++ b/Core/Properties/Schema/GhostOptionChip.tsx
+@@ -1,5 +1,5 @@
+ import { Reveal } from '@pommora/uix/Animations/Reveal'
+-import type { GhostAnchor } from '@pommora/uix/Interactions/ghostCreate'
++import { type GhostAnchor, ghostRootProps } from '@pommora/uix/Interactions/ghostCreate'
+ import { REVEAL_DWELL_MS } from '@pommora/uix/Interactions/hoverReveal'
+ import { cx } from '@pommora/uix/Utilities/cx'
+ import * as s from '@pommora/uix/Menus/frames.css'
+@@ -27,10 +27,8 @@ export function GhostOptionChip({
+     <Reveal open={!ghost.closing} enterOnMount onCollapsed={api.closed}>
+       <button
+         type="button"
+-        data-ghost-root
++        {...ghostRootProps(api)}
+         className={s.ghostOptionRow}
+-        onPointerEnter={api.onGhostEnter}
+-        onPointerLeave={api.onGhostLeave}
+         onClick={() => {
+           // Claim the anchor as the create begins — the slot leaves in the same act, so a second click can't open a second naming session.
+           api.take()
+diff --git a/Core/Tiles/TileGrid.tsx b/Core/Tiles/TileGrid.tsx
+index bf9b3e2f3..dbbc254f7 100644
+--- a/Core/Tiles/TileGrid.tsx
++++ b/Core/Tiles/TileGrid.tsx
+@@ -17,6 +17,7 @@ import { HYSTERESIS } from '@pommora/uix/Interactions/shared'
+ import { TILE_MIN_PX } from '@pommora/uix/Utilities/tileMetrics'
+ import {
+   ghostAnchorProps,
++  ghostRootProps,
+   useClearStrandedGhost,
+   useGhostAnchor,
+ } from '@pommora/uix/Interactions/ghostCreate'
+@@ -684,12 +685,10 @@ export function TileGrid({
+       {ghost && ghostBox && (
+         <button
+           type="button"
+-          data-ghost-root
++          {...ghostRootProps(ghostApi)}
+           data-reveal-held={inserting !== null || undefined}
+           className={cx('tile-ghost tile-base ghost-worn', ghost.closing && 'is-closing')}
+           style={placementStyle(ghostBox)}
+-          onPointerEnter={ghostApi.onGhostEnter}
+-          onPointerLeave={ghostApi.onGhostLeave}
+           onTransitionEnd={(e) => {
+             if (ghost.closing && e.target === e.currentTarget && e.propertyName === 'opacity')
+               ghostApi.closed()
+diff --git a/Core/Views/Cards/CardsView.tsx b/Core/Views/Cards/CardsView.tsx
+index 20bd7daa9..726958414 100644
+--- a/Core/Views/Cards/CardsView.tsx
++++ b/Core/Views/Cards/CardsView.tsx
+@@ -44,13 +44,13 @@ import { Reveal } from '@pommora/uix/Animations/Reveal'
+ import { columnLabel } from '../../Properties/columnDisplay'
+ import { GroupBand } from '../Bands/GroupBand'
+ import { orderedChildren } from '../Pipeline/group'
+-import { rowHover, useViewInteractions } from '../Host/useViewInteractions'
++import { rowHover, useViewInteractions, type ViewInteractions } from '../Host/useViewInteractions'
+ import type { ValueContext } from '../../Properties/valueContext'
+ import { NO_TRAIL, type TrailSegment } from '@pommora/uix/Elements/NavTrail'
+ import { ancestryOf } from '../../Nexus/treeIndex'
+ import { stabilize } from '../../Nexus/treeStabilize'
+ import { Cell } from '../../Properties/Cells/Cell'
+-import { useValueSeat, ValueSeat, type ValueSeatApi } from '../../Properties/Pickers/ValueSeat'
++import { ValueSeat, type ValueSeatApi } from '../../Properties/Pickers/ValueSeat'
+ import { borderedField } from '@pommora/uix/Fields/fields.css'
+ import { overScrollEllipsis } from '@pommora/uix/Interactions/OverScroll'
+ import { type Personalization, TENTHS_SCALE } from '../../Settings/personalization'
+@@ -146,7 +146,6 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
+   const shellClass = cx('cards-view', banner === 'none' && 'is-compact')
+   const hideLocation = viewOption(view, 'hide_location')
+ 
+-  const [pendingSeat, setPendingSeat] = useState<{ anchor: string; id: string } | null>(null)
+   const ghostRowmate = (enteringId: string): boolean => {
+     const root = host.viewRootRef.current
+     const ghostEl = root?.querySelector('.ghost-card')
+@@ -156,14 +155,34 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
+     return Math.abs(g.top - cardEl.getBoundingClientRect().top) < g.height / 2
+   }
+ 
++  // A value from a card's Add shows its property; a right-click pick runs through `MenuSeat` and leaves the view alone.
++  const commitOnCard = (row: ViewRow, column: ResolvedColumn, v: PropertyValue | null): void => {
++    if (!isBlankValue(v)) revealProperty(column.id)
++    commitValue(row, column, v)
++  }
+   const interactions = useViewInteractions(host, {
+     ghost: {
+       graceMs: CARDS_GHOST_GRACE_MS,
+-      suppressed: () => seat.open !== null || host.naming !== null,
+       travelHold: { inZone: ghostRowmate, holdMs: GHOST_TRAVEL_HOLD_MS },
+     },
++    seat: {
++      commit: commitOnCard,
++      anchor: (el) => el.closest<HTMLElement>('.value-seat') ?? el,
++      centered: true,
++      hide: { from: 'view', run: (_, column) => hideProperty(column.id) },
++      add: {
++        columns: (row) =>
++          cardAddColumns(
++            itemColumns(tree, ctx.schema, row.id),
++            row,
++            shownColumnsFor(row, columns, isCompact(view)),
++          ),
++        show: (column) => revealProperty(column.id),
++      },
++    },
+     newPages: 'single',
+   })
++  const { seat } = interactions
+   const effectiveZoom = useElementZoom(host.viewRootRef)
+   const reorderSets = (id: string, beforeId: string | null): boolean =>
+     interactions.bandDrop(
+@@ -171,39 +190,6 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
+       { kind: 'before', beforeKey: beforeId, parentKey: null },
+     )
+ 
+-  // ── The value seat ────────────────────────────────────────────────────────
+-
+-  // A value from a card's Add shows its property; a right-click pick runs through `MenuSeat` and leaves the view alone.
+-  const commitOnCard = (row: ViewRow, column: ResolvedColumn, v: PropertyValue | null): void => {
+-    if (!isBlankValue(v)) revealProperty(column.id)
+-    commitValue(row, column, v)
+-  }
+-  const seat = useValueSeat({
+-    ...host.seatHost,
+-    commit: commitOnCard,
+-    anchor: (el) => el.closest<HTMLElement>('.value-seat') ?? el,
+-    centered: true,
+-    hold: interactions.ghost.suppressWrap,
+-    hide: { from: 'view', run: (_, column) => hideProperty(column.id) },
+-    add: {
+-      columns: (row) =>
+-        cardAddColumns(
+-          itemColumns(tree, ctx.schema, row.id),
+-          row,
+-          shownColumnsFor(row, columns, isCompact(view)),
+-        ),
+-      show: (column) => revealProperty(column.id),
+-    },
+-  })
+-  // The ghost stands down while a value's inline field owns the pointer.
+-  const inline = seat.open?.mode === 'editor'
+-  useEffect(() => {
+-    if (!inline) return
+-    let done = (): void => {}
+-    void interactions.ghost.suppressWrap(() => new Promise<void>((settle) => (done = settle)))
+-    return () => done()
+-  }, [inline])
+-
+   // ── The root banner seat ──────────────────────────────────────────────────
+ 
+   const [bannerRequest, setBannerRequest] = useState<BannerRequest | null>(null)
+@@ -275,18 +261,10 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
+ 
+   const ghostShown = useGhostFlip(
+     host.viewRootRef,
+-    interactions.ghost.ghost && !host.naming ? interactions.ghost.ghost.anchorId : null,
+-    interactions.ghost.ghost === null,
++    interactions.ghostAt,
++    interactions.ghostAt === null,
+     effectiveZoom,
+   )
+-  const ghostCreate = (): void => {
+-    const anchor = interactions.ghost.ghost?.anchorId
+-    const flight = interactions.ghostCreate()
+-    if (!flight || !anchor) return
+-    setPendingSeat({ anchor, id: flight.id })
+-    void flight.path.finally(() => setPendingSeat(null))
+-  }
+-  const ghostSeat = pendingSeat && !rowById.has(pendingSeat.id) ? pendingSeat.anchor : null
+   const ghostCard = (
+     <GhostCard
+       banner={banner}
+@@ -294,9 +272,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
+       columns={columns}
+       ctx={ctx}
+       iconName={entityIcon('page', undefined, defaultIcons)}
+-      onEnter={interactions.ghost.onGhostEnter}
+-      onLeave={interactions.ghost.onGhostLeave}
+-      onCreate={ghostCreate}
++      rootProps={interactions.ghostRootProps}
+     />
+   )
+   const cardScale = view.card_size ?? TENTHS_SCALE.default
+@@ -423,13 +399,13 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
+                     }
+                   />
+                 )
+-                if (ghostShown !== row.id && ghostSeat !== row.id) return [card]
++                if (ghostShown !== row.id) return [card]
+                 return [
+                   card,
+                   // FLIP seats the ghost among its neighbors on the way in; Reveal collapses it on the way out, so an aborted ghost animates away like the sidebar and table ones instead of vanishing.
+                   <Reveal
+                     key={`ghost-${row.id}`}
+-                    open={!interactions.ghost.ghost?.closing}
++                    open={!interactions.ghostClosing}
+                     fill
+                     onCollapsed={interactions.ghost.closed}
+                   >
+@@ -458,28 +434,18 @@ function GhostCard({
+   columns,
+   ctx,
+   iconName,
+-  onEnter,
+-  onLeave,
+-  onCreate,
++  rootProps,
+ }: {
+   banner: CardBanner
+   view: SavedView
+   columns: ResolvedColumn[]
+   ctx: ValueContext
+   iconName: string
+-  onEnter: () => void
+-  onLeave: () => void
+-  onCreate: () => void
++  rootProps: ViewInteractions['ghostRootProps']
+ }): React.JSX.Element {
+   const props = isCompact(view) ? [] : columns.filter((c) => c.kind !== 'title')
+   return (
+-    <CardRoot
+-      data-ghost-root
+-      className="ghost-card"
+-      onPointerEnter={onEnter}
+-      onPointerLeave={onLeave}
+-      onClick={onCreate}
+-    >
++    <CardRoot {...rootProps} className="ghost-card">
+       <CardBody pop={false} className="ghost-worn">
+         {banner !== 'none' && (
+           <CardThumb>
+diff --git a/Core/Views/Cards/cardCreation.test.tsx b/Core/Views/Cards/cardCreation.test.tsx
+index 07e2c2a79..25e31ec0b 100644
+--- a/Core/Views/Cards/cardCreation.test.tsx
++++ b/Core/Views/Cards/cardCreation.test.tsx
+@@ -176,6 +176,7 @@ it('a value’s inline field closes the ghost and keeps it down until the field
+     v.textContent?.includes('words'),
+   )
+   await act(async () => {
++    textValue?.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }))
+     textValue?.click()
+   })
+   await tick(500)
+diff --git a/Core/Views/manualOrderDrops.test.tsx b/Core/Views/Host/rowDrops.test.tsx
+similarity index 95%
+rename from Core/Views/manualOrderDrops.test.tsx
+rename to Core/Views/Host/rowDrops.test.tsx
+index 5845565ef..bb5e76c2d 100644
+--- a/Core/Views/manualOrderDrops.test.tsx
++++ b/Core/Views/Host/rowDrops.test.tsx
+@@ -2,16 +2,16 @@
+ import { beforeEach, describe, expect, it, vi } from 'vitest'
+ import { act } from 'react'
+ import type { Root } from 'react-dom/client'
+-import type { PropertyDefinition } from '../Properties/properties'
+-import type { CollectionNode } from '../Nexus/tree'
+-import type { SavedView } from './views'
++import type { PropertyDefinition } from '../../Properties/properties'
++import type { CollectionNode } from '../../Nexus/tree'
++import type { SavedView } from '../views'
+ import { firePointer, stubRect } from '@pommora/uix/Utilities/pointerHarness'
+-import { ID_KEY } from '../Nexus/identityMark'
+-import { useSession } from '../Session/store'
+-import { propsAtRoot, valuesReply } from '../Testing/pageValues'
+-import { stubDialer } from '../vitest.setup'
+-import { mountEachTest, renderView, settle } from '../Testing/viewHarness'
+-import { makeTree } from '../Testing/testTree'
++import { ID_KEY } from '../../Nexus/identityMark'
++import { useSession } from '../../Session/store'
++import { propsAtRoot, valuesReply } from '../../Testing/pageValues'
++import { stubDialer } from '../../vitest.setup'
++import { mountEachTest, renderView, settle } from '../../Testing/viewHarness'
++import { makeTree } from '../../Testing/testTree'
+ 
+ const statusDef: PropertyDefinition = {
+   id: 'prop_status',
+diff --git a/Core/Views/Host/useViewCreation.ts b/Core/Views/Host/useViewCreation.ts
+index 60410ffc6..fd4e35041 100644
+--- a/Core/Views/Host/useViewCreation.ts
++++ b/Core/Views/Host/useViewCreation.ts
+@@ -44,7 +44,7 @@ export function tieOrderWith(
+   return spliceBeside(mergedRanking(existing, allIds, newId), anchorId, newId, where)
+ }
+ 
+-export interface CreateFlight {
++interface CreateFlight {
+   id: string
+   path: Promise<string | null>
+ }
+diff --git a/Core/Views/Host/useViewHost.ts b/Core/Views/Host/useViewHost.ts
+index 11f847ee3..ab0c50cde 100644
+--- a/Core/Views/Host/useViewHost.ts
++++ b/Core/Views/Host/useViewHost.ts
+@@ -9,7 +9,7 @@ import { useSession } from '../../Session/store'
+ import { useContentHost } from '../../Interface/contentHost'
+ import { useViewTileScope } from '../ViewTileScope'
+ import { identityOf } from '../../Contexts/contextIdentity'
+-import { holderOf, useValueContext } from '../../Properties/valueContext'
++import { useValueContext } from '../../Properties/valueContext'
+ import { bandModelOf } from '../Bands/bandModel'
+ import { containerSchema } from '../../Nexus/treePatch'
+ import { bucketGroupingOf, groupPlan, pageOrderOf } from '../Pipeline/group'
+@@ -25,7 +25,6 @@ import { columnStylePatch, styleFor } from '../../Properties/columnStyles'
+ import type { ViewPatch } from '../views'
+ import { groupKeyToValue, reassignable } from '../valueKinds'
+ import { hideShown, resolveColumn, unhide } from '../Pipeline/columns'
+-import type { SeatHost } from '../../Properties/Pickers/ValueSeat'
+ import type { ResolvedColumn } from '../../Properties/properties'
+ 
+ export type ViewHostApi = NonNullable<ReturnType<typeof useViewHost>>
+@@ -178,15 +177,6 @@ export function useViewHost(source: CollectionNode | SetNode) {
+     styleById.get(column.id) ?? styleFor(column, view, forms)
+ 
+   if (!ctx || !tree) return null
+-  const seatHost = {
+-    rowOf: (id: string) => rowById.get(id),
+-    columnOf: (id: string) => resolveColumn(id, schema, contextIds),
+-    commit: commitValue,
+-    holder: (row: ViewRow) => holderOf(row, ctx),
+-    connections: ctx.connections,
+-    style: styleOf,
+-    setStyle: setStylePatch,
+-  } satisfies Omit<SeatHost, 'anchor'>
+   return {
+     source: painted,
+     schema,
+@@ -221,7 +211,6 @@ export function useViewHost(source: CollectionNode | SetNode) {
+     persistView,
+     commitValue,
+     commitGroupValue,
+-    seatHost,
+     styleOf,
+     mutate,
+     openTarget,
+diff --git a/Core/Views/Host/useViewInteractions.tsx b/Core/Views/Host/useViewInteractions.tsx
+index d1330049d..5bfbce23a 100644
+--- a/Core/Views/Host/useViewInteractions.tsx
++++ b/Core/Views/Host/useViewInteractions.tsx
+@@ -1,6 +1,6 @@
+-// Everything a row, a band, or a page does in answer to the pointer, defined once for every view kind: band drops, row drops and where the order lands, opening a page, the hover ghost, and the page menu. A kind supplies the policy below and its own presentation, nothing else.
++// Everything a row, a band, or a page does in answer to the pointer, defined once for every view kind: band drops, row drops and where the order lands, opening a page, the value seat, the hover ghost, and the page menu. A kind supplies the policy below and its own presentation, nothing else.
+ 
+-import { useMemo, useRef } from 'react'
++import { useMemo, useRef, useState } from 'react'
+ import { useLatest } from '@pommora/uix/Utilities/stableApi'
+ import { UNGROUPED, type ViewRow } from '../viewRow'
+ import type { CollectionNode, SetNode } from '../../Nexus/tree'
+@@ -9,6 +9,7 @@ import { type PageTarget, selectTargetOf } from '../../Navigation/navRef'
+ import { nextOrder } from '@pommora/uix/Utilities/moveItem'
+ import {
+   type GhostAnchor,
++  ghostRootProps,
+   useClearStrandedGhost,
+   useGhostAnchor,
+ } from '@pommora/uix/Interactions/ghostCreate'
+@@ -25,6 +26,8 @@ import { useSession } from '../../Session/store'
+ import { pickOpen } from '../../Session/chromeSlice'
+ import { glanceShown, hoverGlance, leaveGlance } from '../../Interface/Glance/glanceAction'
+ import { showPageMenu } from '../../Interface/Menus/pageMenuActions'
++import { type SeatHost, useValueSeat } from '../../Properties/Pickers/ValueSeat'
++import { holderOf } from '../../Properties/valueContext'
+ import { type BandNode, memberDepth, nodeLabel, springsInto } from '../Bands/bandModel'
+ import { bandRouting, bucketValueAt } from '../Bands/bandRouter'
+ import { bucketKey } from '../Pipeline/group'
+@@ -33,16 +36,17 @@ import { type BandView, bandSpec } from '../Bands/GroupBand'
+ import { sameItems } from '@pommora/uix/Utilities/same'
+ import { useViewTileScope } from '../ViewTileScope'
+ import type { ViewHostApi } from './useViewHost'
+-import { type CreateFlight, tieOrderWith, useViewCreation } from './useViewCreation'
++import { tieOrderWith, useViewCreation } from './useViewCreation'
+ import { dropIO } from './liveView'
+ import { mutateAhead, refusedDrop } from './paintAhead'
+ 
+ interface ViewInteractionPolicy {
+   ghost: {
+     graceMs: number
+-    suppressed: () => boolean
+     travelHold?: { inZone: (enteringId: string) => boolean; holdMs: number }
+   }
++  seat: Pick<SeatHost, 'anchor'> &
++    Partial<Pick<SeatHost, 'commit' | 'centered' | 'add' | 'hide' | 'onClose'>>
+   newPages: NewPageRows
+ }
+ 
+@@ -83,6 +87,8 @@ export function rowHover(
+   }
+ }
+ 
++export type ViewInteractions = ReturnType<typeof useViewInteractions>
++
+ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPolicy) {
+   const {
+     source,
+@@ -114,6 +120,7 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
+     commitGroupValue,
+     openTarget,
+     styleOf,
++    setStylePatch,
+   } = host
+ 
+   const tile = useViewTileScope()
+@@ -419,28 +426,39 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
+   const ghost = useGhostAnchor({
+     dwellMs: REVEAL_DWELL_MS,
+     graceMs: policy.ghost.graceMs,
+-    suppressed: () => pickOpen(useSession.getState()) || glanceShown() || policy.ghost.suppressed(),
++    suppressed: () =>
++      pickOpen(useSession.getState()) ||
++      glanceShown() ||
++      seat.open !== null ||
++      host.naming !== null,
+     travelHold: policy.ghost.travelHold,
+   })
++  const seat = useValueSeat({
++    rowOf: (id) => rowById.get(id),
++    columnOf: (id) => resolveColumn(id, schema, identity.contextIds),
++    commit: commitValue,
++    holder: (row) => holderOf(row, ctx),
++    connections: ctx.connections,
++    style: styleOf,
++    setStyle: setStylePatch,
++    hold: ghost.suppressWrap,
++    ...policy.seat,
++  })
+   useClearStrandedGhost(ghost, rowById)
+   // The container itself holds nothing, so the ghost stands on its own as its first New Page instead of waiting on a hover anchor. Reading the container rather than the pipeline keeps it off a view whose filter is what emptied the paint — there the create would land a page the filter hides again.
+   const ghostStanding = rows.length === 0
+-  const standingFlight = useRef<CreateFlight | null>(null)
+-  /** Claims the ghost's anchor and creates below it, or creates the container's first page under a standing ghost; undefined when no ghost stands. */
+-  const ghostCreate = (): CreateFlight | undefined => {
++  // The ghost holds its place for its create's whole flight, until the newborn's row lands there; a click on it meanwhile creates nothing.
++  const [held, setHeld] = useState<{ anchorId: string | null; id: string } | null>(null)
++  const ghostCreate = (): void => {
++    if (held) return
+     const anchorId = ghost.take()
+     const anchor = anchorId ? rowById.get(anchorId) : undefined
+-    if (anchor) return creation.createAfter(anchor)
+-    if (!ghostStanding) return undefined
+-    // The standing ghost stays mounted until the row lands, so the create is claimed for its whole flight.
+-    if (standingFlight.current) return standingFlight.current
+-    const flight = creation.createFirst()
+-    standingFlight.current = flight
+-    void flight.path.finally(() => {
+-      standingFlight.current = null
+-    })
+-    return flight
++    if (!anchor && !ghostStanding) return
++    const flight = anchor ? creation.createAfter(anchor) : creation.createFirst()
++    setHeld({ anchorId: anchor?.id ?? null, id: flight.id })
++    void flight.path.finally(() => setHeld((h) => (h?.id === flight.id ? null : h)))
+   }
++  const heldAt = held && !rowById.has(held.id) ? held.anchorId : null
+ 
+   return {
+     bandView,
+@@ -453,8 +471,11 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
+     openPage,
+     openSet,
+     pageMenu,
++    seat,
+     ghost,
++    ghostAt: heldAt ?? ghost.ghost?.anchorId ?? null,
++    ghostClosing: heldAt === null && ghost.ghost?.closing === true,
++    ghostRootProps: { ...ghostRootProps(ghost), onClick: ghostCreate },
+     ghostStanding,
+-    ghostCreate,
+   }
+ }
+diff --git a/Core/Views/Table/TableView.tsx b/Core/Views/Table/TableView.tsx
+index 091a68224..2f2d64c89 100644
+--- a/Core/Views/Table/TableView.tsx
++++ b/Core/Views/Table/TableView.tsx
+@@ -5,9 +5,9 @@ import { type ColumnAlign, viewOption } from '../views'
+ import type { PropertyValue } from '../../Properties/propertyValue'
+ import { pickKindOf, type ResolvedColumn } from '../../Properties/properties'
+ import { fillInput } from '@pommora/uix/Fields/fields.css'
+-import { useValueSeat, ValueSeat } from '../../Properties/Pickers/ValueSeat'
++import { ValueSeat } from '../../Properties/Pickers/ValueSeat'
+ import type { ViewHostApi } from '../Host/useViewHost'
+-import { rowHover, useViewInteractions } from '../Host/useViewInteractions'
++import { rowHover, useViewInteractions, type ViewInteractions } from '../Host/useViewInteractions'
+ import { useSession } from '../../Session/store'
+ import { RenamableName } from '../../Interface/RenamableTitle'
+ import type { ValueContext } from '../../Properties/valueContext'
+@@ -56,18 +56,14 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
+   const titleColId = titleCol?.id
+ 
+   const interactions = useViewInteractions(host, {
+-    ghost: {
+-      graceMs: 0,
+-      suppressed: () => seat.open !== null || host.naming !== null,
++    ghost: { graceMs: 0 },
++    seat: {
++      anchor: (el) => el.closest<HTMLElement>('.data-cell') ?? el,
++      onClose: () => cellSweep.clear(),
+     },
+     newPages: 'pair',
+   })
+-  const seat = useValueSeat({
+-    ...host.seatHost,
+-    anchor: (el) => el.closest<HTMLElement>('.data-cell') ?? el,
+-    hold: interactions.ghost.suppressWrap,
+-    onClose: () => cellSweep.clear(),
+-  })
++  const { seat } = interactions
+ 
+   // ── Cell click ────────────────────────────────────────────────────────────
+ 
+@@ -168,14 +164,11 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
+   const indent = (depth: number): string =>
+     depth > 0 ? `calc(var(--loose-inset) + ${rowIndent(depth)})` : 'var(--loose-inset)'
+ 
+-  const ghost = interactions.ghost.ghost
+   const ghostRowProps = {
+     columns,
+     hideIcon: viewOption(view, 'hide_page_icons'),
+     onClosed: interactions.ghost.closed,
+-    onEnter: interactions.ghost.onGhostEnter,
+-    onLeave: interactions.ghost.onGhostLeave,
+-    onCreate: () => void interactions.ghostCreate(),
++    rootProps: interactions.ghostRootProps,
+   }
+   let renderedAnyRow = false
+   const renderRows = (g: ResolvedGroup, depth: number, visible: boolean): React.JSX.Element[] => {
+@@ -208,12 +201,12 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
+             lead={lead}
+           />,
+         ]
+-        if (itemsVisible && ghost?.anchorId === row.id && !open && !host.naming)
++        if (itemsVisible && interactions.ghostAt === row.id)
+           rendered.push(
+             <GhostRow
+               key={`ghost-${row.id}`}
+               padLeft={memberIndent(itemDepth)}
+-              closing={ghost.closing}
++              closing={interactions.ghostClosing}
+               {...ghostRowProps}
+             />,
+           )
+@@ -303,31 +296,24 @@ function GhostRow({
+   hideIcon,
+   closing,
+   onClosed,
+-  onEnter,
+-  onLeave,
+-  onCreate,
++  rootProps,
+ }: {
+   padLeft: string | undefined
+   columns: ResolvedColumn[]
+   hideIcon: boolean
+   closing: boolean
+   onClosed: () => void
+-  onEnter: () => void
+-  onLeave: () => void
+-  onCreate: () => void
++  rootProps: ViewInteractions['ghostRootProps']
+ }): React.JSX.Element {
+   return (
+     <Reveal open={!closing} enterOnMount onCollapsed={onClosed}>
+-      {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/useSemanticElements: a hover-born affordance that must use the row grid's own chrome — a real <button> can't host a .data-row, and keyboard creation lives in the menus */}
++      {/* biome-ignore lint/a11y/useSemanticElements: a hover-born affordance that must use the row grid's own chrome — a real <button> can't host a .data-row, and keyboard creation lives in the menus */}
+       <div
+-        data-ghost-root
++        {...rootProps}
+         className="data-row ghost-row"
+         role="button"
+         tabIndex={-1}
+         aria-label="New Page"
+-        onPointerEnter={onEnter}
+-        onPointerLeave={onLeave}
+-        onClick={onCreate}
+       >
+         {columns.map((c, i) => (
+           <div
+diff --git a/UIX/Interactions/ghostCreate.ts b/UIX/Interactions/ghostCreate.ts
+index e27e0a012..2d37db73a 100644
+--- a/UIX/Interactions/ghostCreate.ts
++++ b/UIX/Interactions/ghostCreate.ts
+@@ -176,6 +176,18 @@ export function ghostAnchorProps(
+   }
+ }
+ 
++export function ghostRootProps(api: Pick<GhostAnchor, 'onGhostEnter' | 'onGhostLeave'>): {
++  'data-ghost-root': true
++  onPointerEnter: () => void
++  onPointerLeave: () => void
++} {
++  return {
++    'data-ghost-root': true,
++    onPointerEnter: api.onGhostEnter,
++    onPointerLeave: api.onGhostLeave,
++  }
++}
++
+ /** An anchor gone from the consumer's pipeline strands `closing`, which reopens with no dwell. */
+ export function useClearStrandedGhost(
+   api: GhostAnchor,

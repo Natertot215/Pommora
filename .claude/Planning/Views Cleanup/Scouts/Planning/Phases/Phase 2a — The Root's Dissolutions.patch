@@ -1,0 +1,2702 @@
+diff --git a/Core/Actions/createActions.test.ts b/Core/Actions/createActions.test.ts
+index 7bb4c5872..45b0c5693 100644
+--- a/Core/Actions/createActions.test.ts
++++ b/Core/Actions/createActions.test.ts
+@@ -141,3 +141,44 @@ describe('createNamed', () => {
+     expect(beginRename).toHaveBeenCalledWith(CREATED.path, true, 'matrix')
+   })
+ })
++
++describe('createNamed places by its kind', () => {
++  const page = { op: 'createPage', parentPath: 'Notes/Ideas', name: 'Untitled' } as const
++  const set = { op: 'createContainer', parentPath: 'Notes', kind: 'set', name: 'Untitled' } as const
++  const space = { op: 'createSpace', contextId: 'g1', name: 'New Realm' } as const
++  const top = {
++    newPagePlacement: 'top',
++    newFolderPlacement: 'top',
++    newSpacePlacement: 'top',
++  } as const
++  const orderOf = async (
++    ask: Parameters<typeof createNamed>[0],
++    personalization: Personalization,
++  ): Promise<string[] | undefined> => {
++    asked.length = 0
++    seed({ kind: 'none' }, makeTree(), personalization)
++    await createNamed(ask)
++    const req = asked[0] as CreateRequest & { order?: string[] }
++    return req.order?.map((id) => (id === req.id ? 'new' : id))
++  }
++
++  it("leads each kind's siblings at its own Top placement", async () => {
++    expect(await orderOf(page, top)).toEqual(['new', 'p2'])
++    expect(await orderOf(set, top)).toEqual(['new', 's1'])
++    expect(await orderOf(space, top)).toEqual(['new', 'a1', 't1', 'pr1'])
++  })
++
++  it("trails each kind's siblings at Bottom, the unset placement", async () => {
++    expect(await orderOf(page, {})).toEqual(['p2', 'new'])
++    expect(await orderOf(set, { newPagePlacement: 'top' })).toEqual(['s1', 'new'])
++    expect(await orderOf(space, {})).toEqual(['a1', 't1', 'pr1', 'new'])
++  })
++
++  it('leaves a create into a folder the tree lacks as its own request', async () => {
++    expect(await orderOf({ ...page, parentPath: 'Notes/Gone' }, top)).toBeUndefined()
++  })
++
++  it('leaves a Collection, which no placement setting governs, as its own request', async () => {
++    expect(await orderOf({ ...set, kind: 'collection', parentPath: '' }, top)).toBeUndefined()
++  })
++})
+diff --git a/Core/Actions/createActions.ts b/Core/Actions/createActions.ts
+index de23bde8f..612ecafe1 100644
+--- a/Core/Actions/createActions.ts
++++ b/Core/Actions/createActions.ts
+@@ -1,9 +1,17 @@
+-import { DEFAULT_NEW_NAME, minted, type UnmintedCreate } from '../Nexus/mutateRequest'
++import {
++  type CreateRequest,
++  DEFAULT_NEW_NAME,
++  minted,
++  type UnmintedCreate,
++} from '../Nexus/mutateRequest'
+ import { spaceCreator } from './createMenu'
+ import type { RenameHost } from '../Session/editSlice'
+ import { relDirname } from '../Paths/posix'
+-import { placeAt, placeNew } from '../Views/creationOrder'
+-import { containerAt, findContainerById } from '../Nexus/treePatch'
++import { placedBeside, placementSlot } from '../Nexus/order'
++import { containerAt, findContainerById, pageIdsIn } from '../Nexus/treePatch'
++import type { NexusTree } from '../Nexus/tree'
++import { type Personalization, type Placement, settingOf } from '../Settings/personalization'
++import { contextWorldOf } from '../Contexts/contextResolve'
+ import { namesContainer } from '../Nexus/entities'
+ import { useSession, windowTargetOf } from '../Session/store'
+ import { personalizationOf } from '../Session/configSlice'
+@@ -20,7 +28,7 @@ export async function newPageAdjacent(
+   if (!container) return
+   const anchor = container.pages.find((p) => p.path === path)
+   if (!anchor) return
+-  const req = placeAt(
++  const req = placedBeside(
+     minted({ op: 'createPage', parentPath, name: DEFAULT_NEW_NAME }),
+     container.pages.map((p) => p.id),
+     anchor.id,
+@@ -38,7 +46,7 @@ export async function newSpaceAdjacent(
+   const { tree, mutate, beginRename } = useSession.getState()
+   const group = tree?.contexts.find((g) => g.spaces.some((s) => s.id === id))
+   if (!group) return
+-  const req = placeAt(
++  const req = placedBeside(
+     minted(spaceCreator(group.def).req),
+     group.spaces.map((s) => s.id),
+     id,
+@@ -48,6 +56,32 @@ export async function newSpaceAdjacent(
+   if (done?.created && 'path' in done.created) beginRename(done.created.path, true, host)
+ }
+ 
++function placeNew<R extends CreateRequest>(tree: NexusTree, req: R, p: Personalization): R {
++  const at = (siblingIds: string[] | undefined, placement: Placement): R =>
++    placedBeside(req, siblingIds, null, placementSlot(placement))
++  const r: CreateRequest = req
++  switch (r.op) {
++    case 'createPage':
++      return at(pageIdsIn(tree, r.parentPath), settingOf(p, 'newPagePlacement'))
++    case 'createContainer': {
++      const parent = r.kind === 'set' ? containerAt(tree, r.parentPath) : null
++      return at(
++        parent ? (parent.sets ?? []).map((n) => n.id) : undefined,
++        settingOf(p, 'newFolderPlacement'),
++      )
++    }
++    case 'createSpace':
++      return at(
++        contextWorldOf(tree.contexts)
++          .groupById.get(r.contextId)
++          ?.spaces.map((n) => n.id),
++        settingOf(p, 'newSpacePlacement'),
++      )
++    default:
++      return req
++  }
++}
++
+ /** An unanchored create, placed by its kind's placement setting and named in place. */
+ export async function createNamed(ask: UnmintedCreate, host?: RenameHost): Promise<void> {
+   const s = useSession.getState()
+diff --git a/Core/Contract/bridge.ts b/Core/Contract/bridge.ts
+index ec652932d..9038f886e 100644
+--- a/Core/Contract/bridge.ts
++++ b/Core/Contract/bridge.ts
+@@ -15,7 +15,6 @@ import type { LayoutPatch, MatrixLayout } from '../Matrix/matrixLayout'
+ import type { WindowsFile } from '../Interface/Windows/windowRecord'
+ import type { ThumbRect } from '../Interface/chrome'
+ import type { PageValues } from '../Views/viewRow'
+-import type { ContainerConfigPatch } from '../Views/containerConfig'
+ import type { ContainerKind } from '../Nexus/entities'
+ import type { Personalization } from '../Settings/personalization'
+ import type { InsertTarget } from '../Tiles/Layout/model'
+@@ -113,10 +112,6 @@ export interface Asks {
+     args: [containerPath: string, kind: ContainerKind, removed: RemovedView]
+     reply: Result<null>
+   }
+-  'container:configure': {
+-    args: [containerPath: string, kind: ContainerKind, patch: ContainerConfigPatch]
+-    reply: Result<null>
+-  }
+   'view:loadValues': {
+     args: [containerPath: string, pageIds?: string[]]
+     reply: Result<Record<string, PageValues>>
+diff --git a/Core/Files/writePathRace.test.ts b/Core/Files/writePathRace.test.ts
+index 039feca39..a61a78859 100644
+--- a/Core/Files/writePathRace.test.ts
++++ b/Core/Files/writePathRace.test.ts
+@@ -14,9 +14,9 @@ import { updatePageBody, renamePage } from '../Nexus/page'
+ import { createTestPage } from '../Testing/createTestPage'
+ import { setChildOrder } from '../Nexus/reorder'
+ import { saveView } from '../Views/viewsFile'
+-import { setContainerConfig } from '../Views/containerConfig'
+ import { sidecarPath } from '../Paths/paths'
+ import { readJsonObject } from './atomicWrite'
++import { patchSidecar } from './sidecar'
+ 
+ const view = (id: string): SavedView => ({
+   id,
+@@ -53,7 +53,7 @@ describe('concurrent sidecar writers', () => {
+     await Promise.all([
+       setChildOrder(folder, 'set_order', ['s1']),
+       saveView(folder, 'collection', view('view_1'), view('view_1')),
+-      setContainerConfig(folder, 'collection', { view_button: 'labeled' }),
++      patchSidecar(folder, 'collection', (cur) => ({ ...cur, view_button: 'labeled' })),
+     ])
+     const sidecar = await readJsonObject(sidecarPath(folder, 'collection'))
+     expect(sidecar?.set_order).toEqual(['s1'])
+diff --git a/Core/Navigation/previewRules.ts b/Core/Navigation/previewRules.ts
+index a932a0e12..a0e5e41d7 100644
+--- a/Core/Navigation/previewRules.ts
++++ b/Core/Navigation/previewRules.ts
+@@ -2,7 +2,7 @@
+ 
+ import { identityOf } from '../Contexts/contextIdentity'
+ import { entityMemo, type NexusTree } from '../Nexus/tree'
+-import { contextPaneTargets, FILEDATA_TARGETS, type PaneTarget } from '../Views/paneTargets'
++import { contextPaneTargets, FILEDATA_TARGETS } from '../Views/paneTargets'
+ import { containerAt } from '../Nexus/treePatch'
+ import { relDirname } from '../Paths/posix'
+ import { settingOf } from '../Settings/personalization'
+@@ -22,7 +22,7 @@ const previewTestOf = entityMemo(
+ )
+ 
+ /** What the rules can judge from the tree alone, so Last Modified and registry properties stay out. */
+-export const previewTargets = (tree: NexusTree): PaneTarget[] => [
++export const previewTargets = (tree: NexusTree) => [
+   FILEDATA_TARGETS.title,
+   ...(tree.collections.length > 0 ? [FILEDATA_TARGETS.location] : []),
+   FILEDATA_TARGETS.createdAt,
+diff --git a/Core/Nexus/mutate.test.ts b/Core/Nexus/mutate.test.ts
+index 4d798c51b..c9837dcee 100644
+--- a/Core/Nexus/mutate.test.ts
++++ b/Core/Nexus/mutate.test.ts
+@@ -2521,6 +2521,19 @@ describe('the acceptance chain, read raw off the disk at every step', () => {
+   })
+ })
+ 
++describe('handleMutate — setViewButton', () => {
++  it('writes view_button onto the container sidecar', async () => {
++    const r = await settledMutate(root, {
++      op: 'setViewButton',
++      path: 'Notes/Daily',
++      kind: 'set',
++      viewButton: 'labeled',
++    })
++    expect(r.ok).toBe(true)
++    expect((await readJson('Notes/Daily/_pageset.json')).view_button).toBe('labeled')
++  })
++})
++
+ describe('handleMutate — setActiveView', () => {
+   it('writes active_view onto the container sidecar', async () => {
+     const r = await settledMutate(root, {
+diff --git a/Core/Nexus/mutate.ts b/Core/Nexus/mutate.ts
+index 19b013aa6..74650d875 100644
+--- a/Core/Nexus/mutate.ts
++++ b/Core/Nexus/mutate.ts
+@@ -186,6 +186,17 @@ async function dispatch(root: string, req: MutateRequest): Promise<MutateReply>
+       return done(await setActiveView(folder.value, req.kind, req.viewId))
+     }
+ 
++    case 'setViewButton': {
++      const folder = await mutableTarget(root, req.path, [req.kind])
++      if (!folder.ok) return folder
++      return done(
++        await patchSidecar(folder.value, req.kind, (cur) => ({
++          ...cur,
++          view_button: req.viewButton,
++        })),
++      )
++    }
++
+     case 'setProperty':
+       return isMarkdownFile(req.path)
+         ? setPropertyOp(root, req)
+diff --git a/Core/Nexus/mutateRequest.ts b/Core/Nexus/mutateRequest.ts
+index 6fb7d006c..facdb7030 100644
+--- a/Core/Nexus/mutateRequest.ts
++++ b/Core/Nexus/mutateRequest.ts
+@@ -6,7 +6,7 @@ import { propertyValue } from '../Properties/propertyValue'
+ import { propertyConfig, propertyDraft } from '../Properties/properties'
+ import { optionEdit } from '../Properties/optionModel'
+ import { formatChange } from '../Properties/keyFormat'
+-import { crop, type PageMetaPatch } from './schemas'
++import { crop, type PageMetaPatch, VIEW_BUTTONS } from './schemas'
+ import type { CascadeReport } from './cascade'
+ import { CONTAINER_KINDS, HELD_KINDS, type HeldKind, NODE_KINDS } from './entities'
+ import { newContentId, newId } from './ids'
+@@ -110,6 +110,7 @@ export const mutateRequest = z.discriminatedUnion('op', [
+   op('setIcon', { path: z.string(), kind: heldKind, icon: z.string().nullable() }),
+   op('setDisclosureLock', { path: z.string(), kind: containerKind, locked: z.boolean() }),
+   op('setActiveView', { path: z.string(), kind: containerKind, viewId: z.string() }),
++  op('setViewButton', { path: z.string(), kind: containerKind, viewButton: z.enum(VIEW_BUTTONS) }),
+   op('setProperty', { path: z.string(), propertyId: z.string(), value: propertyValue.nullable() }),
+   op('putBack', { entries: z.array(putBack) }),
+   op('setPageMeta', { path: z.string(), patch: pageMetaPatch }),
+diff --git a/Core/Nexus/order.test.ts b/Core/Nexus/order.test.ts
+index e3d7aa8c2..c60b9a4a1 100644
+--- a/Core/Nexus/order.test.ts
++++ b/Core/Nexus/order.test.ts
+@@ -1,5 +1,6 @@
+ import { describe, it, expect } from 'vitest'
+-import { resolveOrder, spliceBeside } from './order'
++import { placedBeside, resolveOrder, type Slot, spliceBeside } from './order'
++import type { MutateRequest } from './mutateRequest'
+ 
+ const mk = (id: string, title: string): { id: string; title: string } => ({ id, title })
+ 
+@@ -25,3 +26,39 @@ describe('spliceBeside', () => {
+     expect(spliceBeside(['a', 'b'], null, 'x', 'above')).toEqual(['a', 'b', 'x'])
+   })
+ })
++
++describe('placedBeside', () => {
++  const page: Extract<MutateRequest, { op: 'createPage' }> = {
++    op: 'createPage',
++    id: 'p9',
++    parentPath: 'Notes',
++    name: 'Untitled',
++  }
++  const orderWithSlot = (...at: [string[], string | null, Slot]): string[] | undefined =>
++    placedBeside(page, ...at).order
++
++  it('appends for a band-add and splices beside an anchor', () => {
++    expect(orderWithSlot(['a', 'b'], null, 'last')).toEqual(['a', 'b', 'p9'])
++    expect(orderWithSlot(['a', 'b', 'c'], 'b', 'above')).toEqual(['a', 'p9', 'b', 'c'])
++    expect(orderWithSlot(['a', 'b', 'c'], 'b', 'below')).toEqual(['a', 'b', 'p9', 'c'])
++  })
++
++  it('carries the FULL sibling list — a filtered subset would re-rank hidden rows', () => {
++    const full = ['visible1', 'hidden1', 'visible2', 'hidden2']
++    expect(orderWithSlot(full, 'visible2', 'below')).toEqual([
++      'visible1',
++      'hidden1',
++      'visible2',
++      'p9',
++      'hidden2',
++    ])
++  })
++
++  it('appends when the anchor is not among the siblings', () => {
++    expect(orderWithSlot(['a', 'b'], 'ghost', 'above')).toEqual(['a', 'b', 'p9'])
++  })
++
++  it('leads the siblings at the first slot', () => {
++    expect(orderWithSlot(['a', 'b'], null, 'first')).toEqual(['p9', 'a', 'b'])
++  })
++})
+diff --git a/Core/Nexus/order.ts b/Core/Nexus/order.ts
+index 355bc6198..9df70fb31 100644
+--- a/Core/Nexus/order.ts
++++ b/Core/Nexus/order.ts
+@@ -2,6 +2,8 @@
+ 
+ import { compareTitles } from '../Paths/caseFold'
+ import { nextOrder, resolveRowOrder } from '@pommora/uix/Utilities/moveItem'
++import type { CreateRequest } from './mutateRequest'
++import type { Placement } from '../Settings/personalization'
+ 
+ interface Orderable {
+   id: string
+@@ -37,3 +39,16 @@ export function spliceBeside(
+           : null
+   return nextOrder(ids, item, before)
+ }
++
++export const placementSlot = (placement: Placement): Slot =>
++  placement === 'top' ? 'first' : 'last'
++
++// A parent the tree lacks leaves the request bare, since an order naming only the newborn would drop every sibling from the folder's order.
++export function placedBeside<R extends CreateRequest>(
++  req: R,
++  siblingIds: string[] | undefined,
++  anchorId: string | null,
++  where: Slot,
++): R {
++  return siblingIds ? { ...req, order: spliceBeside(siblingIds, anchorId, req.id, where) } : req
++}
+diff --git a/Core/Nexus/schemas.containerConfig.test.ts b/Core/Nexus/schemas.viewButton.test.ts
+similarity index 100%
+rename from Core/Nexus/schemas.containerConfig.test.ts
+rename to Core/Nexus/schemas.viewButton.test.ts
+diff --git a/Core/Views/Host/useActiveView.ts b/Core/Views/Host/useActiveView.ts
+index 9e1afadc9..b3cfc4917 100644
+--- a/Core/Views/Host/useActiveView.ts
++++ b/Core/Views/Host/useActiveView.ts
+@@ -1,7 +1,6 @@
+ import type { CollectionNode, SetNode } from '../../Nexus/tree'
+-import type { SavedView } from '../views'
++import { pickView, type SavedView } from '../views'
+ import { useViewTileScope } from '../ViewTileScope'
+-import { pickView } from '../Pipeline/pickView'
+ import { useLiveView } from './pendingView'
+ 
+ export function useActiveView(source: CollectionNode | SetNode): SavedView {
+diff --git a/Core/Views/Host/useColumnStyles.test.ts b/Core/Views/Host/useColumnStyles.test.ts
+index 49d62d93e..e64d86547 100644
+--- a/Core/Views/Host/useColumnStyles.test.ts
++++ b/Core/Views/Host/useColumnStyles.test.ts
+@@ -1,5 +1,5 @@
+ import { describe, expect, it } from 'vitest'
+-import { pickedStyle, styleFor } from './useColumnStyles'
++import { columnStylePatch, styleFor } from './useColumnStyles'
+ import { dateDefaults, type DateFormat } from '../../Properties/columnStyles'
+ import type { PropertyDefinition } from '../../Properties/properties'
+ import { savedView, type SavedView } from '../views'
+@@ -97,7 +97,8 @@ describe('a column follows the Nexus until it picks its own', () => {
+ 
+   it("stores nothing for the Nexus's own date form, and 'shown' for its clock", () => {
+     const pick = (key: 'date_format' | 'time_format', value: string) =>
+-      pickedStyle(col('prop_date'), nexus('relative'), key, value)
++      columnStylePatch(view({}), col('prop_date'), nexus('relative'), { [key]: value })
++        .column_styles?.prop_date?.[key]
+     expect(pick('date_format', 'relative')).toBeUndefined()
+     expect(pick('date_format', 'full')).toBe('full')
+     expect(pick('time_format', 'twentyFourHour')).toBe('shown')
+diff --git a/Core/Views/Host/useColumnStyles.ts b/Core/Views/Host/useColumnStyles.ts
+index ceb060851..6bc074d96 100644
+--- a/Core/Views/Host/useColumnStyles.ts
++++ b/Core/Views/Host/useColumnStyles.ts
+@@ -32,7 +32,7 @@ export function styleFor(
+ }
+ 
+ /** What a column stores for a pick from its style menu. */
+-export function pickedStyle(
++function pickedStyle(
+   column: ResolvedColumn,
+   nexus: NexusForms,
+   key: keyof ColumnStyle & string,
+diff --git a/Core/Views/Host/useViewCreation.test.ts b/Core/Views/Host/useViewCreation.test.ts
+new file mode 100644
+index 000000000..f1643c965
+--- /dev/null
++++ b/Core/Views/Host/useViewCreation.test.ts
+@@ -0,0 +1,69 @@
++import { describe, expect, it } from 'vitest'
++import { tieOrderWith } from './useViewCreation'
++import { makeSorter } from '../Pipeline/sort'
++import type { ViewRow } from '../viewRow'
++
++describe('tieOrderWith', () => {
++  it("a null anchor ranks the newborn last while reproducing the ranking — a band-add's end-of-group", () => {
++    expect(tieOrderWith(['b', 'a'], ['a', 'b', 'c'], 'new', null, 'below')).toEqual([
++      'b',
++      'a',
++      'c',
++      'new',
++    ])
++    expect(tieOrderWith(undefined, ['a', 'b'], 'new', null, 'below')).toEqual(['a', 'b', 'new'])
++  })
++
++  it('first leads the whole ranking — a band-add at Top', () => {
++    expect(tieOrderWith(['b', 'a'], ['a', 'b', 'c'], 'new', null, 'first')).toEqual([
++      'new',
++      'b',
++      'a',
++      'c',
++    ])
++  })
++
++  it('reproduces the current ranking and places the new id beside its anchor', () => {
++    const out = tieOrderWith(['b', 'a'], ['a', 'b', 'c', 'd'], 'new', 'c', 'below')
++    expect(out).toEqual(['b', 'a', 'c', 'new', 'd'])
++  })
++
++  it('with no existing order, the array is the full source order — no sibling moves', () => {
++    expect(tieOrderWith(undefined, ['a', 'b', 'c'], 'new', 'a', 'above')).toEqual([
++      'new',
++      'a',
++      'b',
++      'c',
++    ])
++  })
++
++  it('includes every container row, not just the visible ones', () => {
++    // Under an active filter the caller still passes ALL ids — hidden rows keep their rank.
++    const out = tieOrderWith(undefined, ['vis1', 'hid1', 'vis2'], 'new', 'vis1', 'below')
++    expect(out).toEqual(['vis1', 'new', 'hid1', 'vis2'])
++  })
++
++  it('appends when the anchor vanished', () => {
++    expect(tieOrderWith(['a'], ['a', 'b'], 'new', 'gone', 'below')).toEqual(['a', 'b', 'new'])
++  })
++})
++
++// A newborn absent from a live order array ranks last, so both live arrays are spliced in the same act the create writes — the first paint already places the row at its slot.
++describe('the created row settles into the live order', () => {
++  const ALL = ['p1', 'p2', 'p3', 'pNew']
++  const STALE = ['p3', 'p1', 'p2']
++  const rows = (ids: string[]): ViewRow[] =>
++    ids.map((id) => ({ id, path: `${id}.md`, title: id }) as unknown as ViewRow)
++  const painted = (manual: string[] | undefined): string[] | undefined =>
++    makeSorter(undefined, [], [], manual)?.(rows(ALL)).map((r) => r.id)
++
++  it('a stale manual override spliced via tieOrderWith ranks the newborn at its slot first-pass', () => {
++    const spliced = tieOrderWith(STALE, ALL, 'pNew', 'p1', 'below')
++    expect(spliced).toEqual(['p3', 'p1', 'pNew', 'p2'])
++    expect(painted(spliced)).toEqual(spliced)
++  })
++
++  it('unspliced, the same state ranks the newborn last — the defect the settle kills', () => {
++    expect(painted(STALE)).toEqual(['p3', 'p1', 'p2', 'pNew'])
++  })
++})
+diff --git a/Core/Views/Host/useViewCreation.ts b/Core/Views/Host/useViewCreation.ts
+index f050edb35..8ff7007ce 100644
+--- a/Core/Views/Host/useViewCreation.ts
++++ b/Core/Views/Host/useViewCreation.ts
+@@ -3,7 +3,7 @@
+ import { pageValuesOf, type ViewRow, UNGROUPED } from '../viewRow'
+ import { patchOverride } from '../../Properties/valueOverride'
+ import { isBlankValue, type PropertyValue } from '../../Properties/propertyValue'
+-import { viewSpecOf } from '../valueKinds'
++import { groupKeyToValue, viewSpecOf } from '../valueKinds'
+ import { type ViewPatch, viewOption } from '../views'
+ import { type CreatePageRequest, DEFAULT_NEW_NAME, minted } from '../../Nexus/mutateRequest'
+ import { relDirname, relJoin } from '../../Paths/posix'
+@@ -14,14 +14,36 @@ import { resolveFieldValue } from '../../Properties/fieldValue'
+ import { resolveColumn } from '../Pipeline/columns'
+ import { filterSeeds } from '../Pipeline/creationSeeds'
+ import { flattenContainer } from '../Pipeline/group'
+-import { placeAt, placementSlot, tieOrderWith } from '../creationOrder'
+-import type { Slot } from '../../Nexus/order'
++import { placedBeside, placementSlot, type Slot, spliceBeside } from '../../Nexus/order'
+ import { pageIdsIn } from '../../Nexus/treePatch'
+-import { groupKeyToValue } from '../reassign'
+ import { useLatest } from '@pommora/uix/Utilities/stableApi'
+ import type { ViewHostApi } from './useViewHost'
+ import { personalizationOf } from '../../Session/configSlice'
+ 
++function mergedRanking(
++  existing: string[] | undefined,
++  allIds: string[],
++  excludeId: string,
++): string[] {
++  const base = existing ?? []
++  const inBase = new Set(base)
++  return [
++    ...base.filter((id) => id !== excludeId),
++    ...allIds.filter((id) => !inBase.has(id) && id !== excludeId),
++  ]
++}
++
++// Every array carries the full membership it governs — a partial write alphabetizes the untouched siblings, and one built from a filtered view permanently re-ranks every row the filter was hiding.
++export function tieOrderWith(
++  existing: string[] | undefined,
++  allIds: string[],
++  newId: string,
++  anchorId: string | null,
++  where: Slot,
++): string[] {
++  return spliceBeside(mergedRanking(existing, allIds, newId), anchorId, newId, where)
++}
++
+ export interface CreateFlight {
+   id: string
+   path: Promise<string | null>
+@@ -164,7 +186,7 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation
+   const addIn = (parentPath: string, parentSetId: string | undefined): CreateFlight => {
+     const s = useSession.getState()
+     const slot = placementSlot(settingOf(personalizationOf(s), 'newPagePlacement'))
+-    const req = placeAt(
++    const req = placedBeside(
+       pageRequest(parentPath, parentSetId),
+       pageIdsIn(s.tree!, parentPath),
+       null,
+@@ -203,7 +225,7 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation
+     }
+     const siblings = pageIdsIn(useSession.getState().tree!, parentPath)
+     return createPageIn(
+-      placeAt(pageRequest(parentPath, row.parentSetId, seeds), siblings, row.id, where),
++      placedBeside(pageRequest(parentPath, row.parentSetId, seeds), siblings, row.id, where),
+       row.id,
+       where,
+     )
+diff --git a/Core/Views/Host/useViewHost.ts b/Core/Views/Host/useViewHost.ts
+index 36f5b3010..2c1445720 100644
+--- a/Core/Views/Host/useViewHost.ts
++++ b/Core/Views/Host/useViewHost.ts
+@@ -1,5 +1,5 @@
+ import { useMemo, useRef } from 'react'
+-import { UNGROUPED, type ResolvedColumn, type ResolvedGroup, type ViewRow } from '../viewRow'
++import type { ResolvedColumn, ResolvedGroup, ViewRow } from '../viewRow'
+ import type { CollectionNode, SetNode } from '../../Nexus/tree'
+ import type { ColumnStyle } from '../../Properties/columnStyles'
+ import type { PropertyValue } from '../../Properties/propertyValue'
+@@ -11,20 +11,12 @@ import { useViewTileScope } from '../ViewTileScope'
+ import { useSaveView } from '../viewWrite'
+ import { identityOf } from '../../Contexts/contextIdentity'
+ import { holderOf, useValueContext } from '../../Properties/valueContext'
+-import { hideShown, unhide } from '../visibilityModel'
+ import { bandModelOf } from '../Bands/bandModel'
+ import { containerSchema } from '../../Nexus/treePatch'
+-import {
+-  bucketGroupingOf,
+-  bucketKey,
+-  flattenContainer,
+-  groupPlan,
+-  pageOrderOf,
+-} from '../Pipeline/group'
++import { bucketGroupingOf, flattenContainer, groupPlan, pageOrderOf } from '../Pipeline/group'
+ import { resolveView } from '../Pipeline/resolveView'
+-import { searchGroups } from '../Pipeline/search'
+-import { matchKey, matchQuery } from '../../Paths/caseFold'
+-import { relDirname } from '../../Paths/posix'
++import { searchGroups, searchKeysOf } from '../Pipeline/search'
++import { matchQuery } from '../../Paths/caseFold'
+ import { resolvedSortCount } from '../Pipeline/sort'
+ import { useActiveView } from './useActiveView'
+ import { presentedKind } from './viewKinds'
+@@ -32,8 +24,8 @@ import { useBandHeads } from './useBandHeads'
+ import { useContainerValues } from './useContainerValues'
+ import { columnStylePatch, styleFor } from './useColumnStyles'
+ import type { ViewPatch, ViewWriteOpts } from '../views'
+-import { groupKeyToValue, reassignable, reassignTarget } from '../reassign'
+-import { resolveColumn } from '../Pipeline/columns'
++import { groupKeyToValue, reassignable } from '../valueKinds'
++import { hideShown, resolveColumn, unhide } from '../Pipeline/columns'
+ import type { SeatHost } from '../../Properties/Pickers/ValueSeat'
+ 
+ export type ViewHostApi = NonNullable<ReturnType<typeof useViewHost>>
+@@ -94,17 +86,8 @@ export function useViewHost(source: CollectionNode | SetNode) {
+     () => new Map(columns.map((c) => [c.id, styleFor(c, view, nexus)])),
+     [columns, view, nexus],
+   )
+-  // A row's place is the Set chain below the source: every row shares the source's own name, which would otherwise keep them all.
+   const keys = useMemo(
+-    () =>
+-      searching
+-        ? new Map(
+-            rows.map((r) => [
+-              r.id,
+-              matchKey(r.title, relDirname(r.path).slice(source.path.length + 1)),
+-            ]),
+-          )
+-        : null,
++    () => (searching ? searchKeysOf(rows, source.path) : null),
+     [rows, searching, source.path],
+   )
+   const groups = useMemo(
+@@ -112,15 +95,6 @@ export function useViewHost(source: CollectionNode | SetNode) {
+     [resolvedGroups, needle, keys],
+   )
+   const shownCollapsed = searching ? NO_COLLAPSE : collapsed
+-  // A single-sorted view lays its rows out in value RUNS, so a reorder landing one strictly inside another run rewrites the sorted property. Armed only when the column is shown — an unrendered property leaves the run boundaries unreadable.
+-  const sortReassign = useMemo(() => {
+-    if (groupPropId !== undefined || sortKeys !== 1) return undefined
+-    for (const c of view.sort ?? []) {
+-      const column = columns.find((col) => col.id === c.property_id)
+-      if (column && reassignable(column.type)) return column
+-    }
+-    return undefined
+-  }, [groupPropId, sortKeys, view.sort, columns])
+ 
+   const ctx = useValueContext(tree, schema)
+   const bands = useMemo(() => bandModelOf(groups, heads), [groups, heads])
+@@ -187,17 +161,6 @@ export function useViewHost(source: CollectionNode | SetNode) {
+     const column = resolveColumn(propertyId, schema, contextIds)
+     return row && column && commitValue(row, column, groupKeyToValue(groupKey, column.type))
+   }
+-  const reassignBySortRun = (orderIds: string[], groupKey: string, activeId: string): void => {
+-    if (!sortReassign) return
+-    const keyOf = (id: string): string => {
+-      const row = rowById.get(id)
+-      return (row ? bucketKey(row, sortReassign, 'day') : null) ?? UNGROUPED
+-    }
+-    const band = orderIds.filter((id) => rowBand.get(id) === groupKey)
+-    const target = reassignTarget(band, activeId, keyOf)
+-    if (target === undefined) return
+-    commitGroupValue(activeId, sortReassign.id, target)
+-  }
+   const styleOf = (column: ResolvedColumn): ColumnStyle =>
+     styleById.get(column.id) ?? styleFor(column, view, nexus)
+ 
+@@ -234,7 +197,6 @@ export function useViewHost(source: CollectionNode | SetNode) {
+     canReassign,
+     canRelocate,
+     crossBand,
+-    reassignBySortRun,
+     sortKeys,
+     pageOrder,
+     dragDisabled,
+diff --git a/Core/Views/Host/useViewInteractions.test.ts b/Core/Views/Host/useViewInteractions.test.ts
+new file mode 100644
+index 000000000..b35ef0a93
+--- /dev/null
++++ b/Core/Views/Host/useViewInteractions.test.ts
+@@ -0,0 +1,44 @@
++import { describe, it, expect } from 'vitest'
++import { UNGROUPED } from '../viewRow'
++import { reassignTarget } from './useViewInteractions'
++
++describe('reassignTarget - the sorted-run drop', () => {
++  const keys: Record<string, string> = {
++    a: 'opt_todo',
++    b: 'opt_todo',
++    c: 'opt_doing',
++    d: 'opt_doing',
++    e: 'opt_doing',
++    lone: 'opt_blocked',
++    f: UNGROUPED,
++    g: UNGROUPED,
++  }
++  const run = (order: string[], dragged: string): string | undefined =>
++    reassignTarget(order, dragged, (id) => keys[id])
++
++  it('a slot strictly inside a foreign run takes that run value', () => {
++    expect(run(['a', 'c', 'b', 'd', 'e'], 'b')).toBe('opt_doing')
++  })
++
++  it('the seam between two runs changes nothing', () => {
++    expect(run(['a', 'b', 'c', 'd', 'e'], 'b')).toBeUndefined()
++  })
++
++  it('either end of the list changes nothing', () => {
++    expect(run(['b', 'c', 'd', 'e'], 'b')).toBeUndefined()
++    expect(run(['c', 'd', 'e', 'b'], 'b')).toBeUndefined()
++  })
++
++  it('a slot inside the row own run is a pure reorder', () => {
++    expect(run(['c', 'e', 'd'], 'e')).toBeUndefined()
++  })
++
++  it('the no-value tail is a run like any other - entering it clears', () => {
++    expect(run(['c', 'd', 'f', 'a', 'g'], 'a')).toBe(UNGROUPED)
++  })
++
++  it('a run of one can never be entered - it has no interior slot', () => {
++    expect(run(['a', 'b', 'lone', 'f', 'g'], 'b')).toBeUndefined()
++    expect(run(['a', 'lone', 'b', 'f', 'g'], 'b')).toBeUndefined()
++  })
++})
+diff --git a/Core/Views/Host/useViewInteractions.tsx b/Core/Views/Host/useViewInteractions.tsx
+index 9763b9fbf..295edb639 100644
+--- a/Core/Views/Host/useViewInteractions.tsx
++++ b/Core/Views/Host/useViewInteractions.tsx
+@@ -1,6 +1,6 @@
+ // Everything a row, a band, or a page does in answer to the pointer, defined once for every view kind: band drops, row drops and where the order lands, opening a page, the hover ghost, and the page menu. A kind supplies the policy below and its own presentation, nothing else.
+ 
+-import { useRef } from 'react'
++import { useMemo, useRef } from 'react'
+ import { useLatest } from '@pommora/uix/Utilities/stableApi'
+ import { UNGROUPED, type ViewRow } from '../viewRow'
+ import type { CollectionNode, SetNode } from '../../Nexus/tree'
+@@ -27,12 +27,13 @@ import { glanceShown, hoverGlance, leaveGlance } from '../../Interface/Glance/gl
+ import { showPageMenu } from '../../Interface/Menus/pageMenuActions'
+ import { type BandNode, memberDepth, nodeLabel, springsInto } from '../Bands/bandModel'
+ import { bandRouting, bucketValueAt } from '../Bands/bandRouter'
++import { bucketKey } from '../Pipeline/group'
++import { reassignable } from '../valueKinds'
+ import { type BandView, bandSpec } from '../Bands/GroupBand'
+-import { tieOrderWith } from '../creationOrder'
+ import { sameItems } from '@pommora/uix/Utilities/same'
+ import { useViewTileScope } from '../ViewTileScope'
+ import type { ViewHostApi } from './useViewHost'
+-import { type CreateFlight, useViewCreation } from './useViewCreation'
++import { type CreateFlight, tieOrderWith, useViewCreation } from './useViewCreation'
+ import { dropIO, mutateAhead, refusedDrop } from './pendingView'
+ 
+ interface ViewInteractionPolicy {
+@@ -46,6 +47,19 @@ interface ViewInteractionPolicy {
+   newPages: NewPageRows
+ }
+ 
++/** The neighbor rule keeps a drop to a run's edge — a seam, or either end of the list — from rewriting anything. */
++export function reassignTarget(
++  order: string[],
++  draggedId: string,
++  keyOf: (id: string) => string,
++): string | undefined {
++  const i = order.indexOf(draggedId)
++  if (i <= 0 || i >= order.length - 1) return undefined
++  const key = keyOf(order[i - 1])
++  if (key !== keyOf(order[i + 1]) || key === keyOf(draggedId)) return undefined
++  return key
++}
++
+ function pageTarget(row: ViewRow): PageTarget {
+   return { kind: 'page', id: row.id, path: row.path }
+ }
+@@ -92,7 +106,8 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
+     crossBand,
+     dragDisabled,
+     searching,
+-    reassignBySortRun,
++    columns,
++    sortKeys,
+     pageOrder,
+     plan,
+     persistView,
+@@ -104,6 +119,27 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
+ 
+   const tile = useViewTileScope()
+ 
++  // A single-sorted view lays its rows out in value RUNS, so a reorder landing one strictly inside another run rewrites the sorted property. Armed only when the column is shown — an unrendered property leaves the run boundaries unreadable.
++  const sortReassign = useMemo(() => {
++    if (groupPropId !== undefined || sortKeys !== 1) return undefined
++    for (const c of view.sort ?? []) {
++      const column = columns.find((col) => col.id === c.property_id)
++      if (column && reassignable(column.type)) return column
++    }
++    return undefined
++  }, [groupPropId, sortKeys, view.sort, columns])
++  const reassignBySortRun = (orderIds: string[], groupKey: string, activeId: string): void => {
++    if (!sortReassign) return
++    const keyOf = (id: string): string => {
++      const row = rowById.get(id)
++      return (row ? bucketKey(row, sortReassign, 'day') : null) ?? UNGROUPED
++    }
++    const band = orderIds.filter((id) => rowBand.get(id) === groupKey)
++    const target = reassignTarget(band, activeId, keyOf)
++    if (target === undefined) return
++    commitGroupValue(activeId, sortReassign.id, target)
++  }
++
+   // ── Bands ─────────────────────────────────────────────────────────────────
+ 
+   const valueAt = bucketValueAt(bands.byKey)
+diff --git a/Core/Views/Pipeline/columns.test.ts b/Core/Views/Pipeline/columns.test.ts
+index 703ec2dbc..bf303eaf4 100644
+--- a/Core/Views/Pipeline/columns.test.ts
++++ b/Core/Views/Pipeline/columns.test.ts
+@@ -4,7 +4,15 @@ import { FIXTURE_DEFS } from '../../Testing/definitions'
+ import { savedView, type SavedView } from '../views'
+ import { FILEDATA, type PropertyDefinition } from '../../Properties/properties'
+ import { linkedSpacesTree } from '../../Testing/testTree'
+-import { itemColumns, resolveColumn, resolveColumns } from './columns'
++import {
++  hiddenListIds,
++  hideShown,
++  itemColumns,
++  placeInShown,
++  resolveColumn,
++  resolveColumns,
++  unhide,
++} from './columns'
+ 
+ const schema: PropertyDefinition[] = [
+   { id: 'prop_a', label: 'A', key: 'A', type: 'select' },
+@@ -173,3 +181,111 @@ describe('itemColumns', () => {
+     expect(ids(item.properties)).toEqual(['prop_b', 'prop_a'])
+   })
+ })
++
++const [title, createdAt, modifiedAt] = [
++  FILEDATA.title.id,
++  FILEDATA.createdAt.id,
++  FILEDATA.modifiedAt.id,
++]
++const [areas, projects] = ['ctx_areas', 'ctx_projects']
++const stamps = [createdAt, modifiedAt]
++
++const def = (id: string): PropertyDefinition => ({ id, label: id, key: id, type: 'select' })
++
++const listed = (property_order: string[], hidden_properties: string[]): SavedView =>
++  view({ property_order, hidden_properties })
++
++describe('hiddenListIds', () => {
++  it('orders hidden props by the COLLECTION schema, not the hidden array', () => {
++    const schema = [def('a'), def('b'), def('c')]
++    expect(hiddenListIds(listed(['b'], ['c', 'a']), schema, [])).toEqual(['a', 'c', ...stamps])
++  })
++
++  it('lists non-shown contexts first (registry order), then props, then the stamps, drops stale ids', () => {
++    const schema = [def('a')]
++    expect(
++      hiddenListIds(listed([], [areas, modifiedAt, 'stale', 'a']), schema, [areas, projects]),
++    ).toEqual([areas, projects, 'a', createdAt, modifiedAt])
++  })
++
++  it('lists both stamps on a view that shows neither', () => {
++    expect(hiddenListIds(listed([title], []), [], [])).toEqual([createdAt, modifiedAt])
++  })
++
++  it('omits a stamp the view shows', () => {
++    expect(hiddenListIds(listed([title, modifiedAt], []), [], [])).toEqual([createdAt])
++  })
++
++  it('a context in neither list sits in the hidden zone (default-OFF reveal path)', () => {
++    expect(hiddenListIds(listed(['ctxA'], []), [], ['ctxA', 'ctxB'])).toEqual(['ctxB', ...stamps])
++  })
++
++  it('surfaces an unaccounted prop (in schema, in neither list) so it stays revealable', () => {
++    const schema = [def('a'), def('b')]
++    expect(hiddenListIds(listed(['a'], []), schema, [])).toEqual(['b', ...stamps])
++  })
++
++  it('interleaves hidden and unaccounted props in collection order', () => {
++    const schema = [def('a'), def('b'), def('c')]
++    expect(hiddenListIds(listed(['b'], ['a']), schema, [])).toEqual(['a', 'c', ...stamps])
++  })
++})
++
++describe('placeInShown', () => {
++  it('reorders a shown row, writing the full visible order verbatim with hidden ids trailing', () => {
++    const v = listed([title, 'a', 'b', 'h', 'c'], ['h'])
++    expect(placeInShown(v, [title, 'a', 'b', 'c'], 'c', 1)).toEqual({
++      property_order: [title, 'c', 'a', 'b', 'h'],
++      hidden_properties: ['h'],
++    })
++  })
++
++  it('unhides a dragged-in row at the slot and lifts its flag', () => {
++    const v = listed([title, 'a', 'b', 'h'], ['h'])
++    expect(placeInShown(v, [title, 'a', 'b'], 'h', 2)).toEqual({
++      property_order: [title, 'a', 'h', 'b'],
++      hidden_properties: [],
++    })
++  })
++
++  it('appends past the last shown row — a hidden id never in property_order lands', () => {
++    const v = listed(['a'], ['h'])
++    expect(placeInShown(v, ['a'], 'h', 1)).toEqual({
++      property_order: ['a', 'h'],
++      hidden_properties: [],
++    })
++  })
++
++  it('reveals an unaccounted prop — drag-in writes it into property_order (then it shows)', () => {
++    const v = listed([title, 'a'], [])
++    expect(placeInShown(v, [title, 'a'], 'new', 2)).toEqual({
++      property_order: [title, 'a', 'new'],
++      hidden_properties: [],
++    })
++  })
++
++  it('preserves foreign property_order ids at the tail', () => {
++    const v = listed(['a', 'future_key', 'b'], [])
++    expect(placeInShown(v, ['a', 'b'], 'b', 0).property_order).toEqual(['b', 'a', 'future_key'])
++  })
++})
++
++describe('hideShown / unhide', () => {
++  it('hide appends the flag once and never touches property_order', () => {
++    const v = listed(['a', 'b'], [])
++    expect(hideShown(v, 'a')).toEqual({ hidden_properties: ['a'] })
++    expect(hideShown(listed(['a'], ['a']), 'a')).toEqual({ hidden_properties: ['a'] })
++  })
++
++  it('unhide lifts the flag AND places an unplaced prop in the order (allowlist reveal)', () => {
++    // No remembered slot (a title-only minted view) → appended, so the allowlist actually shows it.
++    expect(unhide(listed([], ['a', 'b']), 'a')).toEqual({
++      property_order: ['a'],
++      hidden_properties: ['b'],
++    })
++    expect(unhide(listed(['a'], ['a']), 'a')).toEqual({
++      property_order: ['a'],
++      hidden_properties: [],
++    })
++  })
++})
+diff --git a/Core/Views/Pipeline/columns.ts b/Core/Views/Pipeline/columns.ts
+index 4ee944ff4..3b4edf8be 100644
+--- a/Core/Views/Pipeline/columns.ts
++++ b/Core/Views/Pipeline/columns.ts
+@@ -56,18 +56,72 @@ export function itemColumns(
+   }
+ }
+ 
++const shownIn = (view: SavedView): ((id: string) => boolean) => {
++  const ordered = new Set(view.property_order)
++  const hidden = new Set(view.hidden_properties)
++  return (id) => ordered.has(id) && !hidden.has(id)
++}
++
+ /** Context columns are default-OFF — they render only when the view's property_order explicitly reveals them. */
+ export function resolveColumns(
+   view: SavedView,
+   schema: PropertyDefinition[],
+   contextIds: readonly string[],
+ ): ResolvedColumn[] {
+-  const hidden = new Set(view.hidden_properties)
++  const shown = shownIn(view)
+   const columns = new Map<string, ResolvedColumn>()
+   for (const id of view.property_order) {
+-    if (hidden.has(id) || columns.has(id)) continue
++    if (!shown(id) || columns.has(id)) continue
+     const column = resolveColumn(id, schema, contextIds)
+     if (column) columns.set(id, column)
+   }
+   return columns.has(TITLE.id) ? [...columns.values()] : [TITLE, ...columns.values()]
+ }
++
++export function hiddenListIds(
++  view: SavedView,
++  schema: PropertyDefinition[],
++  contextIds: readonly string[],
++): string[] {
++  const shown = shownIn(view)
++  const hidden = (id: string): boolean => !shown(id)
++  return [
++    ...contextIds.filter(hidden),
++    ...schema.map((d) => d.id).filter(hidden),
++    ...[FILEDATA.createdAt.id, FILEDATA.modifiedAt.id].filter(hidden),
++  ]
++}
++
++type VisibilityPatch = Pick<SavedView, 'property_order' | 'hidden_properties'>
++
++export function placeInShown(
++  view: SavedView,
++  shownIds: string[],
++  id: string,
++  toIndex: number,
++): VisibilityPatch {
++  const next = shownIds.filter((x) => x !== id)
++  next.splice(toIndex, 0, id)
++  return {
++    property_order: [...next, ...view.property_order.filter((x) => !next.includes(x))],
++    hidden_properties: view.hidden_properties.filter((x) => x !== id),
++  }
++}
++
++/** Hide a shown property — flag it, never move it: its property_order slot is its remembered spot, so a later unhide restores it where it was. */
++export function hideShown(view: SavedView, id: string): Pick<SavedView, 'hidden_properties'> {
++  return {
++    hidden_properties: view.hidden_properties.includes(id)
++      ? view.hidden_properties
++      : [...view.hidden_properties, id],
++  }
++}
++
++export function unhide(view: SavedView, id: string): VisibilityPatch {
++  return {
++    property_order: view.property_order.includes(id)
++      ? view.property_order
++      : [...view.property_order, id],
++    hidden_properties: view.hidden_properties.filter((x) => x !== id),
++  }
++}
+diff --git a/Core/Views/Pipeline/pickView.test.ts b/Core/Views/Pipeline/pickView.test.ts
+deleted file mode 100644
+index be62082fd..000000000
+--- a/Core/Views/Pipeline/pickView.test.ts
++++ /dev/null
+@@ -1,14 +0,0 @@
+-import { describe, expect, it } from 'vitest'
+-import type { SetNode } from '../../Nexus/tree'
+-import { DEFAULT_VIEW_ID } from '../views'
+-import { pickView } from './pickView'
+-
+-const set = { kind: 'set', id: 's1', sets: [] } as unknown as SetNode
+-
+-describe('pickView', () => {
+-  it('answers the same default view for every container with no saved view', () => {
+-    const other = { kind: 'set', id: 's2', sets: [] } as unknown as SetNode
+-    expect(pickView(set)).toBe(pickView(other))
+-    expect(pickView(set).id).toBe(DEFAULT_VIEW_ID)
+-  })
+-})
+diff --git a/Core/Views/Pipeline/pickView.ts b/Core/Views/Pipeline/pickView.ts
+deleted file mode 100644
+index 238b9a281..000000000
+--- a/Core/Views/Pipeline/pickView.ts
++++ /dev/null
+@@ -1,12 +0,0 @@
+-import type { CollectionNode, SetNode } from '../../Nexus/tree'
+-import { DEFAULT_VIEW_ID, mintDefaultView, type SavedView } from '../views'
+-
+-const DEFAULT_VIEW: SavedView = { ...mintDefaultView(), id: DEFAULT_VIEW_ID }
+-
+-/** The container's chosen view if still present, else the first saved view, else the one default view (sentinel id until first saved). */
+-export function pickView(source: CollectionNode | SetNode): SavedView {
+-  const views = source.views ?? []
+-  const saved =
+-    (source.activeView ? views.find((v) => v.id === source.activeView) : undefined) ?? views[0]
+-  return saved ?? DEFAULT_VIEW
+-}
+diff --git a/Core/Views/Pipeline/search.ts b/Core/Views/Pipeline/search.ts
+index 7ca6576fd..0dc4427a0 100644
+--- a/Core/Views/Pipeline/search.ts
++++ b/Core/Views/Pipeline/search.ts
+@@ -1,5 +1,12 @@
+-import { type MatchKey, matches } from '../../Paths/caseFold'
+-import { isEmptyBand, type ResolvedGroup } from '../viewRow'
++import { type MatchKey, matches, matchKey } from '../../Paths/caseFold'
++import { relDirname } from '../../Paths/posix'
++import { isEmptyBand, type ResolvedGroup, type ViewRow } from '../viewRow'
++
++// A row's place is the Set chain below the source: every row shares the source's own name, which would otherwise keep them all.
++export const searchKeysOf = (rows: ViewRow[], sourcePath: string): Map<string, MatchKey> =>
++  new Map(
++    rows.map((r) => [r.id, matchKey(r.title, relDirname(r.path).slice(sourcePath.length + 1))]),
++  )
+ 
+ export function searchGroups(
+   groups: ResolvedGroup[],
+diff --git a/Core/Views/Settings/FilterFrame.test.tsx b/Core/Views/Settings/FilterFrame.test.tsx
+index ef9fb000c..9d0eef74e 100644
+--- a/Core/Views/Settings/FilterFrame.test.tsx
++++ b/Core/Views/Settings/FilterFrame.test.tsx
+@@ -5,6 +5,7 @@ import { createRoot, type Root } from 'react-dom/client'
+ import type { CollectionNode, NexusTree } from '../../Nexus/tree'
+ import type { PropertyDefinition } from '../../Properties/properties'
+ import type { SavedView } from '../views'
++import type { FilterGroup, FilterRule } from '../filterRules'
+ import { FilterFrame, type FilterView } from './FilterFrame'
+ import { mountEachTest } from '../../Testing/viewHarness'
+ import { linkedSpacesTree } from '../../Testing/testTree'
+@@ -383,6 +384,24 @@ describe('FilterFrame', () => {
+     expect(lastSaved().filter).toBeUndefined()
+   })
+ 
++  it('any nested group locks, whatever its root or depth', async () => {
++    const r = (id: string): FilterRule => ({ property_id: id, op: 'is', value: 'x' })
++    const nested: FilterGroup[] = [
++      { match: 'any', rules: [{ match: 'all', rules: [r('a'), r('b')] }, r('c')] },
++      { match: 'any', rules: [{ match: 'all', rules: [r('a')] }, r('b')] },
++      { match: 'all', rules: [r('a'), { match: 'any', rules: [r('b'), r('c')] }] },
++      { match: 'all', rules: [r('a'), { match: 'all', rules: [r('b'), r('c')] }] },
++      {
++        match: 'any',
++        rules: [{ match: 'all', rules: [r('a'), { match: 'any', rules: [r('b')] }] }],
++      },
++    ]
++    for (const filter of nested) {
++      await mount(view({ filter }))
++      expect(texts()).toContain('Reset Filter')
++    }
++  })
++
+   it('an empty filter shows one blank lead row with no "+" needed, and no clear-×', async () => {
+     await mount(view())
+     expect(texts()).toContain('Where')
+diff --git a/Core/Views/Settings/FilterFrame.tsx b/Core/Views/Settings/FilterFrame.tsx
+index ab3578339..f849f11e1 100644
+--- a/Core/Views/Settings/FilterFrame.tsx
++++ b/Core/Views/Settings/FilterFrame.tsx
+@@ -3,12 +3,14 @@ import type { CollectionNode, NexusTree, SetNode } from '../../Nexus/tree'
+ import type { PickOption, PropertyDefinition } from '../../Properties/properties'
+ import { type SavedView, viewOption } from '../views'
+ import {
++  type FilterGroup,
+   type FilterRule,
++  isGroup,
+   type MatchMode,
+   ruleOperands,
+   type StandaloneFilter,
+ } from '../filterRules'
+-import type { PaneTarget } from '../paneTargets'
++import { filterTargets } from '../paneTargets'
+ import { Icon } from '@pommora/uix/Symbols'
+ import { leading } from '@pommora/uix/Fields/fields.css'
+ import {
+@@ -41,8 +43,7 @@ import { onActivateKey } from '@pommora/uix/Interactions/activate'
+ import { cx } from '@pommora/uix/Utilities/cx'
+ import { PickerControl, type PickerOption } from '@pommora/uix/Menus/PickerControl'
+ import { SETTINGS_PANE_MAX_HEIGHT } from '@pommora/uix/Menus/frames.css'
+-import { type DecodedFilter, decodeFilter, filterTargets, operatorsFor } from '../filterModel'
+-import type { OperatorChoice } from '../valueKinds'
++import { type OperatorChoice, operatorsFor } from '../valueKinds'
+ import * as fp from './filter-frame.css'
+ import { flattenNodes, LocationField } from './LocationField'
+ import { useMultiValue } from './useMultiValue'
+@@ -114,7 +115,7 @@ function mintRule(
+   schema: PropertyDefinition[],
+   contextIds: readonly string[],
+ ): FilterRule {
+-  const first = operatorsFor(targetId, schema, contextIds)[0]
++  const first = operatorsFor(targetId, resolveColumn(targetId, schema, contextIds)?.type)[0]
+   return {
+     property_id: targetId,
+     op: first?.op ?? '',
+@@ -179,6 +180,16 @@ function ChipsField({
+   )
+ }
+ 
++type DecodedFilter = { kind: 'rows'; mode: MatchMode; rules: FilterRule[] } | { kind: 'locked' }
++
++/** The pane writes one shape, a flat group under the footer's mode; anything nested was authored elsewhere and locks. */
++function decodeFilter(filter: FilterGroup | undefined): DecodedFilter {
++  if (!filter) return { kind: 'rows', mode: 'any', rules: [] }
++  return filter.rules.some(isGroup)
++    ? { kind: 'locked' }
++    : { kind: 'rows', mode: filter.match, rules: filter.rules as FilterRule[] }
++}
++
+ export type FilterView = Pick<SavedView, 'filter' | 'filter_enabled' | 'column_styles'>
+ type FilterPatch = { filter: SavedView['filter'] } | { filter_enabled: boolean }
+ 
+@@ -205,7 +216,7 @@ export function FilterFrame({
+   schema: PropertyDefinition[]
+   tree: NexusTree | null
+   back?: MenuBack
+-  targets?: PaneTarget[]
++  targets?: PickerOption<string>[]
+   onCommit: (patch: FilterPatch) => void
+ }): React.JSX.Element {
+   const nexus = useNexusForms()
+@@ -238,7 +249,7 @@ export function FilterFrame({
+ 
+   const contextIds = contextIdsOf(tree)
+   const targets = supplied ?? filterTargets(schema, tree, locations.length > 0)
+-  const targetById = new Map(targets.map((t) => [t.id, t]))
++  const targetById = new Map(targets.map((t) => [t.value, t]))
+   const folderById = useMemo(
+     () => new Map(flattenNodes(locations).map((n) => [n.id, n])),
+     [locations],
+@@ -279,12 +290,12 @@ export function FilterFrame({
+   ): React.ReactNode =>
+     targets.map((t) => (
+       <MenuItem
+-        key={t.id}
+-        picked={t.id === current ? 'solo' : undefined}
+-        leading={<Icon name={t.icon} size="body" />}
++        key={t.value}
++        picked={t.value === current ? 'solo' : undefined}
++        leading={t.icon && <Icon name={t.icon} size="body" />}
+         onClick={() => {
+           close()
+-          onPick(t.id)
++          onPick(t.value)
+         }}
+       >
+         {t.label}
+@@ -369,7 +380,7 @@ export function FilterFrame({
+ 
+   const ruleRow = (rule: FilterRule, index: number): React.JSX.Element => {
+     const column = resolveColumn(rule.property_id, schema, contextIds)
+-    const ops = operatorsFor(rule.property_id, schema, contextIds)
++    const ops = operatorsFor(rule.property_id, column?.type)
+     const current = ops.find(
+       (o) =>
+         o.op === rule.op &&
+diff --git a/Core/Views/Settings/GroupFrame.tsx b/Core/Views/Settings/GroupFrame.tsx
+index d618f59c4..5241906c1 100644
+--- a/Core/Views/Settings/GroupFrame.tsx
++++ b/Core/Views/Settings/GroupFrame.tsx
+@@ -59,7 +59,7 @@ import { EntityIcon } from '../../Assets/EntityIcon'
+ import { cx } from '@pommora/uix/Utilities/cx'
+ import { useSetting } from '../../Session/store'
+ import { PickerControl, type PickerOption } from '@pommora/uix/Menus/PickerControl'
+-import { FILEDATA_TARGETS, schemaTargets, targetOption } from '../paneTargets'
++import { FILEDATA_TARGETS, schemaTargets } from '../paneTargets'
+ import {
+   chipRegion,
+   hiddenRow,
+@@ -141,7 +141,7 @@ export function GroupFrame({
+   const group = view.group ?? { kind: 'structural' as const }
+   const { nests } = presentedKind(view.type)
+   const plan = useMemo(() => groupPlan(view, schema, nests), [view, schema, nests])
+-  const propertyOptions = schemaTargets(schema, (d) => groupable(d.type)).map(targetOption)
++  const propertyOptions = schemaTargets(schema, (d) => groupable(d.type))
+   const activeDef = plan.kind === 'property' ? plan.group.column.def : undefined
+   const sub = plan.kind === 'sets' ? plan.sub : undefined
+   const subGroup = sub?.config
+@@ -264,11 +264,11 @@ export function GroupFrame({
+             row={pickerRow(
+               'layers',
+               'Sub-Group',
+-              subGroup?.property_id ?? FILEDATA_TARGETS.location.id,
+-              [targetOption(FILEDATA_TARGETS.location), ...propertyOptions],
++              subGroup?.property_id ?? FILEDATA_TARGETS.location.value,
++              [FILEDATA_TARGETS.location, ...propertyOptions],
+               (v) =>
+                 saveSub(
+-                  v === FILEDATA_TARGETS.location.id
++                  v === FILEDATA_TARGETS.location.value
+                     ? undefined
+                     : { property_id: v, order_mode: 'configured' },
+                 ),
+diff --git a/Core/Views/Settings/SortFrame.tsx b/Core/Views/Settings/SortFrame.tsx
+index 73ec6d797..6a818399d 100644
+--- a/Core/Views/Settings/SortFrame.tsx
++++ b/Core/Views/Settings/SortFrame.tsx
+@@ -17,7 +17,7 @@ import type { PickerOption } from '@pommora/uix/Menus/PickerControl'
+ import { OptionOrderList } from './OptionOrderList'
+ import { orderOptions, SUB_LOOK } from './paneRows'
+ import { liveBucketOrder } from '../Pipeline/group'
+-import { FILEDATA_TARGETS, schemaTargets, targetOption } from '../paneTargets'
++import { FILEDATA_TARGETS, schemaTargets } from '../paneTargets'
+ import { chipRegion, middleRegion, SETTINGS_PANE_MAX_HEIGHT } from '@pommora/uix/Menus/frames.css'
+ import { viewSpecOf } from '../valueKinds'
+ 
+@@ -90,7 +90,7 @@ export function SortFrame({
+     ...(!presentedKind(view.type).nests || primary?.property_id === LOCATION_SORT
+       ? [{ value: LOCATION_SORT, label: 'Location', icon: 'folder' as const }]
+       : []),
+-    ...targets.filter((t) => t.id !== sub?.property_id).map(targetOption),
++    ...targets.filter((t) => t.value !== sub?.property_id),
+   ]
+   const sortByOptions =
+     primary && !listed.some((o) => o.value === primary.property_id)
+@@ -102,7 +102,7 @@ export function SortFrame({
+ 
+   const subOptions: PickerOption<string>[] = [
+     { value: '_none', label: 'None', icon: 'circle-off' as const },
+-    ...targets.filter((t) => t.id !== primary?.property_id).map(targetOption),
++    ...targets.filter((t) => t.value !== primary?.property_id),
+   ]
+ 
+   return (
+diff --git a/Core/Views/Settings/ViewFrame.tsx b/Core/Views/Settings/ViewFrame.tsx
+index 893501544..136270af2 100644
+--- a/Core/Views/Settings/ViewFrame.tsx
++++ b/Core/Views/Settings/ViewFrame.tsx
+@@ -1,7 +1,7 @@
+ import { useState } from 'react'
+ import type { CollectionNode, SetNode } from '../../Nexus/tree'
+ import type { PropertyDefinition } from '../../Properties/properties'
+-import { DEFAULT_VIEW_ID, mintNewView, type SavedView } from '../views'
++import { DEFAULT_VIEW_ID, mintNewView, pickView, type SavedView } from '../views'
+ import { reportRefusal } from '../../Interface/Notifications/notifications'
+ import { deleteViewWithUndo } from '../deleteViewWithUndo'
+ import { viewGlyph } from '../viewIcon'
+@@ -24,7 +24,6 @@ import { LineRow, LineZone, lineList } from '@pommora/uix/Interactions/drag'
+ import { moveBefore } from '@pommora/uix/Utilities/moveItem'
+ import * as s from '@pommora/uix/Menus/frames.css'
+ import { useSaveView } from '../viewWrite'
+-import { pickView } from '../Pipeline/pickView'
+ import { useLiveView } from '../Host/pendingView'
+ import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
+ import { chooseColor, chooseIcon } from '../../Assets/IdentityChoice'
+diff --git a/Core/Views/Settings/ViewMenu.tsx b/Core/Views/Settings/ViewMenu.tsx
+index f6ea18710..b9c381e97 100644
+--- a/Core/Views/Settings/ViewMenu.tsx
++++ b/Core/Views/Settings/ViewMenu.tsx
+@@ -1,14 +1,12 @@
+-import { reportRefusal } from '../../Interface/Notifications/notifications'
+ import type { CollectionNode, SetNode } from '../../Nexus/tree'
+ import { MenuDropdown } from '@pommora/uix/Menus/MenuDropdown'
+ import { useSession } from '../../Session/store'
+ import { containerSchema, topContainerOf } from '../../Nexus/treePatch'
+ import { namesContainer } from '../../Nexus/entities'
+-import { pickView } from '../Pipeline/pickView'
++import { pickView } from '../views'
+ import { ViewFrame } from './ViewFrame'
+ import { viewGlyph } from '../viewIcon'
+ import * as s from '../../Interface/Toolbar/toolbar-menu.css'
+-import { dialer } from '../../Platform/dialer'
+ import { popMenu } from '../../Actions/menuActions'
+ import { viewButtonMenuItems } from '../../Actions/viewMenus'
+ 
+@@ -23,6 +21,7 @@ export function ViewMenu(): React.JSX.Element | null {
+ 
+ function ViewMenuInner({ node }: { node: CollectionNode | SetNode }): React.JSX.Element {
+   const tree = useSession((st) => st.tree)
++  const mutate = useSession((st) => st.mutate)
+   const labeled = (node.viewButton ?? 'icon') === 'labeled'
+ 
+   const schema = containerSchema(tree, node)
+@@ -32,11 +31,12 @@ function ViewMenuInner({ node }: { node: CollectionNode | SetNode }): React.JSX.
+     e.preventDefault()
+     const action = await popMenu(viewButtonMenuItems({ viewButton: node.viewButton ?? 'icon' }))
+     if (action !== 'toggle-title') return
+-    reportRefusal(
+-      await dialer().ask('container:configure', node.path, node.kind, {
+-        view_button: labeled ? 'icon' : 'labeled',
+-      }),
+-    )
++    void mutate({
++      op: 'setViewButton',
++      path: node.path,
++      kind: node.kind,
++      viewButton: labeled ? 'icon' : 'labeled',
++    })
+   }
+ 
+   return (
+diff --git a/Core/Views/Settings/VisibilityFrame.tsx b/Core/Views/Settings/VisibilityFrame.tsx
+index e3cf69845..99e975f56 100644
+--- a/Core/Views/Settings/VisibilityFrame.tsx
++++ b/Core/Views/Settings/VisibilityFrame.tsx
+@@ -5,12 +5,18 @@ import type { SavedView } from '../views'
+ import { useSession } from '../../Session/store'
+ import { MenuRowView } from '@pommora/uix/Menus/MenuIndex'
+ import { type MenuBack, MenuTopRow, MenuScrollFrame } from '@pommora/uix/Menus/MenuRows'
+-import { resolveColumn, resolveColumns } from '../Pipeline/columns'
++import {
++  hiddenListIds,
++  hideShown,
++  placeInShown,
++  resolveColumn,
++  resolveColumns,
++  unhide,
++} from '../Pipeline/columns'
+ import { useSaveView } from '../viewWrite'
+ import { LineGroup, LineRow, LineZone } from '@pommora/uix/Interactions/drag'
+ import { PaneRestGroup, type PaneDrop, paneSpec } from '@pommora/uix/Menus/paneDrop'
+ import { contextIdsOf, contextsByIdOf } from '../../Contexts/contextIdentity'
+-import { hiddenListIds, hideShown, placeInShown, unhide } from '../visibilityModel'
+ import { EyeToggle } from '@pommora/uix/Elements/EyeToggle'
+ import { columnIcon, columnLabel } from '../../Properties/columnDisplay'
+ import { Icon } from '@pommora/uix/Symbols'
+diff --git a/Core/Views/Table/useColumns.ts b/Core/Views/Table/useColumns.ts
+index ba815a748..4d38646b8 100644
+--- a/Core/Views/Table/useColumns.ts
++++ b/Core/Views/Table/useColumns.ts
+@@ -17,7 +17,7 @@ import { useLatest } from '@pommora/uix/Utilities/stableApi'
+ import { popMenu } from '../../Actions/menuActions'
+ import { numberBarCapable } from '../../Properties/formatValue'
+ import type { ViewHostApi } from '../Host/useViewHost'
+-import { hideShown } from '../visibilityModel'
++import { hideShown } from '../Pipeline/columns'
+ 
+ // ── Widths and Alignment ────────────────────────────────────────────────────
+ 
+diff --git a/Core/Views/containerConfig.ts b/Core/Views/containerConfig.ts
+deleted file mode 100644
+index 8889f6225..000000000
+--- a/Core/Views/containerConfig.ts
++++ /dev/null
+@@ -1,15 +0,0 @@
+-import type { ContainerKind } from '../Nexus/entities'
+-import type { ViewButton } from '../Nexus/schemas'
+-import { ok, type Result } from '../Contract/result'
+-import { patchSidecar } from '../Files/sidecar'
+-
+-export type ContainerConfigPatch = { view_button: ViewButton }
+-
+-export async function setContainerConfig(
+-  folder: string,
+-  kind: ContainerKind,
+-  patch: ContainerConfigPatch,
+-): Promise<Result<null>> {
+-  const written = await patchSidecar(folder, kind, (cur) => ({ ...cur, ...patch }))
+-  return written.ok ? ok(null) : written
+-}
+diff --git a/Core/Views/creationOrder.test.ts b/Core/Views/creationOrder.test.ts
+deleted file mode 100644
+index f7d1f38ce..000000000
+--- a/Core/Views/creationOrder.test.ts
++++ /dev/null
+@@ -1,156 +0,0 @@
+-import { describe, expect, it } from 'vitest'
+-import type { MutateRequest } from '../Nexus/mutateRequest'
+-import { placeAt, placeNew, tieOrderWith } from './creationOrder'
+-import type { Slot } from '../Nexus/order'
+-import { makeTree } from '../Testing/testTree'
+-import { makeSorter } from './Pipeline/sort'
+-import type { ViewRow } from './viewRow'
+-
+-describe('placeAt', () => {
+-  const page: Extract<MutateRequest, { op: 'createPage' }> = {
+-    op: 'createPage',
+-    id: 'p9',
+-    parentPath: 'Notes',
+-    name: 'Untitled',
+-  }
+-  const orderWithSlot = (...at: [string[], string | null, Slot]): string[] | undefined =>
+-    placeAt(page, ...at).order
+-
+-  it('appends for a band-add and splices beside an anchor', () => {
+-    expect(orderWithSlot(['a', 'b'], null, 'last')).toEqual(['a', 'b', 'p9'])
+-    expect(orderWithSlot(['a', 'b', 'c'], 'b', 'above')).toEqual(['a', 'p9', 'b', 'c'])
+-    expect(orderWithSlot(['a', 'b', 'c'], 'b', 'below')).toEqual(['a', 'b', 'p9', 'c'])
+-  })
+-
+-  it('carries the FULL sibling list — a filtered subset would re-rank hidden rows', () => {
+-    const full = ['visible1', 'hidden1', 'visible2', 'hidden2']
+-    expect(orderWithSlot(full, 'visible2', 'below')).toEqual([
+-      'visible1',
+-      'hidden1',
+-      'visible2',
+-      'p9',
+-      'hidden2',
+-    ])
+-  })
+-
+-  it('appends when the anchor is not among the siblings', () => {
+-    expect(orderWithSlot(['a', 'b'], 'ghost', 'above')).toEqual(['a', 'b', 'p9'])
+-  })
+-
+-  it('leads the siblings at the first slot', () => {
+-    expect(orderWithSlot(['a', 'b'], null, 'first')).toEqual(['p9', 'a', 'b'])
+-  })
+-})
+-
+-describe('placeNew', () => {
+-  const page = { op: 'createPage', id: 'p9', parentPath: 'Notes/Ideas', name: 'Untitled' } as const
+-  const set = {
+-    op: 'createContainer',
+-    id: 's9',
+-    parentPath: 'Notes',
+-    kind: 'set',
+-    name: 'Untitled',
+-  } as const
+-  const space = { op: 'createSpace', id: 'sp9', contextId: 'g1', name: 'New Realm' } as const
+-  const top = {
+-    newPagePlacement: 'top',
+-    newFolderPlacement: 'top',
+-    newSpacePlacement: 'top',
+-  } as const
+-
+-  it("leads each kind's siblings at its own Top placement", () => {
+-    expect(placeNew(makeTree(), page, top)).toEqual({ ...page, order: ['p9', 'p2'] })
+-    expect(placeNew(makeTree(), set, top)).toEqual({ ...set, order: ['s9', 's1'] })
+-    expect(placeNew(makeTree(), space, top)).toEqual({
+-      ...space,
+-      order: ['sp9', 'a1', 't1', 'pr1'],
+-    })
+-  })
+-
+-  it("trails each kind's siblings at Bottom, the unset placement", () => {
+-    expect(placeNew(makeTree(), page, {})).toEqual({ ...page, order: ['p2', 'p9'] })
+-    expect(placeNew(makeTree(), set, { newPagePlacement: 'top' })).toEqual({
+-      ...set,
+-      order: ['s1', 's9'],
+-    })
+-    expect(placeNew(makeTree(), space, {})).toEqual({
+-      ...space,
+-      order: ['a1', 't1', 'pr1', 'sp9'],
+-    })
+-  })
+-
+-  it('leaves a create into a folder the tree lacks as its own request', () => {
+-    const stray = { ...page, parentPath: 'Notes/Gone' }
+-    expect(placeNew(makeTree(), stray, top)).toBe(stray)
+-  })
+-
+-  it('leaves a Collection, which no placement setting governs, as its own request', () => {
+-    const collection = { ...set, kind: 'collection', parentPath: '' } as const
+-    expect(placeNew(makeTree(), collection, top)).toBe(collection)
+-  })
+-})
+-
+-describe('tieOrderWith', () => {
+-  it("a null anchor ranks the newborn last while reproducing the ranking — a band-add's end-of-group", () => {
+-    expect(tieOrderWith(['b', 'a'], ['a', 'b', 'c'], 'new', null, 'below')).toEqual([
+-      'b',
+-      'a',
+-      'c',
+-      'new',
+-    ])
+-    expect(tieOrderWith(undefined, ['a', 'b'], 'new', null, 'below')).toEqual(['a', 'b', 'new'])
+-  })
+-
+-  it('first leads the whole ranking — a band-add at Top', () => {
+-    expect(tieOrderWith(['b', 'a'], ['a', 'b', 'c'], 'new', null, 'first')).toEqual([
+-      'new',
+-      'b',
+-      'a',
+-      'c',
+-    ])
+-  })
+-
+-  it('reproduces the current ranking and places the new id beside its anchor', () => {
+-    const out = tieOrderWith(['b', 'a'], ['a', 'b', 'c', 'd'], 'new', 'c', 'below')
+-    expect(out).toEqual(['b', 'a', 'c', 'new', 'd'])
+-  })
+-
+-  it('with no existing order, the array is the full source order — no sibling moves', () => {
+-    expect(tieOrderWith(undefined, ['a', 'b', 'c'], 'new', 'a', 'above')).toEqual([
+-      'new',
+-      'a',
+-      'b',
+-      'c',
+-    ])
+-  })
+-
+-  it('includes every container row, not just the visible ones', () => {
+-    // Under an active filter the caller still passes ALL ids — hidden rows keep their rank.
+-    const out = tieOrderWith(undefined, ['vis1', 'hid1', 'vis2'], 'new', 'vis1', 'below')
+-    expect(out).toEqual(['vis1', 'new', 'hid1', 'vis2'])
+-  })
+-
+-  it('appends when the anchor vanished', () => {
+-    expect(tieOrderWith(['a'], ['a', 'b'], 'new', 'gone', 'below')).toEqual(['a', 'b', 'new'])
+-  })
+-})
+-
+-// A newborn absent from a live order array ranks last, so both live arrays are spliced in the same act the create writes — the first paint already places the row at its slot.
+-describe('the created row settles into the live order', () => {
+-  const ALL = ['p1', 'p2', 'p3', 'pNew']
+-  const STALE = ['p3', 'p1', 'p2']
+-  const rows = (ids: string[]): ViewRow[] =>
+-    ids.map((id) => ({ id, path: `${id}.md`, title: id }) as unknown as ViewRow)
+-  const painted = (manual: string[] | undefined): string[] | undefined =>
+-    makeSorter(undefined, [], [], manual)?.(rows(ALL)).map((r) => r.id)
+-
+-  it('a stale manual override spliced via tieOrderWith ranks the newborn at its slot first-pass', () => {
+-    const spliced = tieOrderWith(STALE, ALL, 'pNew', 'p1', 'below')
+-    expect(spliced).toEqual(['p3', 'p1', 'pNew', 'p2'])
+-    expect(painted(spliced)).toEqual(spliced)
+-  })
+-
+-  it('unspliced, the same state ranks the newborn last — the defect the settle kills', () => {
+-    expect(painted(STALE)).toEqual(['p3', 'p1', 'p2', 'pNew'])
+-  })
+-})
+diff --git a/Core/Views/creationOrder.ts b/Core/Views/creationOrder.ts
+deleted file mode 100644
+index 8047739a3..000000000
+--- a/Core/Views/creationOrder.ts
++++ /dev/null
+@@ -1,75 +0,0 @@
+-// Every array carries the full membership it governs — a partial write alphabetizes the untouched siblings, and one built from a filtered view permanently re-ranks every row the filter was hiding.
+-
+-import type { CreateRequest } from '../Nexus/mutateRequest'
+-import type { NexusTree } from '../Nexus/tree'
+-import { type Personalization, type Placement, settingOf } from '../Settings/personalization'
+-import { type Slot, spliceBeside } from '../Nexus/order'
+-import { containerAt, pageIdsIn } from '../Nexus/treePatch'
+-import { contextWorldOf } from '../Contexts/contextResolve'
+-
+-function mergedRanking(
+-  existing: string[] | undefined,
+-  allIds: string[],
+-  excludeId: string,
+-): string[] {
+-  const base = existing ?? []
+-  const inBase = new Set(base)
+-  return [
+-    ...base.filter((id) => id !== excludeId),
+-    ...allIds.filter((id) => !inBase.has(id) && id !== excludeId),
+-  ]
+-}
+-
+-export function tieOrderWith(
+-  existing: string[] | undefined,
+-  allIds: string[],
+-  newId: string,
+-  anchorId: string | null,
+-  where: Slot,
+-): string[] {
+-  return spliceBeside(mergedRanking(existing, allIds, newId), anchorId, newId, where)
+-}
+-
+-export const placementSlot = (placement: Placement): Slot =>
+-  placement === 'top' ? 'first' : 'last'
+-
+-// A parent the tree lacks leaves the request bare, since an order naming only the newborn would drop every sibling from the folder's order.
+-export function placeAt<R extends CreateRequest>(
+-  req: R,
+-  siblingIds: string[] | undefined,
+-  anchorId: string | null,
+-  where: Slot,
+-): R {
+-  return siblingIds
+-    ? {
+-        ...req,
+-        order: spliceBeside(siblingIds, anchorId, req.id, where),
+-      }
+-    : req
+-}
+-
+-export function placeNew<R extends CreateRequest>(tree: NexusTree, req: R, p: Personalization): R {
+-  const at = (siblingIds: string[] | undefined, placement: Placement): R =>
+-    placeAt(req, siblingIds, null, placementSlot(placement))
+-  const r: CreateRequest = req
+-  switch (r.op) {
+-    case 'createPage':
+-      return at(pageIdsIn(tree, r.parentPath), settingOf(p, 'newPagePlacement'))
+-    case 'createContainer': {
+-      const parent = r.kind === 'set' ? containerAt(tree, r.parentPath) : null
+-      return at(
+-        parent ? (parent.sets ?? []).map((n) => n.id) : undefined,
+-        settingOf(p, 'newFolderPlacement'),
+-      )
+-    }
+-    case 'createSpace':
+-      return at(
+-        contextWorldOf(tree.contexts)
+-          .groupById.get(r.contextId)
+-          ?.spaces.map((n) => n.id),
+-        settingOf(p, 'newSpacePlacement'),
+-      )
+-    default:
+-      return req
+-  }
+-}
+diff --git a/Core/Views/filterModel.test.ts b/Core/Views/filterModel.test.ts
+deleted file mode 100644
+index 1638fbb5b..000000000
+--- a/Core/Views/filterModel.test.ts
++++ /dev/null
+@@ -1,162 +0,0 @@
+-import { describe, expect, it } from 'vitest'
+-import type { PropertyDefinition } from '../Properties/properties'
+-import type { NexusTree } from '../Nexus/tree'
+-import type { FilterGroup } from './filterRules'
+-import { decodeFilter, filterTargets, operatorsFor } from './filterModel'
+-
+-const r = (
+-  id: string,
+-  op = 'is',
+-  value = 'x',
+-): { property_id: string; op: string; value: string } => ({
+-  property_id: id,
+-  op,
+-  value,
+-})
+-
+-describe('decodeFilter', () => {
+-  it('a flat group decodes as rows under its own mode', () => {
+-    expect(decodeFilter({ match: 'any', rules: [r('a'), r('b')] })).toEqual({
+-      kind: 'rows',
+-      mode: 'any',
+-      rules: [r('a'), r('b')],
+-    })
+-  })
+-
+-  it('any nested group locks, whatever its root or depth', () => {
+-    const nested: FilterGroup[] = [
+-      { match: 'any', rules: [{ match: 'all', rules: [r('a'), r('b')] }, r('c')] },
+-      { match: 'any', rules: [{ match: 'all', rules: [r('a')] }, r('b')] },
+-      { match: 'all', rules: [r('a'), { match: 'any', rules: [r('b'), r('c')] }] },
+-      { match: 'all', rules: [r('a'), { match: 'all', rules: [r('b'), r('c')] }] },
+-      {
+-        match: 'any',
+-        rules: [{ match: 'all', rules: [r('a'), { match: 'any', rules: [r('b')] }] }],
+-      },
+-    ]
+-    for (const filter of nested) expect(decodeFilter(filter).kind).toBe('locked')
+-  })
+-
+-  it('undefined → empty rows in the any mode', () => {
+-    expect(decodeFilter(undefined)).toEqual({ kind: 'rows', mode: 'any', rules: [] })
+-  })
+-})
+-
+-describe('vocabulary', () => {
+-  const schema: PropertyDefinition[] = [
+-    { id: 'prop_sel', label: 'Sel', key: 'Sel', type: 'select' },
+-    { id: 'prop_done', label: 'Done', key: 'Done', type: 'checkbox' },
+-    { id: 'prop_tags', label: 'Tags', key: 'Tags', type: 'multiSelect' },
+-  ]
+-
+-  it("text reads Link's seven operators", () => {
+-    const linkAndText: PropertyDefinition[] = [
+-      { id: 'prop_url', label: 'Link', key: 'Link', type: 'link' },
+-      { id: 'prop_notes', label: 'Notes', key: 'Notes', type: 'text' },
+-    ]
+-    expect(operatorsFor('prop_notes', linkAndText, [])).toEqual(
+-      operatorsFor('prop_url', linkAndText, []),
+-    )
+-    expect(operatorsFor('prop_notes', linkAndText, [])).toHaveLength(7)
+-  })
+-
+-  it('checkbox operators carry the whole clause (slot none, implied values)', () => {
+-    const ops = operatorsFor('prop_done', schema, [])
+-    expect(ops.map((o) => o.label)).toEqual(['Is Checked', "Isn't Checked"])
+-    expect(ops.every((o) => o.slot === 'none')).toBe(true)
+-    expect(ops.map((o) => o.impliedValue)).toEqual(['true', 'false'])
+-  })
+-
+-  it("select reads Is / Isn't / Is Empty / Isn't Empty with chip slots on the membership ops", () => {
+-    const ops = operatorsFor('prop_sel', schema, [])
+-    expect(ops.map((o) => o.label)).toEqual(['Is', "Isn't", 'Is Empty', "Isn't Empty"])
+-    expect(ops[0].slot).toBe('chips')
+-    expect(ops[2].slot).toBe('none')
+-  })
+-
+-  it("multi-select reads Is Any / Is All / Isn't + empties", () => {
+-    expect(operatorsFor('prop_tags', schema, []).map((o) => o.op)).toEqual([
+-      'contains_any',
+-      'contains_all',
+-      'does_not_contain',
+-      'is_empty',
+-      'is_not_empty',
+-    ])
+-  })
+-
+-  it('targets lead Title · Location · the stamps, then registry Contexts, then schema', () => {
+-    const tree = {
+-      contexts: [
+-        { def: { id: 'ctx_areas', title: 'Areas', singular: 'Area' }, spaces: [] },
+-        { def: { id: 'ctx-crew', title: 'Crew', singular: 'Member' }, spaces: [] },
+-      ],
+-      config: { personalization: {} },
+-    } as unknown as NexusTree
+-    expect(filterTargets(schema, tree).map((t) => t.label)).toEqual([
+-      'Title',
+-      'Location',
+-      'Creation Time',
+-      'Last Modified',
+-      'Areas',
+-      'Crew',
+-      'Sel',
+-      'Done',
+-      'Tags',
+-    ])
+-  })
+-
+-  it('a user-defined Context is a target on the same footing as a seeded one', () => {
+-    const tree = {
+-      contexts: [{ def: { id: 'ctx-crew', title: 'Crew', singular: 'Member' }, spaces: [] }],
+-      config: { personalization: {} },
+-    } as unknown as NexusTree
+-    const crew = filterTargets(schema, tree).find((t) => t.id === 'ctx-crew')
+-    expect(crew?.label).toBe('Crew')
+-    expect(operatorsFor('ctx-crew', schema, ['ctx-crew']).map((o) => o.op)).toEqual([
+-      'contains_any',
+-      'contains_all',
+-      'does_not_contain',
+-      'is_empty',
+-      'is_not_empty',
+-    ])
+-  })
+-
+-  it("a Context reads Is Any / Is All / Isn't + empties", () => {
+-    const ops = operatorsFor('ctx-crew', schema, ['ctx-crew'])
+-    expect(ops.map((o) => o.label)).toEqual([
+-      'Is Any',
+-      'Is All',
+-      "Isn't",
+-      'Is Empty',
+-      "Isn't Empty",
+-    ])
+-    expect(ops.slice(0, 3).map((o) => o.op)).toEqual([
+-      'contains_any',
+-      'contains_all',
+-      'does_not_contain',
+-    ])
+-    expect(ops[0].slot).toBe('chips')
+-  })
+-
+-  it("Location Contains and Doesn't Contain take folder names; Is and Isn't take ids alone", () => {
+-    const ops = operatorsFor('_location', schema, [])
+-    expect(ops.map((o) => [o.label, o.names])).toEqual([
+-      ['Is', undefined],
+-      ["Isn't", undefined],
+-      ['Contains', true],
+-      ["Doesn't Contain", true],
+-    ])
+-  })
+-
+-  it('offers no Context targets when there is no tree', () => {
+-    expect(filterTargets(schema, null).map((t) => t.label)).toEqual([
+-      'Title',
+-      'Location',
+-      'Creation Time',
+-      'Last Modified',
+-      'Sel',
+-      'Done',
+-      'Tags',
+-    ])
+-  })
+-})
+diff --git a/Core/Views/filterModel.ts b/Core/Views/filterModel.ts
+deleted file mode 100644
+index ac5b77676..000000000
+--- a/Core/Views/filterModel.ts
++++ /dev/null
+@@ -1,66 +0,0 @@
+-// Anything the frame can't faithfully represent decodes as `locked` rather than being silently flattened.
+-
+-import { FILEDATA, type PropertyDefinition } from '../Properties/properties'
+-import {
+-  FILTER_OPS,
+-  type FilterGroup,
+-  type FilterRule,
+-  isGroup,
+-  type MatchMode,
+-  OPERANDLESS_OPS,
+-} from './filterRules'
+-import { type OperatorChoice, VALUE_KINDS, viewSpecOf } from './valueKinds'
+-import type { NexusTree } from '../Nexus/tree'
+-import { contextIdsOf } from '../Contexts/contextIdentity'
+-import { resolveColumn } from './Pipeline/columns'
+-import { contextPaneTargets, FILEDATA_TARGETS, type PaneTarget, schemaTargets } from './paneTargets'
+-
+-export type DecodedFilter =
+-  | { kind: 'rows'; mode: MatchMode; rules: FilterRule[] }
+-  | { kind: 'locked' }
+-
+-/** The pane writes one shape, a flat group under the footer's mode; anything nested was authored elsewhere and locks. */
+-export function decodeFilter(filter: FilterGroup | undefined): DecodedFilter {
+-  if (!filter) return { kind: 'rows', mode: 'any', rules: [] }
+-  return filter.rules.some(isGroup)
+-    ? { kind: 'locked' }
+-    : { kind: 'rows', mode: filter.match, rules: filter.rules as FilterRule[] }
+-}
+-
+-/** Location reads from the Set's side — you choose the Set, not the page, hence "Contains" over "Is Inside". */
+-const LOCATION_OPS: OperatorChoice[] = [
+-  { op: FILTER_OPS.is, label: 'Is', slot: 'set' },
+-  { op: FILTER_OPS.isNot, label: "Isn't", slot: 'set' },
+-  { op: FILTER_OPS.isInside, label: 'Contains', slot: 'set', names: true },
+-  { op: FILTER_OPS.isNotInside, label: "Doesn't Contain", slot: 'set', names: true },
+-]
+-
+-/** Title never offers empty ops — a title (the filename basename) is never empty. */
+-const TITLE_OPS = VALUE_KINDS.text.ops.filter((o) => !OPERANDLESS_OPS.has(o.op))
+-
+-export function operatorsFor(
+-  propertyId: string,
+-  schema: PropertyDefinition[],
+-  contextIds: readonly string[],
+-): readonly OperatorChoice[] {
+-  if (propertyId === FILEDATA.title.id) return TITLE_OPS
+-  if (propertyId === FILEDATA.location.id) return LOCATION_OPS
+-  return viewSpecOf(resolveColumn(propertyId, schema, contextIds)?.type)?.ops ?? []
+-}
+-
+-export function filterTargets(
+-  schema: PropertyDefinition[],
+-  tree: NexusTree | null,
+-  hasLocations = true,
+-): PaneTarget[] {
+-  const contextIds = contextIdsOf(tree)
+-  return [
+-    FILEDATA_TARGETS.title,
+-    // Every Location operator needs a location to point at, so with none it's a target that can never complete.
+-    ...(hasLocations ? [FILEDATA_TARGETS.location] : []),
+-    FILEDATA_TARGETS.createdAt,
+-    FILEDATA_TARGETS.modifiedAt,
+-    ...contextPaneTargets(tree),
+-    ...schemaTargets(schema, (d) => operatorsFor(d.id, schema, contextIds).length > 0),
+-  ]
+-}
+diff --git a/Core/Views/handlers.test.ts b/Core/Views/handlers.test.ts
+deleted file mode 100644
+index 7c364871a..000000000
+--- a/Core/Views/handlers.test.ts
++++ /dev/null
+@@ -1,50 +0,0 @@
+-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+-import { readFile, rm } from 'node:fs/promises'
+-import { tempRoot } from '../Testing/hostFs'
+-import type { HostContext } from '../Contract/handlers'
+-import { fault } from '../Contract/result'
+-import { createFolderEntity } from '../Nexus/folderEntity'
+-import { newId } from '../Nexus/ids'
+-import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
+-import { closeSession, openSession } from '../Nexus/session'
+-import { sidecarPath } from '../Paths/paths'
+-import { viewsHandlers } from './handlers'
+-
+-const ctx = { push: () => {} } as unknown as HostContext
+-
+-let root: string
+-let sidecar: string
+-
+-beforeEach(async () => {
+-  root = tempRoot('pom-views-handlers-')
+-  const c = await createFolderEntity(root, 'collection', 'Notes', newId())
+-  if (!c.ok) throw new Error('setup failed')
+-  sidecar = sidecarPath(c.value.path, 'collection')
+-  await openSession(root)
+-  await refreshTree(root)
+-})
+-
+-afterEach(async () => {
+-  closeSession()
+-  dropLiveTree()
+-  await rm(root, { recursive: true, force: true })
+-})
+-
+-describe('container:configure', () => {
+-  const configure = (patch: unknown) =>
+-    viewsHandlers['container:configure'](ctx, 'Notes', 'collection', patch)
+-
+-  it('writes a valid view_button', async () => {
+-    expect((await configure({ view_button: 'labeled' })).ok).toBe(true)
+-    expect(JSON.parse(await readFile(sidecar, 'utf8')).view_button).toBe('labeled')
+-  })
+-
+-  it.each([
+-    [{ view_button: 'huge' }],
+-    [{}],
+-  ])('refuses %j and leaves the sidecar as it was', async (patch) => {
+-    const before = await readFile(sidecar, 'utf8')
+-    expect(await configure(patch)).toEqual(fault('A config patch is required.'))
+-    expect(await readFile(sidecar, 'utf8')).toBe(before)
+-  })
+-})
+diff --git a/Core/Views/handlers.ts b/Core/Views/handlers.ts
+index 167b10791..d46616b1a 100644
+--- a/Core/Views/handlers.ts
++++ b/Core/Views/handlers.ts
+@@ -1,16 +1,13 @@
+ import { type Handlers, withRoot, withWriteRoot } from '../Contract/handlers'
+ import { ok, type Result, fault } from '../Contract/result'
+ import { isPlainObject, isStringArray } from '../Contract/validators'
+-import { coerceViewButton } from '../Nexus/schemas'
+ import { type ContainerKind, isContainerKind } from '../Nexus/entities'
+ import { resolveUnderRoot } from '../Paths/pathSafety'
+ import { mutableTarget } from '../Nexus/liveTree'
+-import { setContainerConfig } from './containerConfig'
+ import { loadValues } from './loadValues'
+ import { removedView, savedView } from './views'
+ import { deleteView, duplicateView, reorderViews, restoreView, saveView } from './viewsFile'
+ 
+-// View SELECTION is the container sidecar's `active_view`; this is the view DEFINITION.
+ const containerWrite = <A extends unknown[], T>(
+   run: (folder: string, kind: ContainerKind, ...args: A) => Promise<Result<T>>,
+ ) =>
+@@ -52,13 +49,6 @@ export const viewsHandlers = {
+       : fault('A removed view is required.')
+   }),
+ 
+-  'container:configure': containerWrite(async (folder, kind, patch: unknown) => {
+-    const view_button = isPlainObject(patch) ? coerceViewButton(patch.view_button) : undefined
+-    return view_button
+-      ? setContainerConfig(folder, kind, { view_button })
+-      : fault('A config patch is required.')
+-  }),
+-
+   'view:loadValues': withRoot(async (root, _ctx, containerPath: unknown, pageIds: unknown) => {
+     if (typeof containerPath !== 'string' || (pageIds !== undefined && !isStringArray(pageIds)))
+       return fault('A container path, and optionally page ids, are required.')
+diff --git a/Core/Views/paneTargets.test.ts b/Core/Views/paneTargets.test.ts
+new file mode 100644
+index 000000000..d807fe14e
+--- /dev/null
++++ b/Core/Views/paneTargets.test.ts
+@@ -0,0 +1,53 @@
++import { describe, expect, it } from 'vitest'
++import type { PropertyDefinition } from '../Properties/properties'
++import type { NexusTree } from '../Nexus/tree'
++import { filterTargets } from './paneTargets'
++
++describe('filterTargets', () => {
++  const schema: PropertyDefinition[] = [
++    { id: 'prop_sel', label: 'Sel', key: 'Sel', type: 'select' },
++    { id: 'prop_done', label: 'Done', key: 'Done', type: 'checkbox' },
++    { id: 'prop_tags', label: 'Tags', key: 'Tags', type: 'multiSelect' },
++  ]
++  it('targets lead Title · Location · the stamps, then registry Contexts, then schema', () => {
++    const tree = {
++      contexts: [
++        { def: { id: 'ctx_areas', title: 'Areas', singular: 'Area' }, spaces: [] },
++        { def: { id: 'ctx-crew', title: 'Crew', singular: 'Member' }, spaces: [] },
++      ],
++      config: { personalization: {} },
++    } as unknown as NexusTree
++    expect(filterTargets(schema, tree).map((t) => t.label)).toEqual([
++      'Title',
++      'Location',
++      'Creation Time',
++      'Last Modified',
++      'Areas',
++      'Crew',
++      'Sel',
++      'Done',
++      'Tags',
++    ])
++  })
++
++  it('a user-defined Context is a target on the same footing as a seeded one', () => {
++    const tree = {
++      contexts: [{ def: { id: 'ctx-crew', title: 'Crew', singular: 'Member' }, spaces: [] }],
++      config: { personalization: {} },
++    } as unknown as NexusTree
++    const crew = filterTargets(schema, tree).find((t) => t.value === 'ctx-crew')
++    expect(crew?.label).toBe('Crew')
++  })
++
++  it('offers no Context targets when there is no tree', () => {
++    expect(filterTargets(schema, null).map((t) => t.label)).toEqual([
++      'Title',
++      'Location',
++      'Creation Time',
++      'Last Modified',
++      'Sel',
++      'Done',
++      'Tags',
++    ])
++  })
++})
+diff --git a/Core/Views/paneTargets.ts b/Core/Views/paneTargets.ts
+index 11ad1ca7e..823af802c 100644
+--- a/Core/Views/paneTargets.ts
++++ b/Core/Views/paneTargets.ts
+@@ -3,16 +3,11 @@ import type { NexusTree } from '../Nexus/tree'
+ import { contextsByIdOf } from '../Contexts/contextIdentity'
+ import type { PickerOption } from '@pommora/uix/Menus/PickerControl'
+ import { propertyIcon, propertyTypeIconName } from '../Properties/typeDisplay'
+-
+-export interface PaneTarget {
+-  id: string
+-  label: string
+-  icon: string
+-}
++import { operatorsFor } from './valueKinds'
+ 
+ // Location has no column type, so its glyph is named here.
+-const filedataTarget = ({ id, label, type }: Filedata): PaneTarget => ({
+-  id,
++const filedataTarget = ({ id, label, type }: Filedata): PickerOption<string> => ({
++  value: id,
+   label,
+   icon: type ? propertyTypeIconName(type) : 'folder',
+ })
+@@ -23,22 +18,25 @@ export const FILEDATA_TARGETS = {
+   location: filedataTarget(FILEDATA.location),
+ }
+ 
+-export const contextPaneTargets = (tree: NexusTree | null): PaneTarget[] =>
+-  [...contextsByIdOf(tree)].map(([id, c]) => ({ id, label: c.title, icon: c.icon }))
++export const contextPaneTargets = (tree: NexusTree | null): PickerOption<string>[] =>
++  [...contextsByIdOf(tree)].map(([id, c]) => ({ value: id, label: c.title, icon: c.icon }))
+ 
+ export const schemaTargets = (
+   schema: PropertyDefinition[],
+   qualifies: (def: PropertyDefinition) => boolean,
+-): (PaneTarget & { def: PropertyDefinition })[] =>
+-  schema.filter(qualifies).map((d) => ({
+-    id: d.id,
+-    label: d.label,
+-    icon: propertyIcon(d),
+-    def: d,
+-  }))
++): PickerOption<string>[] =>
++  schema.filter(qualifies).map((d) => ({ value: d.id, label: d.label, icon: propertyIcon(d) }))
+ 
+-export const targetOption = (t: PaneTarget): PickerOption<string> => ({
+-  value: t.id,
+-  label: t.label,
+-  icon: t.icon,
+-})
++export const filterTargets = (
++  schema: PropertyDefinition[],
++  tree: NexusTree | null,
++  hasLocations = true,
++): PickerOption<string>[] => [
++  FILEDATA_TARGETS.title,
++  // Every Location operator needs a location to point at, so with none it's a target that can never complete.
++  ...(hasLocations ? [FILEDATA_TARGETS.location] : []),
++  FILEDATA_TARGETS.createdAt,
++  FILEDATA_TARGETS.modifiedAt,
++  ...contextPaneTargets(tree),
++  ...schemaTargets(schema, (d) => operatorsFor(d.id, d.type).length > 0),
++]
+diff --git a/Core/Views/reassign.test.ts b/Core/Views/reassign.test.ts
+deleted file mode 100644
+index d3beb5b5c..000000000
+--- a/Core/Views/reassign.test.ts
++++ /dev/null
+@@ -1,87 +0,0 @@
+-import { describe, it, expect } from 'vitest'
+-import { UNGROUPED } from './viewRow'
+-import { groupKeyToValue, reassignable, reassignTarget } from './reassign'
+-
+-describe('groupKeyToValue — destination group key → PropertyValue', () => {
+-  it('status: the key is the status value', () => {
+-    expect(groupKeyToValue('opt_done', 'status')).toEqual({ kind: 'select', value: 'opt_done' })
+-  })
+-
+-  it('select: the key is the select value', () => {
+-    expect(groupKeyToValue('opt_red', 'select')).toEqual({ kind: 'select', value: 'opt_red' })
+-  })
+-
+-  it('checkbox: the true key checks, any other key clears — a checkbox is true or absent', () => {
+-    expect(groupKeyToValue('true', 'checkbox')).toEqual({ kind: 'checkbox', value: true })
+-    expect(groupKeyToValue('false', 'checkbox')).toBeNull()
+-  })
+-
+-  it('the no-value band clears the property (null)', () => {
+-    expect(groupKeyToValue(UNGROUPED, 'status')).toBeNull()
+-    expect(groupKeyToValue(UNGROUPED, 'select')).toBeNull()
+-  })
+-
+-  it('an un-reassignable type yields null (caller gates these out)', () => {
+-    expect(groupKeyToValue('2026-06', 'dateTime')).toBeNull()
+-    expect(groupKeyToValue('x', undefined)).toBeNull()
+-  })
+-
+-  it('reassignable holds for Status, Select and Checkbox and nothing else', () => {
+-    for (const t of ['status', 'select', 'checkbox'] as const) expect(reassignable(t)).toBe(true)
+-    for (const t of [
+-      'dateTime',
+-      'createdTime',
+-      'lastEditedTime',
+-      'number',
+-      'multiSelect',
+-      'context',
+-      'link',
+-      'text',
+-      'file',
+-      'title',
+-      undefined,
+-    ] as const)
+-      expect(reassignable(t)).toBe(false)
+-  })
+-})
+-
+-describe('reassignTarget - the sorted-run drop', () => {
+-  const keys: Record<string, string> = {
+-    a: 'opt_todo',
+-    b: 'opt_todo',
+-    c: 'opt_doing',
+-    d: 'opt_doing',
+-    e: 'opt_doing',
+-    lone: 'opt_blocked',
+-    f: UNGROUPED,
+-    g: UNGROUPED,
+-  }
+-  const run = (order: string[], dragged: string): string | undefined =>
+-    reassignTarget(order, dragged, (id) => keys[id])
+-
+-  it('a slot strictly inside a foreign run takes that run value', () => {
+-    expect(run(['a', 'c', 'b', 'd', 'e'], 'b')).toBe('opt_doing')
+-  })
+-
+-  it('the seam between two runs changes nothing', () => {
+-    expect(run(['a', 'b', 'c', 'd', 'e'], 'b')).toBeUndefined()
+-  })
+-
+-  it('either end of the list changes nothing', () => {
+-    expect(run(['b', 'c', 'd', 'e'], 'b')).toBeUndefined()
+-    expect(run(['c', 'd', 'e', 'b'], 'b')).toBeUndefined()
+-  })
+-
+-  it('a slot inside the row own run is a pure reorder', () => {
+-    expect(run(['c', 'e', 'd'], 'e')).toBeUndefined()
+-  })
+-
+-  it('the no-value tail is a run like any other - entering it clears', () => {
+-    expect(run(['c', 'd', 'f', 'a', 'g'], 'a')).toBe(UNGROUPED)
+-  })
+-
+-  it('a run of one can never be entered - it has no interior slot', () => {
+-    expect(run(['a', 'b', 'lone', 'f', 'g'], 'b')).toBeUndefined()
+-    expect(run(['a', 'lone', 'b', 'f', 'g'], 'b')).toBeUndefined()
+-  })
+-})
+diff --git a/Core/Views/reassign.ts b/Core/Views/reassign.ts
+deleted file mode 100644
+index 407ebb4ec..000000000
+--- a/Core/Views/reassign.ts
++++ /dev/null
+@@ -1,31 +0,0 @@
+-import { UNGROUPED } from './viewRow'
+-import type { PropertyValue } from '../Properties/propertyValue'
+-import type { ColumnType } from '../Properties/properties'
+-import { FILTER_OPS } from './filterRules'
+-import { viewSpecOf } from './valueKinds'
+-
+-/** A band names one value when an Is rule on its key would seed one, so a drag into it writes that value; a date band names a span, never one date, so date grouping can't be reassigned by drag. */
+-export const reassignable = (type: ColumnType | undefined): boolean => {
+-  const spec = viewSpecOf(type)
+-  return spec?.bucket !== undefined && spec.seed !== undefined
+-}
+-
+-export function groupKeyToValue(
+-  groupKey: string,
+-  type: ColumnType | undefined,
+-): PropertyValue | null {
+-  return groupKey === UNGROUPED ? null : (viewSpecOf(type)?.seed?.(FILTER_OPS.is, groupKey) ?? null)
+-}
+-
+-/** The neighbor rule keeps a drop to a run's edge — a seam, or either end of the list — from rewriting anything. */
+-export function reassignTarget(
+-  order: string[],
+-  draggedId: string,
+-  keyOf: (id: string) => string,
+-): string | undefined {
+-  const i = order.indexOf(draggedId)
+-  if (i <= 0 || i >= order.length - 1) return undefined
+-  const key = keyOf(order[i - 1])
+-  if (key !== keyOf(order[i + 1]) || key === keyOf(draggedId)) return undefined
+-  return key
+-}
+diff --git a/Core/Views/valueKinds.test.ts b/Core/Views/valueKinds.test.ts
+index 57f5cf15d..e21a98bbd 100644
+--- a/Core/Views/valueKinds.test.ts
++++ b/Core/Views/valueKinds.test.ts
+@@ -1,7 +1,8 @@
+ import { describe, expect, it } from 'vitest'
+ import type { DateGranularity } from './views'
+ import { CREATABLE_TYPES } from '../Properties/properties'
+-import { groupable, VALUE_KINDS } from './valueKinds'
++import { groupable, groupKeyToValue, operatorsFor, reassignable, VALUE_KINDS } from './valueKinds'
++import { UNGROUPED } from './viewRow'
+ 
+ const bucket = (iso: string, g: DateGranularity) =>
+   VALUE_KINDS.dateTime.bucket?.({ kind: 'dateTime', value: iso }, g)
+@@ -41,3 +42,104 @@ describe('the Date bucket', () => {
+     expect(bucket(lateEvening.toISOString(), 'day')).toBe('2026-06-14')
+   })
+ })
++
++describe('groupKeyToValue — destination group key → PropertyValue', () => {
++  it('status: the key is the status value', () => {
++    expect(groupKeyToValue('opt_done', 'status')).toEqual({ kind: 'select', value: 'opt_done' })
++  })
++
++  it('select: the key is the select value', () => {
++    expect(groupKeyToValue('opt_red', 'select')).toEqual({ kind: 'select', value: 'opt_red' })
++  })
++
++  it('checkbox: the true key checks, any other key clears — a checkbox is true or absent', () => {
++    expect(groupKeyToValue('true', 'checkbox')).toEqual({ kind: 'checkbox', value: true })
++    expect(groupKeyToValue('false', 'checkbox')).toBeNull()
++  })
++
++  it('the no-value band clears the property (null)', () => {
++    expect(groupKeyToValue(UNGROUPED, 'status')).toBeNull()
++    expect(groupKeyToValue(UNGROUPED, 'select')).toBeNull()
++  })
++
++  it('an un-reassignable type yields null (caller gates these out)', () => {
++    expect(groupKeyToValue('2026-06', 'dateTime')).toBeNull()
++    expect(groupKeyToValue('x', undefined)).toBeNull()
++  })
++
++  it('reassignable holds for Status, Select and Checkbox and nothing else', () => {
++    for (const t of ['status', 'select', 'checkbox'] as const) expect(reassignable(t)).toBe(true)
++    for (const t of [
++      'dateTime',
++      'createdTime',
++      'lastEditedTime',
++      'number',
++      'multiSelect',
++      'context',
++      'link',
++      'text',
++      'file',
++      'title',
++      undefined,
++    ] as const)
++      expect(reassignable(t)).toBe(false)
++  })
++})
++
++describe('operatorsFor', () => {
++  it("text reads Link's seven operators", () => {
++    expect(operatorsFor('prop_notes', 'text')).toEqual(operatorsFor('prop_url', 'link'))
++    expect(operatorsFor('prop_notes', 'text')).toHaveLength(7)
++  })
++
++  it('checkbox operators carry the whole clause (slot none, implied values)', () => {
++    const ops = operatorsFor('prop_done', 'checkbox')
++    expect(ops.map((o) => o.label)).toEqual(['Is Checked', "Isn't Checked"])
++    expect(ops.every((o) => o.slot === 'none')).toBe(true)
++    expect(ops.map((o) => o.impliedValue)).toEqual(['true', 'false'])
++  })
++
++  it("select reads Is / Isn't / Is Empty / Isn't Empty with chip slots on the membership ops", () => {
++    const ops = operatorsFor('prop_sel', 'select')
++    expect(ops.map((o) => o.label)).toEqual(['Is', "Isn't", 'Is Empty', "Isn't Empty"])
++    expect(ops[0].slot).toBe('chips')
++    expect(ops[2].slot).toBe('none')
++  })
++
++  it("multi-select reads Is Any / Is All / Isn't + empties", () => {
++    expect(operatorsFor('prop_tags', 'multiSelect').map((o) => o.op)).toEqual([
++      'contains_any',
++      'contains_all',
++      'does_not_contain',
++      'is_empty',
++      'is_not_empty',
++    ])
++  })
++
++  it("a Context reads Is Any / Is All / Isn't + empties", () => {
++    const ops = operatorsFor('ctx-crew', 'context')
++    expect(ops.map((o) => o.label)).toEqual([
++      'Is Any',
++      'Is All',
++      "Isn't",
++      'Is Empty',
++      "Isn't Empty",
++    ])
++    expect(ops.slice(0, 3).map((o) => o.op)).toEqual([
++      'contains_any',
++      'contains_all',
++      'does_not_contain',
++    ])
++    expect(ops[0].slot).toBe('chips')
++  })
++
++  it("Location Contains and Doesn't Contain take folder names; Is and Isn't take ids alone", () => {
++    const ops = operatorsFor('_location', undefined)
++    expect(ops.map((o) => [o.label, o.names])).toEqual([
++      ['Is', undefined],
++      ["Isn't", undefined],
++      ['Contains', true],
++      ["Doesn't Contain", true],
++    ])
++  })
++})
+diff --git a/Core/Views/valueKinds.ts b/Core/Views/valueKinds.ts
+index 8d3f623fa..d500a5bd6 100644
+--- a/Core/Views/valueKinds.ts
++++ b/Core/Views/valueKinds.ts
+@@ -4,6 +4,7 @@ import { localDayKey, pad } from '@pommora/uix/Utilities/pad'
+ import { foldKey } from '../Paths/caseFold'
+ import {
+   type ColumnType,
++  FILEDATA,
+   optionIds,
+   type PropertyDefinition,
+   specOf,
+@@ -18,7 +19,8 @@ import {
+   type ValueKind,
+ } from '../Properties/propertyValue'
+ import { dayMs, type LocalDate, readDate, shownText } from '../Properties/formatValue'
+-import { FILTER_OPS } from './filterRules'
++import { FILTER_OPS, OPERANDLESS_OPS } from './filterRules'
++import { UNGROUPED } from './viewRow'
+ import type { DateGranularity } from './views'
+ 
+ type ValueSlot = 'none' | 'text' | 'number' | 'date' | 'chips' | 'set'
+@@ -400,3 +402,32 @@ export const viewSpecOf = (type: ColumnType | undefined): ValueKindSpec | undefi
+ }
+ 
+ export const groupable = (t: PropertyDefinition['type']): boolean => viewSpecOf(t)?.groups === true
++
++/** A band names one value when an Is rule on its key would seed one, so a drag into it writes that value; a date band names a span, never one date, so date grouping can't be reassigned by drag. */
++export const reassignable = (type: ColumnType | undefined): boolean => {
++  const spec = viewSpecOf(type)
++  return spec?.bucket !== undefined && spec.seed !== undefined
++}
++
++export const groupKeyToValue = (
++  groupKey: string,
++  type: ColumnType | undefined,
++): PropertyValue | null =>
++  groupKey === UNGROUPED ? null : (viewSpecOf(type)?.seed?.(FILTER_OPS.is, groupKey) ?? null)
++
++/** Location reads from the Set's side — you choose the Set, not the page, hence "Contains" over "Is Inside". */
++const LOCATION_OPS: OperatorChoice[] = [
++  { op: FILTER_OPS.is, label: 'Is', slot: 'set' },
++  { op: FILTER_OPS.isNot, label: "Isn't", slot: 'set' },
++  { op: FILTER_OPS.isInside, label: 'Contains', slot: 'set', names: true },
++  { op: FILTER_OPS.isNotInside, label: "Doesn't Contain", slot: 'set', names: true },
++]
++
++/** Title never offers empty ops — a title (the filename basename) is never empty. */
++const TITLE_OPS = VALUE_KINDS.text.ops.filter((o) => !OPERANDLESS_OPS.has(o.op))
++
++export function operatorsFor(id: string, type: ColumnType | undefined): readonly OperatorChoice[] {
++  if (id === FILEDATA.title.id) return TITLE_OPS
++  if (id === FILEDATA.location.id) return LOCATION_OPS
++  return viewSpecOf(type)?.ops ?? []
++}
+diff --git a/Core/Views/views.test.ts b/Core/Views/views.test.ts
+index e2cba5c49..394d3b1d3 100644
+--- a/Core/Views/views.test.ts
++++ b/Core/Views/views.test.ts
+@@ -5,11 +5,10 @@ import {
+   mergeViewEdit,
+   savedView,
+   viewOption,
+-  DEFAULT_VIEW_TYPE,
+-  decodeGroupConfig,
+-  decodeSubGroup,
++  DEFAULT_VIEW_ID,
+   mintDefaultView,
+   mintNewView,
++  pickView,
+   pickViewState,
+   mapTiles,
+   mapViews,
+@@ -19,6 +18,7 @@ import {
+ import { mapRules, type FilterGroup, type FilterRule } from './filterRules'
+ import { FILEDATA, type PropertyDefinition } from '../Properties/properties'
+ import { resolveColumns } from './Pipeline/columns'
++import type { SetNode } from '../Nexus/tree'
+ 
+ describe('SavedView decode', () => {
+   it('parses the fixture Table view (type, property_order, group, sort)', () => {
+@@ -291,8 +291,9 @@ describe('view-level grouping fields', () => {
+     expect(v.structural_order_mode).toBeUndefined()
+     expect(v.sub_group).toBeUndefined()
+   })
+-  it('decodeSubGroup fills order_mode and filters non-string order entries', () => {
+-    expect(decodeSubGroup({ property_id: 'p1', order: ['a', 7, 'b'] })).toEqual({
++  it('a sub-group fills order_mode and filters non-string order entries', () => {
++    const v = savedView.parse({ ...base, sub_group: { property_id: 'p1', order: ['a', 7, 'b'] } })
++    expect(v.sub_group).toEqual({
+       property_id: 'p1',
+       order_mode: 'configured',
+       order: ['a', 'b'],
+@@ -300,17 +301,21 @@ describe('view-level grouping fields', () => {
+   })
+ })
+ 
+-describe('decodeGroupConfig (lenient, never throws)', () => {
++describe('the group codec (lenient, never throws)', () => {
++  const groupOf = (group: unknown): SavedView['group'] =>
++    savedView.parse({ id: 'view_g', name: 'G', property_order: [], hidden_properties: [], group })
++      .group
++
+   it('passes structural and flat through', () => {
+-    expect(decodeGroupConfig({ kind: 'structural' })).toEqual({ kind: 'structural' })
+-    expect(decodeGroupConfig({ kind: 'flat' })).toEqual({ kind: 'flat' })
++    expect(groupOf({ kind: 'structural' })).toEqual({ kind: 'structural' })
++    expect(groupOf({ kind: 'flat' })).toEqual({ kind: 'flat' })
+   })
+ 
+   it('degrades garbage / null / non-object to structural', () => {
+-    expect(decodeGroupConfig(null)).toEqual({ kind: 'structural' })
+-    expect(decodeGroupConfig('nope')).toEqual({ kind: 'structural' })
+-    expect(decodeGroupConfig([])).toEqual({ kind: 'structural' })
+-    expect(decodeGroupConfig({})).toEqual({ kind: 'structural' })
++    expect(groupOf(null)).toEqual({ kind: 'structural' })
++    expect(groupOf('nope')).toEqual({ kind: 'structural' })
++    expect(groupOf([])).toEqual({ kind: 'structural' })
++    expect(groupOf({})).toEqual({ kind: 'structural' })
+   })
+ })
+ 
+@@ -318,7 +323,7 @@ describe('SavedView format (the cards density field)', () => {
+   const base = { id: 'view_x', name: 'B', property_order: [], hidden_properties: [] }
+   it('coerces an unknown type to table and round-trips a valid format', () => {
+     const v = savedView.parse({ ...base, type: 'board', format: 'compact' })
+-    expect(v.type).toBe(DEFAULT_VIEW_TYPE)
++    expect(v.type).toBe('table')
+     expect(v.format).toBe('compact')
+   })
+   it('drops an unknown format value', () => {
+@@ -532,3 +537,12 @@ describe('bandKey', () => {
+     expect(bandKey('prop_A', 'opt_x', 'set_1')).toBe('set_1/prop_A/opt_x')
+   })
+ })
++
++describe('pickView', () => {
++  it('answers the same default view for every container with no saved view', () => {
++    const set = { kind: 'set', id: 's1', sets: [] } as unknown as SetNode
++    const other = { kind: 'set', id: 's2', sets: [] } as unknown as SetNode
++    expect(pickView(set)).toBe(pickView(other))
++    expect(pickView(set).id).toBe(DEFAULT_VIEW_ID)
++  })
++})
+diff --git a/Core/Views/views.ts b/Core/Views/views.ts
+index 155c08a07..2562764df 100644
+--- a/Core/Views/views.ts
++++ b/Core/Views/views.ts
+@@ -11,10 +11,11 @@ import { mergeKeys } from '../Files/jsonMerge'
+ import type { Json } from '../Files/stableJson'
+ import type { Result } from '../Contract/result'
+ import { FILEDATA } from '../Properties/properties'
++import type { CollectionNode, SetNode } from '../Nexus/tree'
+ 
+ export const VIEW_TYPES = ['table', 'cards', 'list', 'gallery', 'calendar', 'timeline'] as const
+ export type ViewType = (typeof VIEW_TYPES)[number]
+-export const DEFAULT_VIEW_TYPE: ViewType = 'table'
++const DEFAULT_VIEW_TYPE: ViewType = 'table'
+ 
+ interface ViewKind {
+   label: string
+@@ -134,14 +135,14 @@ function decodeOrdering(raw: Record<string, unknown>): Omit<SubGroupConfig, 'pro
+   }
+ }
+ 
+-export function decodeSubGroup(raw: unknown): SubGroupConfig | undefined {
++function decodeSubGroup(raw: unknown): SubGroupConfig | undefined {
+   if (!isPlainObject(raw)) return undefined
+   if (typeof raw.property_id !== 'string' || raw.property_id === '') return undefined
+   return { property_id: raw.property_id, ...decodeOrdering(raw) }
+ }
+ 
+ /** Never throws; an unknown or malformed shape degrades to `structural` — a throw would poison the whole sidecar decode. */
+-export function decodeGroupConfig(raw: unknown): GroupConfig {
++function decodeGroupConfig(raw: unknown): GroupConfig {
+   if (!isPlainObject(raw)) return { kind: 'structural' }
+   const obj = raw
+   const kind = typeof obj.kind === 'string' ? obj.kind : undefined
+@@ -401,3 +402,13 @@ export function mintNewView(name: string): SavedView {
+ export function mintDefaultView(): SavedView {
+   return mintNewView(VIEW_KINDS[DEFAULT_VIEW_TYPE].label)
+ }
++
++const DEFAULT_VIEW: SavedView = { ...mintDefaultView(), id: DEFAULT_VIEW_ID }
++
++/** The container's chosen view if still present, else the first saved view, else the one default view (sentinel id until first saved). */
++export function pickView(source: CollectionNode | SetNode): SavedView {
++  const views = source.views ?? []
++  const saved =
++    (source.activeView ? views.find((v) => v.id === source.activeView) : undefined) ?? views[0]
++  return saved ?? DEFAULT_VIEW
++}
+diff --git a/Core/Views/visibilityModel.test.ts b/Core/Views/visibilityModel.test.ts
+deleted file mode 100644
+index 0e189d795..000000000
+--- a/Core/Views/visibilityModel.test.ts
++++ /dev/null
+@@ -1,117 +0,0 @@
+-import { describe, expect, it } from 'vitest'
+-import { FILEDATA, type PropertyDefinition } from '../Properties/properties'
+-import type { SavedView } from './views'
+-import { hiddenListIds, hideShown, placeInShown, unhide } from './visibilityModel'
+-
+-const [title, createdAt, modifiedAt] = [
+-  FILEDATA.title.id,
+-  FILEDATA.createdAt.id,
+-  FILEDATA.modifiedAt.id,
+-]
+-const [areas, projects] = ['ctx_areas', 'ctx_projects']
+-const stamps = [createdAt, modifiedAt]
+-
+-const def = (id: string): PropertyDefinition => ({ id, label: id, key: id, type: 'select' })
+-
+-const view = (property_order: string[], hidden_properties: string[]): SavedView => ({
+-  id: 'view_1',
+-  name: 'Table',
+-  type: 'table',
+-  property_order,
+-  hidden_properties,
+-})
+-
+-describe('hiddenListIds', () => {
+-  it('orders hidden props by the COLLECTION schema, not the hidden array', () => {
+-    const schema = [def('a'), def('b'), def('c')]
+-    expect(hiddenListIds(view(['b'], ['c', 'a']), schema, [])).toEqual(['a', 'c', ...stamps])
+-  })
+-
+-  it('lists non-shown contexts first (registry order), then props, then the stamps, drops stale ids', () => {
+-    const schema = [def('a')]
+-    expect(
+-      hiddenListIds(view([], [areas, modifiedAt, 'stale', 'a']), schema, [areas, projects]),
+-    ).toEqual([areas, projects, 'a', createdAt, modifiedAt])
+-  })
+-
+-  it('lists both stamps on a view that shows neither', () => {
+-    expect(hiddenListIds(view([title], []), [], [])).toEqual([createdAt, modifiedAt])
+-  })
+-
+-  it('omits a stamp the view shows', () => {
+-    expect(hiddenListIds(view([title, modifiedAt], []), [], [])).toEqual([createdAt])
+-  })
+-
+-  it('a context in neither list sits in the hidden zone (default-OFF reveal path)', () => {
+-    expect(hiddenListIds(view(['ctxA'], []), [], ['ctxA', 'ctxB'])).toEqual(['ctxB', ...stamps])
+-  })
+-
+-  it('surfaces an unaccounted prop (in schema, in neither list) so it stays revealable', () => {
+-    const schema = [def('a'), def('b')]
+-    expect(hiddenListIds(view(['a'], []), schema, [])).toEqual(['b', ...stamps])
+-  })
+-
+-  it('interleaves hidden and unaccounted props in collection order', () => {
+-    const schema = [def('a'), def('b'), def('c')]
+-    expect(hiddenListIds(view(['b'], ['a']), schema, [])).toEqual(['a', 'c', ...stamps])
+-  })
+-})
+-
+-describe('placeInShown', () => {
+-  it('reorders a shown row, writing the full visible order verbatim with hidden ids trailing', () => {
+-    const v = view([title, 'a', 'b', 'h', 'c'], ['h'])
+-    expect(placeInShown(v, [title, 'a', 'b', 'c'], 'c', 1)).toEqual({
+-      property_order: [title, 'c', 'a', 'b', 'h'],
+-      hidden_properties: ['h'],
+-    })
+-  })
+-
+-  it('unhides a dragged-in row at the slot and lifts its flag', () => {
+-    const v = view([title, 'a', 'b', 'h'], ['h'])
+-    expect(placeInShown(v, [title, 'a', 'b'], 'h', 2)).toEqual({
+-      property_order: [title, 'a', 'h', 'b'],
+-      hidden_properties: [],
+-    })
+-  })
+-
+-  it('appends past the last shown row — a hidden id never in property_order lands', () => {
+-    const v = view(['a'], ['h'])
+-    expect(placeInShown(v, ['a'], 'h', 1)).toEqual({
+-      property_order: ['a', 'h'],
+-      hidden_properties: [],
+-    })
+-  })
+-
+-  it('reveals an unaccounted prop — drag-in writes it into property_order (then it shows)', () => {
+-    const v = view([title, 'a'], [])
+-    expect(placeInShown(v, [title, 'a'], 'new', 2)).toEqual({
+-      property_order: [title, 'a', 'new'],
+-      hidden_properties: [],
+-    })
+-  })
+-
+-  it('preserves foreign property_order ids at the tail', () => {
+-    const v = view(['a', 'future_key', 'b'], [])
+-    expect(placeInShown(v, ['a', 'b'], 'b', 0).property_order).toEqual(['b', 'a', 'future_key'])
+-  })
+-})
+-
+-describe('hideShown / unhide', () => {
+-  it('hide appends the flag once and never touches property_order', () => {
+-    const v = view(['a', 'b'], [])
+-    expect(hideShown(v, 'a')).toEqual({ hidden_properties: ['a'] })
+-    expect(hideShown(view(['a'], ['a']), 'a')).toEqual({ hidden_properties: ['a'] })
+-  })
+-
+-  it('unhide lifts the flag AND places an unplaced prop in the order (allowlist reveal)', () => {
+-    // No remembered slot (a title-only minted view) → appended, so the allowlist actually shows it.
+-    expect(unhide(view([], ['a', 'b']), 'a')).toEqual({
+-      property_order: ['a'],
+-      hidden_properties: ['b'],
+-    })
+-    expect(unhide(view(['a'], ['a']), 'a')).toEqual({
+-      property_order: ['a'],
+-      hidden_properties: [],
+-    })
+-  })
+-})
+diff --git a/Core/Views/visibilityModel.ts b/Core/Views/visibilityModel.ts
+deleted file mode 100644
+index aa7ddf75b..000000000
+--- a/Core/Views/visibilityModel.ts
++++ /dev/null
+@@ -1,52 +0,0 @@
+-import { FILEDATA, type PropertyDefinition } from '../Properties/properties'
+-import type { SavedView } from './views'
+-
+-type VisibilityPatch = Pick<SavedView, 'property_order' | 'hidden_properties'>
+-
+-/** Explicitly hidden OR unaccounted for in property_order — which is what makes a prop or Context created after the view revealable rather than invisible. */
+-export function hiddenListIds(
+-  view: SavedView,
+-  schema: PropertyDefinition[],
+-  contextIds: readonly string[],
+-): string[] {
+-  const set = new Set(view.hidden_properties)
+-  const shown = new Set(view.property_order)
+-  const nonShown = (id: string): boolean => set.has(id) || !shown.has(id)
+-  return [
+-    ...contextIds.filter(nonShown),
+-    ...schema.filter((d) => nonShown(d.id)).map((d) => d.id),
+-    ...[FILEDATA.createdAt.id, FILEDATA.modifiedAt.id].filter(nonShown),
+-  ]
+-}
+-
+-export function placeInShown(
+-  view: SavedView,
+-  shownIds: string[],
+-  id: string,
+-  toIndex: number,
+-): VisibilityPatch {
+-  const next = shownIds.filter((x) => x !== id)
+-  next.splice(toIndex, 0, id)
+-  return {
+-    property_order: [...next, ...view.property_order.filter((x) => !next.includes(x))],
+-    hidden_properties: view.hidden_properties.filter((x) => x !== id),
+-  }
+-}
+-
+-/** Hide a shown property — flag it, never move it: its property_order slot is its remembered spot, so a later unhide restores it where it was. */
+-export function hideShown(view: SavedView, id: string): Pick<SavedView, 'hidden_properties'> {
+-  return {
+-    hidden_properties: view.hidden_properties.includes(id)
+-      ? view.hidden_properties
+-      : [...view.hidden_properties, id],
+-  }
+-}
+-
+-export function unhide(view: SavedView, id: string): VisibilityPatch {
+-  return {
+-    property_order: view.property_order.includes(id)
+-      ? view.property_order
+-      : [...view.property_order, id],
+-    hidden_properties: view.hidden_properties.filter((x) => x !== id),
+-  }
+-}

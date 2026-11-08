@@ -1,0 +1,559 @@
+diff --git a/Core/Views/Pipeline/bandOrder.test.ts b/Core/Views/Pipeline/bandOrder.test.ts
+deleted file mode 100644
+index 9b9262f30..000000000
+--- a/Core/Views/Pipeline/bandOrder.test.ts
++++ /dev/null
+@@ -1,60 +0,0 @@
+-import { describe, it, expect } from 'vitest'
+-import type { ResolvedGroup } from '../viewRow'
+-import { orderGroups } from './bandOrder'
+-
+-const sg = (key: string, children?: ResolvedGroup[]): ResolvedGroup => ({
+-  key,
+-  kind: 'set',
+-  items: [],
+-  ...(children ? { children } : {}),
+-})
+-const ungrouped: ResolvedGroup = {
+-  key: '_ungrouped',
+-  kind: 'tail',
+-  items: [],
+-}
+-const prop = (key: string): ResolvedGroup => ({
+-  key,
+-  kind: 'bucket',
+-  value: key,
+-  items: [],
+-})
+-const keys = (gs: ResolvedGroup[]): string[] => gs.map((g) => g.key)
+-
+-describe('orderGroups', () => {
+-  it('reorders top-level structural siblings by the flat array', () => {
+-    const groups = [sg('A'), sg('B'), sg('C'), ungrouped]
+-    expect(keys(orderGroups(groups, ['C', 'A', 'B']))).toEqual(['C', 'A', 'B', '_ungrouped'])
+-  })
+-
+-  it('reorders nested siblings at every level from the same flat array', () => {
+-    const groups = [sg('A', [sg('A1'), sg('A2')]), sg('B')]
+-    const out = orderGroups(groups, ['B', 'A', 'A2', 'A1'])
+-    expect(keys(out)).toEqual(['B', 'A'])
+-    expect(keys(out[1].children ?? [])).toEqual(['A2', 'A1'])
+-  })
+-
+-  it('keeps unlisted siblings in fs order after the listed ones', () => {
+-    const groups = [sg('A'), sg('B'), sg('C'), sg('D')]
+-    expect(keys(orderGroups(groups, ['D', 'B']))).toEqual(['D', 'B', 'A', 'C'])
+-  })
+-
+-  it('the ungrouped tail holds its placement slot — top stays top, bottom stays bottom', () => {
+-    const bottom = [sg('A'), sg('B'), ungrouped]
+-    expect(keys(orderGroups(bottom, ['B', 'A']))).toEqual(['B', 'A', '_ungrouped'])
+-    expect(keys(orderGroups(bottom, ['_ungrouped', 'B', 'A']))).toEqual(['B', 'A', '_ungrouped'])
+-    const top = [ungrouped, sg('A'), sg('B')]
+-    expect(keys(orderGroups(top, ['B', 'A']))).toEqual(['_ungrouped', 'B', 'A'])
+-  })
+-
+-  it('leaves property groups untouched', () => {
+-    const groups = [prop('done'), prop('open'), ungrouped]
+-    expect(keys(orderGroups(groups, ['open', 'done']))).toEqual(['done', 'open', '_ungrouped'])
+-  })
+-
+-  it('is identity for an undefined or empty order', () => {
+-    const groups = [sg('A'), sg('B')]
+-    expect(orderGroups(groups, undefined)).toBe(groups)
+-    expect(orderGroups(groups, [])).toBe(groups)
+-  })
+-})
+diff --git a/Core/Views/Pipeline/bandOrder.ts b/Core/Views/Pipeline/bandOrder.ts
+deleted file mode 100644
+index 785d21b05..000000000
+--- a/Core/Views/Pipeline/bandOrder.ts
++++ /dev/null
+@@ -1,22 +0,0 @@
+-// Listed sets lead in array order, unlisted sets trail in fs order; non-structural groups HOLD their slot, so the view-level ungrouped_placement survives a manual band order.
+-
+-import type { ResolvedGroup } from '../viewRow'
+-import { resolveRowOrder } from '@pommora/uix/Utilities/moveItem'
+-
+-export function orderGroups(
+-  groups: ResolvedGroup[],
+-  groupOrder: string[] | undefined,
+-): ResolvedGroup[] {
+-  if (!groupOrder || groupOrder.length === 0) return groups
+-  const walk = (level: ResolvedGroup[]): ResolvedGroup[] => {
+-    const recursed = level.map((g) => (g.children ? { ...g, children: walk(g.children) } : g))
+-    const sets = resolveRowOrder(
+-      recursed.filter((g) => g.kind === 'set'),
+-      (g) => g.key,
+-      groupOrder,
+-    )
+-    let i = 0
+-    return recursed.map((g) => (g.kind === 'set' ? sets[i++] : g))
+-  }
+-  return walk(groups)
+-}
+diff --git a/Core/Views/Pipeline/group.test.ts b/Core/Views/Pipeline/group.test.ts
+index d3ccd5c18..7cdd8c9e4 100644
+--- a/Core/Views/Pipeline/group.test.ts
++++ b/Core/Views/Pipeline/group.test.ts
+@@ -17,13 +17,15 @@ import {
+   formatBucketLabel,
+   groupPlan,
+   pageOrderOf,
+-  pruneEmptyBuckets,
++  orderSetTree,
+   resolveGroups as resolveGroupsOf,
+   type SetTreeNode,
+   setOrderOf,
+ } from './group'
+ import { pageValues, propsAtRoot } from '../../Testing/pageValues'
+ import { propertyColumn } from './columns'
++import { resolveView } from './resolveView'
++import { identityFor } from '../../Testing/testTree'
+ 
+ const page = (id: string): PageNode => ({ kind: 'page', id, title: id, path: `${id}.md` })
+ const set = (id: string, pages: PageNode[] = [], sets: SetNode[] = []): SetNode => ({
+@@ -345,7 +347,7 @@ describe('property grouping — status manual order', () => {
+     ])
+   })
+ 
+-  it('resolution keeps live empty buckets — dropping them is the orchestrator’s (pruneEmptyBuckets); the no-value tail stays', () => {
++  it('resolution keeps live empty buckets — dropping them is Hide Empty Groups’ prune; the no-value tail stays', () => {
+     const { rows, setTree } = flattenContainer(col, values, {})
+     const groups = resolveGroups(rows, base, statusSchema, setTree, null, 'bottom')
+     expect(keys(groups)).toEqual([
+@@ -355,7 +357,18 @@ describe('property grouping — status manual order', () => {
+       'prop_status/opt_done',
+       '_ungrouped',
+     ])
+-    expect(keys(pruneEmptyBuckets(groups))).toEqual([
++    const view = {
++      id: 'v',
++      name: 'V',
++      type: 'table',
++      property_order: [],
++      hidden_properties: [],
++      group: base,
++      hide_empty_groups: true,
++    } as SavedView
++    const plan = groupPlan(view, statusSchema, true)
++    const input = { rows, setTree, view, schema: statusSchema, plan, identity: identityFor({}) }
++    expect(keys(resolveView(input).groups)).toEqual([
+       'prop_status/opt_in_progress',
+       'prop_status/opt_not_started',
+       'prop_status/opt_done',
+@@ -417,6 +430,29 @@ describe('sub-grouping (structural + view-level sub_group)', () => {
+     [],
+   )
+ 
++  it('an empty option band shows under a Set while Hide Empty Groups is off, and leaves once it is on', () => {
++    const { rows, setTree } = flattenContainer(col, values, {})
++    const viewOf = (hide: boolean): SavedView =>
++      ({
++        id: 'v',
++        name: 'V',
++        type: 'table',
++        property_order: [],
++        hidden_properties: [],
++        group: structural,
++        sub_group: sub,
++        hide_empty_groups: hide,
++      }) as SavedView
++    const bucketsUnderB = (hide: boolean): string[] => {
++      const view = viewOf(hide)
++      const plan = groupPlan(view, statusSchema, true)
++      const input = { rows, setTree, view, schema: statusSchema, plan, identity: identityFor({}) }
++      return keys(resolveView(input).groups.find((g) => g.key === 'setB')?.children ?? [])
++    }
++    expect(bucketsUnderB(false)).toContain(bandKey('prop_status', 'opt_in_progress', 'setB'))
++    expect(bucketsUnderB(true)).toEqual([bandKey('prop_status', 'opt_done', 'setB')])
++  })
++
+   it('sets stay top bands; sub-set pages roll up and bucket by the property (no sub-set band)', () => {
+     const { rows, setTree } = flattenContainer(col, values, {})
+     const groups = resolveGroups(rows, structural, statusSchema, setTree, null, 'bottom', sub)
+@@ -429,9 +465,11 @@ describe('sub-grouping (structural + view-level sub_group)', () => {
+       })),
+     ).toEqual([
+       { kind: 'bucket', value: 'opt_not_started' },
++      { kind: 'bucket', value: 'opt_opt_open' },
++      { kind: 'bucket', value: 'opt_in_progress' },
+       { kind: 'bucket', value: 'opt_done' },
+     ])
+-    expect(itemIds(setA.children![1])).toEqual(['p_sub'])
++    expect(itemIds(setA.children![3])).toEqual(['p_sub'])
+     expect(groups.some((g) => g.key === 'setA1')).toBe(false)
+   })
+ 
+@@ -479,6 +517,8 @@ describe('sub-grouping (structural + view-level sub_group)', () => {
+     expect(setA.children!.flatMap((c) => (c.kind === 'bucket' ? [c.value] : []))).toEqual([
+       'opt_done',
+       'opt_not_started',
++      'opt_in_progress',
++      'opt_opt_open',
+     ])
+   })
+ 
+@@ -491,7 +531,8 @@ describe('sub-grouping (structural + view-level sub_group)', () => {
+     const byId = (r: ViewRow[]): ViewRow[] => [...r].sort((x, y) => (x.id < y.id ? -1 : 1))
+     const { rows, setTree } = flattenContainer(col3, values3, {})
+     const groups = resolveGroups(rows, structural, statusSchema, setTree, byId, 'bottom', sub)
+-    expect(itemIds(groups[0].children![0])).toEqual(['p_a2', 'p_z'])
++    const done = groups[0].children!.find((c) => c.kind === 'bucket' && c.value === 'opt_done')!
++    expect(itemIds(done)).toEqual(['p_a2', 'p_z'])
+   })
+ 
+   it('an unmappable sub-group property falls back to plain structural', () => {
+@@ -814,6 +855,58 @@ describe('setOrderOf and pageOrderOf', () => {
+   })
+ })
+ 
++describe('orderSetTree', () => {
++  const node = (id: string, sets?: SetTreeNode[]): SetTreeNode => ({
++    id,
++    title: id,
++    ...(sets ? { sets } : {}),
++  })
++  const ids = (tree: SetTreeNode[]): string[] => tree.map((n) => n.id)
++
++  it('reorders top-level Sets by the flat array', () => {
++    const tree = [node('A'), node('B'), node('C')]
++    expect(ids(orderSetTree(tree, ['C', 'A', 'B']))).toEqual(['C', 'A', 'B'])
++  })
++
++  it('reorders nested Sets at every level from the same flat array', () => {
++    const out = orderSetTree(
++      [node('A', [node('A1'), node('A2')]), node('B')],
++      ['B', 'A', 'A2', 'A1'],
++    )
++    expect(ids(out)).toEqual(['B', 'A'])
++    expect(ids(out[1].sets ?? [])).toEqual(['A2', 'A1'])
++  })
++
++  it('keeps unlisted Sets in the Nexus order after the listed ones', () => {
++    const tree = [node('A'), node('B'), node('C'), node('D')]
++    expect(ids(orderSetTree(tree, ['D', 'B']))).toEqual(['D', 'B', 'A', 'C'])
++  })
++
++  it('a custom Set order orders the pages gathered from nested Sets inside one band when nothing sorts them', () => {
++    const top = set('top', [], [set('n1', [page('p1')]), set('n2', [page('p2')])])
++    const { rows, setTree } = flattenContainer(collection([top]), {}, {})
++    const view = {
++      id: 'v',
++      name: 'V',
++      type: 'cards',
++      property_order: [],
++      hidden_properties: [],
++      group: { kind: 'structural' },
++      group_order: ['n2', 'n1'],
++    } as SavedView
++    const plan = groupPlan(view, [], false)
++    const { groups } = resolveView({
++      rows,
++      setTree,
++      view,
++      schema: [],
++      plan,
++      identity: identityFor({}),
++    })
++    expect(itemIds(groups[0])).toEqual(['p2', 'p1'])
++  })
++})
++
+ describe('formatBucketLabel', () => {
+   it('worded formats: month bucket reads written', () => {
+     expect(formatBucketLabel('2026-07', 'month', 'full', 'dash')).toBe('July 2026')
+diff --git a/Core/Views/Pipeline/group.ts b/Core/Views/Pipeline/group.ts
+index c24ec29ca..6c804ec56 100644
+--- a/Core/Views/Pipeline/group.ts
++++ b/Core/Views/Pipeline/group.ts
+@@ -1,4 +1,4 @@
+-import { type ResolvedGroup, type ViewRow, UNGROUPED, isEmptyBand } from '../viewRow'
++import { type ResolvedGroup, type ViewRow, UNGROUPED } from '../viewRow'
+ import {
+   bandKey,
+   type DateGranularity,
+@@ -6,7 +6,6 @@ import {
+   type EmptyPlacement,
+   type GroupConfig,
+   granularityOf,
+-  isBucketHidden,
+   LOCATION_SORT,
+   type SavedView,
+   type StructuralOrderMode,
+@@ -73,23 +72,15 @@ export function pruneHiddenSets(tree: SetTreeNode[], hidden: ReadonlySet<string>
+   )
+ }
+ 
+-export function dropHiddenGroups(
+-  groups: ResolvedGroup[],
+-  hidden: ReadonlySet<string>,
+-  plan: GroupPlan,
+-): ResolvedGroup[] {
+-  const top = plan.kind === 'property' ? plan.group.config.property_id : undefined
+-  const sub = plan.kind === 'sets' ? plan.sub?.config.property_id : undefined
+-  return groups.flatMap((group) => {
+-    if (group.kind === 'bucket' && top && isBucketHidden(hidden, 'group', top, group.value))
+-      return []
+-    const { children: nested, ...band } = group
+-    const children = nested?.filter(
+-      (c) => c.kind !== 'bucket' || !sub || !isBucketHidden(hidden, 'sub', sub, c.value),
+-    )
+-    return [children?.length ? { ...band, children } : band]
+-  })
+-}
++export const orderSetTree = (
++  tree: SetTreeNode[],
++  order: readonly string[] | undefined,
++): SetTreeNode[] =>
++  order?.length
++    ? resolveRowOrder(tree, (node) => node.id, order).map((node) =>
++        node.sets ? { ...node, sets: orderSetTree(node.sets, order) } : node,
++      )
++    : tree
+ 
+ export function formatBucketLabel(
+   key: string,
+@@ -165,31 +156,30 @@ export function bucketOrder(
+   return group.order_mode === 'reversed' ? [...configured].reverse() : configured
+ }
+ 
+-function property(
++function bucketBands(
+   rows: ViewRow[],
+-  { config: group, column }: Grouping<PropertyGroup>,
++  { config, column }: Grouping,
+   sorter: Sorter | null,
+   placement: EmptyPlacement,
++  scope?: string,
+ ): ResolvedGroup[] {
+   const { def } = column
+-  const granularity = granularityOf(group)
+-
+-  const byBucket = groupRows(rows, (r) => bucketKey(r, column, granularity))
++  const byBucket = groupRows(rows, (r) => bucketKey(r, column, granularityOf(config)))
+   const noValue = byBucket.get(null) ?? []
+   byBucket.delete(null)
+   const buckets = byBucket as Map<string, ViewRow[]>
+ 
+-  const groups: ResolvedGroup[] = []
+   // Only a LIVE option earns an empty band: a stale manual-order entry (a deleted option, an old date bucket snapshotted by a band drag) must never render a ghost band.
+   const live = new Set(schemaOptionOrder(def) ?? [])
+-  for (const bucket of liveBucketOrder(group, def, buckets.keys())) {
+-    const items = buckets.get(bucket) ?? []
+-    if (items.length === 0 && !live.has(bucket)) continue
+-    const key = bandKey(group.property_id, bucket)
+-    groups.push({ key, kind: 'bucket', value: bucket, items: applySort(items, sorter) })
+-  }
++  const groups = liveBucketOrder(config, def, buckets.keys()).flatMap((value): ResolvedGroup[] => {
++    const items = buckets.get(value) ?? []
++    if (items.length === 0 && !live.has(value)) return []
++    const key = bandKey(config.property_id, value, scope)
++    return [{ key, kind: 'bucket', value, items: applySort(items, sorter) }]
++  })
+   // No "None" band: value-less rows are a flattened, header-less tail placed by the VIEW-level knob — it holds rows, so hide_empty_groups never touches it.
+-  return placeTail(groups, noValue, sorter, placement)
++  const tail = scope === undefined ? UNGROUPED : bandKey(config.property_id, UNGROUPED, scope)
++  return placeTail(groups, noValue, sorter, placement, tail)
+ }
+ 
+ function structural(
+@@ -246,30 +236,15 @@ function locationFlat(
+ function structuralSubGrouped(
+   rows: ViewRow[],
+   setTree: SetTreeNode[],
+-  { config: sub, column }: Grouping,
++  grouping: Grouping,
+   sorter: Sorter | null,
+   placement: EmptyPlacement,
+ ): ResolvedGroup[] {
+-  const { def } = column
+-  const granularity = granularityOf(sub)
+   const byParent = groupRows(rows, (r) => r.parentSetId)
+   const rootRows = byParent.get(undefined) ?? []
+-
+   const groups: ResolvedGroup[] = setTree.map((node) => {
+     const pages = subtreeIds(node).flatMap((id) => byParent.get(id) ?? [])
+-    const byBucket = groupRows(pages, (r) => bucketKey(r, column, granularity))
+-    const noValue = byBucket.get(null) ?? []
+-    byBucket.delete(null)
+-    const buckets = byBucket as Map<string, ViewRow[]>
+-
+-    let children = bucketOrder(sub, def, new Set(buckets.keys())).flatMap((b): ResolvedGroup[] => {
+-      const items = buckets.get(b)
+-      if (!items) return []
+-      const key = bandKey(sub.property_id, b, node.id)
+-      return [{ key, kind: 'bucket', value: b, items: applySort(items, sorter) }]
+-    })
+-    const tail = bandKey(sub.property_id, UNGROUPED, node.id)
+-    children = placeTail(children, noValue, sorter, placement, tail)
++    const children = bucketBands(pages, grouping, sorter, placement, node.id)
+     return {
+       key: node.id,
+       kind: 'set',
+@@ -280,23 +255,15 @@ function structuralSubGrouped(
+   return placeTail(groups, rootRows, sorter, placement)
+ }
+ 
+-/** Compose bucket-first so a set whose sub-buckets all emptied goes with them. */
+-export function pruneEmptyBuckets(groups: ResolvedGroup[]): ResolvedGroup[] {
++export function pruneGroups(
++  groups: ResolvedGroup[],
++  drops: (group: ResolvedGroup) => boolean,
++): ResolvedGroup[] {
+   return groups.flatMap((group) => {
+     const { children: nested, ...band } = group
+-    const children = nested ? pruneEmptyBuckets(nested) : undefined
+-    if (group.kind === 'bucket' && isEmptyBand({ ...band, children })) return []
+-    return [children?.length ? { ...band, children } : band]
+-  })
+-}
+-
+-export function pruneEmptyGroups(groups: ResolvedGroup[]): ResolvedGroup[] {
+-  return groups.flatMap((group): ResolvedGroup[] => {
+-    if (group.kind !== 'set') return [group]
+-    const { children: nested, ...band } = group
+-    const children = nested ? pruneEmptyGroups(nested) : []
+-    if (isEmptyBand({ ...band, children })) return []
+-    return [children.length > 0 ? { ...band, children } : band]
++    const children = nested && pruneGroups(nested, drops)
++    const pruned: ResolvedGroup = children?.length ? { ...band, children } : band
++    return drops(pruned) ? [] : [pruned]
+   })
+ }
+ 
+@@ -397,7 +364,7 @@ export function resolveGroups(
+         ? locationFlat(rows, setTree, sorter, placement)
+         : flat(rows, sorter)
+     case 'property':
+-      return property(rows, plan.group, sorter, placement)
++      return bucketBands(rows, plan.group, sorter, placement)
+     case 'sets':
+       if (!plan.nests) return structuralFlat(rows, setTree, sorter, placement)
+       return plan.sub
+diff --git a/Core/Views/Pipeline/resolveView.test.ts b/Core/Views/Pipeline/resolveView.test.ts
+index ff7d59f92..a00aa68be 100644
+--- a/Core/Views/Pipeline/resolveView.test.ts
++++ b/Core/Views/Pipeline/resolveView.test.ts
+@@ -609,8 +609,12 @@ describe('resolveView — hidden groups + Hide Empty Groups', () => {
+       groups
+         .find((g) => g.key === 'sA')
+         ?.children?.map((c) => (c.kind === 'bucket' ? c.value : c.key)),
+-    ).toEqual(['opt_Alpha'])
+-    expect(groups.find((g) => g.key === 'sB')?.children).toBeUndefined()
++    ).toEqual(['opt_Alpha', 'opt_Gamma'])
++    expect(
++      groups
++        .find((g) => g.key === 'sB')
++        ?.children?.map((c) => (c.kind === 'bucket' ? c.value : c.key)),
++    ).toEqual(['opt_Alpha', 'opt_Gamma'])
+   })
+ 
+   it('an encoded date bucket drops by its property and bucket', () => {
+diff --git a/Core/Views/Pipeline/resolveView.ts b/Core/Views/Pipeline/resolveView.ts
+index 4d43c1418..773fa4a6d 100644
+--- a/Core/Views/Pipeline/resolveView.ts
++++ b/Core/Views/Pipeline/resolveView.ts
+@@ -1,15 +1,12 @@
+-// Composes the pure stages: columns (resolver) + filter → group → sort-within-group. VIEW-SOURCE-AGNOSTIC — `view`, `rows`, `schema`, `setTree` are all passed in, so a future context-dashboard embed reuses this verbatim. Never couple the view to its container or read `views[]` here.
+-
+ import type { PropertyDefinition, ResolvedColumn } from '../../Properties/properties'
+ import type { ResolvedGroup, ViewRow } from '../viewRow'
+-import { type SavedView, viewOption } from '../views'
++import { isBucketHidden, type SavedView, viewOption } from '../views'
+ import { applyFilter } from './filter'
+-import { orderGroups } from './bandOrder'
+ import {
+-  dropHiddenGroups,
++  bucketGroupingOf,
+   type GroupPlan,
+-  pruneEmptyBuckets,
+-  pruneEmptyGroups,
++  orderSetTree,
++  pruneGroups,
+   pruneHiddenSets,
+   resolveGroups,
+   type SetTreeNode,
+@@ -19,6 +16,9 @@ import { makeSorter } from './sort'
+ import { resolveColumns } from './columns'
+ import type { IdentityMaps } from '../../Contexts/contextIdentity'
+ 
++const holdsRows = (group: ResolvedGroup): boolean =>
++  group.items.length > 0 || (group.children?.some(holdsRows) ?? false)
++
+ export function resolveView(input: {
+   rows: ViewRow[]
+   setTree: SetTreeNode[]
+@@ -41,16 +41,25 @@ export function resolveView(input: {
+   )
+   const sorter = makeSorter(view.sort, schema, identity.contextIds, manualOrder)
+   const hidden = new Set(view.hidden_groups ?? [])
+-  let resolved = resolveGroups(
++  let tree = orderSetTree(setTree, viewSetOrder(plan, view))
++  if (plan.kind === 'sets' && hidden.size > 0) tree = pruneHiddenSets(tree, hidden)
++  const groups = resolveGroups(
+     filtered,
+     plan,
+-    plan.kind === 'sets' && hidden.size > 0 ? pruneHiddenSets(setTree, hidden) : setTree,
++    tree,
+     sorter,
+     viewOption(view, 'ungrouped_placement'),
+   )
+-  if (hidden.size > 0) resolved = dropHiddenGroups(resolved, hidden, plan)
+-  if (viewOption(view, 'hide_empty_groups'))
+-    resolved = pruneEmptyGroups(pruneEmptyBuckets(resolved))
+-  else if (filtered.length !== rows.length) resolved = pruneEmptyGroups(resolved)
+-  return { columns, groups: orderGroups(resolved, viewSetOrder(plan, view)) }
++
++  const hideEmpty = viewOption(view, 'hide_empty_groups')
++  const filtering = filtered.length !== rows.length
++  if (hidden.size === 0 && !hideEmpty && !filtering) return { columns, groups }
++  const grouping = bucketGroupingOf(plan)
++  const level = plan.kind === 'property' ? 'group' : 'sub'
++  const drops = (group: ResolvedGroup): boolean =>
++    (group.kind === 'bucket' &&
++      grouping !== undefined &&
++      isBucketHidden(hidden, level, grouping.config.property_id, group.value)) ||
++    ((hideEmpty ? group.kind !== 'tail' : filtering && group.kind === 'set') && !holdsRows(group))
++  return { columns, groups: pruneGroups(groups, drops) }
+ }
+diff --git a/Core/Views/Table/bandCommits.test.tsx b/Core/Views/Table/bandCommits.test.tsx
+index b1ff807bd..e6fb75224 100644
+--- a/Core/Views/Table/bandCommits.test.tsx
++++ b/Core/Views/Table/bandCommits.test.tsx
+@@ -379,7 +379,7 @@ describe('sub-group bucket band drag', () => {
+         },
+       }),
+     )
+-    await dragBand(2, 115)
++    await dragBand(3, 187)
+     expect(host.querySelector('.drop-line')).toBeNull()
+     await drop()
+     expect(saveSpy).not.toHaveBeenCalled()
+@@ -391,7 +391,7 @@ describe('sub-group bucket band drag', () => {
+ 
+   it('a cross-set bucket drag (a before-slot in another Set) still writes the global sub-order — no moveSet', async () => {
+     await mountTable(subGroupSource())
+-    await dragBand(2, 98)
++    await dragBand(2, 122)
+     await drop()
+     expect(saveSpy).toHaveBeenCalledOnce()
+     expect(lastSavedView().sub_group).toEqual({
+@@ -404,7 +404,7 @@ describe('sub-group bucket band drag', () => {
+ 
+   it('a cross-set slot before the SAME bucket declines — no append-to-end misfire', async () => {
+     await mountTable(subGroupSource())
+-    await dragBand(1, 98)
++    await dragBand(1, 122)
+     await drop()
+     expect(saveSpy).not.toHaveBeenCalled()
+     expect(mutateSpy).not.toHaveBeenCalled()
+@@ -414,7 +414,7 @@ describe('sub-group bucket band drag', () => {
+     await mountTable(
+       subGroupSource({ sub_group: { property_id: 'prop_status', order_mode: 'configured' } }),
+     )
+-    await dragBand(2, 26)
++    await dragBand(3, 50)
+     await drop()
+     expect(saveSpy).toHaveBeenCalledOnce()
+     expect(lastSavedView().sub_group).toEqual({
