@@ -1,4 +1,3 @@
-import { useMemo } from 'react'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import type { PropertyDefinition } from '../../Properties/properties'
 import type { SavedView, ViewWriter } from '../views'
@@ -62,14 +61,6 @@ export function ViewPane({
   save,
 }: PaneProps & { id: ViewPaneId; source: CollectionNode | SetNode }): React.JSX.Element {
   const tree = useSession((st) => st.tree)
-  const locations = useMemo(
-    () =>
-      orderSetTree(
-        source.sets ?? [],
-        viewSetOrder(groupPlan(view, schema, presentedKind(view.type).nests), view),
-      ),
-    [source.sets, view, schema],
-  )
   const pane: PaneProps = { view, schema, back, save }
   switch (id) {
     case 'visibility':
@@ -80,11 +71,12 @@ export function ViewPane({
       return <GroupFrame {...pane} source={source} />
     case 'sort':
       return <SortFrame {...pane} />
-    case 'filter':
+    case 'filter': {
+      const order = viewSetOrder(groupPlan(view, schema, presentedKind(view.type).nests), view)
       return (
         <FilterFrame
           key={view.id}
-          locations={locations}
+          locations={orderSetTree(source.sets ?? [], order)}
           view={view}
           read={() => readLiveView(source.id, view)}
           schema={schema}
@@ -93,5 +85,6 @@ export function ViewPane({
           onCommit={pane.save}
         />
       )
+    }
   }
 }
