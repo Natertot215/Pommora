@@ -191,10 +191,10 @@ describe('the band zone', () => {
     })
   })
 
-  it('a 12px drag from the outline lifts the band; a click still toggles', async () => {
-    const outline = head('B').querySelector('.group-band-drop-outline') as HTMLElement
+  it('a 12px drag from the chevron lifts the band; a click still toggles', async () => {
+    const chevron = head('B').querySelector('[data-chevron]') as HTMLElement
     await act(async () => {
-      firePointer(outline, 'pointerdown', { x: 5, y: 60 })
+      firePointer(chevron, 'pointerdown', { x: 5, y: 60 })
     })
     await act(async () => {
       firePointer(window, 'pointermove', { x: 5, y: 62 })
@@ -207,9 +207,17 @@ describe('the band zone', () => {
     expect(head('B').hasAttribute('data-drag-source')).toBe(true)
     pressEscape()
     await act(async () => {
-      outline.click()
+      chevron.dispatchEvent(new MouseEvent('click', { bubbles: true }))
     })
     expect(toggleSpy).toHaveBeenCalledExactlyOnceWith('B')
+  })
+
+  it('a band head holds no Tab stop: Tab from a head passes its chevron and New Page by', () => {
+    const stops = [...host.querySelectorAll<HTMLElement>('button, a, input, [tabindex]')].filter(
+      (el) => el.tabIndex >= 0,
+    )
+    for (const key of ['A', 'A1', 'B'])
+      expect(stops.filter((el) => head(key).contains(el))).toEqual([])
   })
 
   it('Enter on a head toggles it through open', async () => {

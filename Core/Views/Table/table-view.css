@@ -42,7 +42,7 @@
 :root.native-highlight .data-cell.cell-sweep {
   background: var(--col-highlight);
 }
-/* Chrome lives in group-band.css; this scopes the section rhythm (the row), the sticky pin (the head), and the gutter chevron. */
+/* Chrome lives in group-band.css; this scopes the section rhythm (the row) and the sticky pin (the head). */
 .table-shell .group-band-row,
 .table-shell .group-band + .band-tail {
   padding-top: var(--band-gap);
@@ -56,7 +56,4 @@
   position: sticky;
   left: 0;
   display: inline-flex;
-}
-.table-shell .group-band-drop-outline {
-  cursor: pointer;
 }

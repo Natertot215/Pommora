@@ -173,14 +173,9 @@ function HeadedBand({
           }
           data-reveal-host=""
         >
-          <button
-            type="button"
-            className="group-band-drop-outline row-chevron"
-            onClick={toggle}
-            aria-label={open ? 'Collapse group' : 'Expand group'}
-          >
-            <DisclosureChevron open={open} />
-          </button>
+          <span className="row-chevron">
+            <DisclosureChevron open={open} onToggle={toggle} />
+          </span>
           {/* biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: pointer shortcuts over the title — the head carries the keyboard */}
           <span
             className="group-band-glyph"
@@ -204,6 +199,7 @@ function HeadedBand({
               iconSize="body"
               reveal
               className="group-band-add"
+              tabIndex={-1}
               onClick={() => bands.add(set.key)}
               data-create
               aria-label="New page in group"

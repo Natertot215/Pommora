@@ -220,8 +220,11 @@ describe('a resize through the mounted Table', () => {
     await resize(40)
     await mountTable({ column_widths: { prop_status: 160 } })
     await mountTable()
-    const outline = host.querySelectorAll('.group-band-drop-outline')[0]
-    await act(async () => (outline as HTMLElement).click())
+    await act(async () => {
+      host
+        .querySelector('.group-band-head [data-chevron]')
+        ?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    })
     expect(lastSavedView().collapsed_groups).toEqual(['sA'])
     expect(lastSavedView().column_widths?.prop_status).toBeUndefined()
   })

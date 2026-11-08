@@ -206,9 +206,10 @@ describe('structural band reorder', () => {
     await mountTable(structuralSource())
     await dragBand(2, 2)
     await drop()
-    const outline = host.querySelectorAll('.group-band-drop-outline')[0]
     await act(async () => {
-      ;(outline as HTMLElement).click()
+      host
+        .querySelector('.group-band-head [data-chevron]')
+        ?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
     })
     expect(saveSpy).toHaveBeenCalledTimes(2)
     expect(lastSavedView().group_order).toEqual(['sB', 'sA', 'sA1'])
@@ -698,9 +699,10 @@ describe('band reparent', () => {
     await dragBand(2, 12)
     await drop()
     // Mid-flight, the user collapses a group (a sibling persist with fresh state).
-    const outline = host.querySelectorAll('.group-band-drop-outline')[0]
     await act(async () => {
-      ;(outline as HTMLElement).click()
+      host
+        .querySelector('.group-band-head [data-chevron]')
+        ?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
     })
     const collapsedAtToggle = (saveSpy.mock.calls.at(-1)?.[2] as SavedView).collapsed_groups
     await act(async () => {
@@ -780,7 +782,9 @@ describe('band header — the sidebar interaction model', () => {
     })
     expect(lastSavedView().collapsed_groups ?? []).toContain('sA1')
     await act(async () => {
-      headerOf('A').querySelector<HTMLElement>('.group-band-drop-outline')?.click()
+      headerOf('A')
+        .querySelector('[data-chevron]')
+        ?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
     })
     expect(lastSavedView().collapsed_groups ?? []).toContain('sA')
   })
