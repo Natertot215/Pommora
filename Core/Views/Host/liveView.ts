@@ -176,10 +176,11 @@ export function useSaveView(
     })
 }
 
-const priorSlotOf = (prior: unknown, now: unknown, id: string): string[] | undefined => {
-  if (!Array.isArray(prior) || !Array.isArray(now)) return undefined
-  const at = prior.indexOf(id)
-  if (at < 0) return undefined
+const priorSlotOf = (prior: unknown, now: unknown, dropped: unknown, id: string) => {
+  if (!Array.isArray(prior) || !Array.isArray(now) || !Array.isArray(dropped)) return undefined
+  const [at, d, n] = [prior.indexOf(id), dropped.indexOf(id), now.indexOf(id)]
+  if (at < 0 || n < 0 || (dropped[d - 1] !== now[n - 1] && dropped[d + 1] !== now[n + 1]))
+    return undefined
   const placed = nextOrder(now, id, prior.slice(at + 1).find((x) => now.includes(x)) ?? null)
   return sameItems(placed, now) ? undefined : placed
 }
@@ -219,7 +220,8 @@ export function dropIO(
         const after = readLiveView(source.id, view)
         const back = Object.fromEntries(
           Object.keys(patch).flatMap((k) => {
-            const slot = priorSlotOf(view[k as keyof SavedView], after[k as keyof SavedView], id)
+            const key = k as keyof SavedView
+            const slot = priorSlotOf(view[key], after[key], patch[key], id)
             return slot ? [[k, slot]] : []
           }),
         )

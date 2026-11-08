@@ -190,10 +190,9 @@ async function dispatch(root: string, req: MutateRequest): Promise<MutateReply> 
       const folder = await mutableTarget(root, req.path, [req.kind])
       if (!folder.ok) return folder
       return done(
-        await patchSidecar(folder.value, req.kind, (cur) => ({
-          ...cur,
-          view_button: req.viewButton,
-        })),
+        await patchSidecar(folder.value, req.kind, (cur) =>
+          setOrDrop(cur, 'view_button', req.viewButton),
+        ),
       )
     }
 

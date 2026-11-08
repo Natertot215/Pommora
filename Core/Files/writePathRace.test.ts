@@ -16,7 +16,7 @@ import { setChildOrder } from '../Nexus/reorder'
 import { saveView } from '../Views/viewsFile'
 import { sidecarPath } from '../Paths/paths'
 import { readJsonObject } from './atomicWrite'
-import { patchSidecar } from './sidecar'
+import { handleMutate } from '../Nexus/mutate'
 
 const view = (id: string): SavedView => ({
   id,
@@ -53,7 +53,12 @@ describe('concurrent sidecar writers', () => {
     await Promise.all([
       setChildOrder(folder, 'set_order', ['s1']),
       saveView(folder, 'collection', view('view_1'), view('view_1')),
-      patchSidecar(folder, 'collection', (cur) => ({ ...cur, view_button: 'labeled' })),
+      handleMutate(root, {
+        op: 'setViewButton',
+        path: relative(root, folder),
+        kind: 'collection',
+        viewButton: 'labeled',
+      }),
     ])
     const sidecar = await readJsonObject(sidecarPath(folder, 'collection'))
     expect(sidecar?.set_order).toEqual(['s1'])

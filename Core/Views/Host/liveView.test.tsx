@@ -296,6 +296,26 @@ describe("a view patch riding a drop's write", () => {
     await act(async () => land(false))
     expect(persistView).toHaveBeenCalledWith({ group_order: ['b', 'a', 'c'] }, undefined)
   })
+
+  it('a refused drop leaves a later write that moved the row off its dropped slot as written', async () => {
+    const prior = base({ group_order: ['a', 'b', 'c', 'd'] })
+    let land: (landed: boolean) => void = () => {}
+    const persistView = vi.fn(async () => ok({}))
+    await show(prior)
+    const io = dropIO({ id: 'c', name: 'Row' }, { source: { id: 'k' }, view: prior, persistView })
+    await act(async () =>
+      io.persistAfter(
+        { group_order: ['c', 'a', 'b', 'd'] },
+        new Promise((resolve) => {
+          land = resolve
+        }),
+      ),
+    )
+    await put({ group_order: ['a', 'd', 'c', 'b'] })
+    await act(async () => land(false))
+    expect(persistView).not.toHaveBeenCalled()
+    expect(live.group_order).toEqual(['a', 'd', 'c', 'b'])
+  })
 })
 
 describe('useActiveView', () => {

@@ -342,7 +342,6 @@ function withChildOrder(
   })
 }
 
-// A drag's order as the tree holds it once the drag's write lands, shown before then.
 export function orderInTree(tree: NexusTree, req: OrderRequest): NexusTree | null {
   if (req.op === 'reorderChildren')
     return withChildOrder(tree, req.parentPath, 'setOrder', req.order)

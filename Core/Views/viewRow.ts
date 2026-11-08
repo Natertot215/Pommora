@@ -15,15 +15,12 @@ export type RowValues = PageValues & Pick<ViewRow, 'picked'>
 export type Picked = Record<string, PropertyValue>
 
 /** `frontmatter` is REQUIRED: when values aren't loaded yet, the flatten step supplies an identity-only entry so the row still sorts/groups/filters on intrinsic fields. */
-export interface ViewRow {
+export interface ViewRow extends PageValues {
   id: string
   title: string
   icon?: string
   path: string
   parentSetId?: string
-  frontmatter: PageFrontmatter
-  createdAt: string | null
-  modifiedAt: string | null
   contextValues?: Record<string, string[]>
   picked?: Picked
 }

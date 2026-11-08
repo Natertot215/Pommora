@@ -138,24 +138,16 @@ export function styleFor(
 }
 
 /** What a column stores for a pick from its style menu. */
-function pickedStyle(
-  column: ResolvedColumn,
-  forms: DateForms,
-  key: keyof ColumnStyle & string,
-  value: string,
-): string | undefined {
-  return storedPick(key, value, columnDefaults(column, forms), forms.clock)
-}
-
 export function columnStylePatch(
   view: SavedView,
   column: ResolvedColumn,
   forms: DateForms,
   patch: Partial<ColumnStyle>,
 ): ViewPatch {
+  const defaults = columnDefaults(column, forms)
   const picks = Object.entries(patch).map(([key, value]) => [
     key,
-    pickedStyle(column, forms, key as keyof ColumnStyle & string, String(value)),
+    storedPick(key as keyof ColumnStyle & string, String(value), defaults, forms.clock),
   ])
   return {
     column_styles: {

@@ -1,6 +1,7 @@
 import { reportRefusal } from '../Notifications/notifications'
 import { useCallback, useEffect, useState } from 'react'
 import { fault, ok, type Result, valueOr } from '../../Contract/result'
+import { fetchPageValues } from '../../Views/viewRow'
 import { relDirname } from '../../Paths/posix'
 import { Button } from '@pommora/uix/Buttons/Button'
 import { Checkbox } from '@pommora/uix/Controls/Checkbox'
@@ -36,7 +37,6 @@ import { useWindowGeometry } from './useWindowGeometry'
 import '../../Navigation/nav-list.css'
 import '../../Tiles/tile-base.css'
 import './page-window.css'
-import { fetchPageValues } from '../../Views/viewRow'
 
 // A non-path host chain: embeds inside the reader render inert, and no page path can collide with it.
 const READER_ANCESTOR = 'page-reader'

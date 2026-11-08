@@ -424,7 +424,7 @@ const LOCATION_OPS: OperatorChoice[] = [
 ]
 
 /** Title never offers empty ops — a title (the filename basename) is never empty. */
-const TITLE_OPS = VALUE_KINDS.text.ops.filter((o) => !OPERANDLESS_OPS.has(o.op))
+const TITLE_OPS = TEXT_OPS.filter((o) => !OPERANDLESS_OPS.has(o.op))
 
 export function operatorsFor(id: string, type: ColumnType | undefined): readonly OperatorChoice[] {
   if (id === FILEDATA.title.id) return TITLE_OPS
