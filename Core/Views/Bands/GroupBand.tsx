@@ -147,6 +147,7 @@ function HeadedBand({
       <div
         ref={springRow}
         className="group-band-row"
+        data-view-lead="band"
         data-collapsed={open ? undefined : ''}
         data-empty={node.empty ? '' : undefined}
         style={indent ? { paddingLeft: indent } : undefined}

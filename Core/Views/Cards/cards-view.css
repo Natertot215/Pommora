@@ -11,6 +11,22 @@
   zoom: calc(var(--zoom, 1) * var(--tile-zoom, 1));
   padding-top: var(--band-clearance);
 }
+[data-view-embed] .cards-view {
+  --zoom: var(--embed-zoom);
+  padding-bottom: var(--band-clearance);
+}
+[data-view-embed] .cards-view .cards-grid,
+[data-view-embed] .cards-view .set-cards-row {
+  padding-left: calc(var(--tile-inset-l) / (var(--zoom, 1) * var(--tile-zoom, 1)));
+  padding-right: calc(var(--tile-inset-r) / (var(--zoom, 1) * var(--tile-zoom, 1)));
+}
+[data-view-embed] .cards-view .group-band-row {
+  padding-left: calc(
+    var(--rail-inset) /
+    (var(--zoom, 1) * var(--tile-zoom, 1)) -
+    (12px + var(--cell-icon-gap, 6px))
+  );
+}
 .cards-view.is-compact {
   --card-row-h: 16px; /* KNOB — a compact property-value row */
   --card-min-rows: 2;

@@ -26,6 +26,9 @@
   width: 100%;
   zoom: calc(var(--zoom) * var(--tile-zoom, 1));
 }
+[data-view-embed] .table-shell {
+  --zoom: var(--view-embed-zoom);
+}
 
 /* Scoped to the Hide / style-slide beats only, so a drag resize stays instant. */
 .table-grid.col-hiding .table-head,

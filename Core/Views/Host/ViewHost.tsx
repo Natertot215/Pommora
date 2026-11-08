@@ -15,7 +15,7 @@ export function ViewHost({ source }: { source: CollectionNode | SetNode }): Reac
   // An embedded tile states its own size, so in a tile scope the factor stays 1 and never compounds with the embed zoom.
   const scale = tile ? ZOOM.default : (host.view.view_scale ?? ZOOM.default)
   return (
-    <div style={scale === 1 ? undefined : { zoom: scale }}>
+    <div data-view-embed={tile ? '' : undefined} style={scale === 1 ? undefined : { zoom: scale }}>
       <Renderer host={host} />
     </div>
   )

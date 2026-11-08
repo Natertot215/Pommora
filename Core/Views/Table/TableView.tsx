@@ -176,7 +176,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
           )}
           style={{ minWidth: reflowWidth, '--cols': cols } as React.CSSProperties}
         >
-          <div className="table-head" onTransitionEnd={onTrackTransitionEnd}>
+          <div className="table-head" data-view-lead="head" onTransitionEnd={onTrackTransitionEnd}>
             {columns.map((c, i) => (
               // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
               <div

@@ -6,7 +6,6 @@ import { duration, easing } from '@pommora/uix/Animations/motion'
 import { accessoryButton } from '@pommora/uix/Menus/menu-row.css'
 import { REVEAL_FADE, revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
 import { VIEW_PILL_H, viewStrip } from '@pommora/uix/Elements/view-strip.css'
-import { SETTING_DEFAULTS, embedZoom, viewEmbedZoom } from '../../Settings/personalization'
 
 const c = colorVars.color
 
@@ -128,7 +127,7 @@ export const body = style({
   marginTop: `calc(-1 * ${FADE_RISE})`,
   paddingTop: FADE_RISE,
   transition: `margin-top ${stripReveal}, padding-top ${stripReveal}`,
-  vars: { '--scroll-fade': FADE_RISE },
+  vars: { '--scroll-fade': FADE_RISE, '--tile-inset-l': HEAD_PAD_L, '--tile-inset-r': HEAD_PAD_R },
 })
 
 export const bodyFlush = style({
@@ -137,26 +136,11 @@ export const bodyFlush = style({
   vars: { '--scroll-fade': STRIP_PAD_Y },
 })
 
-globalStyle(`${body} .table-shell`, {
-  vars: { '--zoom': `var(--view-embed-zoom, ${viewEmbedZoom(SETTING_DEFAULTS.embedScale)})` },
-})
+const headLead = `${body} [data-view-lead="head"]`
 
-globalStyle(`${body} .cards-view`, {
-  vars: { '--zoom': `var(--embed-zoom, ${embedZoom(SETTING_DEFAULTS.embedScale)})` },
-  paddingBottom: 'var(--band-clearance)',
-})
+globalStyle(headLead, { vars: { '--heading-fill': 'none', '--heading-divider': 'none' } })
 
-globalStyle(`${body} .cards-view .cards-grid, ${body} .cards-view .set-cards-row`, {
-  paddingLeft: `calc(${HEAD_PAD_L} / (var(--zoom, 1) * var(--tile-zoom, 1)))`,
-  paddingRight: `calc(${HEAD_PAD_R} / (var(--zoom, 1) * var(--tile-zoom, 1)))`,
-})
-
-globalStyle(`${body} .cards-view .group-band-row`, {
-  paddingLeft: `calc(var(--rail-inset) / (var(--zoom, 1) * var(--tile-zoom, 1)) - (12px + var(--cell-icon-gap, 6px)))`,
-})
-globalStyle(`${body} .table`, { vars: { '--heading-fill': 'none', '--heading-divider': 'none' } })
-
-globalStyle(`${body} .col-header:first-child`, { overflow: 'visible' })
-globalStyle(`${body} .col-header:first-child::before`, {
+globalStyle(`${headLead} > :first-child`, { overflow: 'visible' })
+globalStyle(`${headLead} > :first-child::before`, {
   left: `calc((${HEAD_PAD_L} / (var(--zoom, 1) * var(--tile-zoom, 1))) - var(--rail-inset))`,
 })
