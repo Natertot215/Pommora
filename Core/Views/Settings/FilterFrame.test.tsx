@@ -144,7 +144,9 @@ describe('FilterFrame', () => {
     expect(texts()).toContain('All')
     expect(texts()).toContain('Status')
     expect(texts()).toContain('Archived')
-    expect(texts()).toContain('Checked')
+    expect(
+      [...host.querySelectorAll('button[aria-label="Filter operator"]')].map((b) => b.textContent),
+    ).toContain('Checked')
   })
 
   it('the pane carries the compact row rule itself, whatever hosts it', async () => {

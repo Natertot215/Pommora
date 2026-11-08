@@ -488,15 +488,22 @@ describe('useSaveView', () => {
   })
 
   it('a locked tile drops nothing to the source container either', async () => {
-    await render(
-      <ViewTileScopeProvider value={scope(true)}>
+    function Pane(): React.JSX.Element {
+      save = useSaveView(source)
+      return (
         <ViewPane
           id="group"
           source={source}
           view={view}
           schema={[statusDef]}
           back={{ label: 'Settings', onBack: () => {} }}
+          save={(patch) => save(view, patch)}
         />
+      )
+    }
+    await render(
+      <ViewTileScopeProvider value={scope(true)}>
+        <Pane />
       </ViewTileScopeProvider>,
     )
     await clickRow('Group By')

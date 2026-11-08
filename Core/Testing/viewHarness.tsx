@@ -1,6 +1,6 @@
 // The jsdom seat every view suite mounts through: the act environment, pointer capture, and one render-and-flush of the real ViewHost.
 
-import { act, type ReactNode } from 'react'
+import { act, type ComponentProps, type ReactNode } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, vi } from 'vitest'
 import type { CollectionNode } from '../Nexus/tree'
@@ -8,6 +8,8 @@ import { DragGroup } from '@pommora/uix/Interactions/drag'
 import { stubPointerCapture } from '@pommora/uix/Utilities/pointerHarness'
 import { ViewHost } from '../Views/Host/ViewHost'
 import { useSession } from '../Session/store'
+import { useSaveView } from '../Views/Host/liveView'
+import { ViewPane } from '../Views/Settings/ViewPane'
 
 /** Once per suite, at module scope: the jsdom seat, then a fresh host and root before every test, unmounted and removed after it. jsdom ships no `CSS.escape`, which the ghost's id-scoped queries call. */
 export function mountEachTest(onMount: (host: HTMLDivElement, root: Root) => void): void {
@@ -27,6 +29,11 @@ export function mountEachTest(onMount: (host: HTMLDivElement, root: Root) => voi
     act(() => root.unmount())
     host.remove()
   })
+}
+
+export function SavingViewPane(props: Omit<ComponentProps<typeof ViewPane>, 'save'>) {
+  const saveView = useSaveView(props.source)
+  return <ViewPane {...props} save={(patch) => saveView(props.view, patch)} />
 }
 
 export async function renderView(

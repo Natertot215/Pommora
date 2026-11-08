@@ -2,13 +2,13 @@ import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import type { PropertyDefinition } from '../../Properties/properties'
 import type { SavedView, ViewWriter } from '../views'
 import { useSession } from '../../Session/store'
-import { readLiveView, useSaveView } from '../Host/liveView'
+import { readLiveView } from '../Host/liveView'
 import { Icon, type IconName } from '@pommora/uix/Symbols'
 import type { MenuRow } from '@pommora/uix/Menus/MenuIndex'
-import { type MenuBack, MenuSeparator } from '@pommora/uix/Menus/MenuRows'
+import type { MenuBack } from '@pommora/uix/Menus/MenuRows'
 import { ICON } from '@pommora/uix/Menus/frames.css'
 import { VisibilityFrame } from './VisibilityFrame'
-import { kindSwitches, LayoutFrame } from './LayoutFrame'
+import { LayoutFrame } from './LayoutFrame'
 import { GroupFrame } from './GroupFrame'
 import { SortFrame } from './SortFrame'
 import { FilterFrame } from './FilterFrame'
@@ -56,36 +56,13 @@ export function ViewPane({
   view,
   schema,
   back,
-  current,
-  switches = false,
-}: {
-  id: ViewPaneId
-  source: CollectionNode | SetNode
-  view: SavedView
-  schema: PropertyDefinition[]
-  back: MenuBack
-  current?: string
-  switches?: boolean
-}): React.JSX.Element {
+  save,
+}: PaneProps & { id: ViewPaneId; source: CollectionNode | SetNode }): React.JSX.Element {
   const tree = useSession((st) => st.tree)
-  const saveView = useSaveView(source)
-  const pane: PaneProps = { view, schema, back, save: (patch) => saveView(view, patch) }
+  const pane: PaneProps = { view, schema, back, save }
   switch (id) {
     case 'visibility':
-      return (
-        <VisibilityFrame
-          {...pane}
-          current={current}
-          footer={
-            switches ? (
-              <>
-                <MenuSeparator flush />
-                {kindSwitches(view, pane.save)}
-              </>
-            ) : undefined
-          }
-        />
-      )
+      return <VisibilityFrame {...pane} />
     case 'layout':
       return <LayoutFrame {...pane} />
     case 'group':

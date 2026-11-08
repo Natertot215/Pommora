@@ -6,7 +6,7 @@ import {
 } from '../../Properties/properties'
 import { findOption, optionLabel } from '../../Properties/propertyValue'
 import { menuDropLine } from '@pommora/uix/Menus/MenuRows'
-import type { PickerRowLook } from '@pommora/uix/Menus/MenuIndex'
+import type { RowLook } from '@pommora/uix/Menus/MenuIndex'
 import type { PickerOption } from '@pommora/uix/Menus/PickerControl'
 import { heading, side } from '@pommora/uix/Menus/menu-row.css'
 import { hiddenRow, optionRow } from '@pommora/uix/Menus/frames.css'
@@ -20,7 +20,7 @@ import { liveBucketOrder, type PropertyGroup } from '../Pipeline/group'
 import { type SortDirections, viewSpecOf } from '../valueKinds'
 import * as oo from './option-order.css'
 
-export const SUB_LOOK: PickerRowLook = {
+export const SUB_LOOK: RowLook = {
   className: oo.subOrderRow,
   labelClassName: oo.orderLabel,
 }

@@ -25,7 +25,8 @@ import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
 import { titleInput } from '@pommora/uix/Menus/menu-row.css'
 import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
 import { kindRows, kindSwitches, typeGrid } from './LayoutFrame'
-import { chevronRows, VIEW_PANES, ViewPane, type ViewPaneId } from './ViewPane'
+import { chevronRows, type PaneProps, VIEW_PANES, ViewPane, type ViewPaneId } from './ViewPane'
+import { VisibilityFrame } from './VisibilityFrame'
 import { presentedKind } from '../Host/viewKinds'
 import { LineRow, LineZone, lineList } from '@pommora/uix/Interactions/drag'
 import { moveBefore } from '@pommora/uix/Utilities/moveItem'
@@ -107,26 +108,28 @@ function ViewEditor({
   )
 
   const toViews: MenuBack = { label: 'Views', onBack: () => setPane(null) }
+  const leaf: PaneProps = { view, schema, back: toViews, save }
   const detail =
-    pane === 'layout' && presentedKind(view.type).layout.leaf === 'switches' ? (
+    pane !== 'layout' ? (
+      pane && <ViewPane id={pane} source={source} {...leaf} />
+    ) : presentedKind(view.type).layout.leaf === 'visibility' ? (
+      <VisibilityFrame
+        {...leaf}
+        current="Layout"
+        footer={
+          <>
+            <MenuSeparator flush />
+            {kindSwitches(view, save)}
+          </>
+        }
+      />
+    ) : (
       <MenuScrollFrame
         header={<MenuTopRow {...toViews} current="Layout" />}
         maxHeight={s.SETTINGS_PANE_MAX_HEIGHT}
       >
         {kindSwitches(view, save)}
       </MenuScrollFrame>
-    ) : (
-      pane && (
-        <ViewPane
-          {...(pane === 'layout'
-            ? { id: 'visibility', current: 'Layout', switches: true }
-            : { id: pane })}
-          source={source}
-          view={view}
-          schema={schema}
-          back={toViews}
-        />
-      )
     )
 
   return <FrameSlide {...s.SETTINGS_PANE_FLOOR} open={pane !== null} root={root} detail={detail} />

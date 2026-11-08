@@ -412,10 +412,10 @@ export function FilterFrame({
             display={current?.label ?? rule.op}
             icon={current?.icon}
             placeholder="Condition"
-            choices={ops.map((o) => ({ value: o.label, label: o.label, icon: o.icon }))}
-            current={current?.label}
-            onPick={(label) => {
-              const o = ops.find((x) => x.label === label)
+            choices={ops.map((o, i) => ({ value: String(i), label: o.label, icon: o.icon }))}
+            current={current && String(ops.indexOf(current))}
+            onPick={(i) => {
+              const o = ops[Number(i)]
               if (o) pickOp(o)
             }}
           />

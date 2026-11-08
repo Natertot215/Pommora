@@ -7,11 +7,10 @@ import type { PropertyDefinition } from '../../Properties/properties'
 import type { SavedView } from '../views'
 import { firePointer, stubRect } from '@pommora/uix/Utilities/pointerHarness'
 import { useSession } from '../../Session/store'
-import { ViewPane } from './ViewPane'
 import * as group from '../Pipeline/group'
 import { stubDialer } from '../../vitest.setup'
 import { MenuDoorHost } from '../../Testing/MenuDoorHost'
-import { mountEachTest } from '../../Testing/viewHarness'
+import { mountEachTest, SavingViewPane } from '../../Testing/viewHarness'
 import { makeTree } from '../../Testing/testTree'
 
 const statusDef: PropertyDefinition = {
@@ -69,7 +68,7 @@ const mount = async (v: SavedView): Promise<void> => {
   await act(async () => {
     root.render(
       <MenuDoorHost>
-        <ViewPane
+        <SavingViewPane
           id="group"
           source={source}
           view={v}
@@ -181,7 +180,7 @@ describe('GroupFrame rows', () => {
     await act(async () => {
       root.render(
         <MenuDoorHost>
-          <ViewPane
+          <SavingViewPane
             id="group"
             source={nested}
             view={view()}
@@ -204,7 +203,7 @@ describe('GroupFrame rows', () => {
     await act(async () => {
       root.render(
         <MenuDoorHost>
-          <ViewPane
+          <SavingViewPane
             id="group"
             source={nested}
             view={view({ sub_group: { property_id: 'prop_status', order_mode: 'configured' } })}
@@ -385,7 +384,7 @@ describe('GroupFrame lists — dragging in the pane', () => {
     act(async () => {
       root.render(
         <MenuDoorHost>
-          <ViewPane
+          <SavingViewPane
             id="group"
             source={src}
             view={v}

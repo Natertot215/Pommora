@@ -41,7 +41,7 @@ export type MenuRow = (
 
 export type MenuSection = { title?: string; rows: MenuRow[] }
 
-export interface PickerRowLook {
+export interface RowLook {
   ariaLabel?: string
   iconSize?: IconSize
   inert?: boolean
@@ -55,7 +55,7 @@ const lookRow = (
   glyph: string | undefined,
   label: string,
   trailing: Trailing,
-  look?: PickerRowLook,
+  look?: RowLook,
 ): MenuRow => ({
   kind: 'item',
   icon: glyph ? <Icon name={glyph} size={look?.iconSize ?? 'body'} /> : undefined,
@@ -72,7 +72,7 @@ export const pickerRow = <T extends string>(
   value: T,
   options: readonly PickerOption<T>[],
   onPick: (v: T) => void,
-  look?: PickerRowLook,
+  look?: RowLook,
 ): MenuRow =>
   lookRow(
     glyph,
@@ -93,7 +93,7 @@ export const switchRow = (
   label: string,
   checked: boolean,
   onToggle: (next: boolean) => void,
-  look?: PickerRowLook,
+  look?: RowLook,
 ): MenuRow =>
   lookRow(
     glyph,
@@ -106,7 +106,7 @@ export const steppedRow = (
   glyph: string | undefined,
   label: string,
   spec: Parameters<typeof steppedPickerProps>[0],
-  look?: PickerRowLook,
+  look?: RowLook,
 ): MenuRow => {
   const { value, options, onPick, typeable } = steppedPickerProps(spec)
   return pickerRow(glyph, label, value, options, onPick, { ...look, typeable })

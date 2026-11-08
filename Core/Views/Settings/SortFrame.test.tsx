@@ -6,10 +6,9 @@ import type { CollectionNode } from '../../Nexus/tree'
 import type { PropertyDefinition } from '../../Properties/properties'
 import { LOCATION_SORT, type SavedView } from '../views'
 import { useSession } from '../../Session/store'
-import { ViewPane } from './ViewPane'
 import { stubDialer } from '../../vitest.setup'
 import { MenuDoorHost } from '../../Testing/MenuDoorHost'
-import { mountEachTest } from '../../Testing/viewHarness'
+import { mountEachTest, SavingViewPane } from '../../Testing/viewHarness'
 
 const statusDef: PropertyDefinition = {
   id: 'prop_status',
@@ -79,7 +78,7 @@ const mount = async (v: SavedView): Promise<void> => {
   await act(async () => {
     root.render(
       <MenuDoorHost>
-        <ViewPane
+        <SavingViewPane
           id="sort"
           source={source}
           view={v}

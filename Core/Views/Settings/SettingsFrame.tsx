@@ -11,7 +11,14 @@ import { containerSchema, findContainerById, owningCollection } from '../../Nexu
 import { isContainer } from '../../Nexus/entities'
 import { viewGlyph } from '../viewIcon'
 import { PropertyFrame } from '../../Properties/Schema/PropertyFrame'
-import { chevronRows, type SettingsPane, VIEW_PANES, ViewPane, type ViewPaneId } from './ViewPane'
+import {
+  chevronRows,
+  type PaneProps,
+  type SettingsPane,
+  VIEW_PANES,
+  ViewPane,
+  type ViewPaneId,
+} from './ViewPane'
 import { ScalePicker } from '../../Settings/ScalePicker'
 import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
 import { MenuIndex } from '@pommora/uix/Menus/MenuIndex'
@@ -27,6 +34,7 @@ import { useIconChoice } from '../../Assets/IdentityChoice'
 import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
 import { useViewTileScope } from '../ViewTileScope'
 import { useActiveView, useSaveView } from '../Host/liveView'
+import type { ViewWriter } from '../views'
 import { lockLabel } from '../../Actions/toggleLabels'
 
 type PaneId = 'properties' | ViewPaneId
@@ -64,8 +72,9 @@ function ContainerSettings({
 
   const schema = containerSchema(tree, schemaCollection)
   const view = useActiveView(node)
+  const save: ViewWriter = (patch) => saveView(view, patch)
   const iconChoice = useIconChoice(scope ? view.icon : node.icon, (icon) => {
-    if (scope) void saveView(view, { icon })
+    if (scope) void save({ icon })
     else void mutate({ op: 'setIcon', path: node.path, kind: node.kind, icon })
   })
   const configLocked = scope?.locked ?? false
@@ -76,7 +85,7 @@ function ContainerSettings({
 
   const viewScale = view.view_scale ?? ZOOM.default
   const setViewScale = (f: number): void => {
-    void saveView(view, { view_scale: f === ZOOM.default ? undefined : f })
+    void save({ view_scale: f === ZOOM.default ? undefined : f })
   }
 
   const footing = scope ? (
@@ -109,7 +118,7 @@ function ContainerSettings({
         onCommit={(next) => {
           // The header is the VIEW's identity in scope — renaming the source folder from an embed is exactly the mutation the scope exists to prevent.
           if (scope) {
-            if (next && next !== view.name) void saveView(view, { name: next })
+            if (next && next !== view.name) void save({ name: next })
           } else void submitRename(node.path, node.kind, next)
         }}
       />
@@ -118,8 +127,9 @@ function ContainerSettings({
     </MenuScrollFrame>
   )
 
-  const detailFor = (id: PaneId): React.JSX.Element =>
-    id === 'properties' ? (
+  const leaf: PaneProps = { view, schema, back: toRoot, save }
+  const detail =
+    detailPane === 'properties' ? (
       <PropertyFrame
         collectionPath={schemaCollection.path}
         schema={schema}
@@ -127,15 +137,10 @@ function ContainerSettings({
         source={node}
       />
     ) : (
-      <ViewPane id={id} source={node} view={view} schema={schema} back={toRoot} />
+      detailPane && <ViewPane id={detailPane} source={node} {...leaf} />
     )
 
   return (
-    <FrameSlide
-      {...SETTINGS_PANE_FLOOR}
-      open={detailPane !== null}
-      root={root}
-      detail={detailPane && detailFor(detailPane)}
-    />
+    <FrameSlide {...SETTINGS_PANE_FLOOR} open={detailPane !== null} root={root} detail={detail} />
   )
 }
