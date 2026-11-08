@@ -1,7 +1,6 @@
-import { FILEDATA_BY_ID } from './properties'
+import { FILEDATA_BY_ID, type ResolvedColumn } from './properties'
 import { propertyIcon, propertyTypeIconName } from './typeDisplay'
 import type { ContextIdentity } from '../Contexts/contextIdentity'
-import type { ResolvedColumn } from '../Views/viewRow'
 
 export function columnLabel(
   { id, def }: ResolvedColumn,

@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import type { Result } from '../../Contract/result'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
-import type { PropertyDefinition, SelectOption } from '../../Properties/properties'
+import type { PropertyDefinition, SelectOption, ResolvedColumn } from '../../Properties/properties'
 import { findOption } from '../../Properties/propertyValue'
 import {
   bandKey,
@@ -19,7 +19,7 @@ import {
   type ViewPatch,
   viewOption,
 } from '../views'
-import type { ResolvedColumn, ResolvedGroup } from '../viewRow'
+import { type ResolvedGroup, flattenContainer } from '../viewRow'
 import { presentedKind } from '../Host/viewKinds'
 import { DisclosureRow, useDisclosureSet } from '@pommora/uix/Menus/DisclosureRow'
 import { MenuRowView, pickerRow } from '@pommora/uix/Menus/MenuIndex'
@@ -41,7 +41,6 @@ import { useContainerValues } from '../Host/useContainerValues'
 import {
   bucketKey,
   bucketOrder,
-  flattenContainer,
   type GroupPlan,
   type Grouping,
   groupPlan,
@@ -57,7 +56,7 @@ import { dropIO } from '../Host/pendingView'
 import { useBandHeads } from '../Host/useBandHeads'
 import { EntityIcon } from '../../Assets/EntityIcon'
 import { cx } from '@pommora/uix/Utilities/cx'
-import { useSetting } from '../../Session/store'
+import { useDateForms, useSetting } from '../../Session/store'
 import { PickerControl, type PickerOption } from '@pommora/uix/Menus/PickerControl'
 import { FILEDATA_TARGETS, schemaTargets } from '../paneTargets'
 import {
@@ -72,7 +71,7 @@ import * as oo from './option-order.css'
 import { OptionOrderList } from './OptionOrderList'
 import { type HideControls, orderOptions, rowEye, SUB_LOOK } from './paneRows'
 import { OptionChip } from '../../Properties/Cells/OptionChip'
-import { styleFor, useNexusForms } from '../Host/useColumnStyles'
+import { styleFor } from '../../Properties/columnStyles'
 import { groupable } from '../valueKinds'
 
 const STRUCTURAL_ORDER: PickerOption<StructuralOrderMode>[] = [
@@ -118,7 +117,7 @@ export function GroupFrame({
   schema: PropertyDefinition[]
   back: MenuBack
 }): React.JSX.Element {
-  const nexus = useNexusForms()
+  const forms = useDateForms()
   const saveView = useSaveView(source)
   const save = (patch: Partial<SavedView>): void => void saveView(view, patch)
   const saveGroup = (group: GroupConfig): void => save({ group })
@@ -203,7 +202,7 @@ export function GroupFrame({
           />
         }
       />
-      {dateColumn && NUMERIC_FORMATS.has(styleFor(dateColumn, view, nexus).date_format) && (
+      {dateColumn && NUMERIC_FORMATS.has(styleFor(dateColumn, view, forms).date_format) && (
         <FootingItem
           icon="type"
           label="Separation"
@@ -495,7 +494,7 @@ function DateBucketList({
 } & HideControls): React.JSX.Element | null {
   // The Settings frame mounts from the toolbar and beside a tile's view host, never under one, so the list reads the container's values itself.
   const { values } = useContainerValues(source.path)
-  const nexus = useNexusForms()
+  const forms = useDateForms()
 
   const granularity = granularityOf(group)
   const present = useMemo(() => {
@@ -509,7 +508,7 @@ function DateBucketList({
   }, [source, values, group.property_id, column, granularity, view.hidden_groups])
   if (present.size === 0) return null
 
-  const labelOf = dateLabeller(view, group, styleFor(column, view, nexus).date_format)
+  const labelOf = dateLabeller(view, group, styleFor(column, view, forms).date_format)
   return (
     <>
       {bucketOrder(group, column.def, present).map((key) => {

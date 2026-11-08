@@ -1,6 +1,11 @@
-import { groupOptions, optionGroupsOf, type OptionPickKind, type PickOption } from '../properties'
+import {
+  groupOptions,
+  optionGroupsOf,
+  type OptionPickKind,
+  type PickOption,
+  type ResolvedColumn,
+} from '../properties'
 import { type PropertyValue, selectedValues } from '../propertyValue'
-import type { ResolvedColumn } from '../../Views/viewRow'
 
 export type PickGroup = { id: string; options: PickOption[] }
 export type PickCommit = { index: number; next: PropertyValue | null }

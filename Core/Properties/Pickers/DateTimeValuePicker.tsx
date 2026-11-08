@@ -1,7 +1,7 @@
 import type { ColumnStyle, DateFormat } from '../columnStyles'
 import type { PropertyValue } from '../propertyValue'
 import { CalendarPicker } from '@pommora/uix/Pickers/CalendarPicker'
-import { useSetting } from '../../Session/store'
+import { useDateForms } from '../../Session/store'
 import { formatDate, readDate } from '../formatValue'
 
 /** A picker names a date outright, so a relative form shows as the short one. */
@@ -21,10 +21,9 @@ export function DateTimeValuePicker({
   span?: boolean
   onCommit: (value: PropertyValue | null) => void
 }): React.JSX.Element {
-  const nexusClock = useSetting('timeFormat')
+  const { dateFormat: nexusDate, clock: nexusClock } = useDateForms()
   // A hidden time still edits on a clock: the Nexus's.
   const clock = timeFormat && timeFormat !== 'none' ? timeFormat : nexusClock
-  const nexusDate = useSetting('dateFormat')
   const fmt = dateFormFor(dateFormat ?? nexusDate)
   return (
     <CalendarPicker

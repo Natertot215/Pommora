@@ -8,8 +8,8 @@ import { relDirname } from '../Paths/posix'
 import { settingOf } from '../Settings/personalization'
 import { filtering } from '../Views/filterRules'
 import { prepareGroup } from '../Views/Pipeline/filter'
-import { toRow } from '../Views/Pipeline/group'
-import { pageValuesOf } from '../Views/viewRow'
+import { pageValuesOf } from '../Views/pageValues'
+import { toRow } from '../Views/viewRow'
 
 const previewTestOf = entityMemo(
   [(t) => t.config.personalization.openInPreview, (t) => t.contexts],

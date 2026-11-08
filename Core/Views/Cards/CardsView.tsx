@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { ResolvedColumn, ViewRow } from '../viewRow'
+import type { ViewRow } from '../viewRow'
 import type { SetNode } from '../../Nexus/tree'
 import { isBlankValue, type PropertyValue } from '../../Properties/propertyValue'
 import { type CardBanner, isCompact, type SavedView, viewOption } from '../views'
@@ -60,6 +60,7 @@ import { RenamableTitle } from '../../Interface/RenamableTitle'
 import { titleInput } from '@pommora/uix/Menus/menu-row.css'
 import { useGhostFlip } from './useGhostFlip'
 import './cards-view.css'
+import type { ResolvedColumn } from '../../Properties/properties'
 
 // ── Types and constants ─────────────────────────────────────────────────────
 

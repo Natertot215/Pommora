@@ -5,11 +5,12 @@ import { FIXTURE_DEFS } from '../../Testing/definitions'
 import type { CollectionNode, PageNode, SetNode } from '../../Nexus/tree'
 import { savedView, mintDefaultView, LOCATION_SORT, type SavedView } from '../views'
 import type { PropertyDefinition } from '../../Properties/properties'
-import { flattenContainer, groupPlan } from './group'
+import { groupPlan } from './group'
 import { resolveView as resolveViewOf } from './resolveView'
 import { pageValues, propsAtRoot } from '../../Testing/pageValues'
 import { identityFor } from '../../Testing/testTree'
 import type { IdentityMaps } from '../../Contexts/contextIdentity'
+import { flattenContainer } from '../viewRow'
 
 const page = (id: string): PageNode => ({ kind: 'page', id, title: id, path: `${id}.md` })
 const collection = (pages: PageNode[]): CollectionNode => ({

@@ -12,7 +12,6 @@ import {
 import { isWindowTarget, selectTargetOf } from '../../Navigation/navRef'
 import { isOpenInTabs } from '../../Navigation/tabsModel'
 import { assignValue, oneShotWriter } from '../../Properties/assignValue'
-import { fetchPageRow, spaceRowOf } from '../../Views/pageRow'
 import { contextAt, holderSchema } from '../../Nexus/treePatch'
 import { spaceNodeOf } from '../../Nexus/treeIndex'
 import type { NexusTree } from '../../Nexus/tree'
@@ -24,6 +23,7 @@ import { useSession } from '../../Session/store'
 import { confirmArchive, confirmDelete } from '../Confirm/confirmations'
 import { runMetadataAction, runPathAction, showPageMenu } from './pageMenuActions'
 import { chooseColor, chooseIcon } from '../../Assets/IdentityChoice'
+import { fetchPageRow, spaceRowOf } from '../../Views/viewRow'
 
 function creatorsFor(target: EntityMenuTarget): Creator[] {
   switch (target.kind) {

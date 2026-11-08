@@ -1,8 +1,12 @@
 // One allowlist — in propertyOrder AND not hidden — so a property or Context created after a view stays hidden until the user reveals it: creation never visually changes an existing view.
 
-import type { ResolvedColumn } from '../viewRow'
 import type { SavedView } from '../views'
-import { FILEDATA, FILEDATA_BY_ID, type PropertyDefinition } from '../../Properties/properties'
+import {
+  FILEDATA,
+  FILEDATA_BY_ID,
+  type PropertyDefinition,
+  type ResolvedColumn,
+} from '../../Properties/properties'
 import { contextIdsOf } from '../../Contexts/contextIdentity'
 import type { NexusTree } from '../../Nexus/tree'
 import { spaceNodeOf } from '../../Nexus/treeIndex'

@@ -2,7 +2,7 @@ import { readPageRelations } from '../Index/contentIndex'
 import { ID_KEY } from '../Nexus/identityMark'
 import { storeOf } from '../Paths/bundleLayout'
 import type { PageRelationRow } from '../Platform/stores'
-import { type PageValues, pageValuesOf } from '../Views/viewRow'
+import { type PageValues, pageValuesOf } from '../Views/pageValues'
 
 export interface MatrixLink extends Pick<PageRelationRow, 'path' | 'target' | 'key'> {
   kind: Exclude<PageRelationRow['kind'], 'embed'>

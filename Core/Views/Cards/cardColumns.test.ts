@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { FILEDATA, type PropertyDefinition } from '../../Properties/properties'
-import type { ResolvedColumn, ViewRow } from '../viewRow'
+import { FILEDATA, type PropertyDefinition, type ResolvedColumn } from '../../Properties/properties'
+import type { ViewRow } from '../viewRow'
 import { cardAddColumns, fillsBlank, shownColumnsFor } from './cardColumns'
 import { itemColumns, propertyColumn, resolveColumn } from '../Pipeline/columns'
 

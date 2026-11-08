@@ -5,8 +5,8 @@ import { headContextOf } from '../Bands/bandModel'
 import type { Grouping } from '../Pipeline/group'
 import { setIndexOf } from '../Pipeline/setIndex'
 import { usePainted } from './pendingView'
-import { styleFor, useNexusForms } from './useColumnStyles'
-import { useSetting } from '../../Session/store'
+import { styleFor } from '../../Properties/columnStyles'
+import { useDateForms, useSetting } from '../../Session/store'
 
 export function useBandHeads(
   source: CollectionNode | SetNode,
@@ -15,7 +15,7 @@ export function useBandHeads(
 ) {
   const painted = usePainted(source)
   const sets = setIndexOf(painted)
-  const nexus = useNexusForms()
+  const forms = useDateForms()
   const foldersOpen = useSetting('openFoldersOnTitleClick')
   const heads = useMemo(
     () =>
@@ -24,10 +24,10 @@ export function useBandHeads(
         sets,
         grouping,
         view,
-        grouping && styleFor(grouping.column, view, nexus).date_format,
+        grouping && styleFor(grouping.column, view, forms).date_format,
         foldersOpen,
       ),
-    [painted, sets, grouping, view, nexus, foldersOpen],
+    [painted, sets, grouping, view, forms, foldersOpen],
   )
-  return { painted, sets, nexus, heads }
+  return { painted, sets, forms, heads }
 }

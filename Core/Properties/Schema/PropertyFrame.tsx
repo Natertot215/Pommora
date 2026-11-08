@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { Icon } from '@pommora/uix/Symbols'
-import { useSession } from '../../Session/store'
+import { useDateForms, useSession } from '../../Session/store'
 import {
   CREATABLE_TYPES,
   type PropertyConfig,
@@ -15,7 +15,7 @@ import { lookOptions } from '../displayLabels'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import { useActiveView } from '../../Views/Host/useActiveView'
 import { useSaveView } from '../../Views/viewWrite'
-import { columnStylePatch, styleFor, useNexusForms } from '../../Views/Host/useColumnStyles'
+import { columnStylePatch, styleFor } from '../columnStyles'
 import { propertyColumn } from '../../Views/Pipeline/columns'
 import { DropOutline } from '@pommora/uix/Menus/DisclosureRow'
 import { MenuIndex } from '@pommora/uix/Menus/MenuIndex'
@@ -168,7 +168,7 @@ export function PropertyFrame({
   back: MenuBack
   source: CollectionNode | SetNode
 }): React.JSX.Element {
-  const nexus = useNexusForms()
+  const forms = useDateForms()
   const saveView = useSaveView(source)
   const activeView = useActiveView(source)
   const registry = useSession((st) => st.tree?.config.registry) ?? []
@@ -214,7 +214,7 @@ export function PropertyFrame({
     def: PropertyDefinition,
     patch: Partial<ColumnStyle>,
   ): Promise<void> => {
-    await saveView(activeView, columnStylePatch(activeView, propertyColumn(def), nexus, patch))
+    await saveView(activeView, columnStylePatch(activeView, propertyColumn(def), forms, patch))
   }
   const handleDrop = (drop: PaneDrop): void => {
     const at = { containerPath: collectionPath, propertyId: drop.id }
@@ -272,7 +272,7 @@ export function PropertyFrame({
   )
 
   const editor = (def: PropertyDefinition): React.JSX.Element => {
-    const columnStyle = styleFor(propertyColumn(def), activeView, nexus)
+    const columnStyle = styleFor(propertyColumn(def), activeView, forms)
     const options = PROPERTY_TYPES[def.type].options !== undefined
     const rows = rowsFor(def, {
       style: columnStyle,

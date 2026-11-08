@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
 import type { CollectionNode, NexusTree, SetNode } from '../../Nexus/tree'
-import type { PickOption, PropertyDefinition } from '../../Properties/properties'
+import type { PickOption, PropertyDefinition, ResolvedColumn } from '../../Properties/properties'
 import { type SavedView, viewOption } from '../views'
 import {
   type FilterGroup,
@@ -29,12 +29,12 @@ import { OverScroll } from '@pommora/uix/Interactions/OverScroll'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { useEntrance } from '@pommora/uix/Animations/useEntrance'
 import { contextIdsOf } from '../../Contexts/contextIdentity'
-import { styleFor, useNexusForms } from '../Host/useColumnStyles'
+import { styleFor } from '../../Properties/columnStyles'
+import { useDateForms } from '../../Session/store'
 import { formatDate } from '../../Properties/formatValue'
 import { DateTimeValuePicker, dateFormFor } from '../../Properties/Pickers/DateTimeValuePicker'
 import { contextOptionsFor } from '../../Contexts/contextOptions'
 import { resolveColumn } from '../Pipeline/columns'
-import type { ResolvedColumn } from '../viewRow'
 import { checkboxWord } from '../../Properties/propertyValue'
 import { PropertyOptionRows } from '../../Properties/Pickers/PropertyPicker'
 import { pickGroups } from '../../Properties/Pickers/pickModel'
@@ -219,7 +219,7 @@ export function FilterFrame({
   targets?: PickerOption<string>[]
   onCommit: (patch: FilterPatch) => void
 }): React.JSX.Element {
-  const nexus = useNexusForms()
+  const forms = useDateForms()
   const [draft, setDraft] = useState<string | null>(null)
   const minted = useRef(0)
   const mint = (): string => String(++minted.current)
@@ -336,7 +336,7 @@ export function FilterFrame({
       )
 
     if (op.slot === 'date') {
-      const style = styleFor(column!, view, nexus)
+      const style = styleFor(column!, view, forms)
       const fmt = dateFormFor(style.date_format)
       return (
         <RuleField
@@ -390,7 +390,7 @@ export function FilterFrame({
     const target = targetById.get(rule.property_id)
     const isCheckbox = column?.type === 'checkbox'
     const checkboxColor = column?.def?.checkbox_color
-    const checkboxLook = column && styleFor(column, view, nexus).look
+    const checkboxLook = column && styleFor(column, view, forms).look
     const checkboxBox = (o: OperatorChoice): React.JSX.Element => (
       <CheckboxGlyph
         checked={o.impliedValue === 'true'}

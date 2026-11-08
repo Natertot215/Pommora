@@ -23,6 +23,11 @@ export type PropertyType = z.infer<typeof typeIds>
 type FiledataType = 'title' | 'createdTime' | 'lastEditedTime'
 export type ColumnType = PropertyType | FiledataType
 
+/** `type` answers what a column's values are; `kind` answers where they're read from (the row, a definition, or the registry), so the two stamps share a kind and differ by type. */
+export type ResolvedColumn =
+  | { id: string; kind: 'property'; type: PropertyType; def: PropertyDefinition }
+  | { id: string; kind: 'title' | 'context' | 'stamp'; type: ColumnType; def?: undefined }
+
 // `options` names where a type keeps its options: `select_options`, or `status_groups` for Status.
 // `connections` names a type whose values hold connections: Link's whole value, or the links inside Text's prose.
 type TypeSpec = Readonly<{

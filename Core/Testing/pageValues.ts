@@ -3,7 +3,7 @@
 import type { PropertyDefinition } from '../Properties/properties'
 import type { PageFrontmatter } from '../Nexus/schemas'
 import { ok, type Result } from '../Contract/result'
-import type { PageValues } from '../Views/viewRow'
+import type { PageValues } from '../Views/pageValues'
 
 export const propsAtRoot = (
   props: Record<string, unknown>,

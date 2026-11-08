@@ -2,13 +2,11 @@ import { identityOf } from '../Contexts/contextIdentity'
 import type { CollectionNode, NexusTree, PageNode, SetNode } from '../Nexus/tree'
 import { entityMemo } from '../Nexus/tree'
 import { pageIndexOf } from '../Nexus/record'
-import { spaceRowOf } from '../Views/pageRow'
 import type { PropertyDefinition } from '../Properties/properties'
 import { linkKeysOf } from '../Properties/validation'
 import { resolveColumn } from '../Views/Pipeline/columns'
 import { applyFilter } from '../Views/Pipeline/filter'
-import { toRow } from '../Views/Pipeline/group'
-import type { ViewRow } from '../Views/viewRow'
+import { type ViewRow, spaceRowOf, toRow } from '../Views/viewRow'
 import {
   type FilterRule,
   filtering,

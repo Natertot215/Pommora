@@ -1,7 +1,9 @@
 import { z } from 'zod'
 import { looseDecoder } from '../Files/decoders'
 import { LINK_DISPLAYS } from '../Connections/linkValue'
-import type { ColumnType, PropertyDefinition } from './properties'
+import type { ColumnType, PropertyDefinition, ResolvedColumn } from './properties'
+import type { SavedView, ViewPatch } from '../Views/views'
+import type { TimeFormatSetting } from '../Settings/personalization'
 
 const OPTION_LOOKS = ['standard', 'compact'] as const
 const CHECKBOX_LOOKS = ['checkbox', 'switch'] as const
@@ -114,4 +116,50 @@ export function defaultStyleFor(
   // A Link column reads the way its property says to unless this view says otherwise — so the property's Format is the default here rather than a constant that would silently override it.
   const look = type === 'link' ? (def?.link_display ?? looks.at(0)) : looks.at(0)
   return look === undefined ? {} : { look }
+}
+
+/** The Nexus's own date form and clock, which a column follows until it picks its own. */
+export interface DateForms {
+  dateFormat: DateFormat
+  clock: TimeFormatSetting
+}
+
+const columnDefaults = ({ type, def }: ResolvedColumn, forms: DateForms): ColumnStyle => ({
+  ...dateDefaults(forms.dateFormat),
+  ...defaultStyleFor(type, def),
+})
+
+export function styleFor(
+  column: ResolvedColumn,
+  view: Pick<SavedView, 'column_styles'>,
+  forms: DateForms,
+): ColumnStyle {
+  return resolveStyle(view.column_styles?.[column.id], columnDefaults(column, forms), forms.clock)
+}
+
+/** What a column stores for a pick from its style menu. */
+function pickedStyle(
+  column: ResolvedColumn,
+  forms: DateForms,
+  key: keyof ColumnStyle & string,
+  value: string,
+): string | undefined {
+  return storedPick(key, value, columnDefaults(column, forms), forms.clock)
+}
+
+export function columnStylePatch(
+  view: SavedView,
+  column: ResolvedColumn,
+  forms: DateForms,
+  patch: Partial<ColumnStyle>,
+): ViewPatch {
+  const picks = Object.entries(patch).map(([key, value]) => [
+    key,
+    pickedStyle(column, forms, key as keyof ColumnStyle & string, String(value)),
+  ])
+  return {
+    column_styles: {
+      [column.id]: { ...view.column_styles?.[column.id], ...Object.fromEntries(picks) },
+    },
+  }
 }

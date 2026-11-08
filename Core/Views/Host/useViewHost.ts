@@ -1,5 +1,5 @@
 import { useMemo, useRef } from 'react'
-import type { ResolvedColumn, ResolvedGroup, ViewRow } from '../viewRow'
+import { type ResolvedGroup, type ViewRow, flattenContainer } from '../viewRow'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import type { ColumnStyle } from '../../Properties/columnStyles'
 import type { PropertyValue } from '../../Properties/propertyValue'
@@ -13,7 +13,7 @@ import { identityOf } from '../../Contexts/contextIdentity'
 import { holderOf, useValueContext } from '../../Properties/valueContext'
 import { bandModelOf } from '../Bands/bandModel'
 import { containerSchema } from '../../Nexus/treePatch'
-import { bucketGroupingOf, flattenContainer, groupPlan, pageOrderOf } from '../Pipeline/group'
+import { bucketGroupingOf, groupPlan, pageOrderOf } from '../Pipeline/group'
 import { resolveView } from '../Pipeline/resolveView'
 import { searchGroups, searchKeysOf } from '../Pipeline/search'
 import { matchQuery } from '../../Paths/caseFold'
@@ -22,11 +22,12 @@ import { useActiveView } from './useActiveView'
 import { presentedKind } from './viewKinds'
 import { useBandHeads } from './useBandHeads'
 import { useContainerValues } from './useContainerValues'
-import { columnStylePatch, styleFor } from './useColumnStyles'
+import { columnStylePatch, styleFor } from '../../Properties/columnStyles'
 import type { ViewPatch, ViewWriteOpts } from '../views'
 import { groupKeyToValue, reassignable } from '../valueKinds'
 import { hideShown, resolveColumn, unhide } from '../Pipeline/columns'
 import type { SeatHost } from '../../Properties/Pickers/ValueSeat'
+import type { ResolvedColumn } from '../../Properties/properties'
 
 export type ViewHostApi = NonNullable<ReturnType<typeof useViewHost>>
 
@@ -61,7 +62,7 @@ export function useViewHost(source: CollectionNode | SetNode) {
   const pageOrder = pageOrderOf(plan, view, sortKeys)
   const grouping = bucketGroupingOf(plan)
   const groupPropId = grouping?.config.property_id
-  const { painted, sets, nexus, heads } = useBandHeads(source, grouping, view)
+  const { painted, sets, forms, heads } = useBandHeads(source, grouping, view)
   const groupPropType = grouping?.column.type
   const canReassign = reassignable(groupPropType)
   const canRelocate = plan.kind === 'sets' && plan.sub === undefined
@@ -83,8 +84,8 @@ export function useViewHost(source: CollectionNode | SetNode) {
   }, [painted, effectiveValues, pageMetadata, view, schema, plan, manualOrder, identity])
   // Every shown column's style, resolved once per pass; the table, the cards, and the pickers read it.
   const styleById = useMemo(
-    () => new Map(columns.map((c) => [c.id, styleFor(c, view, nexus)])),
-    [columns, view, nexus],
+    () => new Map(columns.map((c) => [c.id, styleFor(c, view, forms)])),
+    [columns, view, forms],
   )
   const keys = useMemo(
     () => (searching ? searchKeysOf(rows, source.path) : null),
@@ -129,7 +130,7 @@ export function useViewHost(source: CollectionNode | SetNode) {
     column: ResolvedColumn,
     key: keyof ColumnStyle & string,
     value: string,
-  ): void => void persistView(columnStylePatch(view, column, nexus, { [key]: value }))
+  ): void => void persistView(columnStylePatch(view, column, forms, { [key]: value }))
   const viewRootRef = useRef<HTMLElement | null>(null)
   const revealingRef = useRef<Set<string>>(new Set())
   const revealProperty = (id: string): void => {
@@ -162,7 +163,7 @@ export function useViewHost(source: CollectionNode | SetNode) {
     return row && column && commitValue(row, column, groupKeyToValue(groupKey, column.type))
   }
   const styleOf = (column: ResolvedColumn): ColumnStyle =>
-    styleById.get(column.id) ?? styleFor(column, view, nexus)
+    styleById.get(column.id) ?? styleFor(column, view, forms)
 
   if (!ctx || !tree) return null
   const seatHost = {

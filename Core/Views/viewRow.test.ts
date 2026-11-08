@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { NULL_VALUE } from '../Properties/propertyValue'
 import type { NexusTree, SpaceNode } from '../Nexus/tree'
 import { linkedSpacesTree } from '../Testing/testTree'
-import { spaceRowOf } from './pageRow'
+import { spaceRowOf } from './viewRow'
 
 const linked = (): { tree: NexusTree; node: SpaceNode } => {
   const tree = linkedSpacesTree({

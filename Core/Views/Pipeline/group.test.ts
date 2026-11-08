@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { NULL_VALUE } from '../../Properties/propertyValue'
 import { ID_KEY } from '../../Nexus/identityMark'
 import type { CollectionNode, PageNode, SetNode } from '../../Nexus/tree'
-import type { ViewRow } from '../viewRow'
+import { type ViewRow, flattenContainer, frontmatterOf } from '../viewRow'
 import {
   bandKey,
   type GroupConfig,
@@ -14,9 +14,7 @@ import type { PropertyDefinition } from '../../Properties/properties'
 import {
   bucketGroupingOf,
   bucketKey,
-  flattenContainer,
   formatBucketLabel,
-  frontmatterOf,
   groupPlan,
   pageOrderOf,
   pruneEmptyBuckets,

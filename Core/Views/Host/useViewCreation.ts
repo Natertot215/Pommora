@@ -1,6 +1,6 @@
 // The page exists on disk as Untitled the moment the gesture fires — seeds riding the create, its order written at the gesture — and the caller's rename opens its naming surface over the row once it lands.
 
-import { pageValuesOf, type ViewRow, UNGROUPED } from '../viewRow'
+import { type ViewRow, UNGROUPED, flattenContainer } from '../viewRow'
 import { patchOverride } from '../../Properties/valueOverride'
 import { isBlankValue, type PropertyValue } from '../../Properties/propertyValue'
 import { groupKeyToValue, viewSpecOf } from '../valueKinds'
@@ -13,12 +13,12 @@ import { settingOf } from '../../Settings/personalization'
 import { resolveFieldValue } from '../../Properties/fieldValue'
 import { resolveColumn } from '../Pipeline/columns'
 import { filterSeeds } from '../Pipeline/creationSeeds'
-import { flattenContainer } from '../Pipeline/group'
 import { placedBeside, placementSlot, type Slot, spliceBeside } from '../../Nexus/order'
 import { pageIdsIn } from '../../Nexus/treePatch'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import type { ViewHostApi } from './useViewHost'
 import { personalizationOf } from '../../Session/configSlice'
+import { pageValuesOf } from '../pageValues'
 
 function mergedRanking(
   existing: string[] | undefined,

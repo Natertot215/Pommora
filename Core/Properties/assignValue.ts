@@ -2,13 +2,14 @@ import { type RefObject, useEffect, useRef } from 'react'
 import type { MutateOutcome, MutateRequest } from '../Nexus/mutateRequest'
 import { isBlankValue, NULL_VALUE, type PropertyValue } from './propertyValue'
 import { patchOverride, type SetOverrides } from './valueOverride'
-import type { Picked, ResolvedColumn, ViewRow } from '../Views/viewRow'
+import type { Picked, ViewRow } from '../Views/viewRow'
 import { resolveFieldValue } from './fieldValue'
 import { shownAlias } from '../Connections/linkValue'
 import { pathNow, pageIndexOf } from '../Nexus/record'
 import type { ConnPage } from '../Connections/pageIndex'
 import { pushUndo } from '../Session/undo'
 import { useSession } from '../Session/store'
+import type { ResolvedColumn } from './properties'
 
 export interface ValueWriter {
   rowOf: (id: string) => ViewRow | undefined

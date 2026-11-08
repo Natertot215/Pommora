@@ -1,7 +1,7 @@
 import { Fragment } from 'react'
 import type { ColumnStyle } from '../columnStyles'
 import { findOption, optionLabel, isBlankValue, type PropertyValue } from '../propertyValue'
-import type { ResolvedColumn, ViewRow } from '../../Views/viewRow'
+import type { ViewRow } from '../../Views/viewRow'
 import { ProgressBar } from '@pommora/uix/Elements/ProgressBar'
 import { OverScroll } from '@pommora/uix/Interactions/OverScroll'
 import { valueGlyph } from '@pommora/uix/Fields/fields.css'
@@ -18,6 +18,7 @@ import { holderOf, type ValueContext } from '../valueContext'
 import { FileChip } from '@pommora/uix/Labels/recipes'
 import { SortableZone, useDragItem } from '@pommora/uix/Interactions/drag'
 import { moveBefore } from '@pommora/uix/Utilities/moveItem'
+import type { ResolvedColumn } from '../properties'
 
 export function Cell({
   row,

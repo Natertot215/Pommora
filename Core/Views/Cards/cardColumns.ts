@@ -1,5 +1,5 @@
-import { type ColumnType, PROPERTY_TYPES } from '../../Properties/properties'
-import type { ResolvedColumn, ViewRow } from '../viewRow'
+import { type ColumnType, PROPERTY_TYPES, type ResolvedColumn } from '../../Properties/properties'
+import type { ViewRow } from '../viewRow'
 import { holdsValue } from '../../Properties/fieldValue'
 import type { ItemColumns } from '../Pipeline/columns'
 

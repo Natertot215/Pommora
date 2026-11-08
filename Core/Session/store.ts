@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { type StateCreator, type StoreApi, create } from 'zustand'
 import { createCacheSlice } from './cacheSlice'
 import { createChromeSlice } from './chromeSlice'
@@ -13,6 +14,7 @@ import { createViewSearchSlice } from './viewSearchSlice'
 import type { SessionState } from './sessionState'
 import type { PageMeta } from '../Nexus/schemas'
 import { type SettingKey, type SettingValue, settingOf } from '../Settings/personalization'
+import type { DateForms } from '../Properties/columnStyles'
 
 export type { PageSlot } from './navigationSlice'
 export {
@@ -66,6 +68,12 @@ export const pageMetaOf =
 
 export const useSetting = <K extends SettingKey>(key: K): SettingValue<K> =>
   useSession((s) => settingOf(personalizationOf(s), key))
+
+export function useDateForms(): DateForms {
+  const dateFormat = useSetting('dateFormat')
+  const clock = useSetting('timeFormat')
+  return useMemo(() => ({ dateFormat, clock }), [dateFormat, clock])
+}
 
 /** A fold this machine remembers under `key`, stored only while it differs from `defaultOpen`. Read live, since a surface that outlives a Nexus switch must follow the new record. */
 export function useFold(key: string, defaultOpen = true): [boolean, (open: boolean) => void] {

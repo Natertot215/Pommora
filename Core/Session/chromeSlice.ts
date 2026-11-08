@@ -1,10 +1,10 @@
 import type { ActionItem, MenuOptions } from '../Actions/menuModel'
 import type { MetadataTarget } from '../Actions/metadataMenu'
 import type { ColumnStyle } from '../Properties/columnStyles'
-import type { ResolvedColumn } from '../Views/viewRow'
 import type { ConfirmRequest } from '../Interface/Confirm/confirmations'
 import type { PageStats } from '../MarkdownPM/Engine/subfieldStats'
 import type { Slice } from './sessionState'
+import type { ResolvedColumn } from '../Properties/properties'
 
 interface MenuPending extends MenuOptions {
   id: number

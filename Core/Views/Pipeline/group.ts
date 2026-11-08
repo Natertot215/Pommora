@@ -1,15 +1,4 @@
-// The setTree is node.sets itself (the real folder walk), so empty Sets still appear as disclosure groups and a Collection and a Set container flow through the identical structural path.
-
-import type { CollectionNode, PageNode, SetNode } from '../../Nexus/tree'
-import {
-  type PageValues,
-  type ResolvedColumn,
-  type ResolvedGroup,
-  type RowValues,
-  type ViewRow,
-  UNGROUPED,
-  isEmptyBand,
-} from '../viewRow'
+import { type ResolvedGroup, type ViewRow, UNGROUPED, isEmptyBand } from '../viewRow'
 import {
   bandKey,
   type DateGranularity,
@@ -24,9 +13,11 @@ import {
   type SubGroupConfig,
   viewOption,
 } from '../views'
-import { ID_KEY } from '../../Nexus/identityMark'
-import type { PageFrontmatter, PageMeta } from '../../Nexus/schemas'
-import { optionIds, type PropertyDefinition } from '../../Properties/properties'
+import {
+  optionIds,
+  type PropertyDefinition,
+  type ResolvedColumn,
+} from '../../Properties/properties'
 import { resolveFieldValue } from '../../Properties/fieldValue'
 import { propertyColumn } from './columns'
 import { dateFmt, formatDate, NUMERIC_FORMATS } from '../../Properties/formatValue'
@@ -98,46 +89,6 @@ export function dropHiddenGroups(
     )
     return [children?.length ? { ...band, children } : band]
   })
-}
-
-export const frontmatterOf = (
-  values: Record<string, PageValues>,
-  pageId: string,
-): PageFrontmatter => values[pageId]?.frontmatter ?? { [ID_KEY]: pageId }
-
-export function toRow(
-  page: PageNode,
-  parentSetId: string | undefined,
-  values: Record<string, RowValues>,
-  pageMetadata: Record<string, PageMeta>,
-): ViewRow {
-  const v = values[page.id]
-  return {
-    id: page.id,
-    title: page.title,
-    icon: pageMetadata[page.id]?.icon,
-    path: page.path,
-    ...(parentSetId !== undefined ? { parentSetId } : {}),
-    frontmatter: frontmatterOf(values, page.id),
-    createdAt: v?.createdAt ?? null,
-    modifiedAt: v?.modifiedAt ?? null,
-    ...(page.contextValues !== undefined ? { contextValues: page.contextValues } : {}),
-    ...(v?.picked ? { picked: v.picked } : {}),
-  }
-}
-
-export function flattenContainer(
-  node: CollectionNode | SetNode,
-  valuesByPageId: Record<string, RowValues>,
-  pageMetadata: Record<string, PageMeta>,
-): { rows: ViewRow[]; setTree: SetTreeNode[] } {
-  const rows: ViewRow[] = []
-  const walk = (container: CollectionNode | SetNode, parentSetId: string | undefined): void => {
-    for (const p of container.pages) rows.push(toRow(p, parentSetId, valuesByPageId, pageMetadata))
-    for (const child of container.sets ?? []) walk(child, child.id)
-  }
-  walk(node, undefined)
-  return { rows, setTree: node.sets ?? [] }
 }
 
 export function formatBucketLabel(

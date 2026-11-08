@@ -3,8 +3,8 @@ import type { PickerRowLook } from '@pommora/uix/Menus/MenuIndex'
 import { side } from '@pommora/uix/Menus/menu-row.css'
 import type { PickerOption } from '@pommora/uix/Menus/PickerControl'
 import { type SortDirections, viewSpecOf } from '../valueKinds'
-import type { ResolvedColumn } from '../viewRow'
 import * as oo from './option-order.css'
+import type { ResolvedColumn } from '../../Properties/properties'
 
 export const SUB_LOOK: PickerRowLook = {
   className: oo.subOrderRow,

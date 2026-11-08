@@ -25,11 +25,10 @@ import {
 } from '../Properties/columnStyles'
 import { parseStyleAction, styleMenuItems } from '../Actions/columnMenu'
 import { popMenu } from '../Actions/menuActions'
-import { useNexusForms } from '../Views/Host/useColumnStyles'
 import type { BundleStore } from '../Paths/bundleLayout'
 import { propertyTypeIconName } from '../Properties/typeDisplay'
 import { personalizationOf } from '../Session/configSlice'
-import { useSession } from '../Session/store'
+import { useDateForms, useSession } from '../Session/store'
 import type { Personalization } from '../Settings/personalization'
 import { COLUMN_LAYOUT } from '../Views/Table/useColumns'
 import { crumbSegments, type useBundleBrowser } from './browser'
@@ -62,12 +61,12 @@ export function useDateColumn(kind: BundleStore['kind']): {
   width: number | null
 } {
   const key = `${kind}ColumnStyle` as const
-  const nexus = useNexusForms()
+  const forms = useDateForms()
   const stored = useSession((s) => personalizationOf(s)[key])
   const setPersonalization = useSession((s) => s.setPersonalization)
   // A store shows when each item entered it, where a view's date column leaves the time hidden.
-  const defaults = { ...dateDefaults(nexus.dateFormat), time_format: nexus.clock }
-  const style = resolveStyle(stored, defaults, nexus.clock)
+  const defaults = { ...dateDefaults(forms.dateFormat), time_format: forms.clock }
+  const style = resolveStyle(stored, defaults, forms.clock)
   const sample = widestDate(style)
   const [measured, measureRef] = useState<HTMLElement | null>(null)
   const [width, setWidth] = useState<number | null>(null)
@@ -92,7 +91,7 @@ export function useDateColumn(kind: BundleStore['kind']): {
       if (!pick) return
       const next = {
         ...stored,
-        [pick.key]: storedPick(pick.key, pick.value, defaults, nexus.clock),
+        [pick.key]: storedPick(pick.key, pick.value, defaults, forms.clock),
       }
       setPersonalization(key, holdsStyle(next) ? next : undefined)
     },

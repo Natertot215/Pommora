@@ -8,9 +8,9 @@ import {
   PROPERTY_TYPES,
   type PropertyDefinition,
   SELECT_GROUP,
+  type ResolvedColumn,
 } from '../properties'
 import { optionLabel, type PropertyValue } from '../propertyValue'
-import type { ResolvedColumn } from '../../Views/viewRow'
 import { OptionDraft } from '../Schema/OptionSlot'
 import { type OptionStyleControl, useOptionEdit } from '../Schema/useOptionEdit'
 import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'

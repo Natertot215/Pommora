@@ -1,7 +1,6 @@
 import { reportRefusal } from '../Notifications/notifications'
 import { useCallback, useEffect, useState } from 'react'
 import { fault, ok, type Result, valueOr } from '../../Contract/result'
-import { fetchPageValues } from '../../Views/pageRow'
 import { relDirname } from '../../Paths/posix'
 import { Button } from '@pommora/uix/Buttons/Button'
 import { Checkbox } from '@pommora/uix/Controls/Checkbox'
@@ -20,7 +19,7 @@ import { storesChanged } from '../../Session/nexusSlice'
 import { pathNow } from '../../Nexus/record'
 import { trailOf } from '../../Nexus/treeIndex'
 import { useConnections } from '../../Session/pageConnections'
-import { useSession, useSetting } from '../../Session/store'
+import { useDateForms, useSession } from '../../Session/store'
 import type { Reader } from '../../Session/windowSlice'
 import type { PageTarget } from '../../Navigation/navRef'
 import { askDeleteSnapshots, askRestoreSnapshot } from '../Confirm/confirmations'
@@ -37,6 +36,7 @@ import { useWindowGeometry } from './useWindowGeometry'
 import '../../Navigation/nav-list.css'
 import '../../Tiles/tile-base.css'
 import './page-window.css'
+import { fetchPageValues } from '../../Views/viewRow'
 
 // A non-path host chain: embeds inside the reader render inert, and no page path can collide with it.
 const READER_ANCESTOR = 'page-reader'
@@ -129,8 +129,7 @@ function ReaderShell({
 function HistoryReader({ reader, closing }: Branch<'history'>): React.JSX.Element {
   const target = reader.page
   const tree = useSession((s) => s.tree)
-  const nexusClock = useSetting('timeFormat')
-  const dateFormat = useSetting('dateFormat')
+  const { dateFormat, clock: nexusClock } = useDateForms()
 
   const [rows, setRows] = useState<number[]>([])
   const [checked, setChecked] = useState<ReadonlySet<number>>(new Set())

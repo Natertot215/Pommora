@@ -1,27 +1,13 @@
-import { localIso } from '@pommora/uix/Utilities/pad'
+import { valueOr } from '../Contract/result'
 import { ID_KEY } from '../Nexus/identityMark'
-import { idTime } from '../Nexus/ids'
-import { type PageFrontmatter, pageFrontmatter } from '../Nexus/schemas'
-import type { ColumnType, PropertyDefinition, PropertyType } from '../Properties/properties'
+import type { PageFrontmatter, PageMeta } from '../Nexus/schemas'
+import type { CollectionNode, NexusTree, PageNode, SetNode, SpaceNode } from '../Nexus/tree'
+import { spaceLinksOf } from '../Nexus/treeIndex'
 import type { PropertyValue } from '../Properties/propertyValue'
-
-export interface PageValues {
-  frontmatter: PageFrontmatter
-  createdAt: string | null
-  modifiedAt: string | null
-}
-
-export function pageValuesOf(
-  id: string,
-  fm: Record<string, unknown>,
-  mtimeMs: number | null,
-): PageValues {
-  return {
-    frontmatter: pageFrontmatter.parse({ ...fm, [ID_KEY]: id }),
-    createdAt: localIso(idTime(id)),
-    modifiedAt: localIso(mtimeMs),
-  }
-}
+import { contextWorldOf, resolveContextKeys } from '../Contexts/contextResolve'
+import { relDirname } from '../Paths/posix'
+import { dialer } from '../Platform/dialer'
+import type { PageValues } from './pageValues'
 
 export type RowValues = PageValues & Pick<ViewRow, 'picked'>
 
@@ -42,11 +28,6 @@ export interface ViewRow {
   picked?: Picked
 }
 
-/** `type` answers what a column's values are; `kind` answers where they're read from (the row, a definition, or the registry), so the two stamps share a kind and differ by type. */
-export type ResolvedColumn =
-  | { id: string; kind: 'property'; type: PropertyType; def: PropertyDefinition }
-  | { id: string; kind: 'title' | 'context' | 'stamp'; type: ColumnType; def?: undefined }
-
 interface GroupBase {
   key: string
   items: ViewRow[]
@@ -63,3 +44,96 @@ export const isEmptyBand = (group: Pick<GroupBase, 'items' | 'children'>): boole
 
 /** Stored on disk in `collapsed_groups`, so it round-trips across builds — the single source the pipeline and the render code both match group keys against. */
 export const UNGROUPED = '_ungrouped'
+
+export const frontmatterOf = (
+  values: Record<string, PageValues>,
+  pageId: string,
+): PageFrontmatter => values[pageId]?.frontmatter ?? { [ID_KEY]: pageId }
+
+export function toRow(
+  page: PageNode,
+  parentSetId: string | undefined,
+  values: Record<string, RowValues>,
+  pageMetadata: Record<string, PageMeta>,
+): ViewRow {
+  const v = values[page.id]
+  return {
+    id: page.id,
+    title: page.title,
+    icon: pageMetadata[page.id]?.icon,
+    path: page.path,
+    ...(parentSetId !== undefined ? { parentSetId } : {}),
+    frontmatter: frontmatterOf(values, page.id),
+    createdAt: v?.createdAt ?? null,
+    modifiedAt: v?.modifiedAt ?? null,
+    ...(page.contextValues !== undefined ? { contextValues: page.contextValues } : {}),
+    ...(v?.picked ? { picked: v.picked } : {}),
+  }
+}
+
+// The setTree is node.sets itself (the real folder walk), so empty Sets still appear as disclosure groups and a Collection and a Set container flow through the identical structural path.
+export function flattenContainer(
+  node: CollectionNode | SetNode,
+  valuesByPageId: Record<string, RowValues>,
+  pageMetadata: Record<string, PageMeta>,
+): { rows: ViewRow[]; setTree: SetNode[] } {
+  const rows: ViewRow[] = []
+  const walk = (container: CollectionNode | SetNode, parentSetId: string | undefined): void => {
+    for (const p of container.pages) rows.push(toRow(p, parentSetId, valuesByPageId, pageMetadata))
+    for (const child of container.sets ?? []) walk(child, child.id)
+  }
+  walk(node, undefined)
+  return { rows, setTree: node.sets ?? [] }
+}
+
+export function pageRowOf(
+  tree: NexusTree | null,
+  page: { id: string; path: string; title: string },
+  fm: PageFrontmatter,
+  picked?: Picked,
+): ViewRow {
+  const links = tree ? resolveContextKeys(fm, contextWorldOf(tree.contexts)) : null
+  return {
+    ...page,
+    icon: tree?.config.pageMetadata[page.id]?.icon,
+    frontmatter: fm,
+    createdAt: null,
+    modifiedAt: null,
+    ...(links?.size ? { contextValues: Object.fromEntries(links) } : {}),
+    ...(picked ? { picked } : {}),
+  }
+}
+
+// A Space has no ID key on disk; this one exists to satisfy ViewRow and is never written back.
+export function spaceRowOf(tree: NexusTree, node: SpaceNode, picked?: Picked): ViewRow {
+  const links = spaceLinksOf(tree).get(node.id)
+  return {
+    id: node.id,
+    title: node.title,
+    icon: node.icon,
+    path: node.path,
+    frontmatter: { ...node.values, [ID_KEY]: node.id } as PageFrontmatter,
+    createdAt: null,
+    modifiedAt: null,
+    ...(links ? { contextValues: links } : {}),
+    ...(picked ? { picked } : {}),
+  }
+}
+
+/** A failed batch read keeps the values already held — a blank container reads as data loss. */
+export const fetchPageValues = (
+  path: string,
+  pageIds?: string[],
+): Promise<Record<string, PageValues> | null> =>
+  dialer()
+    .ask('view:loadValues', path, pageIds)
+    .then((r) => valueOr(r, null))
+
+export async function fetchPageRow(
+  tree: NexusTree | null,
+  page: { id: string; path: string; title: string },
+): Promise<ViewRow | null> {
+  const values = await fetchPageValues(relDirname(page.path), [page.id])
+  const found = values?.[page.id]
+  return found ? pageRowOf(tree, page, found.frontmatter) : null
+}

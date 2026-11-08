@@ -5,12 +5,11 @@ import {
   type SetOverrides,
   settled,
 } from '../../Properties/valueOverride'
-import type { PageValues, RowValues } from '../viewRow'
-import { frontmatterOf } from '../Pipeline/group'
-import { fetchPageValues } from '../pageRow'
+import { type RowValues, fetchPageValues, frontmatterOf } from '../viewRow'
 import { isAtOrUnder } from '../../Paths/posix'
 import { useSession } from '../../Session/store'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
+import type { PageValues } from '../pageValues'
 
 /** A rename refetches, its overrides standing since they're keyed by field; a push retires overrides only once its read lands, since a row retired ahead of it paints its identity-only fallback for the round trip. */
 export function useValuesEpoch(

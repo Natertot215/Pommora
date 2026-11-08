@@ -5,13 +5,14 @@ import { PICKER_MAX_HEIGHT, PICKER_WIDTH } from '@pommora/uix/Pickers/picker-bas
 import { Icon } from '@pommora/uix/Symbols'
 import { contextsByIdOf } from '../../Contexts/contextIdentity'
 import { useSession } from '../../Session/store'
-import type { ResolvedColumn, ViewRow } from '../../Views/viewRow'
+import type { ViewRow } from '../../Views/viewRow'
 import type { ValueSeatApi } from './ValueSeat'
 import { columnIcon, columnLabel, GROUP_LABELS } from '../columnDisplay'
 import { resolveFieldValue } from '../fieldValue'
 import { ValuePane } from './PropertyPicker'
 import { emptyPane } from './property-picker.css'
 import { entryOutcome } from './valueClick'
+import type { ResolvedColumn } from '../properties'
 
 export function MetadataPicker({ seat }: { seat: ValueSeatApi }): React.JSX.Element {
   const contexts = contextsByIdOf(useSession((s) => s.tree))

@@ -1,8 +1,8 @@
 // A column's type is its own (`ResolvedColumn.type`); its value is decoded definition-first, never inferred from the value's shape, so a Link column always reads as a link.
 
-import type { ResolvedColumn, ViewRow } from '../Views/viewRow'
+import type { ViewRow } from '../Views/viewRow'
 import type { PageFrontmatter } from '../Nexus/schemas'
-import type { PropertyDefinition } from './properties'
+import type { PropertyDefinition, ResolvedColumn } from './properties'
 import { decodeValue, isBlankValue, NULL_VALUE, type PropertyValue } from './propertyValue'
 
 const stampValue = (iso: string | null): PropertyValue =>
