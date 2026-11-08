@@ -1,5 +1,12 @@
-import { type MatchKey, matches } from '../../Paths/caseFold'
-import { isEmptyBand, type ResolvedGroup } from '../viewRow'
+import { type MatchKey, matches, matchKey } from '../../Paths/caseFold'
+import { relDirname } from '../../Paths/posix'
+import { isEmptyBand, type ResolvedGroup, type ViewRow } from '../viewRow'
+
+// A row's place is the Set chain below the source: every row shares the source's own name, which would otherwise keep them all.
+export const searchKeysOf = (rows: ViewRow[], sourcePath: string): Map<string, MatchKey> =>
+  new Map(
+    rows.map((r) => [r.id, matchKey(r.title, relDirname(r.path).slice(sourcePath.length + 1))]),
+  )
 
 export function searchGroups(
   groups: ResolvedGroup[],

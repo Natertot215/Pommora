@@ -1,5 +1,5 @@
 import { useMemo, useRef } from 'react'
-import { UNGROUPED, type ResolvedColumn, type ResolvedGroup, type ViewRow } from '../viewRow'
+import type { ResolvedColumn, ResolvedGroup, ViewRow } from '../viewRow'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import type { ColumnStyle } from '../../Properties/columnStyles'
 import type { PropertyValue } from '../../Properties/propertyValue'
@@ -11,20 +11,12 @@ import { useViewTileScope } from '../ViewTileScope'
 import { useSaveView } from '../viewWrite'
 import { identityOf } from '../../Contexts/contextIdentity'
 import { holderOf, useValueContext } from '../../Properties/valueContext'
-import { hideShown, unhide } from '../visibilityModel'
 import { bandModelOf } from '../Bands/bandModel'
 import { containerSchema } from '../../Nexus/treePatch'
-import {
-  bucketGroupingOf,
-  bucketKey,
-  flattenContainer,
-  groupPlan,
-  pageOrderOf,
-} from '../Pipeline/group'
+import { bucketGroupingOf, flattenContainer, groupPlan, pageOrderOf } from '../Pipeline/group'
 import { resolveView } from '../Pipeline/resolveView'
-import { searchGroups } from '../Pipeline/search'
-import { matchKey, matchQuery } from '../../Paths/caseFold'
-import { relDirname } from '../../Paths/posix'
+import { searchGroups, searchKeysOf } from '../Pipeline/search'
+import { matchQuery } from '../../Paths/caseFold'
 import { resolvedSortCount } from '../Pipeline/sort'
 import { useActiveView } from './useActiveView'
 import { presentedKind } from './viewKinds'
@@ -32,8 +24,8 @@ import { useBandHeads } from './useBandHeads'
 import { useContainerValues } from './useContainerValues'
 import { columnStylePatch, styleFor } from './useColumnStyles'
 import type { ViewPatch, ViewWriteOpts } from '../views'
-import { groupKeyToValue, reassignable, reassignTarget } from '../reassign'
-import { resolveColumn } from '../Pipeline/columns'
+import { groupKeyToValue, reassignable } from '../valueKinds'
+import { hideShown, resolveColumn, unhide } from '../Pipeline/columns'
 import type { SeatHost } from '../../Properties/Pickers/ValueSeat'
 
 export type ViewHostApi = NonNullable<ReturnType<typeof useViewHost>>
@@ -94,17 +86,8 @@ export function useViewHost(source: CollectionNode | SetNode) {
     () => new Map(columns.map((c) => [c.id, styleFor(c, view, nexus)])),
     [columns, view, nexus],
   )
-  // A row's place is the Set chain below the source: every row shares the source's own name, which would otherwise keep them all.
   const keys = useMemo(
-    () =>
-      searching
-        ? new Map(
-            rows.map((r) => [
-              r.id,
-              matchKey(r.title, relDirname(r.path).slice(source.path.length + 1)),
-            ]),
-          )
-        : null,
+    () => (searching ? searchKeysOf(rows, source.path) : null),
     [rows, searching, source.path],
   )
   const groups = useMemo(
@@ -112,15 +95,6 @@ export function useViewHost(source: CollectionNode | SetNode) {
     [resolvedGroups, needle, keys],
   )
   const shownCollapsed = searching ? NO_COLLAPSE : collapsed
-  // A single-sorted view lays its rows out in value RUNS, so a reorder landing one strictly inside another run rewrites the sorted property. Armed only when the column is shown — an unrendered property leaves the run boundaries unreadable.
-  const sortReassign = useMemo(() => {
-    if (groupPropId !== undefined || sortKeys !== 1) return undefined
-    for (const c of view.sort ?? []) {
-      const column = columns.find((col) => col.id === c.property_id)
-      if (column && reassignable(column.type)) return column
-    }
-    return undefined
-  }, [groupPropId, sortKeys, view.sort, columns])
 
   const ctx = useValueContext(tree, schema)
   const bands = useMemo(() => bandModelOf(groups, heads), [groups, heads])
@@ -187,17 +161,6 @@ export function useViewHost(source: CollectionNode | SetNode) {
     const column = resolveColumn(propertyId, schema, contextIds)
     return row && column && commitValue(row, column, groupKeyToValue(groupKey, column.type))
   }
-  const reassignBySortRun = (orderIds: string[], groupKey: string, activeId: string): void => {
-    if (!sortReassign) return
-    const keyOf = (id: string): string => {
-      const row = rowById.get(id)
-      return (row ? bucketKey(row, sortReassign, 'day') : null) ?? UNGROUPED
-    }
-    const band = orderIds.filter((id) => rowBand.get(id) === groupKey)
-    const target = reassignTarget(band, activeId, keyOf)
-    if (target === undefined) return
-    commitGroupValue(activeId, sortReassign.id, target)
-  }
   const styleOf = (column: ResolvedColumn): ColumnStyle =>
     styleById.get(column.id) ?? styleFor(column, view, nexus)
 
@@ -234,7 +197,6 @@ export function useViewHost(source: CollectionNode | SetNode) {
     canReassign,
     canRelocate,
     crossBand,
-    reassignBySortRun,
     sortKeys,
     pageOrder,
     dragDisabled,

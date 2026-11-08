@@ -141,3 +141,44 @@ describe('createNamed', () => {
     expect(beginRename).toHaveBeenCalledWith(CREATED.path, true, 'matrix')
   })
 })
+
+describe('createNamed places by its kind', () => {
+  const page = { op: 'createPage', parentPath: 'Notes/Ideas', name: 'Untitled' } as const
+  const set = { op: 'createContainer', parentPath: 'Notes', kind: 'set', name: 'Untitled' } as const
+  const space = { op: 'createSpace', contextId: 'g1', name: 'New Realm' } as const
+  const top = {
+    newPagePlacement: 'top',
+    newFolderPlacement: 'top',
+    newSpacePlacement: 'top',
+  } as const
+  const orderOf = async (
+    ask: Parameters<typeof createNamed>[0],
+    personalization: Personalization,
+  ): Promise<string[] | undefined> => {
+    asked.length = 0
+    seed({ kind: 'none' }, makeTree(), personalization)
+    await createNamed(ask)
+    const req = asked[0] as CreateRequest & { order?: string[] }
+    return req.order?.map((id) => (id === req.id ? 'new' : id))
+  }
+
+  it("leads each kind's siblings at its own Top placement", async () => {
+    expect(await orderOf(page, top)).toEqual(['new', 'p2'])
+    expect(await orderOf(set, top)).toEqual(['new', 's1'])
+    expect(await orderOf(space, top)).toEqual(['new', 'a1', 't1', 'pr1'])
+  })
+
+  it("trails each kind's siblings at Bottom, the unset placement", async () => {
+    expect(await orderOf(page, {})).toEqual(['p2', 'new'])
+    expect(await orderOf(set, { newPagePlacement: 'top' })).toEqual(['s1', 'new'])
+    expect(await orderOf(space, {})).toEqual(['a1', 't1', 'pr1', 'new'])
+  })
+
+  it('leaves a create into a folder the tree lacks as its own request', async () => {
+    expect(await orderOf({ ...page, parentPath: 'Notes/Gone' }, top)).toBeUndefined()
+  })
+
+  it('leaves a Collection, which no placement setting governs, as its own request', async () => {
+    expect(await orderOf({ ...set, kind: 'collection', parentPath: '' }, top)).toBeUndefined()
+  })
+})

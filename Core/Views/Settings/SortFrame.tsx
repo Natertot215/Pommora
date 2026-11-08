@@ -17,7 +17,7 @@ import type { PickerOption } from '@pommora/uix/Menus/PickerControl'
 import { OptionOrderList } from './OptionOrderList'
 import { orderOptions, SUB_LOOK } from './paneRows'
 import { liveBucketOrder } from '../Pipeline/group'
-import { FILEDATA_TARGETS, schemaTargets, targetOption } from '../paneTargets'
+import { FILEDATA_TARGETS, schemaTargets } from '../paneTargets'
 import { chipRegion, middleRegion, SETTINGS_PANE_MAX_HEIGHT } from '@pommora/uix/Menus/frames.css'
 import { viewSpecOf } from '../valueKinds'
 
@@ -90,7 +90,7 @@ export function SortFrame({
     ...(!presentedKind(view.type).nests || primary?.property_id === LOCATION_SORT
       ? [{ value: LOCATION_SORT, label: 'Location', icon: 'folder' as const }]
       : []),
-    ...targets.filter((t) => t.id !== sub?.property_id).map(targetOption),
+    ...targets.filter((t) => t.value !== sub?.property_id),
   ]
   const sortByOptions =
     primary && !listed.some((o) => o.value === primary.property_id)
@@ -102,7 +102,7 @@ export function SortFrame({
 
   const subOptions: PickerOption<string>[] = [
     { value: '_none', label: 'None', icon: 'circle-off' as const },
-    ...targets.filter((t) => t.id !== primary?.property_id).map(targetOption),
+    ...targets.filter((t) => t.value !== primary?.property_id),
   ]
 
   return (

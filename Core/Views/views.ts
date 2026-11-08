@@ -11,10 +11,11 @@ import { mergeKeys } from '../Files/jsonMerge'
 import type { Json } from '../Files/stableJson'
 import type { Result } from '../Contract/result'
 import { FILEDATA } from '../Properties/properties'
+import type { CollectionNode, SetNode } from '../Nexus/tree'
 
 export const VIEW_TYPES = ['table', 'cards', 'list', 'gallery', 'calendar', 'timeline'] as const
 export type ViewType = (typeof VIEW_TYPES)[number]
-export const DEFAULT_VIEW_TYPE: ViewType = 'table'
+const DEFAULT_VIEW_TYPE: ViewType = 'table'
 
 interface ViewKind {
   label: string
@@ -134,14 +135,14 @@ function decodeOrdering(raw: Record<string, unknown>): Omit<SubGroupConfig, 'pro
   }
 }
 
-export function decodeSubGroup(raw: unknown): SubGroupConfig | undefined {
+function decodeSubGroup(raw: unknown): SubGroupConfig | undefined {
   if (!isPlainObject(raw)) return undefined
   if (typeof raw.property_id !== 'string' || raw.property_id === '') return undefined
   return { property_id: raw.property_id, ...decodeOrdering(raw) }
 }
 
 /** Never throws; an unknown or malformed shape degrades to `structural` — a throw would poison the whole sidecar decode. */
-export function decodeGroupConfig(raw: unknown): GroupConfig {
+function decodeGroupConfig(raw: unknown): GroupConfig {
   if (!isPlainObject(raw)) return { kind: 'structural' }
   const obj = raw
   const kind = typeof obj.kind === 'string' ? obj.kind : undefined
@@ -400,4 +401,14 @@ export function mintNewView(name: string): SavedView {
 
 export function mintDefaultView(): SavedView {
   return mintNewView(VIEW_KINDS[DEFAULT_VIEW_TYPE].label)
+}
+
+const DEFAULT_VIEW: SavedView = { ...mintDefaultView(), id: DEFAULT_VIEW_ID }
+
+/** The container's chosen view if still present, else the first saved view, else the one default view (sentinel id until first saved). */
+export function pickView(source: CollectionNode | SetNode): SavedView {
+  const views = source.views ?? []
+  const saved =
+    (source.activeView ? views.find((v) => v.id === source.activeView) : undefined) ?? views[0]
+  return saved ?? DEFAULT_VIEW
 }

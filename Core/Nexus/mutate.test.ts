@@ -2521,6 +2521,19 @@ describe('the acceptance chain, read raw off the disk at every step', () => {
   })
 })
 
+describe('handleMutate — setViewButton', () => {
+  it('writes view_button onto the container sidecar', async () => {
+    const r = await settledMutate(root, {
+      op: 'setViewButton',
+      path: 'Notes/Daily',
+      kind: 'set',
+      viewButton: 'labeled',
+    })
+    expect(r.ok).toBe(true)
+    expect((await readJson('Notes/Daily/_pageset.json')).view_button).toBe('labeled')
+  })
+})
+
 describe('handleMutate — setActiveView', () => {
   it('writes active_view onto the container sidecar', async () => {
     const r = await settledMutate(root, {

@@ -3,16 +3,11 @@ import type { NexusTree } from '../Nexus/tree'
 import { contextsByIdOf } from '../Contexts/contextIdentity'
 import type { PickerOption } from '@pommora/uix/Menus/PickerControl'
 import { propertyIcon, propertyTypeIconName } from '../Properties/typeDisplay'
-
-export interface PaneTarget {
-  id: string
-  label: string
-  icon: string
-}
+import { operatorsFor } from './valueKinds'
 
 // Location has no column type, so its glyph is named here.
-const filedataTarget = ({ id, label, type }: Filedata): PaneTarget => ({
-  id,
+const filedataTarget = ({ id, label, type }: Filedata): PickerOption<string> => ({
+  value: id,
   label,
   icon: type ? propertyTypeIconName(type) : 'folder',
 })
@@ -23,22 +18,25 @@ export const FILEDATA_TARGETS = {
   location: filedataTarget(FILEDATA.location),
 }
 
-export const contextPaneTargets = (tree: NexusTree | null): PaneTarget[] =>
-  [...contextsByIdOf(tree)].map(([id, c]) => ({ id, label: c.title, icon: c.icon }))
+export const contextPaneTargets = (tree: NexusTree | null): PickerOption<string>[] =>
+  [...contextsByIdOf(tree)].map(([id, c]) => ({ value: id, label: c.title, icon: c.icon }))
 
 export const schemaTargets = (
   schema: PropertyDefinition[],
   qualifies: (def: PropertyDefinition) => boolean,
-): (PaneTarget & { def: PropertyDefinition })[] =>
-  schema.filter(qualifies).map((d) => ({
-    id: d.id,
-    label: d.label,
-    icon: propertyIcon(d),
-    def: d,
-  }))
+): PickerOption<string>[] =>
+  schema.filter(qualifies).map((d) => ({ value: d.id, label: d.label, icon: propertyIcon(d) }))
 
-export const targetOption = (t: PaneTarget): PickerOption<string> => ({
-  value: t.id,
-  label: t.label,
-  icon: t.icon,
-})
+export const filterTargets = (
+  schema: PropertyDefinition[],
+  tree: NexusTree | null,
+  hasLocations = true,
+): PickerOption<string>[] => [
+  FILEDATA_TARGETS.title,
+  // Every Location operator needs a location to point at, so with none it's a target that can never complete.
+  ...(hasLocations ? [FILEDATA_TARGETS.location] : []),
+  FILEDATA_TARGETS.createdAt,
+  FILEDATA_TARGETS.modifiedAt,
+  ...contextPaneTargets(tree),
+  ...schemaTargets(schema, (d) => operatorsFor(d.id, d.type).length > 0),
+]

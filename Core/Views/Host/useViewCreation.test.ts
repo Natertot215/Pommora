@@ -1,0 +1,69 @@
+import { describe, expect, it } from 'vitest'
+import { tieOrderWith } from './useViewCreation'
+import { makeSorter } from '../Pipeline/sort'
+import type { ViewRow } from '../viewRow'
+
+describe('tieOrderWith', () => {
+  it("a null anchor ranks the newborn last while reproducing the ranking — a band-add's end-of-group", () => {
+    expect(tieOrderWith(['b', 'a'], ['a', 'b', 'c'], 'new', null, 'below')).toEqual([
+      'b',
+      'a',
+      'c',
+      'new',
+    ])
+    expect(tieOrderWith(undefined, ['a', 'b'], 'new', null, 'below')).toEqual(['a', 'b', 'new'])
+  })
+
+  it('first leads the whole ranking — a band-add at Top', () => {
+    expect(tieOrderWith(['b', 'a'], ['a', 'b', 'c'], 'new', null, 'first')).toEqual([
+      'new',
+      'b',
+      'a',
+      'c',
+    ])
+  })
+
+  it('reproduces the current ranking and places the new id beside its anchor', () => {
+    const out = tieOrderWith(['b', 'a'], ['a', 'b', 'c', 'd'], 'new', 'c', 'below')
+    expect(out).toEqual(['b', 'a', 'c', 'new', 'd'])
+  })
+
+  it('with no existing order, the array is the full source order — no sibling moves', () => {
+    expect(tieOrderWith(undefined, ['a', 'b', 'c'], 'new', 'a', 'above')).toEqual([
+      'new',
+      'a',
+      'b',
+      'c',
+    ])
+  })
+
+  it('includes every container row, not just the visible ones', () => {
+    // Under an active filter the caller still passes ALL ids — hidden rows keep their rank.
+    const out = tieOrderWith(undefined, ['vis1', 'hid1', 'vis2'], 'new', 'vis1', 'below')
+    expect(out).toEqual(['vis1', 'new', 'hid1', 'vis2'])
+  })
+
+  it('appends when the anchor vanished', () => {
+    expect(tieOrderWith(['a'], ['a', 'b'], 'new', 'gone', 'below')).toEqual(['a', 'b', 'new'])
+  })
+})
+
+// A newborn absent from a live order array ranks last, so both live arrays are spliced in the same act the create writes — the first paint already places the row at its slot.
+describe('the created row settles into the live order', () => {
+  const ALL = ['p1', 'p2', 'p3', 'pNew']
+  const STALE = ['p3', 'p1', 'p2']
+  const rows = (ids: string[]): ViewRow[] =>
+    ids.map((id) => ({ id, path: `${id}.md`, title: id }) as unknown as ViewRow)
+  const painted = (manual: string[] | undefined): string[] | undefined =>
+    makeSorter(undefined, [], [], manual)?.(rows(ALL)).map((r) => r.id)
+
+  it('a stale manual override spliced via tieOrderWith ranks the newborn at its slot first-pass', () => {
+    const spliced = tieOrderWith(STALE, ALL, 'pNew', 'p1', 'below')
+    expect(spliced).toEqual(['p3', 'p1', 'pNew', 'p2'])
+    expect(painted(spliced)).toEqual(spliced)
+  })
+
+  it('unspliced, the same state ranks the newborn last — the defect the settle kills', () => {
+    expect(painted(STALE)).toEqual(['p3', 'p1', 'p2', 'pNew'])
+  })
+})

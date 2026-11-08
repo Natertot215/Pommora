@@ -15,7 +15,6 @@ import type { LayoutPatch, MatrixLayout } from '../Matrix/matrixLayout'
 import type { WindowsFile } from '../Interface/Windows/windowRecord'
 import type { ThumbRect } from '../Interface/chrome'
 import type { PageValues } from '../Views/viewRow'
-import type { ContainerConfigPatch } from '../Views/containerConfig'
 import type { ContainerKind } from '../Nexus/entities'
 import type { Personalization } from '../Settings/personalization'
 import type { InsertTarget } from '../Tiles/Layout/model'
@@ -111,10 +110,6 @@ export interface Asks {
   }
   'views:restore': {
     args: [containerPath: string, kind: ContainerKind, removed: RemovedView]
-    reply: Result<null>
-  }
-  'container:configure': {
-    args: [containerPath: string, kind: ContainerKind, patch: ContainerConfigPatch]
     reply: Result<null>
   }
   'view:loadValues': {

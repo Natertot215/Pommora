@@ -2,6 +2,8 @@
 
 import { compareTitles } from '../Paths/caseFold'
 import { nextOrder, resolveRowOrder } from '@pommora/uix/Utilities/moveItem'
+import type { CreateRequest } from './mutateRequest'
+import type { Placement } from '../Settings/personalization'
 
 interface Orderable {
   id: string
@@ -36,4 +38,17 @@ export function spliceBeside(
           ? (ids[at + 1] ?? null)
           : null
   return nextOrder(ids, item, before)
+}
+
+export const placementSlot = (placement: Placement): Slot =>
+  placement === 'top' ? 'first' : 'last'
+
+// A parent the tree lacks leaves the request bare, since an order naming only the newborn would drop every sibling from the folder's order.
+export function placedBeside<R extends CreateRequest>(
+  req: R,
+  siblingIds: string[] | undefined,
+  anchorId: string | null,
+  where: Slot,
+): R {
+  return siblingIds ? { ...req, order: spliceBeside(siblingIds, anchorId, req.id, where) } : req
 }

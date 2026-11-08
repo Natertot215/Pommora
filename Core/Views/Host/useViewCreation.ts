@@ -3,7 +3,7 @@
 import { pageValuesOf, type ViewRow, UNGROUPED } from '../viewRow'
 import { patchOverride } from '../../Properties/valueOverride'
 import { isBlankValue, type PropertyValue } from '../../Properties/propertyValue'
-import { viewSpecOf } from '../valueKinds'
+import { groupKeyToValue, viewSpecOf } from '../valueKinds'
 import { type ViewPatch, viewOption } from '../views'
 import { type CreatePageRequest, DEFAULT_NEW_NAME, minted } from '../../Nexus/mutateRequest'
 import { relDirname, relJoin } from '../../Paths/posix'
@@ -14,13 +14,35 @@ import { resolveFieldValue } from '../../Properties/fieldValue'
 import { resolveColumn } from '../Pipeline/columns'
 import { filterSeeds } from '../Pipeline/creationSeeds'
 import { flattenContainer } from '../Pipeline/group'
-import { placeAt, placementSlot, tieOrderWith } from '../creationOrder'
-import type { Slot } from '../../Nexus/order'
+import { placedBeside, placementSlot, type Slot, spliceBeside } from '../../Nexus/order'
 import { pageIdsIn } from '../../Nexus/treePatch'
-import { groupKeyToValue } from '../reassign'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import type { ViewHostApi } from './useViewHost'
 import { personalizationOf } from '../../Session/configSlice'
+
+function mergedRanking(
+  existing: string[] | undefined,
+  allIds: string[],
+  excludeId: string,
+): string[] {
+  const base = existing ?? []
+  const inBase = new Set(base)
+  return [
+    ...base.filter((id) => id !== excludeId),
+    ...allIds.filter((id) => !inBase.has(id) && id !== excludeId),
+  ]
+}
+
+// Every array carries the full membership it governs — a partial write alphabetizes the untouched siblings, and one built from a filtered view permanently re-ranks every row the filter was hiding.
+export function tieOrderWith(
+  existing: string[] | undefined,
+  allIds: string[],
+  newId: string,
+  anchorId: string | null,
+  where: Slot,
+): string[] {
+  return spliceBeside(mergedRanking(existing, allIds, newId), anchorId, newId, where)
+}
 
 export interface CreateFlight {
   id: string
@@ -164,7 +186,7 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
   const addIn = (parentPath: string, parentSetId: string | undefined): CreateFlight => {
     const s = useSession.getState()
     const slot = placementSlot(settingOf(personalizationOf(s), 'newPagePlacement'))
-    const req = placeAt(
+    const req = placedBeside(
       pageRequest(parentPath, parentSetId),
       pageIdsIn(s.tree!, parentPath),
       null,
@@ -203,7 +225,7 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
     }
     const siblings = pageIdsIn(useSession.getState().tree!, parentPath)
     return createPageIn(
-      placeAt(pageRequest(parentPath, row.parentSetId, seeds), siblings, row.id, where),
+      placedBeside(pageRequest(parentPath, row.parentSetId, seeds), siblings, row.id, where),
       row.id,
       where,
     )

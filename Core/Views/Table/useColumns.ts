@@ -17,7 +17,7 @@ import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import { popMenu } from '../../Actions/menuActions'
 import { numberBarCapable } from '../../Properties/formatValue'
 import type { ViewHostApi } from '../Host/useViewHost'
-import { hideShown } from '../visibilityModel'
+import { hideShown } from '../Pipeline/columns'
 
 // ── Widths and Alignment ────────────────────────────────────────────────────
 

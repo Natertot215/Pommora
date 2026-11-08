@@ -56,18 +56,72 @@ export function itemColumns(
   }
 }
 
+const shownIn = (view: SavedView): ((id: string) => boolean) => {
+  const ordered = new Set(view.property_order)
+  const hidden = new Set(view.hidden_properties)
+  return (id) => ordered.has(id) && !hidden.has(id)
+}
+
 /** Context columns are default-OFF — they render only when the view's property_order explicitly reveals them. */
 export function resolveColumns(
   view: SavedView,
   schema: PropertyDefinition[],
   contextIds: readonly string[],
 ): ResolvedColumn[] {
-  const hidden = new Set(view.hidden_properties)
+  const shown = shownIn(view)
   const columns = new Map<string, ResolvedColumn>()
   for (const id of view.property_order) {
-    if (hidden.has(id) || columns.has(id)) continue
+    if (!shown(id) || columns.has(id)) continue
     const column = resolveColumn(id, schema, contextIds)
     if (column) columns.set(id, column)
   }
   return columns.has(TITLE.id) ? [...columns.values()] : [TITLE, ...columns.values()]
+}
+
+export function hiddenListIds(
+  view: SavedView,
+  schema: PropertyDefinition[],
+  contextIds: readonly string[],
+): string[] {
+  const shown = shownIn(view)
+  const hidden = (id: string): boolean => !shown(id)
+  return [
+    ...contextIds.filter(hidden),
+    ...schema.map((d) => d.id).filter(hidden),
+    ...[FILEDATA.createdAt.id, FILEDATA.modifiedAt.id].filter(hidden),
+  ]
+}
+
+type VisibilityPatch = Pick<SavedView, 'property_order' | 'hidden_properties'>
+
+export function placeInShown(
+  view: SavedView,
+  shownIds: string[],
+  id: string,
+  toIndex: number,
+): VisibilityPatch {
+  const next = shownIds.filter((x) => x !== id)
+  next.splice(toIndex, 0, id)
+  return {
+    property_order: [...next, ...view.property_order.filter((x) => !next.includes(x))],
+    hidden_properties: view.hidden_properties.filter((x) => x !== id),
+  }
+}
+
+/** Hide a shown property — flag it, never move it: its property_order slot is its remembered spot, so a later unhide restores it where it was. */
+export function hideShown(view: SavedView, id: string): Pick<SavedView, 'hidden_properties'> {
+  return {
+    hidden_properties: view.hidden_properties.includes(id)
+      ? view.hidden_properties
+      : [...view.hidden_properties, id],
+  }
+}
+
+export function unhide(view: SavedView, id: string): VisibilityPatch {
+  return {
+    property_order: view.property_order.includes(id)
+      ? view.property_order
+      : [...view.property_order, id],
+    hidden_properties: view.hidden_properties.filter((x) => x !== id),
+  }
 }

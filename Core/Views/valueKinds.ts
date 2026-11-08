@@ -4,6 +4,7 @@ import { localDayKey, pad } from '@pommora/uix/Utilities/pad'
 import { foldKey } from '../Paths/caseFold'
 import {
   type ColumnType,
+  FILEDATA,
   optionIds,
   type PropertyDefinition,
   specOf,
@@ -18,7 +19,8 @@ import {
   type ValueKind,
 } from '../Properties/propertyValue'
 import { dayMs, type LocalDate, readDate, shownText } from '../Properties/formatValue'
-import { FILTER_OPS } from './filterRules'
+import { FILTER_OPS, OPERANDLESS_OPS } from './filterRules'
+import { UNGROUPED } from './viewRow'
 import type { DateGranularity } from './views'
 
 type ValueSlot = 'none' | 'text' | 'number' | 'date' | 'chips' | 'set'
@@ -400,3 +402,32 @@ export const viewSpecOf = (type: ColumnType | undefined): ValueKindSpec | undefi
 }
 
 export const groupable = (t: PropertyDefinition['type']): boolean => viewSpecOf(t)?.groups === true
+
+/** A band names one value when an Is rule on its key would seed one, so a drag into it writes that value; a date band names a span, never one date, so date grouping can't be reassigned by drag. */
+export const reassignable = (type: ColumnType | undefined): boolean => {
+  const spec = viewSpecOf(type)
+  return spec?.bucket !== undefined && spec.seed !== undefined
+}
+
+export const groupKeyToValue = (
+  groupKey: string,
+  type: ColumnType | undefined,
+): PropertyValue | null =>
+  groupKey === UNGROUPED ? null : (viewSpecOf(type)?.seed?.(FILTER_OPS.is, groupKey) ?? null)
+
+/** Location reads from the Set's side — you choose the Set, not the page, hence "Contains" over "Is Inside". */
+const LOCATION_OPS: OperatorChoice[] = [
+  { op: FILTER_OPS.is, label: 'Is', slot: 'set' },
+  { op: FILTER_OPS.isNot, label: "Isn't", slot: 'set' },
+  { op: FILTER_OPS.isInside, label: 'Contains', slot: 'set', names: true },
+  { op: FILTER_OPS.isNotInside, label: "Doesn't Contain", slot: 'set', names: true },
+]
+
+/** Title never offers empty ops — a title (the filename basename) is never empty. */
+const TITLE_OPS = VALUE_KINDS.text.ops.filter((o) => !OPERANDLESS_OPS.has(o.op))
+
+export function operatorsFor(id: string, type: ColumnType | undefined): readonly OperatorChoice[] {
+  if (id === FILEDATA.title.id) return TITLE_OPS
+  if (id === FILEDATA.location.id) return LOCATION_OPS
+  return viewSpecOf(type)?.ops ?? []
+}

@@ -3,12 +3,14 @@ import type { CollectionNode, NexusTree, SetNode } from '../../Nexus/tree'
 import type { PickOption, PropertyDefinition } from '../../Properties/properties'
 import { type SavedView, viewOption } from '../views'
 import {
+  type FilterGroup,
   type FilterRule,
+  isGroup,
   type MatchMode,
   ruleOperands,
   type StandaloneFilter,
 } from '../filterRules'
-import type { PaneTarget } from '../paneTargets'
+import { filterTargets } from '../paneTargets'
 import { Icon } from '@pommora/uix/Symbols'
 import { leading } from '@pommora/uix/Fields/fields.css'
 import {
@@ -41,8 +43,7 @@ import { onActivateKey } from '@pommora/uix/Interactions/activate'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { PickerControl, type PickerOption } from '@pommora/uix/Menus/PickerControl'
 import { SETTINGS_PANE_MAX_HEIGHT } from '@pommora/uix/Menus/frames.css'
-import { type DecodedFilter, decodeFilter, filterTargets, operatorsFor } from '../filterModel'
-import type { OperatorChoice } from '../valueKinds'
+import { type OperatorChoice, operatorsFor } from '../valueKinds'
 import * as fp from './filter-frame.css'
 import { flattenNodes, LocationField } from './LocationField'
 import { useMultiValue } from './useMultiValue'
@@ -114,7 +115,7 @@ function mintRule(
   schema: PropertyDefinition[],
   contextIds: readonly string[],
 ): FilterRule {
-  const first = operatorsFor(targetId, schema, contextIds)[0]
+  const first = operatorsFor(targetId, resolveColumn(targetId, schema, contextIds)?.type)[0]
   return {
     property_id: targetId,
     op: first?.op ?? '',
@@ -179,6 +180,16 @@ function ChipsField({
   )
 }
 
+type DecodedFilter = { kind: 'rows'; mode: MatchMode; rules: FilterRule[] } | { kind: 'locked' }
+
+/** The pane writes one shape, a flat group under the footer's mode; anything nested was authored elsewhere and locks. */
+function decodeFilter(filter: FilterGroup | undefined): DecodedFilter {
+  if (!filter) return { kind: 'rows', mode: 'any', rules: [] }
+  return filter.rules.some(isGroup)
+    ? { kind: 'locked' }
+    : { kind: 'rows', mode: filter.match, rules: filter.rules as FilterRule[] }
+}
+
 export type FilterView = Pick<SavedView, 'filter' | 'filter_enabled' | 'column_styles'>
 type FilterPatch = { filter: SavedView['filter'] } | { filter_enabled: boolean }
 
@@ -205,7 +216,7 @@ export function FilterFrame({
   schema: PropertyDefinition[]
   tree: NexusTree | null
   back?: MenuBack
-  targets?: PaneTarget[]
+  targets?: PickerOption<string>[]
   onCommit: (patch: FilterPatch) => void
 }): React.JSX.Element {
   const nexus = useNexusForms()
@@ -238,7 +249,7 @@ export function FilterFrame({
 
   const contextIds = contextIdsOf(tree)
   const targets = supplied ?? filterTargets(schema, tree, locations.length > 0)
-  const targetById = new Map(targets.map((t) => [t.id, t]))
+  const targetById = new Map(targets.map((t) => [t.value, t]))
   const folderById = useMemo(
     () => new Map(flattenNodes(locations).map((n) => [n.id, n])),
     [locations],
@@ -279,12 +290,12 @@ export function FilterFrame({
   ): React.ReactNode =>
     targets.map((t) => (
       <MenuItem
-        key={t.id}
-        picked={t.id === current ? 'solo' : undefined}
-        leading={<Icon name={t.icon} size="body" />}
+        key={t.value}
+        picked={t.value === current ? 'solo' : undefined}
+        leading={t.icon && <Icon name={t.icon} size="body" />}
         onClick={() => {
           close()
-          onPick(t.id)
+          onPick(t.value)
         }}
       >
         {t.label}
@@ -369,7 +380,7 @@ export function FilterFrame({
 
   const ruleRow = (rule: FilterRule, index: number): React.JSX.Element => {
     const column = resolveColumn(rule.property_id, schema, contextIds)
-    const ops = operatorsFor(rule.property_id, schema, contextIds)
+    const ops = operatorsFor(rule.property_id, column?.type)
     const current = ops.find(
       (o) =>
         o.op === rule.op &&

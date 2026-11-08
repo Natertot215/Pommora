@@ -6,7 +6,7 @@ import { propertyValue } from '../Properties/propertyValue'
 import { propertyConfig, propertyDraft } from '../Properties/properties'
 import { optionEdit } from '../Properties/optionModel'
 import { formatChange } from '../Properties/keyFormat'
-import { crop, type PageMetaPatch } from './schemas'
+import { crop, type PageMetaPatch, VIEW_BUTTONS } from './schemas'
 import type { CascadeReport } from './cascade'
 import { CONTAINER_KINDS, HELD_KINDS, type HeldKind, NODE_KINDS } from './entities'
 import { newContentId, newId } from './ids'
@@ -110,6 +110,7 @@ export const mutateRequest = z.discriminatedUnion('op', [
   op('setIcon', { path: z.string(), kind: heldKind, icon: z.string().nullable() }),
   op('setDisclosureLock', { path: z.string(), kind: containerKind, locked: z.boolean() }),
   op('setActiveView', { path: z.string(), kind: containerKind, viewId: z.string() }),
+  op('setViewButton', { path: z.string(), kind: containerKind, viewButton: z.enum(VIEW_BUTTONS) }),
   op('setProperty', { path: z.string(), propertyId: z.string(), value: propertyValue.nullable() }),
   op('putBack', { entries: z.array(putBack) }),
   op('setPageMeta', { path: z.string(), patch: pageMetaPatch }),

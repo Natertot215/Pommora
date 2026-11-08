@@ -1,6 +1,6 @@
 // Everything a row, a band, or a page does in answer to the pointer, defined once for every view kind: band drops, row drops and where the order lands, opening a page, the hover ghost, and the page menu. A kind supplies the policy below and its own presentation, nothing else.
 
-import { useRef } from 'react'
+import { useMemo, useRef } from 'react'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import { UNGROUPED, type ViewRow } from '../viewRow'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
@@ -27,12 +27,13 @@ import { glanceShown, hoverGlance, leaveGlance } from '../../Interface/Glance/gl
 import { showPageMenu } from '../../Interface/Menus/pageMenuActions'
 import { type BandNode, memberDepth, nodeLabel, springsInto } from '../Bands/bandModel'
 import { bandRouting, bucketValueAt } from '../Bands/bandRouter'
+import { bucketKey } from '../Pipeline/group'
+import { reassignable } from '../valueKinds'
 import { type BandView, bandSpec } from '../Bands/GroupBand'
-import { tieOrderWith } from '../creationOrder'
 import { sameItems } from '@pommora/uix/Utilities/same'
 import { useViewTileScope } from '../ViewTileScope'
 import type { ViewHostApi } from './useViewHost'
-import { type CreateFlight, useViewCreation } from './useViewCreation'
+import { type CreateFlight, tieOrderWith, useViewCreation } from './useViewCreation'
 import { dropIO, mutateAhead, refusedDrop } from './pendingView'
 
 interface ViewInteractionPolicy {
@@ -44,6 +45,19 @@ interface ViewInteractionPolicy {
   /** Opens the renderer's naming surface over a page that already exists on disk. */
   rename: (target: { id: string; path: string }, fromCreate: boolean) => void
   newPages: NewPageRows
+}
+
+/** The neighbor rule keeps a drop to a run's edge — a seam, or either end of the list — from rewriting anything. */
+export function reassignTarget(
+  order: string[],
+  draggedId: string,
+  keyOf: (id: string) => string,
+): string | undefined {
+  const i = order.indexOf(draggedId)
+  if (i <= 0 || i >= order.length - 1) return undefined
+  const key = keyOf(order[i - 1])
+  if (key !== keyOf(order[i + 1]) || key === keyOf(draggedId)) return undefined
+  return key
 }
 
 function pageTarget(row: ViewRow): PageTarget {
@@ -92,7 +106,8 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     crossBand,
     dragDisabled,
     searching,
-    reassignBySortRun,
+    columns,
+    sortKeys,
     pageOrder,
     plan,
     persistView,
@@ -103,6 +118,27 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
   } = host
 
   const tile = useViewTileScope()
+
+  // A single-sorted view lays its rows out in value RUNS, so a reorder landing one strictly inside another run rewrites the sorted property. Armed only when the column is shown — an unrendered property leaves the run boundaries unreadable.
+  const sortReassign = useMemo(() => {
+    if (groupPropId !== undefined || sortKeys !== 1) return undefined
+    for (const c of view.sort ?? []) {
+      const column = columns.find((col) => col.id === c.property_id)
+      if (column && reassignable(column.type)) return column
+    }
+    return undefined
+  }, [groupPropId, sortKeys, view.sort, columns])
+  const reassignBySortRun = (orderIds: string[], groupKey: string, activeId: string): void => {
+    if (!sortReassign) return
+    const keyOf = (id: string): string => {
+      const row = rowById.get(id)
+      return (row ? bucketKey(row, sortReassign, 'day') : null) ?? UNGROUPED
+    }
+    const band = orderIds.filter((id) => rowBand.get(id) === groupKey)
+    const target = reassignTarget(band, activeId, keyOf)
+    if (target === undefined) return
+    commitGroupValue(activeId, sortReassign.id, target)
+  }
 
   // ── Bands ─────────────────────────────────────────────────────────────────
 

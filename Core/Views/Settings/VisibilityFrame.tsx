@@ -5,12 +5,18 @@ import type { SavedView } from '../views'
 import { useSession } from '../../Session/store'
 import { MenuRowView } from '@pommora/uix/Menus/MenuIndex'
 import { type MenuBack, MenuTopRow, MenuScrollFrame } from '@pommora/uix/Menus/MenuRows'
-import { resolveColumn, resolveColumns } from '../Pipeline/columns'
+import {
+  hiddenListIds,
+  hideShown,
+  placeInShown,
+  resolveColumn,
+  resolveColumns,
+  unhide,
+} from '../Pipeline/columns'
 import { useSaveView } from '../viewWrite'
 import { LineGroup, LineRow, LineZone } from '@pommora/uix/Interactions/drag'
 import { PaneRestGroup, type PaneDrop, paneSpec } from '@pommora/uix/Menus/paneDrop'
 import { contextIdsOf, contextsByIdOf } from '../../Contexts/contextIdentity'
-import { hiddenListIds, hideShown, placeInShown, unhide } from '../visibilityModel'
 import { EyeToggle } from '@pommora/uix/Elements/EyeToggle'
 import { columnIcon, columnLabel } from '../../Properties/columnDisplay'
 import { Icon } from '@pommora/uix/Symbols'

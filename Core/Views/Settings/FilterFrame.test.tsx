@@ -5,6 +5,7 @@ import { createRoot, type Root } from 'react-dom/client'
 import type { CollectionNode, NexusTree } from '../../Nexus/tree'
 import type { PropertyDefinition } from '../../Properties/properties'
 import type { SavedView } from '../views'
+import type { FilterGroup, FilterRule } from '../filterRules'
 import { FilterFrame, type FilterView } from './FilterFrame'
 import { mountEachTest } from '../../Testing/viewHarness'
 import { linkedSpacesTree } from '../../Testing/testTree'
@@ -381,6 +382,24 @@ describe('FilterFrame', () => {
     expect(byLabel('Filter active')).toBeTruthy()
     await click([...host.querySelectorAll('*')].find((el) => el.textContent === 'Reset Filter'))
     expect(lastSaved().filter).toBeUndefined()
+  })
+
+  it('any nested group locks, whatever its root or depth', async () => {
+    const r = (id: string): FilterRule => ({ property_id: id, op: 'is', value: 'x' })
+    const nested: FilterGroup[] = [
+      { match: 'any', rules: [{ match: 'all', rules: [r('a'), r('b')] }, r('c')] },
+      { match: 'any', rules: [{ match: 'all', rules: [r('a')] }, r('b')] },
+      { match: 'all', rules: [r('a'), { match: 'any', rules: [r('b'), r('c')] }] },
+      { match: 'all', rules: [r('a'), { match: 'all', rules: [r('b'), r('c')] }] },
+      {
+        match: 'any',
+        rules: [{ match: 'all', rules: [r('a'), { match: 'any', rules: [r('b')] }] }],
+      },
+    ]
+    for (const filter of nested) {
+      await mount(view({ filter }))
+      expect(texts()).toContain('Reset Filter')
+    }
   })
 
   it('an empty filter shows one blank lead row with no "+" needed, and no clear-×', async () => {

@@ -14,9 +14,9 @@ import { updatePageBody, renamePage } from '../Nexus/page'
 import { createTestPage } from '../Testing/createTestPage'
 import { setChildOrder } from '../Nexus/reorder'
 import { saveView } from '../Views/viewsFile'
-import { setContainerConfig } from '../Views/containerConfig'
 import { sidecarPath } from '../Paths/paths'
 import { readJsonObject } from './atomicWrite'
+import { patchSidecar } from './sidecar'
 
 const view = (id: string): SavedView => ({
   id,
@@ -53,7 +53,7 @@ describe('concurrent sidecar writers', () => {
     await Promise.all([
       setChildOrder(folder, 'set_order', ['s1']),
       saveView(folder, 'collection', view('view_1'), view('view_1')),
-      setContainerConfig(folder, 'collection', { view_button: 'labeled' }),
+      patchSidecar(folder, 'collection', (cur) => ({ ...cur, view_button: 'labeled' })),
     ])
     const sidecar = await readJsonObject(sidecarPath(folder, 'collection'))
     expect(sidecar?.set_order).toEqual(['s1'])

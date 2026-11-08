@@ -59,7 +59,7 @@ import { EntityIcon } from '../../Assets/EntityIcon'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { useSetting } from '../../Session/store'
 import { PickerControl, type PickerOption } from '@pommora/uix/Menus/PickerControl'
-import { FILEDATA_TARGETS, schemaTargets, targetOption } from '../paneTargets'
+import { FILEDATA_TARGETS, schemaTargets } from '../paneTargets'
 import {
   chipRegion,
   hiddenRow,
@@ -141,7 +141,7 @@ export function GroupFrame({
   const group = view.group ?? { kind: 'structural' as const }
   const { nests } = presentedKind(view.type)
   const plan = useMemo(() => groupPlan(view, schema, nests), [view, schema, nests])
-  const propertyOptions = schemaTargets(schema, (d) => groupable(d.type)).map(targetOption)
+  const propertyOptions = schemaTargets(schema, (d) => groupable(d.type))
   const activeDef = plan.kind === 'property' ? plan.group.column.def : undefined
   const sub = plan.kind === 'sets' ? plan.sub : undefined
   const subGroup = sub?.config
@@ -264,11 +264,11 @@ export function GroupFrame({
             row={pickerRow(
               'layers',
               'Sub-Group',
-              subGroup?.property_id ?? FILEDATA_TARGETS.location.id,
-              [targetOption(FILEDATA_TARGETS.location), ...propertyOptions],
+              subGroup?.property_id ?? FILEDATA_TARGETS.location.value,
+              [FILEDATA_TARGETS.location, ...propertyOptions],
               (v) =>
                 saveSub(
-                  v === FILEDATA_TARGETS.location.id
+                  v === FILEDATA_TARGETS.location.value
                     ? undefined
                     : { property_id: v, order_mode: 'configured' },
                 ),

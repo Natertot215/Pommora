@@ -1,9 +1,17 @@
-import { DEFAULT_NEW_NAME, minted, type UnmintedCreate } from '../Nexus/mutateRequest'
+import {
+  type CreateRequest,
+  DEFAULT_NEW_NAME,
+  minted,
+  type UnmintedCreate,
+} from '../Nexus/mutateRequest'
 import { spaceCreator } from './createMenu'
 import type { RenameHost } from '../Session/editSlice'
 import { relDirname } from '../Paths/posix'
-import { placeAt, placeNew } from '../Views/creationOrder'
-import { containerAt, findContainerById } from '../Nexus/treePatch'
+import { placedBeside, placementSlot } from '../Nexus/order'
+import { containerAt, findContainerById, pageIdsIn } from '../Nexus/treePatch'
+import type { NexusTree } from '../Nexus/tree'
+import { type Personalization, type Placement, settingOf } from '../Settings/personalization'
+import { contextWorldOf } from '../Contexts/contextResolve'
 import { namesContainer } from '../Nexus/entities'
 import { useSession, windowTargetOf } from '../Session/store'
 import { personalizationOf } from '../Session/configSlice'
@@ -20,7 +28,7 @@ export async function newPageAdjacent(
   if (!container) return
   const anchor = container.pages.find((p) => p.path === path)
   if (!anchor) return
-  const req = placeAt(
+  const req = placedBeside(
     minted({ op: 'createPage', parentPath, name: DEFAULT_NEW_NAME }),
     container.pages.map((p) => p.id),
     anchor.id,
@@ -38,7 +46,7 @@ export async function newSpaceAdjacent(
   const { tree, mutate, beginRename } = useSession.getState()
   const group = tree?.contexts.find((g) => g.spaces.some((s) => s.id === id))
   if (!group) return
-  const req = placeAt(
+  const req = placedBeside(
     minted(spaceCreator(group.def).req),
     group.spaces.map((s) => s.id),
     id,
@@ -46,6 +54,32 @@ export async function newSpaceAdjacent(
   )
   const done = await mutate(req)
   if (done?.created && 'path' in done.created) beginRename(done.created.path, true, host)
+}
+
+function placeNew<R extends CreateRequest>(tree: NexusTree, req: R, p: Personalization): R {
+  const at = (siblingIds: string[] | undefined, placement: Placement): R =>
+    placedBeside(req, siblingIds, null, placementSlot(placement))
+  const r: CreateRequest = req
+  switch (r.op) {
+    case 'createPage':
+      return at(pageIdsIn(tree, r.parentPath), settingOf(p, 'newPagePlacement'))
+    case 'createContainer': {
+      const parent = r.kind === 'set' ? containerAt(tree, r.parentPath) : null
+      return at(
+        parent ? (parent.sets ?? []).map((n) => n.id) : undefined,
+        settingOf(p, 'newFolderPlacement'),
+      )
+    }
+    case 'createSpace':
+      return at(
+        contextWorldOf(tree.contexts)
+          .groupById.get(r.contextId)
+          ?.spaces.map((n) => n.id),
+        settingOf(p, 'newSpacePlacement'),
+      )
+    default:
+      return req
+  }
 }
 
 /** An unanchored create, placed by its kind's placement setting and named in place. */

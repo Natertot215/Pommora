@@ -1,16 +1,13 @@
 import { type Handlers, withRoot, withWriteRoot } from '../Contract/handlers'
 import { ok, type Result, fault } from '../Contract/result'
 import { isPlainObject, isStringArray } from '../Contract/validators'
-import { coerceViewButton } from '../Nexus/schemas'
 import { type ContainerKind, isContainerKind } from '../Nexus/entities'
 import { resolveUnderRoot } from '../Paths/pathSafety'
 import { mutableTarget } from '../Nexus/liveTree'
-import { setContainerConfig } from './containerConfig'
 import { loadValues } from './loadValues'
 import { removedView, savedView } from './views'
 import { deleteView, duplicateView, reorderViews, restoreView, saveView } from './viewsFile'
 
-// View SELECTION is the container sidecar's `active_view`; this is the view DEFINITION.
 const containerWrite = <A extends unknown[], T>(
   run: (folder: string, kind: ContainerKind, ...args: A) => Promise<Result<T>>,
 ) =>
@@ -50,13 +47,6 @@ export const viewsHandlers = {
     return parsed.success
       ? restoreView(folder, kind, parsed.data)
       : fault('A removed view is required.')
-  }),
-
-  'container:configure': containerWrite(async (folder, kind, patch: unknown) => {
-    const view_button = isPlainObject(patch) ? coerceViewButton(patch.view_button) : undefined
-    return view_button
-      ? setContainerConfig(folder, kind, { view_button })
-      : fault('A config patch is required.')
   }),
 
   'view:loadValues': withRoot(async (root, _ctx, containerPath: unknown, pageIds: unknown) => {

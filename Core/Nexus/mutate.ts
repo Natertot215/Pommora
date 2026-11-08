@@ -186,6 +186,17 @@ async function dispatch(root: string, req: MutateRequest): Promise<MutateReply> 
       return done(await setActiveView(folder.value, req.kind, req.viewId))
     }
 
+    case 'setViewButton': {
+      const folder = await mutableTarget(root, req.path, [req.kind])
+      if (!folder.ok) return folder
+      return done(
+        await patchSidecar(folder.value, req.kind, (cur) => ({
+          ...cur,
+          view_button: req.viewButton,
+        })),
+      )
+    }
+
     case 'setProperty':
       return isMarkdownFile(req.path)
         ? setPropertyOp(root, req)

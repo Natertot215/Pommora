@@ -1,7 +1,6 @@
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
-import type { SavedView } from '../views'
+import { pickView, type SavedView } from '../views'
 import { useViewTileScope } from '../ViewTileScope'
-import { pickView } from '../Pipeline/pickView'
 import { useLiveView } from './pendingView'
 
 export function useActiveView(source: CollectionNode | SetNode): SavedView {

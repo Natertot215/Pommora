@@ -5,11 +5,10 @@ import {
   mergeViewEdit,
   savedView,
   viewOption,
-  DEFAULT_VIEW_TYPE,
-  decodeGroupConfig,
-  decodeSubGroup,
+  DEFAULT_VIEW_ID,
   mintDefaultView,
   mintNewView,
+  pickView,
   pickViewState,
   mapTiles,
   mapViews,
@@ -19,6 +18,7 @@ import {
 import { mapRules, type FilterGroup, type FilterRule } from './filterRules'
 import { FILEDATA, type PropertyDefinition } from '../Properties/properties'
 import { resolveColumns } from './Pipeline/columns'
+import type { SetNode } from '../Nexus/tree'
 
 describe('SavedView decode', () => {
   it('parses the fixture Table view (type, property_order, group, sort)', () => {
@@ -291,8 +291,9 @@ describe('view-level grouping fields', () => {
     expect(v.structural_order_mode).toBeUndefined()
     expect(v.sub_group).toBeUndefined()
   })
-  it('decodeSubGroup fills order_mode and filters non-string order entries', () => {
-    expect(decodeSubGroup({ property_id: 'p1', order: ['a', 7, 'b'] })).toEqual({
+  it('a sub-group fills order_mode and filters non-string order entries', () => {
+    const v = savedView.parse({ ...base, sub_group: { property_id: 'p1', order: ['a', 7, 'b'] } })
+    expect(v.sub_group).toEqual({
       property_id: 'p1',
       order_mode: 'configured',
       order: ['a', 'b'],
@@ -300,17 +301,21 @@ describe('view-level grouping fields', () => {
   })
 })
 
-describe('decodeGroupConfig (lenient, never throws)', () => {
+describe('the group codec (lenient, never throws)', () => {
+  const groupOf = (group: unknown): SavedView['group'] =>
+    savedView.parse({ id: 'view_g', name: 'G', property_order: [], hidden_properties: [], group })
+      .group
+
   it('passes structural and flat through', () => {
-    expect(decodeGroupConfig({ kind: 'structural' })).toEqual({ kind: 'structural' })
-    expect(decodeGroupConfig({ kind: 'flat' })).toEqual({ kind: 'flat' })
+    expect(groupOf({ kind: 'structural' })).toEqual({ kind: 'structural' })
+    expect(groupOf({ kind: 'flat' })).toEqual({ kind: 'flat' })
   })
 
   it('degrades garbage / null / non-object to structural', () => {
-    expect(decodeGroupConfig(null)).toEqual({ kind: 'structural' })
-    expect(decodeGroupConfig('nope')).toEqual({ kind: 'structural' })
-    expect(decodeGroupConfig([])).toEqual({ kind: 'structural' })
-    expect(decodeGroupConfig({})).toEqual({ kind: 'structural' })
+    expect(groupOf(null)).toEqual({ kind: 'structural' })
+    expect(groupOf('nope')).toEqual({ kind: 'structural' })
+    expect(groupOf([])).toEqual({ kind: 'structural' })
+    expect(groupOf({})).toEqual({ kind: 'structural' })
   })
 })
 
@@ -318,7 +323,7 @@ describe('SavedView format (the cards density field)', () => {
   const base = { id: 'view_x', name: 'B', property_order: [], hidden_properties: [] }
   it('coerces an unknown type to table and round-trips a valid format', () => {
     const v = savedView.parse({ ...base, type: 'board', format: 'compact' })
-    expect(v.type).toBe(DEFAULT_VIEW_TYPE)
+    expect(v.type).toBe('table')
     expect(v.format).toBe('compact')
   })
   it('drops an unknown format value', () => {
@@ -530,5 +535,14 @@ describe('bandKey', () => {
   it('spells a property band <property>/<bucket>, and a sub-band under its Set <set>/<property>/<bucket>', () => {
     expect(bandKey('prop_A', 'opt_x')).toBe('prop_A/opt_x')
     expect(bandKey('prop_A', 'opt_x', 'set_1')).toBe('set_1/prop_A/opt_x')
+  })
+})
+
+describe('pickView', () => {
+  it('answers the same default view for every container with no saved view', () => {
+    const set = { kind: 'set', id: 's1', sets: [] } as unknown as SetNode
+    const other = { kind: 'set', id: 's2', sets: [] } as unknown as SetNode
+    expect(pickView(set)).toBe(pickView(other))
+    expect(pickView(set).id).toBe(DEFAULT_VIEW_ID)
   })
 })

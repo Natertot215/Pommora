@@ -4,7 +4,15 @@ import { FIXTURE_DEFS } from '../../Testing/definitions'
 import { savedView, type SavedView } from '../views'
 import { FILEDATA, type PropertyDefinition } from '../../Properties/properties'
 import { linkedSpacesTree } from '../../Testing/testTree'
-import { itemColumns, resolveColumn, resolveColumns } from './columns'
+import {
+  hiddenListIds,
+  hideShown,
+  itemColumns,
+  placeInShown,
+  resolveColumn,
+  resolveColumns,
+  unhide,
+} from './columns'
 
 const schema: PropertyDefinition[] = [
   { id: 'prop_a', label: 'A', key: 'A', type: 'select' },
@@ -171,5 +179,113 @@ describe('itemColumns', () => {
     const item = itemColumns(tree(['prop_b', 'g1']), schema, 'a1')
     expect(ids(item.contexts)).toEqual(['g1', 'g2'])
     expect(ids(item.properties)).toEqual(['prop_b', 'prop_a'])
+  })
+})
+
+const [title, createdAt, modifiedAt] = [
+  FILEDATA.title.id,
+  FILEDATA.createdAt.id,
+  FILEDATA.modifiedAt.id,
+]
+const [areas, projects] = ['ctx_areas', 'ctx_projects']
+const stamps = [createdAt, modifiedAt]
+
+const def = (id: string): PropertyDefinition => ({ id, label: id, key: id, type: 'select' })
+
+const listed = (property_order: string[], hidden_properties: string[]): SavedView =>
+  view({ property_order, hidden_properties })
+
+describe('hiddenListIds', () => {
+  it('orders hidden props by the COLLECTION schema, not the hidden array', () => {
+    const schema = [def('a'), def('b'), def('c')]
+    expect(hiddenListIds(listed(['b'], ['c', 'a']), schema, [])).toEqual(['a', 'c', ...stamps])
+  })
+
+  it('lists non-shown contexts first (registry order), then props, then the stamps, drops stale ids', () => {
+    const schema = [def('a')]
+    expect(
+      hiddenListIds(listed([], [areas, modifiedAt, 'stale', 'a']), schema, [areas, projects]),
+    ).toEqual([areas, projects, 'a', createdAt, modifiedAt])
+  })
+
+  it('lists both stamps on a view that shows neither', () => {
+    expect(hiddenListIds(listed([title], []), [], [])).toEqual([createdAt, modifiedAt])
+  })
+
+  it('omits a stamp the view shows', () => {
+    expect(hiddenListIds(listed([title, modifiedAt], []), [], [])).toEqual([createdAt])
+  })
+
+  it('a context in neither list sits in the hidden zone (default-OFF reveal path)', () => {
+    expect(hiddenListIds(listed(['ctxA'], []), [], ['ctxA', 'ctxB'])).toEqual(['ctxB', ...stamps])
+  })
+
+  it('surfaces an unaccounted prop (in schema, in neither list) so it stays revealable', () => {
+    const schema = [def('a'), def('b')]
+    expect(hiddenListIds(listed(['a'], []), schema, [])).toEqual(['b', ...stamps])
+  })
+
+  it('interleaves hidden and unaccounted props in collection order', () => {
+    const schema = [def('a'), def('b'), def('c')]
+    expect(hiddenListIds(listed(['b'], ['a']), schema, [])).toEqual(['a', 'c', ...stamps])
+  })
+})
+
+describe('placeInShown', () => {
+  it('reorders a shown row, writing the full visible order verbatim with hidden ids trailing', () => {
+    const v = listed([title, 'a', 'b', 'h', 'c'], ['h'])
+    expect(placeInShown(v, [title, 'a', 'b', 'c'], 'c', 1)).toEqual({
+      property_order: [title, 'c', 'a', 'b', 'h'],
+      hidden_properties: ['h'],
+    })
+  })
+
+  it('unhides a dragged-in row at the slot and lifts its flag', () => {
+    const v = listed([title, 'a', 'b', 'h'], ['h'])
+    expect(placeInShown(v, [title, 'a', 'b'], 'h', 2)).toEqual({
+      property_order: [title, 'a', 'h', 'b'],
+      hidden_properties: [],
+    })
+  })
+
+  it('appends past the last shown row — a hidden id never in property_order lands', () => {
+    const v = listed(['a'], ['h'])
+    expect(placeInShown(v, ['a'], 'h', 1)).toEqual({
+      property_order: ['a', 'h'],
+      hidden_properties: [],
+    })
+  })
+
+  it('reveals an unaccounted prop — drag-in writes it into property_order (then it shows)', () => {
+    const v = listed([title, 'a'], [])
+    expect(placeInShown(v, [title, 'a'], 'new', 2)).toEqual({
+      property_order: [title, 'a', 'new'],
+      hidden_properties: [],
+    })
+  })
+
+  it('preserves foreign property_order ids at the tail', () => {
+    const v = listed(['a', 'future_key', 'b'], [])
+    expect(placeInShown(v, ['a', 'b'], 'b', 0).property_order).toEqual(['b', 'a', 'future_key'])
+  })
+})
+
+describe('hideShown / unhide', () => {
+  it('hide appends the flag once and never touches property_order', () => {
+    const v = listed(['a', 'b'], [])
+    expect(hideShown(v, 'a')).toEqual({ hidden_properties: ['a'] })
+    expect(hideShown(listed(['a'], ['a']), 'a')).toEqual({ hidden_properties: ['a'] })
+  })
+
+  it('unhide lifts the flag AND places an unplaced prop in the order (allowlist reveal)', () => {
+    // No remembered slot (a title-only minted view) → appended, so the allowlist actually shows it.
+    expect(unhide(listed([], ['a', 'b']), 'a')).toEqual({
+      property_order: ['a'],
+      hidden_properties: ['b'],
+    })
+    expect(unhide(listed(['a'], ['a']), 'a')).toEqual({
+      property_order: ['a'],
+      hidden_properties: [],
+    })
   })
 })

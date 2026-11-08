@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { pickedStyle, styleFor } from './useColumnStyles'
+import { columnStylePatch, styleFor } from './useColumnStyles'
 import { dateDefaults, type DateFormat } from '../../Properties/columnStyles'
 import type { PropertyDefinition } from '../../Properties/properties'
 import { savedView, type SavedView } from '../views'
@@ -97,7 +97,8 @@ describe('a column follows the Nexus until it picks its own', () => {
 
   it("stores nothing for the Nexus's own date form, and 'shown' for its clock", () => {
     const pick = (key: 'date_format' | 'time_format', value: string) =>
-      pickedStyle(col('prop_date'), nexus('relative'), key, value)
+      columnStylePatch(view({}), col('prop_date'), nexus('relative'), { [key]: value })
+        .column_styles?.prop_date?.[key]
     expect(pick('date_format', 'relative')).toBeUndefined()
     expect(pick('date_format', 'full')).toBe('full')
     expect(pick('time_format', 'twentyFourHour')).toBe('shown')

@@ -32,7 +32,7 @@ export function styleFor(
 }
 
 /** What a column stores for a pick from its style menu. */
-export function pickedStyle(
+function pickedStyle(
   column: ResolvedColumn,
   nexus: NexusForms,
   key: keyof ColumnStyle & string,

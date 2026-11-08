@@ -2,7 +2,7 @@
 
 import { identityOf } from '../Contexts/contextIdentity'
 import { entityMemo, type NexusTree } from '../Nexus/tree'
-import { contextPaneTargets, FILEDATA_TARGETS, type PaneTarget } from '../Views/paneTargets'
+import { contextPaneTargets, FILEDATA_TARGETS } from '../Views/paneTargets'
 import { containerAt } from '../Nexus/treePatch'
 import { relDirname } from '../Paths/posix'
 import { settingOf } from '../Settings/personalization'
@@ -22,7 +22,7 @@ const previewTestOf = entityMemo(
 )
 
 /** What the rules can judge from the tree alone, so Last Modified and registry properties stay out. */
-export const previewTargets = (tree: NexusTree): PaneTarget[] => [
+export const previewTargets = (tree: NexusTree) => [
   FILEDATA_TARGETS.title,
   ...(tree.collections.length > 0 ? [FILEDATA_TARGETS.location] : []),
   FILEDATA_TARGETS.createdAt,

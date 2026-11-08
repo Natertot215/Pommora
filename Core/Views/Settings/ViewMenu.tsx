@@ -1,14 +1,12 @@
-import { reportRefusal } from '../../Interface/Notifications/notifications'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import { MenuDropdown } from '@pommora/uix/Menus/MenuDropdown'
 import { useSession } from '../../Session/store'
 import { containerSchema, topContainerOf } from '../../Nexus/treePatch'
 import { namesContainer } from '../../Nexus/entities'
-import { pickView } from '../Pipeline/pickView'
+import { pickView } from '../views'
 import { ViewFrame } from './ViewFrame'
 import { viewGlyph } from '../viewIcon'
 import * as s from '../../Interface/Toolbar/toolbar-menu.css'
-import { dialer } from '../../Platform/dialer'
 import { popMenu } from '../../Actions/menuActions'
 import { viewButtonMenuItems } from '../../Actions/viewMenus'
 
@@ -23,6 +21,7 @@ export function ViewMenu(): React.JSX.Element | null {
 
 function ViewMenuInner({ node }: { node: CollectionNode | SetNode }): React.JSX.Element {
   const tree = useSession((st) => st.tree)
+  const mutate = useSession((st) => st.mutate)
   const labeled = (node.viewButton ?? 'icon') === 'labeled'
 
   const schema = containerSchema(tree, node)
@@ -32,11 +31,12 @@ function ViewMenuInner({ node }: { node: CollectionNode | SetNode }): React.JSX.
     e.preventDefault()
     const action = await popMenu(viewButtonMenuItems({ viewButton: node.viewButton ?? 'icon' }))
     if (action !== 'toggle-title') return
-    reportRefusal(
-      await dialer().ask('container:configure', node.path, node.kind, {
-        view_button: labeled ? 'icon' : 'labeled',
-      }),
-    )
+    void mutate({
+      op: 'setViewButton',
+      path: node.path,
+      kind: node.kind,
+      viewButton: labeled ? 'icon' : 'labeled',
+    })
   }
 
   return (
