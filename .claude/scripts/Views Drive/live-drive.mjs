@@ -1,20 +1,20 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
-  ask, boxOf, click, hover, closeSettings, escapeAll, FM, inMain, labels, launch, mintPageId, mouseClick, must, NEXUS,
+  ask, boxOf, click, hover, closeSettings, escapeAll, FM, inMain, labels, launch, menuByEvent, mintPageId, mouseClick, must, NEXUS,
   openSettings, phasedItem, pickNative, popNative, pressKey, press, restore, settles, SETTINGS_BUTTON, shot, sleep, SWITCH, tally,
   typeText, until,
 } from '../drive-harness.mjs'
 import { parse } from 'yaml'
 
 const PORT = 9423
-const BUILT = ['2', '3', '4', '5', '6']
+const BUILT = ['2', '3', '4', '5', '6', '7']
 const argv = process.argv.slice(2)
 const at = argv.indexOf('--landed')
 const LANDED = at >= 0 ? Number(argv[at + 1]) : NaN
 const GROUPS = new Set(argv.filter((a, i) => i !== at && i !== at + 1))
 if (!Number.isInteger(LANDED) || GROUPS.size === 0 || [...GROUPS].some((g) => !BUILT.includes(g))) {
-  console.error(`usage: node live-drive.mjs <group…> --landed <phase>   (groups ${BUILT.join(', ')}; 7 to 10 land at their checkpoints; --landed 0 is the baseline)`)
+  console.error(`usage: node live-drive.mjs <group…> --landed <phase>   (groups ${BUILT.join(', ')}; 8 to 10 land at their checkpoints; --landed 0 is the baseline)`)
   process.exit(2)
 }
 
@@ -42,6 +42,10 @@ const DRIFT = {
   more: LANDED >= 3 ? 'More actions' : 'More',
   /** Task 3-3 renamed both page-icon switches; the label is BC3's own case, and the toggle crossing finds the switch by it. */
   titleIcons: (kind) => (LANDED >= 3 ? 'Title Icons' : kind === 'cards' ? 'Hide Icons' : 'Page Icons'),
+  /** Task 7-1 renamed the disclosure chevron's attribute. */
+  chevron: LANDED >= 7 ? '[data-chevron]' : '[data-drop-outline]',
+  /** Phase 7's checkpoint removed the bundle table's date class; a row's last cell is its date. */
+  bundleDate: LANDED >= 7 ? '.data-cell:last-child' : '.bundle-date',
 }
 
 // ── The Nexus on disk ───────────────────────────────────────────────────────
@@ -539,7 +543,7 @@ const dataRow = (title) => `document.querySelector('.data-row[data-rid="${PAGES[
 async function dateColumn(cdp, scope, dateHead) {
   return cdp.evaluate(`(() => {
     const head = ${leadOf(dateHead)}
-    const cells = [...document.querySelectorAll('${scope} .bundle-date')].filter((c) => c.getClientRects().length).map((c) => ${leadOf('c')})
+    const cells = [...document.querySelectorAll('${scope} ${DRIFT.bundleDate}')].filter((c) => c.getClientRects().length).map((c) => ${leadOf('c')})
     return { head, cells }
   })()`)
 }
@@ -830,8 +834,7 @@ const HEADS = `[...document.querySelectorAll('.group-band-head')].filter((h) => 
 const headLabels = (cdp) => cdp.evaluate(`${HEADS}.map((h) => h.getAttribute('aria-label'))`)
 /** The `n`th head reading `label` (0-based), in document order. */
 const head = (label, n = 0) => `${HEADS}.filter((h) => h.getAttribute('aria-label') === ${JSON.stringify(label)})[${n}]`
-/** A head's fold arrow, under any of the closed phases' spellings. */
-const chevronOf = (expr) => `(${expr}).querySelector('[data-chevron], [data-drop-outline]')`
+const chevronOf = (expr) => `(${expr}).querySelector('${DRIFT.chevron}')`
 const expanded = (cdp, expr) => cdp.evaluate(`(${expr})?.getAttribute('aria-expanded') ?? null`)
 const cardTitles = async (cdp) => (await cdp.evaluate(`[...document.querySelectorAll('.cards-view [data-rid]')].filter((c) => c.getClientRects().length).map((c) => c.dataset.rid)`)).map(titleOf)
 const only = (list, keep) => list.filter((t) => keep.includes(t))
@@ -840,6 +843,44 @@ const within = (labels, from, until) => labels.slice(labels.indexOf(from) + 1, u
 const BETA_PAGES = ['Alpha 1', 'Alpha 2', 'Alpha 3', 'Beta 1']
 const SUBSET_ORDER = [IDS.alpha, IDS.beta, IDS.subB, IDS.subA]
 const subGrouped = { sub_group: { property_id: STAGE.id, order_mode: 'configured' } }
+
+/** A Set's id: a page id with the kind mark a container carries. */
+const containerId = () => { const id = mintPageId(); return `${id.slice(0, 10)}0${id.slice(11)}` }
+/** A refused cross-parent nest of VD Delta, a Set the stored group_order never ranked, into Set Alpha, with VD Gamma dragged above Set Beta inside the hold, on a surface drawing the Collection's Sets as rows: `open` shows it, `row` finds a Set's row by title, and `labels` reads the rows drawn. */
+async function refusedNest(cdp, tag, { open, row, labels }) {
+  const gamma = containerId()
+  const delta = containerId()
+  const inner = containerId()
+  // Set Alpha takes a sub-Set, so a nest into it lands before a ranked sibling and the drop stages a group_order of its own.
+  await mutate(cdp, { op: 'createContainer', id: inner, parentPath: 'Collection A/Set Alpha', kind: 'set', name: 'VD Inner' })
+  await mutate(cdp, { op: 'createContainer', id: gamma, parentPath: COLLECTION, kind: 'set', name: 'VD Gamma' })
+  await mutate(cdp, { op: 'createContainer', id: delta, parentPath: COLLECTION, kind: 'set', name: 'VD Delta' })
+  const view = tableView(vid(tag), 'VD Nest', { group_order: [IDS.alpha, inner, IDS.beta, IDS.subA, IDS.subB, gamma] })
+  await showView(cdp, view)
+  await open?.()
+  await until('VD Delta\'s row', async () => cdp.evaluate(`!!(${row('VD Delta')})`))
+  const TOP = ['Set Alpha', 'Set Beta', 'VD Gamma', 'VD Delta']
+  const top = async () => (await labels()).filter((l) => TOP.includes(l))
+  const before = await top()
+  await hold('mutate', `(args) => args[0]?.op === 'moveSet' && JSON.stringify(args).includes('VD Delta')`, 3500, true)
+  const from = await boxOf(cdp, row('VD Delta'))
+  const into = await boxOf(cdp, row('Set Alpha'))
+  await dragPoints(cdp, { x: from.x, y: from.y }, { x: into.x, y: into.y }, { settle: 300 })
+  const nested = await top()
+  const gammaAt = await boxOf(cdp, row('VD Gamma'))
+  const betaAt = await boxOf(cdp, row('Set Beta'))
+  await dragPoints(cdp, { x: gammaAt.x, y: gammaAt.y }, { x: betaAt.x, y: betaAt.top + 2 }, { settle: 300 })
+  const regrouped = await top()
+  await sleep(4500)
+  const after = await top()
+  const names = { [IDS.alpha]: 'Set Alpha', [IDS.beta]: 'Set Beta', [IDS.subA]: 'Sub-Set A', [IDS.subB]: 'Sub-Set B', [inner]: 'VD Inner', [gamma]: 'VD Gamma', [delta]: 'VD Delta' }
+  const saved = (viewOnDisk(view.id)?.group_order ?? []).map((id) => names[id] ?? id)
+  const atRoot = (await held(cdp)).get(delta)?.path === 'Collection A/VD Delta'
+  await closeAll(cdp)
+  for (const name of ['VD Gamma', 'VD Delta', 'Set Alpha/VD Inner']) await mutate(cdp, { op: 'delete', path: `Collection A/${name}`, kind: 'set' })
+  const pass = atRoot && same(after, ['Set Alpha', 'VD Gamma', 'Set Beta', 'VD Delta']) && saved.at(-1) === 'VD Delta' && saved.indexOf('VD Gamma') < saved.indexOf('Set Beta')
+  return { pass, before, nested, regrouped, after, saved, atRoot }
+}
 
 async function group6(cdp) {
   const g = '6'
@@ -900,7 +941,7 @@ async function group6(cdp) {
   bc(g, 15, 'E-3', 'an empty Done band dragged above Todo under its Set saves the sub-group\'s order', bucketed && reordered, show({ bucketed, sub: viewOnDisk(V6_SUB.id)?.sub_group }))
 
   // BC15 · a Set holding only empty bands springs open on a drag.
-  const hollowId = `${mintPageId().slice(0, 10)}0${mintPageId().slice(11)}`
+  const hollowId = containerId()
   await mutate(cdp, { op: 'createContainer', id: hollowId, parentPath: COLLECTION, kind: 'set', name: 'VD Hollow' })
   await showView(cdp, tableView(vid('g6hollow'), 'VD Hollow View', { ...subGrouped, collapsed_groups: [hollowId] }))
   await until('VD Hollow\'s head', async () => cdp.evaluate(`!!(${head('VD Hollow')})`)).catch(() => {})
@@ -943,39 +984,8 @@ async function group6(cdp) {
   bc(g, 16, '6.6', 'the drop line over the ungrouped tail\'s row stands off its indent as it does over a banded row', typeof line.tail === 'number' && near(line.tail, line.banded), show(line))
 
   // F6 · a refused nest of a Set the stored group_order never ranked, after another Set write, returns it to the slot its drop was ranked from.
-  const containerId = () => { const id = mintPageId(); return `${id.slice(0, 10)}0${id.slice(11)}` }
-  const gamma = containerId()
-  const delta = containerId()
-  const inner = containerId()
-  // Set Alpha takes a sub-Set, so a nest into it lands before a ranked sibling and the drop stages a group_order of its own.
-  await mutate(cdp, { op: 'createContainer', id: inner, parentPath: 'Collection A/Set Alpha', kind: 'set', name: 'VD Inner' })
-  await mutate(cdp, { op: 'createContainer', id: gamma, parentPath: COLLECTION, kind: 'set', name: 'VD Gamma' })
-  await mutate(cdp, { op: 'createContainer', id: delta, parentPath: COLLECTION, kind: 'set', name: 'VD Delta' })
-  const V6_NEST = tableView(vid('g6nest'), 'VD Nest', { group_order: [IDS.alpha, inner, IDS.beta, IDS.subA, IDS.subB, gamma] })
-  await showView(cdp, V6_NEST)
-  await until('VD Delta\'s head', async () => cdp.evaluate(`!!(${head('VD Delta')})`))
-  const TOP = ['Set Alpha', 'Set Beta', 'VD Gamma', 'VD Delta']
-  const topHeads = async () => (await headLabels(cdp)).filter((l) => TOP.includes(l))
-  const nestBefore = await topHeads()
-  await hold('mutate', `(args) => args[0]?.op === 'moveSet' && JSON.stringify(args).includes('VD Delta')`, 3500, true)
-  const from = await boxOf(cdp, head('VD Delta'))
-  const into = await boxOf(cdp, head('Set Alpha'))
-  await dragPoints(cdp, { x: from.x, y: from.y }, { x: into.x, y: into.y }, { settle: 300 })
-  const nested = await topHeads()
-  const gammaAt = await boxOf(cdp, head('VD Gamma'))
-  const betaAt = await boxOf(cdp, head('Set Beta'))
-  await dragPoints(cdp, { x: gammaAt.x, y: gammaAt.y }, { x: betaAt.x, y: betaAt.top + 2 }, { settle: 300 })
-  const regrouped = await topHeads()
-  await sleep(4500)
-  const after = await topHeads()
-  const saved = (viewOnDisk(V6_NEST.id)?.group_order ?? []).map((id) => ({ [IDS.alpha]: 'Set Alpha', [IDS.beta]: 'Set Beta', [IDS.subA]: 'Sub-Set A', [IDS.subB]: 'Sub-Set B', [inner]: 'VD Inner', [gamma]: 'VD Gamma', [delta]: 'VD Delta' })[id] ?? id)
-  const atRoot = (await held(cdp)).get(delta)?.path === 'Collection A/VD Delta'
-  fold(g, 'nest', 'a refused nest of VD Delta, which the stored group_order never ranked, returns it to the end it was ranked from while VD Gamma\'s reorder over it stands',
-    atRoot && same(after, ['Set Alpha', 'VD Gamma', 'Set Beta', 'VD Delta']) && saved.at(-1) === 'VD Delta' && saved.indexOf('VD Gamma') < saved.indexOf('Set Beta'),
-    show({ nestBefore, nested, regrouped, after, saved, atRoot }))
-  await mutate(cdp, { op: 'delete', path: 'Collection A/VD Gamma', kind: 'set' })
-  await mutate(cdp, { op: 'delete', path: 'Collection A/VD Delta', kind: 'set' })
-  await mutate(cdp, { op: 'delete', path: 'Collection A/Set Alpha/VD Inner', kind: 'set' })
+  const nest = await refusedNest(cdp, 'g6nest', { row: head, labels: () => headLabels(cdp) })
+  fold(g, 'nest', 'a refused nest of VD Delta, which the stored group_order never ranked, returns it to the end it was ranked from while VD Gamma\'s reorder over it stands', nest.pass, show(nest))
 
   // F6 · an empty Location-sorted flat Cards view draws no band and no gap under its Set cards, as an unsorted one doesn't.
   const emptied = { group: { kind: 'flat' }, set_cards: true, filter: { match: 'all', rules: [{ property_id: '_title', op: 'contains', value: 'VD Nothing Matches' }] } }
@@ -1032,6 +1042,280 @@ async function group6(cdp) {
   await shot(cdp, 'g6-end')
 }
 
+// ── Group 7 — Disclosure and Rows ───────────────────────────────────────────
+
+/** The bundle table's row titled `title` inside `scope`. */
+const bundleRow = (scope, title) => `[...document.querySelectorAll('${scope} .data-row')].find((r) => r.getClientRects().length && r.querySelector('.cell-title-text')?.textContent === ${JSON.stringify(title)})`
+/** A folder row's chevron pressed twice as one double-click, its `aria-expanded` read before, after each press, and once the double-click has settled. */
+async function doubleClickChevron(cdp, rowExpr) {
+  const at = await boxOf(cdp, `(${rowExpr}).querySelector('${DRIFT.chevron}')`)
+  const open = () => cdp.evaluate(`(${rowExpr})?.getAttribute('aria-expanded') ?? null`)
+  const seen = [await open()]
+  await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: at.x, y: at.y, button: 'none' })
+  for (const clickCount of [1, 2]) {
+    for (const type of ['mousePressed', 'mouseReleased'])
+      await cdp.send('Input.dispatchMouseEvent', { type, x: at.x, y: at.y, button: 'left', buttons: type === 'mousePressed' ? 1 : 0, clickCount })
+    await sleep(80)
+    seen.push(await open())
+  }
+  await sleep(700)
+  seen.push(await open())
+  return seen
+}
+/** A bundle row's lead cell: its content width, its title's left edge, and its trail's width and whether the trail caps. */
+const bundleLead = (rowExpr) => `(() => {
+  const r = (${rowExpr}); if (!r) return null
+  const cell = r.querySelector('.cell-lead'); const cs = getComputedStyle(cell); const box = cell.getBoundingClientRect(); const trail = r.querySelector('.bundle-trail')
+  return { content: box.width - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight), title: r.querySelector('.cell-title').getBoundingClientRect().left, trail: trail.getBoundingClientRect().width, capped: trail.scrollWidth > trail.clientWidth + 1 }
+})()`
+/** What has focus: whether it's a band head, and whether it sits inside one. */
+const FOCUS = `(() => { const a = document.activeElement; return { label: a?.getAttribute('aria-label') ?? null, cls: String(a?.className ?? '').slice(0, 40), head: !!a?.classList.contains('group-band-head'), inHead: !!a?.closest('.group-band-head') } })()`
+/** The band list's one Tab stop entered, then Tab: answers where each put focus. */
+async function tabThrough(cdp, zone) {
+  await cdp.evaluate(`(${zone}).focus()`)
+  await sleep(200)
+  const entered = await cdp.evaluate(FOCUS)
+  await pressKey(cdp, 'Tab')
+  return { entered, next: await cdp.evaluate(FOCUS) }
+}
+/** Enter on a focused head, twice: answers the head's `aria-expanded`, whether it kept focus, and whether `collapsed_groups` holds `key`, after each. */
+async function enterFolds(cdp, headExpr, viewId, key) {
+  const read = async () => ({ open: await expanded(cdp, headExpr), focused: await cdp.evaluate(`document.activeElement === (${headExpr})`), saved: (viewOnDisk(viewId)?.collapsed_groups ?? []).includes(key) })
+  await cdp.evaluate(`(${headExpr}).focus()`)
+  await pressKey(cdp, 'Enter')
+  await settles(async () => (viewOnDisk(viewId)?.collapsed_groups ?? []).includes(key), 3000)
+  const folded = await read()
+  await pressKey(cdp, 'Enter')
+  await settles(async () => !(viewOnDisk(viewId)?.collapsed_groups ?? []).includes(key), 3000)
+  return { folded, unfolded: await read() }
+}
+const folds = (r) => r.folded.open === 'false' && r.folded.focused && r.folded.saved && r.unfolded.open === 'true' && !r.unfolded.saved
+/** The native menu the context-menu key raises on a focused head, closed once read. */
+async function menuKey(cdp, headExpr) {
+  await cdp.evaluate(`(${headExpr}).focus()`)
+  const rows = await menuByEvent(cdp, headExpr)
+  await pickNative([])
+  return labels(rows)
+}
+const drawn = (expr) => `(() => { const e = (${expr}); return !!e && e.getClientRects().length > 0 && e.getBoundingClientRect().width >= 8 })()`
+/** The view's search, opened from the title's menu and typed into, or emptied. */
+async function search(cdp, query) {
+  const field = `document.querySelector('.detail-title-search')`
+  if (query) {
+    await popNative(cdp, await boxOf(cdp, `document.querySelector('.detail-title-text')`))
+    await pickNative(['Search'])
+    await until('the search field', async () => cdp.evaluate(`!!${field}`), 3000)
+    await typeText(cdp, query)
+  } else {
+    await cdp.evaluate(`${field}.focus(); ${field}.select()`)
+    await pressKey(cdp, 'Backspace')
+    await pressKey(cdp, 'Escape')
+  }
+  await sleep(800)
+}
+/** The sidebar row reading `title`. */
+const sideRow = (title) => `[...document.querySelectorAll('nav .row')].find((r) => r.getClientRects().length && r.textContent.trim() === ${JSON.stringify(title)})`
+/** The Grouping pane's folder list: the one band list drawn outside the sidebar and the view. */
+const PANE_ZONE = `[...document.querySelectorAll('.line-zone')].find((z) => z.getClientRects().length && !z.closest('nav, .sidebar, ${DRIFT.shell}, .cards-view'))`
+const paneRow = (title) => `[...(${PANE_ZONE})?.querySelectorAll('[data-line-row]') ?? []].find((r) => r.getClientRects().length && r.firstElementChild?.textContent === ${JSON.stringify(title)})`
+const paneTitles = (cdp) => cdp.evaluate(`[...(${PANE_ZONE})?.querySelectorAll('[data-line-row]') ?? []].filter((r) => r.getClientRects().length).map((r) => r.firstElementChild.textContent)`)
+/** The Filter's Location tree: the last pane drawn, once the rule's values field opens it. */
+const LOCATION_PANE = `[...document.querySelectorAll('[data-picker-portal]:not([data-dismissal-shield])')].at(-1)`
+const locationRow = (title) => `[...(${LOCATION_PANE}).querySelectorAll('[role=button][data-reveal-host]')].find((r) => r.getClientRects().length && r.textContent === ${JSON.stringify(title)})`
+const locationTitles = (cdp) => cdp.evaluate(`[...(${LOCATION_PANE}).querySelectorAll('[role=button][data-reveal-host]')].filter((r) => r.getClientRects().length).map((r) => r.textContent)`)
+/** Where a tree row's folder glyph sits against the row's content edge: flush reads 0. */
+const leafLead = (rowExpr) => `(() => { const r = (${rowExpr}); if (!r) return null; const glyph = [...r.querySelectorAll('svg')].find((s) => !s.matches('${DRIFT.chevron}')); return glyph.getBoundingClientRect().left - r.getBoundingClientRect().left - parseFloat(getComputedStyle(r).paddingLeft) })()`
+/** The Location rule's tree, opened through the Settings door; `pick` adds the rule first. */
+async function locationTree(cdp, pick) {
+  await door(cdp, 'settings', 'Filter')
+  if (pick) {
+    await mouseClick(cdp, ctl('Filter property'))
+    await until('the property list', async () => cdp.evaluate(`!!${portalRow('Location')}`))
+    await click(cdp, portalRow('Location'))
+    await until('the Location rule', async () => cdp.evaluate(`!!${ctl('Filter values')}`))
+  }
+  await mouseClick(cdp, ctl('Filter values'))
+  await until('the Location tree', async () => cdp.evaluate(`!!${locationRow('Set Alpha')}`))
+  await sleep(400)
+}
+/** One nesting step, in px: the decision's `--disclosure-indent`. */
+const STEP = 14
+const V7_ORDERED = [IDS.beta, IDS.alpha, IDS.subB, IDS.subA]
+
+async function group7(cdp) {
+  const g = '7'
+  const LONG = 'VD Folder Named Long Enough That Its Inner Trail Caps'
+
+  // BC17 · the Trash's and Archive's folder chevron is the shared control.
+  const folder = async (name, page) => {
+    await mutate(cdp, { op: 'createContainer', id: containerId(), parentPath: COLLECTION, kind: 'set', name })
+    await mutate(cdp, { op: 'createPage', id: mintPageId(), parentPath: `${COLLECTION}/${name}`, name: page, seeds: {} })
+    return `${COLLECTION}/${name}`
+  }
+  await mutate(cdp, { op: 'delete', path: await folder(LONG, 'VD Inside'), kind: 'set' })
+  await mutate(cdp, { op: 'archive', path: await folder('VD Shelved', 'VD Shelved Page'), kind: 'set' })
+  await openSettings(cdp, 'Trash')
+  await until('the trashed folder', async () => cdp.evaluate(`!!${bundleRow('.trash-frame', LONG)}`))
+  await sleep(500)
+  const trashFolder = bundleRow('.trash-frame', LONG)
+  const trashSeen = await doubleClickChevron(cdp, trashFolder)
+  bc(g, 17, '7.1', 'the Trash\'s folder chevron opens the folder on a double-click\'s first click and closes it on its second, as the sidebar\'s does', same(trashSeen, ['false', 'true', 'false', 'false']), show(trashSeen))
+  if ((await expanded(cdp, trashFolder)) !== 'true') await mouseClick(cdp, `(${trashFolder}).querySelector('${DRIFT.chevron}')`)
+  await until('the inner row', async () => cdp.evaluate(`!!${bundleRow('.trash-frame', 'VD Inside')}`), 3000).catch(() => {})
+  const outer = await cdp.evaluate(bundleLead(trashFolder))
+  const inner = await cdp.evaluate(bundleLead(bundleRow('.trash-frame', 'VD Inside')))
+  bc(g, 17, '7.1', 'a nested bundle row\'s trail caps at 55% of its cell, measured inside its indent', !!inner && inner.capped && near(inner.content, outer.content - STEP) && near(inner.trail, 0.55 * inner.content, 1.5), show({ outer, inner }))
+  const steps = { bundle: inner && outer && inner.title - outer.title }
+  await shot(cdp, 'g7-trash', `document.querySelector('.trash-frame')`)
+  await closeSettings(cdp)
+
+  await closeAll(cdp)
+  await mouseClick(cdp, VIEWS_BUTTON)
+  await until('the Archive row', async () => cdp.evaluate(`!!${btn('Archive')}`))
+  await pressIn(cdp, btn('Archive'))
+  await until('the archived folder', async () => cdp.evaluate(`!!${bundleRow('.bundle-rows', 'VD Shelved')}`))
+  await closeAll(cdp)
+  await sleep(500)
+  const archiveSeen = await doubleClickChevron(cdp, bundleRow('.bundle-rows', 'VD Shelved'))
+  bc(g, 17, '7.1', 'the Archive\'s folder chevron opens the folder on a double-click\'s first click and closes it on its second', same(archiveSeen, ['false', 'true', 'false', 'false']), show(archiveSeen))
+
+  // BC18 · a band head takes no Tab stop of its own; Enter, the menu key, and focus are the head's as they were.
+  const V7 = tableView(vid('g7table'), 'VD Disclosure')
+  await must(`save ${V7.name}`, ask(cdp, 'views:save', COLLECTION, 'collection', V7, {}))
+  await mouseClick(cdp, VIEWS_BUTTON)
+  await until('the views dropdown', async () => cdp.evaluate(`!!${btn(V7.name)}`))
+  await pressIn(cdp, btn(V7.name))
+  await until('the view again', async () => cdp.evaluate(`!!${dataRow('Page A')}`))
+  await closeAll(cdp)
+  await showView(cdp, V7)
+  const tableTab = await tabThrough(cdp, `document.querySelector('${DRIFT.shell} .line-zone')`)
+  bc(g, 18, 'C-3', 'Tab from the Table\'s band list passes every band chevron and New Page button by', tableTab.entered.head && !tableTab.next.inHead, show(tableTab))
+  const alphaHead = head('Set Alpha')
+  const label = await cdp.evaluate(`({ expanded: (${alphaHead}).getAttribute('aria-expanded'), labeled: [...(${alphaHead}).querySelectorAll('[aria-label]')].map((e) => e.getAttribute('aria-label')).filter((l) => /^(Collapse|Expand) group$/.test(l)) })`)
+  bc(g, 18, 'C-3', 'a band head carries aria-expanded and its chevron no Collapse or Expand label', label.expanded === 'true' && label.labeled.length === 0, show(label))
+  const cursor = await cdp.evaluate(`getComputedStyle(${chevronOf(alphaHead)}).cursor`)
+  bc(g, 18, 'C-3', 'the Table band\'s chevron shows no pointer cursor', cursor !== 'pointer', show(cursor))
+  const tableEnter = await enterFolds(cdp, alphaHead, V7.id, IDS.alpha)
+  reg(g, 'Enter on a focused Table band head folds it in place, focus kept, and saves collapsed_groups; Enter again unfolds it', folds(tableEnter), show(tableEnter))
+  const tableMenu = await menuKey(cdp, alphaHead)
+  reg(g, 'the menu key on a focused Table Set band head opens its menu with New Page', tableMenu.includes('New Page'), show(tableMenu))
+
+  // BC19 · the ghost row draws the data rows' lead cell.
+  await hover(cdp, dataRow('Page C'), 1500)
+  const leads = await cdp.evaluate(`(() => { const read = (row) => { const c = row?.querySelector('.cell-lead'); const rail = c?.querySelector(':scope > .row-rail')?.getBoundingClientRect(); return c && { rail: rail ? [Math.round(rail.left), Math.round(rail.width)] : null, pad: getComputedStyle(c).paddingLeft, left: Math.round(c.getBoundingClientRect().left) } }; return { ghost: read(document.querySelector('.data-row.ghost-row')), data: read(${dataRow('Page C')}) } })()`)
+  bc(g, 19, '7.5', 'the ghost row draws the data rows\' lead cell, gutter included', !!leads.ghost?.rail && same(leads.ghost, leads.data), show(leads))
+  const pageA = await cdp.evaluate(leadOf(`(${dataRow('Page A')}).querySelector('.cell-lead')`))
+  const alpha1 = await cdp.evaluate(leadOf(`(${dataRow('Alpha 1')}).querySelector('.cell-lead')`))
+  steps.table = alpha1.content - pageA.content
+
+  const V7C = cardsView(vid('g7cards'), 'VD Disclosure Cards', { set_cards: false })
+  await showView(cdp, V7C)
+  const cardsTab = await tabThrough(cdp, `[...document.querySelectorAll('.cards-view .line-zone')].find((z) => z.getClientRects().length)`)
+  bc(g, 18, 'C-3', 'Tab from the Cards band list passes every band chevron and New Page button by', cardsTab.entered.head && !cardsTab.next.inHead, show(cardsTab))
+  const cardsEnter = await enterFolds(cdp, head('Set Alpha'), V7C.id, IDS.alpha)
+  reg(g, 'Enter on a focused Cards band head folds it in place, focus kept, and saves collapsed_groups; Enter again unfolds it', folds(cardsEnter), show(cardsEnter))
+  const cardsMenu = await menuKey(cdp, head('Set Alpha'))
+  reg(g, 'the menu key on a focused Cards Set band head opens its menu with New Page', cardsMenu.includes('New Page'), show(cardsMenu))
+
+  // Regression: a search opens every band, a folded one included, and its chevron changes nothing.
+  for (const [kind, view, shown] of [['Table', tableView(vid('g7search'), 'VD Search', { collapsed_groups: [IDS.alpha] }), shownTitles], ['Cards', cardsView(vid('g7searchcards'), 'VD Search Cards', { set_cards: false, collapsed_groups: [IDS.alpha] }), cardTitles]]) {
+    await showView(cdp, view)
+    await search(cdp, 'Page')
+    const opened = { open: await expanded(cdp, head('Set Alpha')), rows: await shown(cdp) }
+    await mouseClick(cdp, chevronOf(head('Set Alpha')))
+    await sleep(600)
+    const pressed = { open: await expanded(cdp, head('Set Alpha')), saved: viewOnDisk(view.id)?.collapsed_groups }
+    await search(cdp, '')
+    const cleared = await headLabels(cdp)
+    reg(g, `a ${kind} search opens every band, a folded one included, and its chevron changes nothing`, opened.open === 'true' && opened.rows.includes('Page A') && pressed.open === 'true' && same(pressed.saved, [IDS.alpha]) && cleared.includes('Set Beta'), show({ opened, pressed, cleared }))
+  }
+
+  // Regression: the sidebar's chevron, and one nesting step across the Table, the bundle table, and the sidebar.
+  const collection = sideRow('Collection A')
+  if (await cdp.evaluate(`!!${sideRow('Set Alpha')}`)) await mouseClick(cdp, chevronOf(collection))
+  await sleep(400)
+  await mouseClick(cdp, chevronOf(collection))
+  const sets = await settles(async () => cdp.evaluate(`!!${sideRow('Set Alpha')} && !!${sideRow('Set Beta')}`), 3000)
+  reg(g, 'the sidebar\'s chevron expands a Collection, drawing its Sets', sets, show(sets))
+  // The step is read between two nested rows, since a Collection's own row takes the section's padding rather than the nested rows' lead.
+  if (sets) {
+    await mouseClick(cdp, chevronOf(sideRow('Set Beta')))
+    if (await settles(async () => cdp.evaluate(`!!${sideRow('Sub-Set A')}`), 3000))
+      steps.sidebar = await cdp.evaluate(`(${sideRow('Sub-Set A')}).firstElementChild.getBoundingClientRect().left - (${sideRow('Set Beta')}).firstElementChild.getBoundingClientRect().left`)
+    await mouseClick(cdp, chevronOf(sideRow('Set Beta')))
+  }
+  await mouseClick(cdp, chevronOf(collection))
+  reg(g, 'rows nest by one 14px step in the Table, the bundle table, and the sidebar', Object.keys(steps).length === 3 && Object.values(steps).every((s) => near(s, STEP)), show(steps))
+
+  // BC20 · Hide Disclosure Chevrons reaches the sidebar and the Grouping pane through one rule.
+  await openSettings(cdp, 'Interface')
+  const caption = await cdp.evaluate(`(() => { let el = ${SWITCH('Hide Disclosure Chevrons')}; while (el && !/gutter/.test(el.textContent)) el = el.parentElement; return el?.textContent.replace('Hide Disclosure Chevrons', '').trim() ?? null })()`)
+  await closeSettings(cdp)
+  bc(g, 20, 'C-4', 'Hide Disclosure Chevrons\' caption names the sidebar and the Grouping pane', /sidebar/.test(caption ?? '') && /Grouping pane/.test(caption ?? ''), show(caption))
+  const sideGeometry = `(() => { const r = ${collection}; const cs = getComputedStyle(r); const box = r.getBoundingClientRect(); return { left: box.left, icon: r.querySelector('.row-icon').getBoundingClientRect().left - box.left - parseFloat(cs.paddingLeft), gap: parseFloat(cs.columnGap) } })()`
+  const shownGeometry = await cdp.evaluate(sideGeometry)
+  await setting(cdp, 'Hide Disclosure Chevrons', true)
+  const hiddenGeometry = await cdp.evaluate(sideGeometry)
+  bc(g, 20, 'C-4', 'with Hide Disclosure Chevrons on, a sidebar row keeps its 8px gap where the chevron sat and its hover fill stays where it reaches with chevrons shown', near(hiddenGeometry.left, shownGeometry.left) && near(hiddenGeometry.icon, hiddenGeometry.gap), show({ shownGeometry, hiddenGeometry }))
+
+  const V7O = tableView(vid('g7order'), 'VD Location Order', { group_order: V7_ORDERED })
+  await showView(cdp, V7O)
+  await door(cdp, 'settings', 'Group')
+  await until('the Grouping list', async () => cdp.evaluate(`!!${paneRow('Set Beta')}`))
+  const paneChevron = await cdp.evaluate(drawn(`(${paneRow('Set Beta')}).querySelector('${DRIFT.chevron}')`))
+  reg(g, 'with Hide Disclosure Chevrons on, the Grouping pane\'s folder list draws no chevron', !paneChevron, show(paneChevron))
+  await closeAll(cdp)
+  const kept = { band: await cdp.evaluate(drawn(chevronOf(head('Set Beta')))) }
+  await locationTree(cdp, true)
+  kept.location = await cdp.evaluate(drawn(`(${locationRow('Set Beta')}).querySelector('${DRIFT.chevron}')`))
+  await closeAll(cdp)
+  await openSettings(cdp, 'Trash')
+  await until('the trashed folder', async () => cdp.evaluate(`!!${trashFolder}`))
+  kept.bundle = await cdp.evaluate(drawn(`(${trashFolder}).querySelector('${DRIFT.chevron}')`))
+  await closeSettings(cdp)
+  reg(g, 'bands, the bundle table, and the Location tree keep their chevrons under Hide Disclosure Chevrons', kept.band && kept.location && kept.bundle, show(kept))
+  await setting(cdp, 'Hide Disclosure Chevrons', false)
+
+  // BC21 · the Location tree takes the view's custom Set order and the Grouping tree's leaf spacing.
+  await door(cdp, 'settings', 'Group')
+  await until('the Grouping list', async () => cdp.evaluate(`!!${paneRow('Set Alpha')}`))
+  const groupingLeaf = await cdp.evaluate(leafLead(`(${paneRow('Set Alpha')}).firstElementChild`))
+  const paneShut = await paneTitles(cdp)
+  await mouseClick(cdp, chevronOf(paneRow('Set Beta')))
+  await sleep(500)
+  const paneOpen = await paneTitles(cdp)
+  await mouseClick(cdp, chevronOf(paneRow('Set Beta')))
+  await sleep(500)
+  const paneShutAgain = await paneTitles(cdp)
+  reg(g, 'the Grouping pane\'s folder list expands and collapses by its chevron', !paneShut.includes('Sub-Set A') && paneOpen.includes('Sub-Set A') && paneOpen.includes('Sub-Set B') && !paneShutAgain.includes('Sub-Set A'), show({ paneShut, paneOpen, paneShutAgain }))
+  await locationTree(cdp)
+  const locationLeaf = await cdp.evaluate(leafLead(locationRow('Set Alpha')))
+  const tops = (await locationTitles(cdp)).filter((t) => ['Set Alpha', 'Set Beta'].includes(t))
+  await mouseClick(cdp, chevronOf(locationRow('Set Beta')))
+  await sleep(500)
+  const opened = (await locationTitles(cdp)).filter((t) => t.startsWith('Sub-Set'))
+  await mouseClick(cdp, chevronOf(locationRow('Set Beta')))
+  await sleep(500)
+  const shut = (await locationTitles(cdp)).filter((t) => t.startsWith('Sub-Set'))
+  await closeAll(cdp)
+  bc(g, 21, 'C-5', 'the Location tree lists Set Beta before Set Alpha and Sub-Set B before Sub-Set A under the view\'s custom Set order', same(tops, ['Set Beta', 'Set Alpha']) && same(opened, ['Sub-Set B', 'Sub-Set A']), show({ tops, opened }))
+  bc(g, 21, 'C-5', 'a Location tree leaf sits flush where the Grouping list\'s does', near(locationLeaf, groupingLeaf), show({ locationLeaf, groupingLeaf }))
+  reg(g, 'the Filter\'s Location tree expands and collapses by its chevron', opened.length === 2 && shut.length === 0, show({ opened, shut }))
+  await shot(cdp, 'g7-trees')
+
+  // F7 · the Grouping pane's refused nest of a Set the stored group_order never ranked returns it to the slot its drop was ranked from.
+  const nest = await refusedNest(cdp, 'g7nest', {
+    open: async () => {
+      await door(cdp, 'settings', 'Group')
+      await until('the Grouping list', async () => cdp.evaluate(`!!${paneRow('Set Alpha')}`))
+    },
+    row: paneRow,
+    labels: () => paneTitles(cdp),
+  })
+  fold(g, 'nest', 'a refused nest of VD Delta in the Grouping pane\'s Set list, which the stored group_order never ranked, returns it to the end it was ranked from while VD Gamma\'s reorder over it stands', nest.pass, show(nest))
+  await shot(cdp, 'g7-end')
+}
+
 // ── The run ─────────────────────────────────────────────────────────────────
 
 let cdp
@@ -1040,7 +1324,7 @@ try {
   await seed(cdp)
   await mouseClick(cdp, `[...document.querySelectorAll('.row span')].findLast((e) => e.textContent.trim() === 'Collection A')`)
   await sleep(1200)
-  for (const g of BUILT) if (GROUPS.has(g)) await { 2: group2, 3: group3, 4: group4, 5: group5, 6: group6 }[g](cdp)
+  for (const g of BUILT) if (GROUPS.has(g)) await { 2: group2, 3: group3, 4: group4, 5: group5, 6: group6, 7: group7 }[g](cdp)
   cdp.close()
 } catch (e) {
   item(0, 0, '—', 'the run reached its end', false, String(e?.stack ?? e))

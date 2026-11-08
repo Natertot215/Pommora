@@ -1,6 +1,6 @@
 ## Views Drive — Matrix
 
-The drive's cases, derived from the *Views Cleanup — Implementation Plan*'s *§Behavior Changes* and written against each phase's AFTER, its patch in `Planning/Views Cleanup/Scouts/Planning/Phases/`. Groups 2 to 10 follow the plan phase of their number. A group holds every behavior change its phase lands, crossed with each surface, input, and setting that reaches it, beside the interactions its refactor rewired on those surfaces, so a regression shows. Each case names its decision: `BC<n> <id>` is the numbered behavior change and its decision, owned by the group's phase, so it reads `AWAIT` at a head before that phase and must hold from it on; `R P<n>` is a regression crossing of phase `n`'s rewiring, owned by phase 0, so it holds at every head, the baseline included. `F<n> <tag>` is a behavior phase `n`'s checkpoint fold lands, owned by phase `n` like a behavior change. Every case prints as `g<group> [P<owner> <decision>] <name>`, so a run reads against the tables below line for line. Groups 2 to 6 are built; groups 7 to 10 are built at their own checkpoints from the rows below.
+The drive's cases, derived from the *Views Cleanup — Implementation Plan*'s *§Behavior Changes* and written against each phase's AFTER, its patch in `Planning/Views Cleanup/Scouts/Planning/Phases/`. Groups 2 to 10 follow the plan phase of their number. A group holds every behavior change its phase lands, crossed with each surface, input, and setting that reaches it, beside the interactions its refactor rewired on those surfaces, so a regression shows. Each case names its decision: `BC<n> <id>` is the numbered behavior change and its decision, owned by the group's phase, so it reads `AWAIT` at a head before that phase and must hold from it on; `R P<n>` is a regression crossing of phase `n`'s rewiring, owned by phase 0, so it holds at every head, the baseline included. `F<n> <tag>` is a behavior phase `n`'s checkpoint fold lands, owned by phase `n` like a behavior change. Every case prints as `g<group> [P<owner> <decision>] <name>`, so a run reads against the tables below line for line. Groups 2 to 7 are built; groups 8 to 10 are built at their own checkpoints from the rows below.
 
 #### Dimensions
 
@@ -13,7 +13,7 @@ The drive's cases, derived from the *Views Cleanup — Implementation Plan*'s *�
 
 **A held write:** the drive wraps the host's `mutate` and `views:save` handlers in the main process, so a case can hold one call's reply or refuse it, and restores them at the end. It widens a round trip of a few milliseconds to seconds, which is what BC1, BC2, BC12, BC13, and F6 nest read inside.
 
-**Drift:** selectors that changed between closed phases sit in one table, `DRIFT`, keyed by `--landed`: `.table-view` reads `.table-shell` from Phase 4 (Task 4-3); the Trash's `.trash-head-name` and `.trash-head-date` read `.col-header` cells from Phase 4 (Task 4-1); the dropdown's placeholder is found by `More` before Phase 3 and `More actions` from it (Task 3-3); the page-icon switch is found by `Page Icons` (Table) or `Hide Icons` (Cards) before Phase 3 and `Title Icons` from it. A selector difference is drift; a behavior difference is the case itself, so BC3 and BC6 assert the new label while their regression crossings find the control by the drifted one.
+**Drift:** selectors that changed between closed phases sit in one table, `DRIFT`, keyed by `--landed`: `.table-view` reads `.table-shell` from Phase 4 (Task 4-3); the Trash's `.trash-head-name` and `.trash-head-date` read `.col-header` cells from Phase 4 (Task 4-1); the dropdown's placeholder is found by `More` before Phase 3 and `More actions` from it (Task 3-3); the page-icon switch is found by `Page Icons` (Table) or `Hide Icons` (Cards) before Phase 3 and `Title Icons` from it; the disclosure chevron's `[data-drop-outline]` reads `[data-chevron]` from Phase 7 (Task 7-1); the bundle table's `.bundle-date` reads its row's last `.data-cell` from Phase 7 (its checkpoint fold). A selector difference is drift; a behavior difference is the case itself, so BC3 and BC6 assert the new label while their regression crossings find the control by the drifted one.
 
 #### Pruned
 
@@ -31,7 +31,7 @@ The drive's cases, derived from the *Views Cleanup — Implementation Plan*'s *�
 - **Selection per row (R P5):** `TableView`'s per-row subscription draws the same ring; no case reads the selection differently, and the view's search, rows, and creates already re-render every row the phase touched.
 - **The search's keys (R P2):** `Pipeline/search.test.ts` pins `searchKeysOf`; the host's memo is unchanged.
 - **The autocomplete's heading list (R P7):** `UIX/Menus/DisclosureRow.test.ts` pins `unfolded`, which `openHeadingRows`' cases followed into.
-- **The Grouping pane's Set list under the F6 nest:** it keeps the unranked gap until Phase 7, so its crossing is group 7's.
+- **A band's chevron press (R P7):** group 6's three chevron cases fold and unfold a Table Set band and fold a Cards Set band through the drifted chevron.
 - **Undo of a column drag and resize:** neither was undoable before or after; no decision names it.
 
 #### Group 2 — The Views Root and the Live View
@@ -165,24 +165,33 @@ The drive's cases, derived from the *Views Cleanup — Implementation Plan*'s *�
 
 | Case | Surface · Input | Expected | Decision |
 | --- | --- | --- | --- |
-| the Trash's / Archive's folder chevron opens and closes the folder on a double-click, as the sidebar's does | Trash and Archive · chevron double-click | the folder opens on the first click and closes on the second | BC17 7.1 |
-| a nested bundle row's trail caps against its indented cell | Trash · nested row | the trail's right edge sits inside the indented title cell | BC17 7.1 |
-| Tab from the band list passes no band chevron or New Page button | Table and Cards bands · Tab | the next focus is outside the band list | BC18 C-3 |
-| Enter on a focused band head folds and unfolds it | Table and Cards band heads · Enter | `aria-expanded` flips and `collapsed_groups` follows | BC18 C-3 |
-| the menu key on a focused band head opens its menu | band head · `contextmenu` with no press | the native band menu with New Page | BC18 C-3 |
-| the band head carries aria-expanded; its chevron carries no label | band head | `aria-expanded` on the head, no `Collapse group` label | BC18 C-3 |
+| the Trash's folder chevron opens the folder on a double-click's first click and closes it on its second, as the sidebar's does | Trash · chevron double-click | `aria-expanded` reads false, true, false, and stays false | BC17 7.1 |
+| a nested bundle row's trail caps at 55% of its cell, measured inside its indent | Trash · a folder's inner row | the inner cell's content box is the folder row's less one step, and the capped trail is 55% of it | BC17 7.1 |
+| the Archive's folder chevron opens the folder on a double-click's first click and closes it on its second | Archive · chevron double-click | as the Trash | BC17 7.1 |
+| Tab from the Table's band list passes every band chevron and New Page button by | Table Set bands · the list's Tab stop, then Tab | the list hands focus to a head; Tab lands outside every head | BC18 C-3 |
+| a band head carries aria-expanded and its chevron no Collapse or Expand label | Table Set band head | `aria-expanded` on the head; no `Collapse group` or `Expand group` inside it | BC18 C-3 |
 | the Table band's chevron shows no pointer cursor | Table band chevron | computed `cursor` isn't `pointer` | BC18 C-3 |
-| the ghost row draws the data rows' lead cell, gutter included | Table ghost row | its lead cell holds the gutter and the same left padding as a data row at its depth | BC19 7.5 |
+| Enter on a focused Table band head folds it in place, focus kept, and saves collapsed_groups; Enter again unfolds it | Table Set band head · Enter, twice | `aria-expanded` flips, focus stays on the head, `collapsed_groups` follows | R P7 |
+| the menu key on a focused Table Set band head opens its menu with New Page | Table Set band head · `contextmenu` with no press | the native band menu holds New Page | R P7 |
+| the ghost row draws the data rows' lead cell, gutter included | Table ghost row | its lead cell holds the rail at the data row's place and width, with the data row's padding | BC19 7.5 |
+| Tab from the Cards band list passes every band chevron and New Page button by | Cards Set bands · the list's Tab stop, then Tab | the list hands focus to a head; Tab lands outside every head, on a card | BC18 C-3 |
+| Enter on a focused Cards band head folds it in place, focus kept, and saves collapsed_groups; Enter again unfolds it | Cards Set band head · Enter, twice | as the Table | R P7 |
+| the menu key on a focused Cards Set band head opens its menu with New Page | Cards Set band head · `contextmenu` with no press | as the Table | R P7 |
+| a Table search opens every band, a folded one included, and its chevron changes nothing | Table, Set Alpha folded · search, chevron press | Set Alpha drawn open with its rows; `collapsed_groups` unchanged; every band back once the search empties | R P7 |
+| a Cards search opens every band, a folded one included, and its chevron changes nothing | Cards, Set Alpha folded · the same | the same | R P7 |
+| the sidebar's chevron expands a Collection, drawing its Sets | sidebar · chevron press | its Sets draw | R P7 |
+| rows nest by one 14px step in the Table, the bundle table, and the sidebar | Table rows, Trash rows, sidebar rows | each depth's lead steps 14px; the sidebar's is read between two nested rows, since a Collection's own row takes the section's padding | R P7 |
 | Hide Disclosure Chevrons' caption names the sidebar and the Grouping pane | Settings · Interface | the caption names both | BC20 C-4 |
-| with Hide Disclosure Chevrons on, a sidebar row keeps its 8px gap where the chevron sat | sidebar · setting on | the icon sits about 2px right of the old place; the hover fill reaches 6px further left | BC20 C-4 |
-| with Hide Disclosure Chevrons on, the Grouping pane's folder list hides its chevrons and the Location tree keeps them | Group and Filter panes · setting on | no `[data-chevron]` drawn in the Grouping list; drawn in the Location tree | BC20 C-4 |
-| the Location tree lists folders in the view's custom Set order with the Grouping tree's leaf spacing | Filter · Location value, `group_order` set | Sub-Set B listed before Sub-Set A; a leaf's lead equals the Grouping list's | BC21 C-5 |
-| a band's chevron press folds and persists it, Table and Cards | bands · chevron press | as group 6 (the chevron now `[data-chevron]`) | R P7 |
-| a search opens every band, a folded one included, and its chevron changes nothing | Table and Cards · search | every band drawn open; `collapsed_groups` unchanged | R P7 |
-| the Grouping pane's folder list and the Filter's Location tree expand and collapse | both panes · chevron press | children show and hide | R P7 |
-| the sidebar's chevron expands a Collection | sidebar · chevron press | its Sets draw | R P7 |
-| rows nest by one 14px step in the Table, the Bundle table, and the sidebar | each, nested rows | each depth's lead steps by the `--disclosure-indent` token | R P7 |
-| bands, the Bundle table, and the Location tree keep their chevrons under Hide Disclosure Chevrons | each · setting on | `[data-chevron]` drawn | R P7 |
+| with Hide Disclosure Chevrons on, a sidebar row keeps its 8px gap where the chevron sat and its hover fill stays where it reaches with chevrons shown | sidebar · setting off, then on | the row's left edge is unchanged; its icon sits the row's gap past its content edge | BC20 C-4 |
+| with Hide Disclosure Chevrons on, the Grouping pane's folder list draws no chevron | Group pane · setting on | no chevron drawn | R P7 |
+| bands, the bundle table, and the Location tree keep their chevrons under Hide Disclosure Chevrons | each · setting on | each chevron drawn | R P7 |
+| the Grouping pane's folder list expands and collapses by its chevron | Group pane · chevron press, twice | the sub-Sets show, then hide | R P7 |
+| the Location tree lists Set Beta before Set Alpha and Sub-Set B before Sub-Set A under the view's custom Set order | Filter · Location value, `group_order` Set Beta first | the tree's order | BC21 C-5 |
+| a Location tree leaf sits flush where the Grouping list's does | Filter's Location tree and the Group pane · Set Alpha | the leaf's glyph sits at its row's content edge in both | BC21 C-5 |
+| the Filter's Location tree expands and collapses by its chevron | Filter · Location value, chevron press, twice | the sub-Sets show, then hide | R P7 |
+| a refused nest of VD Delta in the Grouping pane's Set list, which the stored group_order never ranked, returns it to the end it was ranked from while VD Gamma's reorder over it stands | Group pane's Set list, `group_order` ranking every Set but VD Delta, Set Alpha holding a sub-Set · VD Delta's row dragged into Set Alpha, its `moveSet` held 3.5 s and refused, VD Gamma's row dragged above Set Beta inside the hold | as group 6's F6 nest, read from the pane's rows | F7 nest |
+
+**BC18's and BC20's held halves:** at Phase 6's head the band head already toggled on Enter (`LineRow`'s `open`), carried `aria-expanded`, and opened its menu on `contextmenu`; the Grouping pane already drew no chevron under the setting (`GroupFrame` read it), and the old sidebar rule reached only `.row`, which the Location tree's rows don't wear. Tasks 7-2 and 7-4 rewired these without changing them on screen, so their crossings are regressions, and each behavior change's cases assert what changed: the head's Tab stops, the chevron's label and cursor, the caption, and the sidebar row's geometry.
 
 #### Group 8 — View Tiles
 
