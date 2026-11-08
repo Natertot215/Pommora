@@ -1,6 +1,6 @@
-import type { ActionItem } from './menuModel'
+import { type ActionItem, joinGroups } from './menuModel'
 import type { ViewButton, ViewStyle } from '../Nexus/schemas'
-import { iconLabel, viewsLabel } from './toggleLabels'
+import { shownLabel } from './toggleLabels'
 
 type ViewStyleAction = 'style-dropdown' | 'style-toolbar'
 
@@ -14,6 +14,14 @@ type EmbedTitleMenuAction =
   | `size-${number}`
 
 type EmbedAreaMenuAction = 'show-title' | 'new-view' | 'toggle-views' | ViewStyleAction
+
+type ViewRowAction = 'rename' | 'icon' | 'color' | 'titles' | 'duplicate' | 'delete'
+
+interface ViewRowMenuContext {
+  titlesShown?: boolean
+  deletable: boolean
+  duplicable: boolean
+}
 
 const EMBED_TITLE_SIZES = [1, 2, 3, 4, 5, 6] as const
 
@@ -41,7 +49,7 @@ export function embedTitleMenuItems(
 ): ActionItem<EmbedTitleMenuAction>[] {
   return [
     { label: 'Edit Icon', action: 'change-icon' },
-    { label: iconLabel(iconShown), action: 'toggle-icon' },
+    { label: shownLabel(iconShown, 'Icon'), action: 'toggle-icon' },
     {
       label: 'Title Size',
       submenu: EMBED_TITLE_SIZES.map((n) => ({
@@ -51,7 +59,7 @@ export function embedTitleMenuItems(
       })),
     },
     { label: 'Hide Title', action: 'hide-title', separatorBefore: true },
-    { label: viewsLabel(viewsShown), action: 'toggle-views' },
+    { label: shownLabel(viewsShown, 'Views'), action: 'toggle-views' },
   ]
 }
 
@@ -63,7 +71,7 @@ export function embedAreaMenuItems(current: {
   return [
     ...(current.titleShown ? [] : [{ label: 'Show Title', action: 'show-title' as const }]),
     { label: 'New View', action: 'new-view' },
-    { label: viewsLabel(current.viewsShown), action: 'toggle-views' },
+    { label: shownLabel(current.viewsShown, 'Views'), action: 'toggle-views' },
     styleRow(current.viewStyle),
   ]
 }
@@ -71,10 +79,32 @@ export function embedAreaMenuItems(current: {
 export function viewButtonMenuItems(current: {
   viewButton: ViewButton
 }): ActionItem<ViewButtonMenuAction>[] {
-  return [
-    {
-      label: current.viewButton === 'labeled' ? 'Hide Title' : 'Show Title',
-      action: 'toggle-title',
-    },
-  ]
+  return [{ label: shownLabel(current.viewButton === 'labeled', 'Title'), action: 'toggle-title' }]
+}
+
+const itemRows = (ctx: ViewRowMenuContext, glyphs = false): ActionItem<ViewRowAction>[] => [
+  {
+    label: 'Duplicate',
+    action: 'duplicate',
+    disabled: !ctx.duplicable,
+    ...(glyphs && { icon: 'copy' }),
+  },
+  { label: 'Delete', action: 'delete', disabled: !ctx.deletable, ...(glyphs && { icon: 'trash' }) },
+]
+
+export const viewItemMenuItems = (ctx: ViewRowMenuContext): ActionItem<ViewRowAction>[] =>
+  joinGroups(itemRows(ctx, true).map((row) => [row]))
+
+export function viewRowMenuItems(ctx: ViewRowMenuContext): ActionItem<ViewRowAction>[] {
+  return joinGroups<ViewRowAction>([
+    [
+      { label: 'Rename', action: 'rename' },
+      { label: 'Edit Icon', action: 'icon' },
+      { label: 'Edit Color', action: 'color' },
+      ...(ctx.titlesShown === undefined
+        ? []
+        : [{ label: shownLabel(ctx.titlesShown, 'Titles'), action: 'titles' as const }]),
+    ],
+    itemRows(ctx),
+  ])
 }

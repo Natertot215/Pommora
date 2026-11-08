@@ -1,5 +1,5 @@
 import { type ActionItem, joinGroups } from './menuModel'
-import { iconLabel } from './toggleLabels'
+import { shownLabel } from './toggleLabels'
 
 export type NexusIconAction = 'editIcon' | 'addPhoto' | 'editPhoto' | 'resetIcon'
 
@@ -68,7 +68,7 @@ export function titleMenuItems<A = never>(
     ...(opts.iconRows ?? [{ label: 'Edit Icon', action: 'editIcon' as const }]),
     ...(opts.iconHidden === undefined
       ? []
-      : [{ label: iconLabel(!opts.iconHidden), action: 'toggleIcon' as const }]),
+      : [{ label: shownLabel(!opts.iconHidden, 'Icon'), action: 'toggleIcon' as const }]),
   ]
 }
 

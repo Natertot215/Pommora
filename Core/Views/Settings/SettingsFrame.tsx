@@ -3,11 +3,12 @@ import { ZOOM } from '../../Settings/personalization'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import { entityIcon } from '../../Assets/entityIconPolicy'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
-import { trailOf, findCollection, findSet } from '../../Nexus/treeIndex'
+import { trailOf } from '../../Nexus/treeIndex'
 import { SETTINGS_PANE_FLOOR } from '@pommora/uix/Menus/frames.css'
 import { useSession } from '../../Session/store'
 import { personalizationOf } from '../../Session/configSlice'
-import { containerSchema, owningCollection } from '../../Nexus/treePatch'
+import { containerSchema, findContainerById, owningCollection } from '../../Nexus/treePatch'
+import { isContainer } from '../../Nexus/entities'
 import { viewGlyph } from '../viewIcon'
 import { PropertyFrame } from '../../Properties/Schema/PropertyFrame'
 import { chevronRows, type SettingsPane, VIEW_PANES, ViewPane, type ViewPaneId } from './ViewPane'
@@ -39,13 +40,8 @@ export function SettingsFrame(): React.JSX.Element | null {
   const selection = useSession((st) => st.selection)
   const tree = useSession((st) => st.tree)
   const scope = useViewTileScope()
-  const selectionNode =
-    selection.kind === 'collection'
-      ? findCollection(tree, selection.id)
-      : selection.kind === 'set'
-        ? findSet(tree, selection.id)
-        : undefined
-  const node = scope?.source ?? selectionNode
+  const node =
+    scope?.source ?? (tree && isContainer(selection) ? findContainerById(tree, selection.id) : null)
   const schemaCollection = node && owningCollection(tree, node)
   if (!node || !schemaCollection) return null
   return <ContainerSettings node={node} schemaCollection={schemaCollection} />
@@ -83,8 +79,28 @@ function ContainerSettings({
     void saveView(view, { view_scale: f === ZOOM.default ? undefined : f })
   }
 
+  const footing = scope ? (
+    <MenuFooting
+      leading={
+        <FooterLockButton
+          ariaLabel={lockLabel(scope.locked, 'View Configuration')}
+          locked={scope.locked}
+          onToggle={() => scope.setLocked(!scope.locked)}
+        />
+      }
+      trailing={<NavTrail segments={trailOf(tree, node)} iconSize="control" overScroll={false} />}
+    />
+  ) : (
+    <MenuFooting
+      leading={<ScalePicker ariaLabel="View Scale" value={viewScale} onPick={setViewScale} />}
+      trailing={
+        <FooterIconButton icon="ellipsis" ariaLabel="More actions" onClick={() => {}} disabled />
+      }
+    />
+  )
+
   const root = (
-    <>
+    <MenuScrollFrame footer={footing}>
       <InlineEditHeader
         value={scope ? view.name : node.title}
         readOnly={configLocked}
@@ -99,37 +115,6 @@ function ContainerSettings({
       />
       <MenuSeparator flush />
       <MenuIndex sections={[{ rows: chevronRows(ENTRIES, setPane, frozen) }]} />
-    </>
-  )
-
-  const footing = (
-    <MenuFooting
-      leading={<ScalePicker ariaLabel="View Scale" value={viewScale} onPick={setViewScale} />}
-      trailing={
-        <FooterIconButton icon="ellipsis" ariaLabel="More actions" onClick={() => {}} disabled />
-      }
-    />
-  )
-  const plainRoot = <MenuScrollFrame footer={footing}>{root}</MenuScrollFrame>
-
-  const scopedRoot = scope && (
-    <MenuScrollFrame
-      footer={
-        <MenuFooting
-          leading={
-            <FooterLockButton
-              ariaLabel={lockLabel(scope.locked, 'View Configuration')}
-              locked={scope.locked}
-              onToggle={() => scope.setLocked(!scope.locked)}
-            />
-          }
-          trailing={
-            <NavTrail segments={trailOf(tree, node)} iconSize="control" overScroll={false} />
-          }
-        />
-      }
-    >
-      {root}
     </MenuScrollFrame>
   )
 
@@ -149,7 +134,7 @@ function ContainerSettings({
     <FrameSlide
       {...SETTINGS_PANE_FLOOR}
       open={detailPane !== null}
-      root={scopedRoot || plainRoot}
+      root={root}
       detail={detailPane && detailFor(detailPane)}
     />
   )

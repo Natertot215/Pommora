@@ -1,7 +1,6 @@
 import { globalStyle, style } from '@vanilla-extract/css'
 import { menuAnchor } from '@pommora/uix/Menus/menuAnchor'
 import { stack } from '@pommora/uix/Theme/stack'
-import { vars } from '@pommora/uix/Theme/color.css'
 
 // ── KNOBS — the toolbar menu button geometry (tune here) ──
 const BUTTON = {
@@ -28,11 +27,3 @@ globalStyle(`${button} button`, { gap: 0 })
 export const buttonSlot = style({ display: 'contents' })
 
 export const chrome = { wrapper, button, anchor }
-
-export const chevronButton = style({ color: vars.color.label.secondary })
-
-/** The views list's closing row, below every view and outside their reorder: its text reads as a view's chevron does, its glyph and lock a step quieter. */
-export const archiveRow = style({ color: vars.color.label.secondary })
-export const archiveGlyph = style({ color: vars.color.label.tertiary })
-export const archiveDivider = style({})
-globalStyle(`${archiveDivider} > *`, { background: vars.color.border.light })

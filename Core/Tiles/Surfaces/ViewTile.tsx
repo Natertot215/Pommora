@@ -58,9 +58,8 @@ import {
 } from '@pommora/uix/Elements/view-strip.css'
 import * as s from './view-tile.css'
 import { popMenu } from '../../Actions/menuActions'
-import { viewsLabel } from '../../Actions/toggleLabels'
-import { embedAreaMenuItems, embedTitleMenuItems } from '../../Actions/viewMenus'
-import { viewRowMenuItems } from '../../Actions/viewRowMenu'
+import { shownLabel } from '../../Actions/toggleLabels'
+import { embedAreaMenuItems, embedTitleMenuItems, viewRowMenuItems } from '../../Actions/viewMenus'
 import { useLatest, useStableApi } from '@pommora/uix/Utilities/stableApi'
 
 function coerceEmbeddedView(raw: unknown, id: string): SavedView {
@@ -519,7 +518,7 @@ export function ViewTile({
       <button
         type="button"
         className={settingsBtn}
-        aria-label={viewsLabel(viewsShown)}
+        aria-label={shownLabel(viewsShown, 'Views')}
         onClick={() => {
           reveal.press()
           toggleViews()

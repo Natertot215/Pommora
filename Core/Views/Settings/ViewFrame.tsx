@@ -34,10 +34,10 @@ import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
 import { chooseColor, chooseIcon, useIconChoice } from '../../Assets/IdentityChoice'
 import { ARCHIVE_ICON, ARCHIVE_TITLE } from '../../Archive/archiveLabel'
 import { useSession } from '../../Session/store'
-import * as vd from '../../Interface/Toolbar/toolbar-menu.css'
+import * as vd from './view-frame.css'
 import { dialer } from '../../Platform/dialer'
 import { EDITOR_MENU, popMenu } from '../../Actions/menuActions'
-import { viewItemMenuItems, viewRowMenuItems } from '../../Actions/viewRowMenu'
+import { viewItemMenuItems, viewRowMenuItems } from '../../Actions/viewMenus'
 import { selectTargetOf } from '../../Navigation/navRef'
 
 async function deleteViewWithUndo(

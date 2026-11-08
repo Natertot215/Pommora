@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { footerLabel } from '../../Actions/toggleLabels'
+import { shownLabel } from '../../Actions/toggleLabels'
 import type { WindowTarget } from '../../Navigation/navRef'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { BASE_FEEL } from '@pommora/uix/Animations/feel'
@@ -112,7 +112,7 @@ function PageWindowBody({
               bar: footer,
               open: footerOpen,
               onOpenChange: setFooterOpen,
-              label: footerLabel,
+              label: (shown) => shownLabel(shown, 'Footer'),
               lead: footerLead,
             }
           : undefined

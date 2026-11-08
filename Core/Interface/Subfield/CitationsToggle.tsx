@@ -1,4 +1,4 @@
-import { citationsLabel } from '../../Actions/toggleLabels'
+import { shownLabel } from '../../Actions/toggleLabels'
 import { text } from '@pommora/uix/Theme/typography.css'
 import { onActivateClick } from '@pommora/uix/Interactions/activate'
 import { citationsVisible, useSession } from '../../Session/store'
@@ -11,7 +11,7 @@ export function CitationsToggle({ page }: { page: SubfieldPage | null }): React.
   const shown = useSession((s) => citationsVisible(s, target?.id))
   const toggle = useSession((s) => s.toggleCitations)
   if (stats.citations === 0 || !target) return null
-  const label = citationsLabel(shown)
+  const label = shownLabel(shown, 'Footnotes')
   return (
     <button
       type="button"

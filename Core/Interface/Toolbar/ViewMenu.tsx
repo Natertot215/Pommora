@@ -3,10 +3,10 @@ import { MenuDropdown } from '@pommora/uix/Menus/MenuDropdown'
 import { useSession } from '../../Session/store'
 import { containerSchema, topContainerOf } from '../../Nexus/treePatch'
 import { namesContainer } from '../../Nexus/entities'
-import { pickView } from '../views'
-import { ViewFrame } from './ViewFrame'
-import { viewGlyph } from '../viewIcon'
-import * as s from '../../Interface/Toolbar/toolbar-menu.css'
+import { useActiveView } from '../../Views/Host/liveView'
+import { ViewFrame } from '../../Views/Settings/ViewFrame'
+import { viewGlyph } from '../../Views/viewIcon'
+import * as s from './toolbar-menu.css'
 import { popMenu } from '../../Actions/menuActions'
 import { viewButtonMenuItems } from '../../Actions/viewMenus'
 
@@ -25,7 +25,7 @@ function ViewMenuInner({ node }: { node: CollectionNode | SetNode }): React.JSX.
   const labeled = (node.viewButton ?? 'icon') === 'labeled'
 
   const schema = containerSchema(tree, node)
-  const view = pickView(node)
+  const view = useActiveView(node)
 
   const onContextMenu = async (e: React.MouseEvent): Promise<void> => {
     e.preventDefault()
