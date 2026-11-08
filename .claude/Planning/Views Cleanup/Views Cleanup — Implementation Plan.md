@@ -23,7 +23,7 @@
 | 3 · One Pane Route | -158, -76 its own | 9,261 | -168 (+1569 / -1737); 9,262; comments 3,514; after the checkpoint's fold -176 (+1573 / -1749); 9,262; comments 3,514 |
 | 4 · The Table and the Second Table | -304, -146 its own | 9,259 | -322 (+1809 / -2131); 9,260; comments 3,510; after the checkpoint's fold -338 (+1799 / -2137); 9,259; comments 3,509 |
 | 5 · The Host and Its Renderers | -393, -89 its own | 9,259 | -427 (+2238 / -2665); 9,259; comments 3,495; after the checkpoint's fold -443 (+2255 / -2698); 9,260; comments 3,495 |
-| 6 · The Pipeline and the Bands | -439, -46 its own | 9,258 | |
+| 6 · The Pipeline and the Bands | -439, -46 its own | 9,258 | -489 (+2426 / -2915); 9,259; comments 3,492; after the checkpoint's fold -550 (+2452 / -3002); 9,260; comments 3,492 |
 | 7 · Disclosure and Rows | -426, +13 its own | 9,259 | |
 | 8 · View Tiles | -355, +71 its own | 9,259 | |
 | 9 · MenuBase | -355, ±0 its own | 9,259 | |
@@ -60,37 +60,37 @@ The order lets each signature land once. The kind record goes first because the 
 
 #### Decision Map
 
-| Decisions | Where |
-|---|---|
-| A-1 to A-6 | Scope and process: *§Constraints* and every task |
-| B-1 | Task 1-1 |
-| B-2 | Tasks 5-1, 5-3 |
-| C-1 | Task 7-1 |
-| C-2 | Task 7-3 |
-| C-3 | Task 7-2 |
-| C-4, C-5 | Task 7-4; the Filter's Location tree keeps its chevrons (*§Constraints · Rulings*) |
-| D-1, D-2 | Task 5-1; the view-name renames consolidate in Task 8-1 |
-| E-1 | Task 11-1 |
-| E-2 | Task 6-1, inside a band; the Location-sorted clause isn't delivered (*§Open Items*) |
-| E-3 | Task 6-1 |
-| E-4 | Task 3-3 |
-| E-5 | Task 3-3 |
-| F-1 | Task 3-1 keeps the grid at the editor's root and each kind's Layout leaf as it draws today |
-| F-2 | Task 3-3 |
-| F-3, F-4 | Hold: no task touches the title labels, the duplicate switch, or the Settings header's meaning |
-| F-5 | Task 8-1 |
-| F-6 | Task 3-3 |
-| F-7 | Task 3-4 |
-| F-8 | Task 4-1 |
-| F-9 | Task 3-3 |
-| G-1 | Phase 9 earns the rename; `Views/Host/` stays |
-| G-2 | Tasks 6-2 (`useBandSource`), 4-3 (`.table-shell`), 7-3 (`RowRail` dissolves into `RowLead`) |
-| G-3 | Task 2-2 |
-| G-4 | Task 3-1 (`SettingsPane`) |
-| I-040 | Task 5-1 |
-| I-059 | Task 10-1 |
-| I-069 | Task 9-1 |
-| I-070 | Task 2-3 |
+| Decisions  | Where                                                                                          |
+| ---------- | ---------------------------------------------------------------------------------------------- |
+| A-1 to A-6 | Scope and process: *§Constraints* and every task                                               |
+| B-1        | Task 1-1                                                                                       |
+| B-2        | Tasks 5-1, 5-3                                                                                 |
+| C-1        | Task 7-1                                                                                       |
+| C-2        | Task 7-3                                                                                       |
+| C-3        | Task 7-2                                                                                       |
+| C-4, C-5   | Task 7-4; the Filter's Location tree keeps its chevrons (*§Constraints · Rulings*)             |
+| D-1, D-2   | Task 5-1; the view-name renames consolidate in Task 8-1                                        |
+| E-1        | Task 11-1                                                                                      |
+| E-2        | Task 6-1, inside a band; the Location-sorted clause isn't delivered (*§Open Items*)            |
+| E-3        | Task 6-1                                                                                       |
+| E-4        | Task 3-3                                                                                       |
+| E-5        | Task 3-3                                                                                       |
+| F-1        | Task 3-1 keeps the grid at the editor's root and each kind's Layout leaf as it draws today     |
+| F-2        | Task 3-3                                                                                       |
+| F-3, F-4   | Hold: no task touches the title labels, the duplicate switch, or the Settings header's meaning |
+| F-5        | Task 8-1                                                                                       |
+| F-6        | Task 3-3                                                                                       |
+| F-7        | Task 3-4                                                                                       |
+| F-8        | Task 4-1                                                                                       |
+| F-9        | Task 3-3                                                                                       |
+| G-1        | Phase 9 earns the rename; `Views/Host/` stays                                                  |
+| G-2        | Tasks 6-2 (`useBandSource`), 4-3 (`.table-shell`), 7-3 (`RowRail` dissolves into `RowLead`)    |
+| G-3        | Task 2-2                                                                                       |
+| G-4        | Task 3-1 (`SettingsPane`)                                                                      |
+| I-040      | Task 5-1                                                                                       |
+| I-059      | Task 10-1                                                                                      |
+| I-069      | Task 9-1                                                                                       |
+| I-070      | Task 2-3                                                                                       |
 
 #### Concepts
 
@@ -292,7 +292,7 @@ The order lets each signature land once. The kind record goes first because the 
 - **Gates:** "Run the gates" means `npm run typecheck`, `npm run test`, and `npm run lint` from the repo root, lint clean. A file written by a shell command skips Biome's hook, so `npm run format` follows any scripted edit. A VERIFY grep that uses `\b` runs under `git grep -P`. `npm run build`, confirming `✓ built in`, runs from a clean state at the final head. Known load-flaky files rerun by file before a failure is read as real. A worktree in the session scratchpad needs the Studio `.claude` linked two levels above the worktree's root, where `package.json`'s `../../.claude` resolves. "The ledger checks" in a phase's last VERIFY means three reads: the test count against the Net Ledger's row, the comment count (*§Constraints · Comments*) against the Comment Ledger's row, and `view-delta`'s Actionable cell (*§Constraints · The Number*) against the Net Ledger's Estimate.
 - **Commits:** each task commits once its VERIFY passes, through `git commit --only -m "…" -- <paths>` after `git add` for new or renamed files. Messages are past tense, one to three sentences, and end with `Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>`. The post-commit hook pushes `active`. A Bash command carrying `git` can't contain a personal name anywhere, paths and heredocs included. The plan file commits with `--only` whenever its BASELINE, ledgers, ticks, or *§Deviations* change.
 - **The Number:** net lines are measured from `cae07c129` across the whole work. Every phase's VERIFY runs `python3 ~/"The Studio/.claude/scripts/view-delta/view-delta.py" <BASELINE> --exclude .claude --save <scratch file>`, a working-tree diff, since VERIFY runs before the commit, and records the **Actionable** cell in the Net Ledger's Measured, cumulative. Without `--save` the script opens a viewer, so it's always passed. A phase whose own delta lands above its estimate is reported by notification before the next opens, with what the increase buys. The north star is 300 or more production lines removed.
-- **Live Drives:** the Archive Drive (`.claude/scripts/Archive Drive/live-drive.mjs`, port 9393, every group, about six minutes) runs at Phase 4's checkpoint and the final head, since Task 4-1 changes the chrome it asserts, and its selectors change in Task 4-3's patch. The Properties Drive (`port 9403`) runs its E and F groups at Phase 3's checkpoint and the final head, since Task 3-4 re-points MP-E-3. Each runs from a worktree built by `.claude/scripts/editor-parity/worktree.sh <sha> "$WT"` with `POMMORA_DRIVE_REPO="$WT"`, one at a time, never from the main checkout, and never stopping an instance the run didn't start. A failing case is fixed in the code, or in the drive where the case misreads a decision, never bent to pass.
+- **Live Drives:** the Archive Drive (`.claude/scripts/Archive Drive/live-drive.mjs`, port 9393, every group, about six minutes) runs at Phase 4's checkpoint and the final head, since Task 4-1 changes the chrome it asserts, and its selectors change in Task 4-3's patch. The Properties Drive (`port 9403`) runs its E and F groups at Phase 3's checkpoint and the final head, since Task 3-4 re-points MP-E-3. Each runs from a worktree built by `.claude/scripts/editor-parity/worktree.sh <sha> "$WT"` with `POMMORA_DRIVE_REPO="$WT"`, one at a time, never from the main checkout, and never stopping an instance the run didn't start. The Views Drive (`.claude/scripts/Views Drive/`, port 9423) holds the views' interaction matrix in groups by plan phase, each phase's behavior changes crossed with every surface, input, and setting that reaches them beside the interactions its refactor rewired. It runs whole at every checkpoint from Phase 6 on and at the final head, the same way, after replaying the baseline and each closed phase's head once at Phase 6's checkpoint; a phase's group lands at its own checkpoint. A failing case is fixed in the code, or in the drive where the case misreads a decision, never bent to pass.
 - **Execution:** the plan runs end to end through `c/plan-execution`, unattended. Each task goes to an `execution-agent` (`opus-medium`) informed of *§Context* and *§Overview*, which reports insights, concerns, and suggestions rather than diverging, and the orchestrator checks its result against the task's AFTER and VERIFY. Every review checkpoint dispatches two read-only agents at `opus-high`, one under `code-simplification` and one under `adversarial-review`, each weighing the phase against these constraints and its place in the plan, reading outward rather than in isolation, with no implementation running meanwhile; the orchestrator reconciles both reports and weighs the landed work against the **Mandate** before the next phase opens. An in-flight call is weighed against those and the plan's objectives, recorded under *§Deviations* where it changes an outcome, and disclosed in the final report. Each compaction checkpoint in *§Process Overview* runs `c/pre-compaction` and continues; on the continuation the orchestrator rereads *§Constraints* and *§Process Overview* from this file rather than from the handoff's summary before the next phase opens.
 - **Notifications:** a PushNotification at the run's start, at each phase's close with the running net, at each wave's fold, when anything goes red that stops progress along with what was done about it, and when the report is ready.
 - **Neutral Gate:** the work ends with a `fable-high` neutral reviewer given only the BASELINE head, HEAD, and this intention, with no plan, log, or document: *"Pommora's saved views were drawn by two renderers that each wired themselves to the host by hand, while a view kind was defined across three tables and its Table fallback written twice; the settings panes were reached through two doors and three dispatchers; the Trash and Archive table built its heading by hand beside the Table's; the page record straddled the engine and window halves; and renaming, disclosure, indentation, and the view list's rows were each implemented more than once. This work gives each built kind one record and one lookup, routes both settings doors through one pane table, gives the host a return of only what renderers read with one rename shape and one creation path, dissolves the root's misfiled files to their owners, gives the pipeline one prune walk and one bucket builder, gives disclosure one shape and rows one indent step, shares the view list's row between the dropdown and tiles, names the menu shell as a shell, and gives each row one lock, with each rule stated once, built from what the codebase already had, and nothing left over."* It answers, without hedging, whether a zero-context reader given the before and the after prefers the after, what it would correct, and the strengths to keep. Every phase is written so that review passes.
@@ -341,7 +341,7 @@ The order lets each signature land once. The kind record goes first because the 
   - [x] Task 3-3 · The rows and their words
   - [x] Task 3-4 · The Filter's lists go through the menu door
   - [x] Review Checkpoint
-  - [ ] Compaction Checkpoint
+  - [x] Compaction Checkpoint
 - [ ] **Phase 4** — The Table and the Second Table
   - [x] Task 4-1 · The Bundle table draws its heading
   - [x] Task 4-2 · One column gesture
@@ -352,18 +352,17 @@ The order lets each signature land once. The kind record goes first because the 
   - [x] Task 5-2 · The seat and the ghost inside the interactions
   - [x] Task 5-3 · One item API and the host's return
   - [x] Review Checkpoint
-  - [ ] Compaction Checkpoint
+  - [x] Compaction Checkpoint
 - [ ] **Phase 6** — The Pipeline and the Bands
-  - [ ] Task 6-1 · One prune, one bucket builder, one ordered Set tree
-  - [ ] Task 6-2 · The band layer owns its model
-  - [ ] Review Checkpoint
+  - [x] Task 6-1 · One prune, one bucket builder, one ordered Set tree
+  - [x] Task 6-2 · The band layer owns its model
+  - [x] Review Checkpoint
 - [ ] **Phase 7** — Disclosure and Rows
   - [ ] Task 7-1 · One disclosure shape
   - [ ] Task 7-2 · The band head's one Tab stop
   - [ ] Task 7-3 · One indent step and one lead cell
   - [ ] Task 7-4 · The Navigation Trees
   - [ ] Review Checkpoint
-  - [ ] Compaction Checkpoint
 - [ ] **Phase 8** — View Tiles
   - [ ] Task 8-1 · One view list row and menu
   - [ ] Task 8-2 · The tile's own pieces
@@ -377,6 +376,7 @@ The order lets each signature land once. The kind record goes first because the 
   - [ ] Review Checkpoint
 - [ ] **Phase 11** — Docs and Issues
   - [ ] Task 11-1 · Docs and issues
+  - [ ] Compaction Checkpoint
 - [ ] *§Final Verification* over `<BASELINE>..HEAD`
 - [ ] `[Stop: the final report, per §Final Verification]`
 
@@ -873,7 +873,7 @@ Renderers should declare and the tile should read (8.4): each marks its lead wit
 
 The reviews run over `<BASELINE>..HEAD`, each wave closed before the next opens, every agent here but the neutral gate at `opus-xhigh`.
 
-- [ ] **Wave One:** two read-only reviewers briefed with `code-simplification`, one reading inward at the diff and one reading outward against the rest of Core, Desktop, and UIX; one fix agent folds what holds as numbered fixes beside a Not Taken list with reasons; the fold commits, and both drives run from a worktree of that head.
+- [ ] **Wave One:** two read-only reviewers briefed with `code-simplification`, one reading inward at the diff and one reading outward against the rest of Core, Desktop, and UIX; one fix agent folds what holds as numbered fixes beside a Not Taken list with reasons; the fold commits, and every drive *§Constraints · Live Drives* names runs from a worktree of that head.
 - [ ] **Wave Two:** two fresh reviewers briefed with `adversarial-review`, one inward and one outward, over the folded range and given the Not Taken list, so a fold left out returns only on new evidence; folded, committed, and driven the same way.
 - [ ] **Wave Three, Only If It Helps:** run it where Wave Two's folds were structural, as a final look rather than churn for its own sake. The orchestrator states why it ran or didn't.
 - [ ] **The Neutral Gate:** one `fable-high` agent briefed as *§Constraints · Neutral Gate* says, re-run after a fold.
@@ -923,3 +923,4 @@ Planning's own folds, and where each landed, sit in *Scouts/Planning/Phases/Wave
 - **Phase 3 checkpoint (11-08-2026), fold `fc8b3b4bf`, -8 Actionable; every later row's Measured now reads 18 below its Estimate:** the morning's ruling had left the editor's Layout leaf spelled in the record, `ViewEditor`'s branch, and two editor-only props on the shared dispatcher (`current`, `switches`), so `ViewEditor` now owns both leaf arms (the Table leaf reaches `VisibilityFrame` with its `Layout` title and switches footer from the editor rather than through the dispatcher) and `ViewPane` is `PaneProps & { id, source }`, binding no save of its own; `SettingsFrame` binds `save` once and `detailFor` inlined; the "Visibility is the list alone" pin reddens when `ViewPane`'s visibility case passes a switches footer. The Filter's operator list is keyed by position rather than its wording; `PickerRowLook` is `RowLook`, since `switchRow` and `steppedRow` take it too; `FilterFrame.test.tsx`'s Checked case compares exact operator texts, since "Unchecked" contained "Checked". Tests that mounted `ViewPane` for its own save mount `SavingViewPane` from `viewHarness.tsx` (+7, the fold's -15 reading -8), except `liveView.test.tsx`'s locked-tile case, which binds its save inline because patch 8a carries its `ViewPane` import as context; it moves to the helper at Phase 8's checkpoint, with the helper's return type declared. The Properties Drive's groups 18 and 19 held 67 of 67 from a worktree of `4c66b4171`, `~/Test` restored. Scheduled for Phase 8's checkpoint, since 8a rewrites both: the dropdown's rows read the saved view while the toolbar button reads the live one, so a rename from a row shows the old name under the new one until the write lands (`ViewListRow`'s `onCommit` returns the save, and the row reads the live view); `viewButtonMenuItems(labeled)` in place of recomputing `=== 'labeled'`, which 8a's `viewMenus.ts` hunk blocks today. Scheduled for Phase 10's checkpoint, the last patch touching `OptionOrderList.tsx` and `GroupFrame.tsx`: the hide controls travel both spread as two props and whole as `hide`, so every consumer takes `hide?: HideControls`. Not taken: gathering `SettingsFrame`'s header identity once (+11 measured against the -3 estimated); exporting `lookRow` to delete `typeRows.tsx`'s two-caller `item` (the plan keeps `lookRow` private); `hideEye`'s `dim` as an options object (the E-4 comment carries the reason where it's read); dropping the `// PLACEHOLDER` marker over the dropdown's More button (the markers are the owner's own).
 - **Phase 4 checkpoint (11-08-2026), fold `14926adc0`, -16 Actionable and -1 comment; every later row's Measured now reads 34 below its Estimate (added -12, removed -22), tests level with the row again, comments 2 below:** `useColumns`' resize kept a `resizing` state equal at every render to `dragWidth !== null` and cleared the width through three end paths, so `resizing` derives from the width, `teardown` alone clears it, and `onActivate`, `onAbort`, and its comment left (the gesture skeleton runs `teardown` then `onDrop` or `onAbort` in one event); both `.table-grid` lookups assert their grid, since the handles render only inside it; `startResize`'s doc kept only its own two reasons, having joined the deleted `ColumnHeader.tsx`'s header and inline comment against the Comments rule, and `BundleTable`'s doc gave back the `DateHeading` measure sentence it had absorbed, `BundleRows`' doc reading "under the table's heading"; one biome-ignore wording for the shared `.col-header` right-click; `table.css`'s two `.no-borders .data-cell` rules merged, `cells.css`'s carried blank line and `.col-measure`'s dead `flex: none` and inherited `white-space: nowrap` gone; `table-view.css`'s header names the cell sweep it holds; `columns.test.ts`'s own-slot `placeInShown` case left (no caller reaches a row's own slot) and the default-on case reads in the block's idiom. The Archive Drive held 159 of 159 from a worktree of `c9a3a3b6b`, `~/Test` restored. Scheduled for Phase 5's checkpoint, since 5c owns the lines: `hideColumn`, `setColumnAlign`, and `runStyleAction`, each private with one caller in `openHeaderMenu`, inline there. Scheduled for Phase 7's checkpoint, since 7c carries the line as context: `.bundle-date` survives only as a selector for `ArchiveView.test.tsx` and the Archive Drive, so the class goes and both read `.bundle-rows .data-cell:last-child`, the final head's drive run proving it. Not taken: `BundleTable` owning the title heading's icon (both callers pass the same one; the plan's two-prop shape stands); the `.table-shell` double duty (the shared shell and a stand-in for the Table kind, with the band rhythm scoped under it) and `table-view.css`'s name, which the report already holds for the owner as a placement, now with a third option, splitting the three shell rules out so the Archive imports no Table sheet. For the final report: the Archive Drive's 7B column check compares left edges the grid makes equal, so neither it nor any test asserts F-8's left alignment or Behavior Change 9's date lead; the atlas check prints one FAILED table (`ViewTypesPM.md:97`, `--labels-gap` moved to `cells.css`) at every head until Phase 11 rewrites the document, by the plan's documents-change-once rule.
 - **Phase 5 checkpoint (11-08-2026), fold `9dd0f59a3`, -16 Actionable; every later row's Measured now reads 50 below its Estimate (added +5, removed -55), tests one above, comments two below:** the two scheduled folds landed. The I-070 arm's prior for a row the stored `manual_order` never ranked is the ranking `placeInView` spliced the drop into, `mergedRanking(view.manual_order, row ids)` computed once and handed to `dropIO` as `prior: { manual_order: ranked }`, which `persistAfter` reads as `prior?.[key] ?? view[key]`; the drawn band-by-band order was wrong for it (a band's last row would return first, shown by a scratch run) and writing it into `view` would have made a second source of truth, since `view` keys the stage and is the live read's fallback; a third pin in `liveView.test.tsx` holds it. `useColumns`' `hideColumn`, `setColumnAlign`, and `runStyleAction` inlined into `openHeaderMenu`. From the reviews: `useGhostFlip`'s `gone` parameter, always `liveId === null` since Task 5-2, left with its unreachable test state; the interactions return `onGhostClosed` and `holdGhost` in place of the raw `ghost` anchor, so a renderer can't read `anchorId` past the held create; `RenamableTitle` dropped the `renames` default `RenamableName` already declares. Scheduled for Phase 6's checkpoint, since 6b rewrites `bandRouter.ts`: `routeSet`'s `group_order` arm has the same unranked gap under a custom Set order never dragged, so the Set `BandEffect` carries `prior: { group_order: ranked }` and `runBandEffect` passes it through. Scheduled for Phase 10's checkpoint, since 7c and 10 carry `DataRow`'s head as context: the per-row selection read spelled in both renderers becomes one `useRowSelected(id)` beside `rowHover`. Left for the final waves: `TableView`'s `activeCell` flattened to one `??` chain and the renderers' item-API types named alike (`RowApi`, `CardItem`), both 0 lines inside later patches' context. For the owner: `RenamableName` lives in `Core/Interface/RenamableTitle.tsx`, a file named for the fence wrapper (a placement); under a view search a band's New Page creates a page the search hides, so no name field opens (true for the band's + before this work, now the band menu's New Page too; a product call between the search keeping the naming id and creation clearing the search); `PageMenu` and `SettingsFrame` still commit names through `InlineEditHeader`'s own `submitRename`, a path outside D-1's list. `InterfacePM.md:32` joined *§Reconciliation*.
+- **Phase 6 checkpoint (11-08-2026), fold `20fd7adbf`, -61 Actionable; every later row's Measured now reads 111 below its Estimate (added +31, removed -142), tests two above, comments two below:** the three Set-band builders became one `setBands`; `schemaOptionOrder` and `configuredOrder` gave way to `appendTail` over the schema's options; `flat` and `locationFlat` gave way to `placeTail`, so an empty Location-sorted view emits no band as an empty unsorted one already did, which drops the blank band gap an empty Location-sorted Cards view drew under its Set cards; the Set-order pass runs for Set plans alone, gated as the hidden-Set prune is; the mounted column-width suite in `useColumns.test.ts` is named for what it pins. The scheduled `group_order` prior landed narrower than the Phase 5 entry framed it: a custom order never dragged forms no `after`, so no prior is read there, and the real gap is a stored `group_order` that doesn't rank the dragged Set, such as a Set made since the last Set drag. The Set effect carries `prior: { group_order: ranked }` beside its `after`, and the prior reaches `dropIO` through `bandRouting`'s IO factory rather than `runBandEffect`, since `dropIO` fixes its prior when it's built; a pin in `bandDrops.test.tsx` holds it. Scheduled for Phase 7's checkpoint, since 7a carries `GroupFrame.tsx`'s lines as context: `LocationHierarchy`'s factory passes the prior too (the Grouping pane keeps the gap until then), beside the Phase 1 `persist: ViewWriter` fold, and `BandScope` holds the `BandModel` in place of `valueAt` and `shown`, `BandBase` and `bandScopeOf` leaving (about -16), a type change that lands whole with `GroupFrame`'s caller. Scheduled for Phase 8's checkpoint, once 7d makes `orderSetTree` generic and 8c has last touched `CardsView.tsx`: `setIndex.ts`'s `orderedChildren` gives way to `orderSetTree` over the painted tree both callers already hold (about -14), the mechanism Wave One's Not Taken missed. Scheduled for Phase 10's checkpoint, the last patch carrying `bandZone`'s lines: `listZone` takes the band line's indent as a parameter while its member line reads `memberIndent`, two sources for one Table rule. Not taken: the host's band-name fallback, which reads as dead but isn't, since the Cards' Set-card row sends Set keys through `bandDrop` under a property plan, where the key names no band; widening `optionIds` to take an absent definition (net 0 across three files); folding `searchGroups` into `pruneGroups` (it filters items as it walks). Phase 11's patch needs `--3way` on `viewHarness.tsx:1`, whose context the Phase 3 fold widened. For the owner: a cross-parent Set nest in a view that has never stored a Set order forms no `after`, since the order shows alike, so a refusal has nothing to unwind, and a second Set drag inside the round trip saves the first Set's ahead-painted slot; the fix stages `after` on every cross-parent nest under a custom order, a view write per nest, which is a product call rather than a fold. The Views Drive, built at this checkpoint, held 100 of 100 from a worktree of `20fd7adbf`, after replaying the baseline and Phases 2 to 5's heads, `~/Test` restored after each run. Its one failure on the way, I-070's arm for a row no stored `manual_order` ranked, read red at Phases 2 to 4 and held from Phase 5, the gap Phase 5's fold closed. The fold's two changes carry cases of their own, each reading AWAIT at Phase 5's head. Behavior Change 8's in-app look already held at the baseline (Sort's rows, their height, and the ringed current row), so Task 3-4 changed the Filter's route rather than its look, and its two cases are regression crossings.
