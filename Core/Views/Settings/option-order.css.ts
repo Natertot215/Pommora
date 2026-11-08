@@ -10,3 +10,6 @@ const SUB_ORDER_GAP = '-4px'
 export const subOrderRow = style({ marginTop: SUB_ORDER_GAP })
 
 export const orderLabel = style([text.body.emphasized, { color: c.label.secondary }])
+
+/** KNOB — the hierarchy's disclosed sub-group chips render a step smaller than table chips. */
+export const subChip = style({ zoom: 0.85 })

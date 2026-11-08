@@ -14,29 +14,27 @@ import {
 import { LineGroup, LineRow, LineZone } from '@pommora/uix/Interactions/drag'
 import { PaneRestGroup, type PaneDrop, paneSpec } from '@pommora/uix/Menus/paneDrop'
 import { contextIdsOf, contextsByIdOf } from '../../Contexts/contextIdentity'
-import { EyeToggle } from '@pommora/uix/Elements/EyeToggle'
 import { columnIcon, columnLabel } from '../../Properties/columnDisplay'
 import { Icon } from '@pommora/uix/Symbols'
 import * as s from '@pommora/uix/Menus/frames.css'
 import type { PaneProps } from './ViewPane'
+import { type HideControls, hideEye } from './OptionOrderList'
 
 function VisibilityGroups({
   shownIds,
   hiddenIds,
-  hiddenSet,
+  hide,
   nameFor,
   iconFor,
-  onToggle,
 }: {
   shownIds: string[]
   hiddenIds: string[]
-  hiddenSet: Set<string>
+  hide: Required<HideControls>
   nameFor: (id: string) => string
   iconFor: (id: string) => string
-  onToggle: (id: string, hidden: boolean) => void
 }): React.JSX.Element {
   const row = (id: string): React.JSX.Element => {
-    const hidden = hiddenSet.has(id)
+    const hidden = hide.isHidden(id)
     return (
       <LineRow key={id} id={id}>
         <MenuRowView
@@ -54,16 +52,7 @@ function VisibilityGroups({
                     disabled: true,
                     onClick: () => {},
                   }
-                : {
-                    kind: 'field',
-                    children: (
-                      <EyeToggle
-                        hidden={hidden}
-                        name={nameFor(id)}
-                        onToggle={() => onToggle(id, hidden)}
-                      />
-                    ),
-                  },
+                : { kind: 'field', children: hideEye(nameFor(id), id, hide) },
             className: hidden ? s.hiddenRow : undefined,
           }}
         />
@@ -131,10 +120,13 @@ export function VisibilityFrame({
         <VisibilityGroups
           shownIds={shownIds}
           hiddenIds={hiddenIds}
-          hiddenSet={hiddenSet}
+          hide={{
+            isHidden: (id) => hiddenSet.has(id),
+            onToggleHidden: (id) =>
+              save(hiddenSet.has(id) ? unhide(view, id) : hideShown(view, id)),
+          }}
           nameFor={nameFor}
           iconFor={iconFor}
-          onToggle={(id, hidden) => save(hidden ? unhide(view, id) : hideShown(view, id))}
         />
       </LineZone>
     </MenuScrollFrame>

@@ -161,7 +161,7 @@ describe('ViewFrame — the Archive row', () => {
     shown('collection')
     await mount(source([view('view_a', 'Table')]))
     const newView = document.querySelector('[aria-label="New View"]') as HTMLElement
-    const more = document.querySelector('[aria-label="More"]') as HTMLButtonElement
+    const more = document.querySelector('[aria-label="More actions"]') as HTMLButtonElement
     expect(newView.parentElement?.firstElementChild).toBe(newView)
     expect(newView.parentElement?.lastElementChild).toBe(more)
     expect(more.disabled).toBe(true)

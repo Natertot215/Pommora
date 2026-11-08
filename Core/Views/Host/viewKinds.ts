@@ -5,7 +5,7 @@ import type { ViewHostApi } from './useViewHost'
 import { TABLE_KIND } from '../Table/tableKind'
 import { CARDS_KIND } from '../Cards/cardsKind'
 
-export type SwitchEntry = {
+type SwitchEntry = {
   icon: IconName
   label: string
   key: ViewFlag

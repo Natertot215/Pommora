@@ -32,8 +32,6 @@ import {
   menuDropLine,
 } from '@pommora/uix/Menus/MenuRows'
 import { LineRow, LineZone } from '@pommora/uix/Interactions/drag'
-import { EyeToggle } from '@pommora/uix/Elements/EyeToggle'
-import { revealDim } from '@pommora/uix/Interactions/hover-reveal.css'
 import { DualSwitch } from '@pommora/uix/Controls/DualSwitch'
 import { useContainerValues } from '../Host/useContainerValues'
 import {
@@ -56,18 +54,22 @@ import { EntityIcon } from '../../Assets/EntityIcon'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { useDateForms, useSetting } from '../../Session/store'
 import { PickerControl, type PickerOption } from '@pommora/uix/Menus/PickerControl'
-import { FILEDATA_TARGETS, schemaTargets } from '../paneTargets'
+import { FILEDATA_TARGETS, NONE_OPTION, schemaTargets } from '../paneTargets'
 import {
   chipRegion,
   hiddenRow,
   middleRegion,
-  optionRow,
   SETTINGS_PANE_MAX_HEIGHT,
 } from '@pommora/uix/Menus/frames.css'
-import * as gp from './group-frame.css'
 import * as oo from './option-order.css'
-import { OptionOrderList } from './OptionOrderList'
-import { type HideControls, orderOptions, rowEye, SUB_LOOK } from './paneRows'
+import {
+  type HideControls,
+  HideableRow,
+  hideEye,
+  OptionOrderList,
+  orderOptions,
+  SUB_LOOK,
+} from './OptionOrderList'
 import { OptionChip } from '../../Properties/Cells/OptionChip'
 import { styleFor } from '../../Properties/columnStyles'
 import { groupable } from '../valueKinds'
@@ -144,11 +146,11 @@ export function GroupFrame({
     plan.kind === 'property' && topByDate ? plan.group.column : subByDate ? sub?.column : undefined
 
   const pickGroupBy = (id: string): void => {
-    if (id === 'none') {
+    if (id === NONE_OPTION.value) {
       if (group.kind !== 'flat') saveGroup({ kind: 'flat' })
       return
     }
-    if (id === 'location') {
+    if (id === FILEDATA_TARGETS.location.value) {
       if (group.kind !== 'structural') saveGroup({ kind: 'structural' })
       return
     }
@@ -158,13 +160,13 @@ export function GroupFrame({
 
   const groupByValue =
     plan.kind === 'none'
-      ? 'none'
+      ? NONE_OPTION.value
       : plan.kind === 'property'
         ? plan.group.config.property_id
-        : 'location'
+        : FILEDATA_TARGETS.location.value
   const groupByOptions: PickerOption<string>[] = [
-    ...(nests ? [] : [{ value: 'none', label: 'None', icon: 'circle-off' as const }]),
-    { value: 'location', label: 'Location', icon: 'folder' as const },
+    ...(nests ? [] : [NONE_OPTION]),
+    FILEDATA_TARGETS.location,
     ...propertyOptions,
   ]
 
@@ -231,7 +233,7 @@ export function GroupFrame({
       {plan.kind === 'property' ? (
         <MenuRowView
           row={pickerRow(
-            'arrow-up-down',
+            'arrow-down-up',
             'Order',
             plan.group.config.order_mode,
             orderOptions(plan.group.column, GROUP_ORDERS),
@@ -241,7 +243,7 @@ export function GroupFrame({
       ) : plan.kind === 'sets' ? (
         <MenuRowView
           row={pickerRow(
-            'arrow-up-down',
+            'folder',
             'Order',
             viewOption(view, 'structural_order_mode'),
             STRUCTURAL_ORDER,
@@ -276,7 +278,7 @@ export function GroupFrame({
           {subGroup && (
             <MenuRowView
               row={pickerRow(
-                'arrow-up-down',
+                'arrow-down-up',
                 'Order',
                 subGroup.order_mode,
                 orderOptions(sub?.column, GROUP_ORDERS),
@@ -397,14 +399,16 @@ function LocationHierarchy({
     o: SelectOption,
     def: PropertyDefinition,
   ): React.JSX.Element => (
-    <LineRow
+    <HideableRow
       key={o.id}
-      id={bandKey(def.id, o.id, setId)}
-      className={cx(optionRow, gp.subChip, subControls.isHidden?.(o.id) && hiddenRow)}
+      line={bandKey(def.id, o.id, setId)}
+      hideKey={o.id}
+      label={o.label}
+      hide={subControls}
+      className={oo.subChip}
     >
       <OptionChip type={def.type} option={o} />
-      {rowEye(o.label, o.id, subControls)}
-    </LineRow>
+    </HideableRow>
   )
 
   const setsIn = (parentKey: string | null): SetNode[] =>
@@ -428,16 +432,8 @@ function LocationHierarchy({
         onClick={disclosable ? toggle : undefined}
         className={cx(setHidden && hiddenRow)}
         tabIndex={-1}
-        trailing={
-          onToggleHidden && (
-            <EyeToggle
-              hidden={setHidden}
-              name={s.title}
-              className={setHidden ? undefined : revealDim}
-              onToggle={() => onToggleHidden(s.id)}
-            />
-          )
-        }
+        // Many folders can show at once, and a full-strength eye on each would crowd the list.
+        trailing={hideEye(s.title, s.id, { isHidden, onToggleHidden }, true)}
         wrap={(row) => (
           <LineRow
             id={s.id}
@@ -510,10 +506,9 @@ function DateBucketList({
       {bucketOrder(group, column.def, present).map((key) => {
         const label = labelOf(key)
         return (
-          <div key={key} className={cx(optionRow, isHidden?.(key) && hiddenRow)}>
+          <HideableRow key={key} hideKey={key} label={label} hide={{ isHidden, onToggleHidden }}>
             <span className={oo.orderLabel}>{label}</span>
-            {rowEye(label, key, { isHidden, onToggleHidden })}
-          </div>
+          </HideableRow>
         )
       })}
     </>

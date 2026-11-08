@@ -43,6 +43,8 @@ export const ICON = {
   optionEdit: 'body',
 } satisfies Record<string, IconSize>
 
+export const ROOT_ROW_LOOK = { iconSize: ICON.rootEntry } as const
+
 export const anchor = style(menuAnchor('right', stack.local.lifted))
 
 export const header = style({

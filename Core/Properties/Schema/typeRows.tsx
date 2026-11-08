@@ -1,5 +1,5 @@
 import { PathField } from '@pommora/uix/Fields/PathField'
-import { type MenuRow, pickerRow, type Trailing } from '@pommora/uix/Menus/MenuIndex'
+import { type MenuRow, pickerRow, switchRow, type Trailing } from '@pommora/uix/Menus/MenuIndex'
 import { type PickerOption, pickerOptions } from '@pommora/uix/Menus/PickerControl'
 import { resolveColor } from '@pommora/uix/Theme/ramp'
 import { numberFrom } from '@pommora/uix/Utilities/numberUnit'
@@ -66,11 +66,10 @@ const pickerToDecimals = (v: string): 'hidden' | number => (v === 'hidden' ? 'hi
 
 const ROW = { inert: true } as const
 
-const item = (label: string, trailing: Trailing, reveal?: boolean): MenuRow => ({
+const item = (label: string, trailing: Trailing): MenuRow => ({
   kind: 'item',
   label,
   trailing,
-  reveal,
   ...ROW,
 })
 
@@ -109,15 +108,12 @@ function numberRows(
       (v) => configure({ number_currency: v }),
       { ...ROW, reveal: family === 'currency' },
     ),
-    item(
+    switchRow(
+      undefined,
       'Separators',
-      {
-        kind: 'switch',
-        checked: def.number_separators ?? true,
-        onChange: (next) => configure({ number_separators: next }),
-        ariaLabel: 'Separators',
-      },
-      !percent,
+      def.number_separators ?? true,
+      (next) => configure({ number_separators: next }),
+      { ...ROW, reveal: !percent },
     ),
     pickerRow(
       undefined,
@@ -127,16 +123,10 @@ function numberRows(
       (v) => configure({ number_decimals: pickerToDecimals(v) }),
       { ...ROW, ariaLabel: 'Decimal places' },
     ),
-    item(
-      'Fraction',
-      {
-        kind: 'switch',
-        checked: fraction,
-        onChange: (next) => configure({ number_fraction: next }),
-        ariaLabel: 'Fraction',
-      },
-      !percent,
-    ),
+    switchRow(undefined, 'Fraction', fraction, (next) => configure({ number_fraction: next }), {
+      ...ROW,
+      reveal: !percent,
+    }),
     pickerRow(undefined, 'Value', '', [], () => {}, {
       ...ROW,
       ariaLabel: 'Fraction value',
@@ -189,12 +179,16 @@ const dateRows = (_def: PropertyDefinition, { style, setStyle }: RowContext): Me
 ]
 
 const linkRows = (def: PropertyDefinition, { configure }: RowContext): MenuRow[] => [
-  item('Underline', {
-    kind: 'switch',
-    checked: def.link_underline ?? false,
-    onChange: (v) => configure({ link_underline: v }),
-    ariaLabel: 'Underline links',
-  }),
+  switchRow(
+    undefined,
+    'Underline',
+    def.link_underline ?? false,
+    (v) => configure({ link_underline: v }),
+    {
+      ...ROW,
+      ariaLabel: 'Underline links',
+    },
+  ),
   colorItem(def.link_color, 'var(--link)', (next) => configure({ link_color: next })),
   pickerRow(
     undefined,

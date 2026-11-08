@@ -1,5 +1,11 @@
 import { useState } from 'react'
-import { steppedRow, MenuIndex, type MenuSection, pickerRow } from '@pommora/uix/Menus/MenuIndex'
+import {
+  steppedRow,
+  MenuIndex,
+  type MenuSection,
+  pickerRow,
+  switchRow,
+} from '@pommora/uix/Menus/MenuIndex'
 import {
   FooterIconButton,
   FooterLockButton,
@@ -59,16 +65,9 @@ export function MatrixMenu(): React.JSX.Element {
           onSelect: () => setFiltering(true),
         },
         { kind: 'separator' },
-        ...DISPLAY.map(({ key, label }) => ({
-          kind: 'item' as const,
-          label,
-          trailing: {
-            kind: 'switch' as const,
-            checked: display[key],
-            onChange: (next: boolean) => patch({ display: { [key]: next } }),
-            ariaLabel: label,
-          },
-        })),
+        ...DISPLAY.map(({ key, label }) =>
+          switchRow(undefined, label, display[key], (next) => patch({ display: { [key]: next } })),
+        ),
       ],
     },
     {

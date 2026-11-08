@@ -17,6 +17,7 @@ import {
   type MenuBack,
   AccessoryButton,
   FootingCreate,
+  FooterIconButton,
   menuDropLine,
 } from '@pommora/uix/Menus/MenuRows'
 import { MenuIndex } from '@pommora/uix/Menus/MenuIndex'
@@ -210,12 +211,11 @@ export function ViewFrame({
           leading={<FootingCreate ariaLabel="New View" onClick={() => void createView()} />}
           trailing={
             // PLACEHOLDER
-            <AccessoryButton
-              icon="dots"
-              size="control"
-              ariaLabel="More"
-              disabled
+            <FooterIconButton
+              icon="ellipsis"
+              ariaLabel="More actions"
               onClick={() => {}}
+              disabled
             />
           }
         />

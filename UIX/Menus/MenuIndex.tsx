@@ -44,13 +44,27 @@ export type MenuSection = { title?: string; rows: MenuRow[] }
 export interface PickerRowLook {
   ariaLabel?: string
   iconSize?: IconSize
-  solid?: boolean
   inert?: boolean
   reveal?: boolean
   className?: string
   labelClassName?: string
   typeable?: ComponentProps<typeof PickerControl>['typeable']
 }
+
+const lookRow = (
+  glyph: string | undefined,
+  label: string,
+  trailing: Trailing,
+  look?: PickerRowLook,
+): MenuRow => ({
+  kind: 'item',
+  icon: glyph ? <Icon name={glyph} size={look?.iconSize ?? 'body'} /> : undefined,
+  label: look?.labelClassName ? <span className={look.labelClassName}>{label}</span> : label,
+  trailing,
+  inert: look?.inert,
+  reveal: look?.reveal,
+  className: look?.className,
+})
 
 export const pickerRow = <T extends string>(
   glyph: string | undefined,
@@ -59,23 +73,34 @@ export const pickerRow = <T extends string>(
   options: readonly PickerOption<T>[],
   onPick: (v: T) => void,
   look?: PickerRowLook,
-): MenuRow => ({
-  kind: 'item',
-  icon: glyph ? <Icon name={glyph} size={look?.iconSize ?? 'body'} /> : undefined,
-  label: look?.labelClassName ? <span className={look.labelClassName}>{label}</span> : label,
-  trailing: {
-    kind: 'picker',
-    ariaLabel: look?.ariaLabel ?? label,
-    value,
-    options,
-    onPick,
-    solid: look?.solid,
-    typeable: look?.typeable,
-  },
-  inert: look?.inert,
-  reveal: look?.reveal,
-  className: look?.className,
-})
+): MenuRow =>
+  lookRow(
+    glyph,
+    label,
+    {
+      kind: 'picker',
+      ariaLabel: look?.ariaLabel ?? label,
+      value,
+      options,
+      onPick,
+      typeable: look?.typeable,
+    },
+    look,
+  )
+
+export const switchRow = (
+  glyph: string | undefined,
+  label: string,
+  checked: boolean,
+  onToggle: (next: boolean) => void,
+  look?: PickerRowLook,
+): MenuRow =>
+  lookRow(
+    glyph,
+    label,
+    { kind: 'switch', checked, onChange: onToggle, ariaLabel: look?.ariaLabel ?? label },
+    look,
+  )
 
 export const steppedRow = (
   glyph: string | undefined,

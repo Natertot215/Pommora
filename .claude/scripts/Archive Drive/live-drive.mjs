@@ -1064,7 +1064,7 @@ async function group6B() {
   await until('the views dropdown', () => cdp.evaluate(`!!(${ARCHIVE_ROW})`)).catch(() => {})
   const footing = await cdp.evaluate(`(() => { const f = (${NEW_VIEW})?.closest('div'); const a = ${ARCHIVE_ROW}; const more = f?.lastElementChild; return { last: !!a && a.parentElement?.lastElementChild === a, divided: a?.previousElementSibling?.getAttribute('aria-hidden') ?? null, reorder: !!a?.closest('[data-line-row]'), picked: !!a && ${picked('a')}, more: more?.getAttribute('aria-label') ?? null, disabled: more?.disabled ?? null } })()`)
   item('6B', 'G-4', 'the views list closes on an Archive row below its last view, and the footing ends in the disabled More button',
-    footing.last && footing.divided === 'true' && !footing.reorder && !footing.picked && footing.more === 'More' && footing.disabled === true, show(footing))
+    footing.last && footing.divided === 'true' && !footing.reorder && !footing.picked && footing.more === 'More actions' && footing.disabled === true, show(footing))
 
   const tabsBefore = await tabCount(cdp)
   await mouseClick(cdp, ARCHIVE_ROW)

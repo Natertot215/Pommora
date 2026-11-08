@@ -18,6 +18,12 @@ export const FILEDATA_TARGETS = {
   location: filedataTarget(FILEDATA.location),
 }
 
+export const NONE_OPTION: PickerOption<string> = {
+  value: 'none',
+  label: 'None',
+  icon: 'circle-off',
+}
+
 export const contextPaneTargets = (tree: NexusTree | null): PickerOption<string>[] =>
   [...contextsByIdOf(tree)].map(([id, c]) => ({ value: id, label: c.title, icon: c.icon }))
 

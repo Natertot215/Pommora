@@ -6,10 +6,9 @@ import { resolveColumn } from '../Pipeline/columns'
 import { contextIdsOf } from '../../Contexts/contextIdentity'
 import { useSession } from '../../Session/store'
 import type { PickerOption } from '@pommora/uix/Menus/PickerControl'
-import { OptionOrderList } from './OptionOrderList'
-import { orderOptions, SUB_LOOK } from './paneRows'
+import { OptionOrderList, orderOptions, SUB_LOOK } from './OptionOrderList'
 import { liveBucketOrder } from '../Pipeline/group'
-import { FILEDATA_TARGETS, schemaTargets } from '../paneTargets'
+import { FILEDATA_TARGETS, NONE_OPTION, schemaTargets } from '../paneTargets'
 import { chipRegion, middleRegion, SETTINGS_PANE_MAX_HEIGHT } from '@pommora/uix/Menus/frames.css'
 import { viewSpecOf } from '../valueKinds'
 import type { PaneProps } from './ViewPane'
@@ -68,9 +67,9 @@ export function SortFrame({ view, schema, back, save }: PaneProps): React.JSX.El
       }
 
   const listed: PickerOption<string>[] = [
-    { value: '_none', label: 'None', icon: 'circle-off' as const },
+    NONE_OPTION,
     ...(!presentedKind(view.type).nests || primary?.property_id === LOCATION_SORT
-      ? [{ value: LOCATION_SORT, label: 'Location', icon: 'folder' as const }]
+      ? [{ ...FILEDATA_TARGETS.location, value: LOCATION_SORT }]
       : []),
     ...targets.filter((t) => t.value !== sub?.property_id),
   ]
@@ -83,7 +82,7 @@ export function SortFrame({ view, schema, back, save }: PaneProps): React.JSX.El
       : listed
 
   const subOptions: PickerOption<string>[] = [
-    { value: '_none', label: 'None', icon: 'circle-off' as const },
+    NONE_OPTION,
     ...targets.filter((t) => t.value !== primary?.property_id),
   ]
 
@@ -96,9 +95,9 @@ export function SortFrame({ view, schema, back, save }: PaneProps): React.JSX.El
         row={pickerRow(
           'arrow-up-down',
           'Sort By',
-          primary?.property_id ?? '_none',
+          primary?.property_id ?? NONE_OPTION.value,
           sortByOptions,
-          (v) => pickPrimary(v === '_none' ? null : v),
+          (v) => pickPrimary(v === NONE_OPTION.value ? null : v),
         )}
       />
       {primary && (
@@ -135,9 +134,9 @@ export function SortFrame({ view, schema, back, save }: PaneProps): React.JSX.El
             row={pickerRow(
               'arrow-up-down',
               'Sub-Sort',
-              sub?.property_id ?? '_none',
+              sub?.property_id ?? NONE_OPTION.value,
               subOptions,
-              (v) => pickSub(v === '_none' ? null : v),
+              (v) => pickSub(v === NONE_OPTION.value ? null : v),
             )}
           />
           {sub && (
