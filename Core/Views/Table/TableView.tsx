@@ -20,18 +20,17 @@ import { RowRail } from '@pommora/uix/Table/RowRail'
 import { memberDepth } from '../Bands/bandModel'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { columnIcon, columnLabel } from '../../Properties/columnDisplay'
-import { type DragShift, gapShift, useColumns } from './useColumns'
+import { type ColumnDrag, gapShift, useColumns } from './useColumns'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
 import { overScrollLabel } from '@pommora/uix/Interactions/OverScroll'
 import { useStableApi } from '@pommora/uix/Utilities/stableApi'
 import { text } from '@pommora/uix/Theme'
 import { Icon } from '@pommora/uix/Symbols'
-import { ColumnHeader } from './ColumnHeader'
 import './table-view.css'
 import type { GhostAnchor } from '@pommora/uix/Interactions/ghostCreate'
-import { useCellSweep } from './cellSweep'
-import { LineZone, useLineRow } from '@pommora/uix/Interactions/drag'
+import { useCellSweep } from './useCellSweep'
+import { LineRow, LineZone } from '@pommora/uix/Interactions/drag'
 
 export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const {
@@ -58,11 +57,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     hiding,
     sliding,
     resizing,
-    resizeColumn,
     startResize,
-    abortResize,
-    endResize,
-    commitResize,
     openHeaderMenu,
     startColumnDrag,
     onTrackTransitionEnd,
@@ -203,12 +198,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
 
   // ── The render ────────────────────────────────────────────────────────────
 
-  const headerIcon = (column: ResolvedColumn): React.ReactNode =>
-    iconsShown && (
-      <span className="col-header-icon">
-        <Icon name={columnIcon(column, ctx.contexts)} size="body" />
-      </span>
-    )
   const indent = (depth: number): string =>
     depth > 0 ? `calc(var(--loose-inset) + ${rowIndent(depth)})` : 'var(--loose-inset)'
 
@@ -299,22 +288,22 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
         >
           <div className="table-head" onTransitionEnd={onTrackTransitionEnd}>
             {columns.map((c, i) => (
-              <ColumnHeader
+              // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
+              <div
                 key={c.id}
-                id={c.id}
-                label={columnLabel(c, ctx.contexts)}
-                icon={headerIcon(c)}
-                align={alignByCol[i]}
-                transform={gapShift(dragShift, i)}
-                dragging={dragShift?.from === i}
-                onDragStart={(e) => startColumnDrag(e, i)}
-                onResize={resizeColumn}
-                onResizeStart={startResize}
-                onResizeAbort={abortResize}
-                onResizeEnd={endResize}
-                onResizeCommit={commitResize}
+                className={cx('col-header', dragShift?.from === i && 'col-dragging')}
+                style={{ transform: gapShift(dragShift, i), textAlign: alignByCol[i] }}
+                onPointerDown={(e) => startColumnDrag(e, i)}
                 onContextMenu={(e) => void openHeaderMenu(c, e)}
-              />
+              >
+                {iconsShown && (
+                  <span className="col-header-icon">
+                    <Icon name={columnIcon(c, ctx.contexts)} size="body" />
+                  </span>
+                )}
+                {columnLabel(c, ctx.contexts)}
+                <span className="col-resizer" onPointerDown={(e) => startResize(e, c.id)} />
+              </div>
             ))}
           </div>
           {groups.flatMap((g) => renderRows(g, 0, true))}
@@ -414,7 +403,7 @@ const DataRow = memo(function DataRow({
   columns: ResolvedColumn[]
   ctx: ValueContext
   padLeft: string | undefined
-  dragShift: DragShift | null
+  dragShift: ColumnDrag | null
   alignByCol: ColumnAlign[]
   styleByCol: ColumnStyle[]
   api: RowCellApi
@@ -427,15 +416,14 @@ const DataRow = memo(function DataRow({
   sweepCol: string | null
   lead: boolean
 }): React.JSX.Element {
-  const { ref, handle } = useLineRow(row.id, { open: () => api.open(row) })
   return (
-    <div
-      ref={ref}
+    <LineRow
+      id={row.id}
+      open={() => api.open(row)}
       data-rid={row.id}
       data-reveal-host=""
       className={cx('data-row', selected && 'selected', lead && 'row-lead')}
       {...rowHover(row, api.hover)}
-      {...handle}
     >
       {columns.map((c, i) => {
         const style: React.CSSProperties = {
@@ -497,6 +485,6 @@ const DataRow = memo(function DataRow({
           </div>
         )
       })}
-    </div>
+    </LineRow>
   )
 })

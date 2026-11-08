@@ -1,4 +1,4 @@
-// Everything a table column is: the layout table and its clamp, the reorder helper, and the hook that resolves a view's columns into the per-index width, alignment and style the grid paints — plus the resize, hide, align and drag gestures that rewrite them.
+// Everything a table column is: the layout table and its clamp, and the hook that resolves a view's columns into the per-index width, alignment and style the grid paints — plus the resize, hide, align and drag gestures that rewrite them.
 
 import { useEffect, useMemo, useState } from 'react'
 import { columnMenuItems, parseStyleAction } from '../../Actions/columnMenu'
@@ -6,7 +6,6 @@ import { type ColumnLook, defaultStyleFor, type ColumnStyle } from '../../Proper
 import type { ColumnType, ResolvedColumn } from '../../Properties/properties'
 import { type ColumnAlign, type SavedView, viewOption } from '../views'
 import { announce } from '@pommora/uix/Interactions/a11y'
-import { moveItem } from '@pommora/uix/Utilities/moveItem'
 import { usePointerGesture } from '@pommora/uix/Interactions/gesture'
 import { useSettleFallback } from '@pommora/uix/Animations/useExitPresence'
 import { ICON_PX } from '@pommora/uix/Theme/theme-vars.css'
@@ -16,7 +15,7 @@ import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import { popMenu } from '../../Actions/menuActions'
 import { numberBarCapable } from '../../Properties/formatValue'
 import type { ViewHostApi } from '../Host/useViewHost'
-import { hideShown } from '../Pipeline/columns'
+import { hideShown, placeInShown } from '../Pipeline/columns'
 
 // ── Widths and Alignment ────────────────────────────────────────────────────
 
@@ -71,26 +70,11 @@ export function clampWidth(
 export const alignFor = (column: ResolvedColumn, view: SavedView): ColumnAlign =>
   view.column_alignments?.[column.id] ?? COLUMN_LAYOUT[column.type].align
 
-// ── Order ───────────────────────────────────────────────────────────────────
-
-/** Any hidden property is preserved at the tail so a later hide/show toggle can't drop it, and the full visible order is written explicitly so default-on reserved columns persist the slot they were dragged to. */
-export function reorderColumns(
-  visibleIds: string[],
-  propertyOrder: string[],
-  activeId: string,
-  overId: string,
-): string[] {
-  const next = moveItem(visibleIds, visibleIds.indexOf(activeId), visibleIds.indexOf(overId))
-  const hidden = propertyOrder.filter((id) => !visibleIds.includes(id))
-  return [...next, ...hidden]
-}
-
 // ── The painted shift ───────────────────────────────────────────────────────
 
-export type DragShift = { from: number; to: number; width: number }
-type ColumnDrag = DragShift & { id: string }
+export type ColumnDrag = { from: number; to: number; width: number; id: string }
 
-export function gapShift(d: DragShift | null, ci: number): string | undefined {
+export function gapShift(d: ColumnDrag | null, ci: number): string | undefined {
   if (!d) return undefined
   if (d.to < d.from && ci >= d.to && ci < d.from) return `translateX(${d.width}px)`
   if (d.to > d.from && ci > d.from && ci <= d.to) return `translateX(${-d.width}px)`
@@ -148,7 +132,7 @@ export function useColumns(host: ViewHostApi) {
     if (widened.length) setSliding((s) => new Set([...s, ...widened]))
   }
   // A watcher or pane write can reshape `columns` mid-drag — a vanished source column ends the shift rather than painting a neighbor.
-  const dragShift: DragShift | null =
+  const dragShift: ColumnDrag | null =
     colDrag && columns[colDrag.from]?.id === colDrag.id ? colDrag : null
 
   const reflowWidth = columns.reduce((sum, _c, i) => sum + colWidth(i), 0)
@@ -179,28 +163,41 @@ export function useColumns(host: ViewHostApi) {
     return () => ro.disconnect()
   }, [])
 
-  const reorderColumn = (activeId: string, overId: string): void => {
-    const next = reorderColumns(
-      columns.map((c) => c.id),
-      view.property_order,
-      activeId,
-      overId,
-    )
-    void persistView({ property_order: next })
-  }
-  const resizeColumn = (id: string, width: number): number => {
-    const clamped = clampWidth(Math.round(width), typeOf(id), colStyle(id).look, iconsShown)
-    setDragWidth({ id, width: clamped })
-    return clamped
-  }
-  const startResize = (): void => setResizing(true)
-  // Cleared by whichever end fires, never by teardown — the skeleton runs teardown BEFORE onAbort.
-  const abortResize = (): void => setDragWidth(null)
-  const endResize = (): void => setResizing(false)
-  const commitResize = (id: string, width: number): void => {
-    setDragWidth(null)
-    void persistView({
-      column_widths: { [id]: clampWidth(width, typeOf(id), colStyle(id).look, iconsShown) },
+  /** On the skeleton like its GFM sibling: cancel reverts instead of committing, and a zero-move click ends through teardown alone. The strip stops propagation so a resize never starts a reorder, and its pointer delta is divided by the live zoom so a screen drag maps onto the grid's pre-zoom track width. */
+  const startResize = (e: React.PointerEvent, id: string): void => {
+    e.preventDefault()
+    e.stopPropagation()
+    const grip = e.currentTarget as HTMLElement
+    const grid = grip.closest('.table-grid')
+    const zoom = grid ? currentZoom(grid) : 1
+    const startX = e.clientX
+    // The rendered width, so a Title stretched past its floor resizes from where its edge sits.
+    const width = grip.parentElement!.getBoundingClientRect().width / zoom
+    let last = width
+    beginGesture({
+      el: grip,
+      event: e,
+      activation: 0,
+      onActivate: () => {
+        setResizing(true)
+        return true
+      },
+      onDragMove: (ev) => {
+        last = clampWidth(
+          Math.round(width + (ev.clientX - startX) / zoom),
+          typeOf(id),
+          colStyle(id).look,
+          iconsShown,
+        )
+        setDragWidth({ id, width: last })
+      },
+      onDrop: () => {
+        setDragWidth(null)
+        void persistView({ column_widths: { [id]: last } })
+      },
+      // Cleared by whichever end fires, never by teardown — the skeleton runs teardown BEFORE onAbort.
+      onAbort: () => setDragWidth(null),
+      teardown: () => setResizing(false),
     })
   }
   const hideColumn = (id: string): void => {
@@ -319,7 +316,14 @@ export function useColumns(host: ViewHostApi) {
       },
       onDrop: () => {
         if (current && current.to !== current.from) {
-          reorderColumn(columns[current.from].id, columns[current.to].id)
+          void persistView(
+            placeInShown(
+              view,
+              columns.map((c) => c.id),
+              dragId,
+              current.to,
+            ),
+          )
           announce('Moved column.')
         }
       },
@@ -349,11 +353,7 @@ export function useColumns(host: ViewHostApi) {
     hiding: collapsing !== null,
     sliding: sliding.size > 0,
     resizing,
-    resizeColumn,
     startResize,
-    abortResize,
-    endResize,
-    commitResize,
     openHeaderMenu,
     startColumnDrag,
     onTrackTransitionEnd,

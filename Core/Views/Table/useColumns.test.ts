@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { FILEDATA, type PropertyDefinition } from '../../Properties/properties'
 import { savedView, type SavedView } from '../views'
-import { alignFor, clampWidth, COLUMN_LAYOUT, minWidthFor, reorderColumns } from './useColumns'
+import { alignFor, clampWidth, COLUMN_LAYOUT, minWidthFor } from './useColumns'
 import { resolveColumn } from '../Pipeline/columns'
 
 const schema: PropertyDefinition[] = [
@@ -14,6 +14,17 @@ const schema: PropertyDefinition[] = [
   { id: 'prop_date', label: 'Due', key: 'Due', type: 'dateTime' },
   { id: 'prop_notes', label: 'Notes', key: 'Notes', type: 'text' },
 ]
+
+function view(over: Partial<SavedView>): SavedView {
+  return savedView.parse({
+    id: 'view_x',
+    name: 'V',
+    type: 'table',
+    property_order: [],
+    hidden_properties: [],
+    ...over,
+  })
+}
 
 describe('column widths', () => {
   describe('COLUMN_LAYOUT', () => {
@@ -74,16 +85,6 @@ describe('column widths', () => {
 })
 
 describe('column alignment', () => {
-  function view(over: Partial<SavedView>): SavedView {
-    return savedView.parse({
-      id: 'view_x',
-      name: 'V',
-      type: 'table',
-      property_order: [],
-      hidden_properties: [],
-      ...over,
-    })
-  }
   const col = (id: string) => resolveColumn(id, schema, ['ctx_areas'])!
 
   describe('the type default', () => {
@@ -113,39 +114,6 @@ describe('column alignment', () => {
       const v = view({ column_alignments: { prop_status: 'left', prop_n: 'right' } })
       expect(alignFor(col('prop_status'), v)).toBe('left')
       expect(alignFor(col('prop_n'), v)).toBe('right')
-    })
-  })
-})
-
-describe('column order', () => {
-  describe('reorderColumns', () => {
-    it('moves a visible column to a new slot, writing the full explicit order', () => {
-      expect(
-        reorderColumns(['_title', 'a', 'b', 'c'], ['_title', 'a', 'b', 'c'], 'c', 'a'),
-      ).toEqual(['_title', 'c', 'a', 'b'])
-    })
-
-    it('preserves a hidden property (in property_order, not rendered) at the tail — survives hide/show', () => {
-      expect(reorderColumns(['_title', 'a'], ['_title', 'hidden1', 'a'], 'a', '_title')).toEqual([
-        'a',
-        '_title',
-        'hidden1',
-      ])
-    })
-
-    it('writes default-on Context/title columns explicitly even when absent from property_order', () => {
-      expect(reorderColumns(['_title', 'ctx_areas'], [], 'ctx_areas', '_title')).toEqual([
-        'ctx_areas',
-        '_title',
-      ])
-    })
-
-    it('normalizes (visible + hidden) without moving when active === over', () => {
-      expect(reorderColumns(['_title', 'a'], ['_title', 'a', 'hidden1'], 'a', 'a')).toEqual([
-        '_title',
-        'a',
-        'hidden1',
-      ])
     })
   })
 })

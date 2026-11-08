@@ -268,6 +268,22 @@ describe('placeInShown', () => {
     const v = listed(['a', 'future_key', 'b'], [])
     expect(placeInShown(v, ['a', 'b'], 'b', 0).property_order).toEqual(['b', 'a', 'future_key'])
   })
+
+  it('writes default-on Context/title columns explicitly even when absent from property_order', () => {
+    expect(placeInShown(view({}), ['_title', 'ctx_areas'], 'ctx_areas', 0).property_order).toEqual([
+      'ctx_areas',
+      '_title',
+    ])
+  })
+
+  it('normalizes (visible + hidden) without moving when dropped on its own slot', () => {
+    const v = view({ property_order: ['_title', 'a', 'hidden1'] })
+    expect(placeInShown(v, ['_title', 'a'], 'a', 1).property_order).toEqual([
+      '_title',
+      'a',
+      'hidden1',
+    ])
+  })
 })
 
 describe('hideShown / unhide', () => {
