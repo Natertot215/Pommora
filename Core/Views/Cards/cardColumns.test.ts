@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { FILEDATA, type PropertyDefinition, type ResolvedColumn } from '../../Properties/properties'
 import type { ViewRow } from '../viewRow'
-import { cardAddColumns, fillsBlank, shownColumnsFor } from './cardColumns'
+import { cardAddColumns, shownColumnsFor } from './cardColumns'
 import { itemColumns, propertyColumn, resolveColumn } from '../Pipeline/columns'
 
 const TITLE_COLUMN = resolveColumn(FILEDATA.title.id, [], [])!
@@ -53,25 +53,5 @@ describe('cardAddColumns', () => {
   it('lists a blank a Compact card leaves undrawn', () => {
     const columns = [TITLE_COLUMN, propertyColumn(sel), propertyColumn(chk)]
     expect(listed({}, shownColumnsFor(row({}), columns, true))).toEqual(['sel', 'num'])
-  })
-})
-
-describe('fillsBlank', () => {
-  it('fillsBlank: every type but the stamps', () => {
-    for (const t of [
-      'status',
-      'select',
-      'multiSelect',
-      'context',
-      'dateTime',
-      'number',
-      'link',
-      'text',
-      'file',
-      'checkbox',
-    ] as const)
-      expect(fillsBlank(t)).toBe(true)
-    for (const t of ['createdTime', 'lastEditedTime', 'title'] as const)
-      expect(fillsBlank(t)).toBe(false)
   })
 })

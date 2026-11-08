@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { type ResolvedGroup, type ViewRow, flattenContainer } from '../viewRow'
+import { type Picked, type ResolvedGroup, type ViewRow, flattenContainer } from '../viewRow'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import type { ColumnStyle } from '../../Properties/columnStyles'
 import type { PropertyValue } from '../../Properties/propertyValue'
 import { assignValue, useValueWriter } from '../../Properties/assignValue'
+import { patchOverride } from '../../Properties/valueOverride'
 import type { Result } from '../../Contract/result'
 import { useSession } from '../../Session/store'
 import { useContentHost } from '../../Interface/contentHost'
@@ -23,8 +24,8 @@ import { useBandHeads } from './useBandHeads'
 import { useContainerValues } from './useContainerValues'
 import { columnStylePatch, styleFor } from '../../Properties/columnStyles'
 import type { ViewPatch } from '../views'
-import { groupKeyToValue, reassignable } from '../valueKinds'
-import { hideShown, resolveColumn, unhide } from '../Pipeline/columns'
+import { reassignable } from '../valueKinds'
+import { hideShown, unhide } from '../Pipeline/columns'
 import type { ResolvedColumn } from '../../Properties/properties'
 
 export type ViewHostApi = NonNullable<ReturnType<typeof useViewHost>>
@@ -33,8 +34,6 @@ const NO_COLLAPSE = new Set<string>()
 
 export function useViewHost(source: CollectionNode | SetNode) {
   const tree = useSession((s) => s.tree)
-  const openTarget = useSession((s) => s.openTarget)
-  const mutate = useSession((s) => s.mutate)
   const saveView = useSaveView(source)
   const tile = useViewTileScope()
   const host = useContentHost()
@@ -142,7 +141,7 @@ export function useViewHost(source: CollectionNode | SetNode) {
     key: keyof ColumnStyle & string,
     value: string,
   ): void => void persistView(columnStylePatch(view, column, forms, { [key]: value }))
-  const viewRootRef = useRef<HTMLElement | null>(null)
+  const viewRootRef = useRef<HTMLDivElement>(null)
   const revealingRef = useRef<Set<string>>(new Set())
   const revealProperty = (id: string): void => {
     if (revealingRef.current.has(id)) return
@@ -164,22 +163,14 @@ export function useViewHost(source: CollectionNode | SetNode) {
     column: ResolvedColumn,
     value: PropertyValue | null,
   ): Promise<boolean> | undefined => assignValue(writer, row, column, value)
-  const commitGroupValue = (
-    pageId: string,
-    propertyId: string,
-    groupKey: string,
-  ): Promise<boolean> | undefined => {
-    const row = rowById.get(pageId)
-    const column = resolveColumn(propertyId, schema, contextIds)
-    return row && column && commitValue(row, column, groupKeyToValue(groupKey, column.type))
-  }
+  const overrideValues = (pageId: string, picked: Picked, write: Promise<boolean>): void =>
+    patchOverride(setValueOverride, pageId, picked, write)
   const styleOf = (column: ResolvedColumn): ColumnStyle =>
     styleById.get(column.id) ?? styleFor(column, view, forms)
 
   if (!ctx || !tree) return null
   return {
     source: painted,
-    schema,
     view,
     plan,
     nests,
@@ -210,13 +201,8 @@ export function useViewHost(source: CollectionNode | SetNode) {
     revealProperty,
     persistView,
     commitValue,
-    commitGroupValue,
     styleOf,
-    mutate,
-    openTarget,
-    tree,
-    effectiveValues,
-    setValueOverride,
+    overrideValues,
     viewRootRef,
     naming,
     beginNaming,

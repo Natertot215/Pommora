@@ -1,7 +1,7 @@
 // Everything a row, a band, or a page does in answer to the pointer, defined once for every view kind: band drops, row drops and where the order lands, opening a page, the value seat, the hover ghost, and the page menu. A kind supplies the policy below and its own presentation, nothing else.
 
 import { useMemo, useRef, useState } from 'react'
-import { useLatest } from '@pommora/uix/Utilities/stableApi'
+import { type StableHandlers, useLatest, useStableApi } from '@pommora/uix/Utilities/stableApi'
 import { UNGROUPED, type ViewRow } from '../viewRow'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import type { NewPageRows } from '../../Actions/pageMenu'
@@ -26,12 +26,12 @@ import { useSession } from '../../Session/store'
 import { pickOpen } from '../../Session/chromeSlice'
 import { glanceShown, hoverGlance, leaveGlance } from '../../Interface/Glance/glanceAction'
 import { showPageMenu } from '../../Interface/Menus/pageMenuActions'
-import { type SeatHost, useValueSeat } from '../../Properties/Pickers/ValueSeat'
+import { type SeatHost, useValueSeat, type ValueSeatApi } from '../../Properties/Pickers/ValueSeat'
 import { holderOf } from '../../Properties/valueContext'
 import { type BandNode, memberDepth, nodeLabel, springsInto } from '../Bands/bandModel'
 import { bandRouting, bucketValueAt } from '../Bands/bandRouter'
 import { bucketKey } from '../Pipeline/group'
-import { reassignable } from '../valueKinds'
+import { groupKeyToValue, reassignable } from '../valueKinds'
 import { type BandView, bandSpec } from '../Bands/GroupBand'
 import { sameItems } from '@pommora/uix/Utilities/same'
 import { useViewTileScope } from '../ViewTileScope'
@@ -40,7 +40,26 @@ import { tieOrderWith, useViewCreation } from './useViewCreation'
 import { dropIO } from './liveView'
 import { mutateAhead, refusedDrop } from './paintAhead'
 
-interface ViewInteractionPolicy {
+export type ItemApi = {
+  click: ValueSeatApi['click']
+  menu: ValueSeatApi['menu']
+  pane: ValueSeatApi['pane']
+  editor: ValueSeatApi['editor']
+  openAdd: ValueSeatApi['openAdd']
+  commit: SeatHost['commit']
+  open: (row: ViewRow, newTab: boolean) => void
+  openSet: (set: SetNode, newTab: boolean) => void
+  hover: GhostAnchor['onHover']
+  pageMenu: (
+    row: ViewRow,
+    e: React.MouseEvent,
+    anchor?: HTMLElement,
+    editImage?: () => void,
+  ) => Promise<void>
+  endNaming: () => void
+}
+
+interface ViewInteractionPolicy<Own extends StableHandlers> {
   ghost: {
     graceMs: number
     travelHold?: { inZone: (enteringId: string) => boolean; holdMs: number }
@@ -48,6 +67,7 @@ interface ViewInteractionPolicy {
   seat: Pick<SeatHost, 'anchor'> &
     Partial<Pick<SeatHost, 'commit' | 'centered' | 'add' | 'hide' | 'onClose'>>
   newPages: NewPageRows
+  item: Own
 }
 
 /** The neighbor rule keeps a drop to a run's edge — a seam, or either end of the list — from rewriting anything. */
@@ -89,7 +109,10 @@ export function rowHover(
 
 export type ViewInteractions = ReturnType<typeof useViewInteractions>
 
-export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPolicy) {
+export function useViewInteractions<Own extends StableHandlers>(
+  host: ViewHostApi,
+  policy: ViewInteractionPolicy<Own>,
+) {
   const {
     source,
     view,
@@ -102,7 +125,6 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     nests,
     collapsed,
     toggleCollapse,
-    schema,
     identity,
     ctx,
     groupPropId,
@@ -117,12 +139,21 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     plan,
     persistView,
     commitValue,
-    commitGroupValue,
-    openTarget,
     styleOf,
     setStylePatch,
   } = host
 
+  const { schema } = ctx
+  const commitGroupValue = (
+    pageId: string,
+    propertyId: string,
+    groupKey: string,
+  ): Promise<boolean> | undefined => {
+    const row = rowById.get(pageId)
+    const column = resolveColumn(propertyId, schema, identity.contextIds)
+    return row && column && commitValue(row, column, groupKeyToValue(groupKey, column.type))
+  }
+  const openTarget = useSession((s) => s.openTarget)
   const tile = useViewTileScope()
 
   // A single-sorted view lays its rows out in value RUNS, so a reorder landing one strictly inside another run rewrites the sorted property. Armed only when the column is shown — an unrendered property leaves the run boundaries unreadable.
@@ -400,8 +431,15 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
   }
 
   const liveRows = useLatest(rowById)
-  const pageMenu = (row: ViewRow, anchor: HTMLElement, editImage?: () => void): Promise<void> =>
-    ghost.suppressWrap(() =>
+  const pageMenu = (
+    row: ViewRow,
+    e: React.MouseEvent,
+    anchor = e.currentTarget as HTMLElement,
+    editImage?: () => void,
+  ): Promise<void> => {
+    e.preventDefault()
+    e.stopPropagation()
+    return ghost.suppressWrap(() =>
       showPageMenu(row, {
         trigger: anchor,
         rename: () => host.beginNaming(row.id),
@@ -420,6 +458,7 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
         },
       }),
     )
+  }
 
   // ── Ghost ─────────────────────────────────────────────────────────────────
 
@@ -460,7 +499,23 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
   }
   const heldAt = held && !rowById.has(held.id) ? held.anchorId : null
 
+  const item = useStableApi<ItemApi & Own>({
+    click: seat.click,
+    menu: seat.menu,
+    pane: seat.pane,
+    editor: seat.editor,
+    openAdd: seat.openAdd,
+    commit: seat.host.commit,
+    open: openPage,
+    openSet,
+    hover: ghost.onHover,
+    pageMenu,
+    endNaming: host.endNaming,
+    ...policy.item,
+  })
+
   return {
+    item,
     bandView,
     bandDrop: bandRoutes.drop,
     bandZone,
@@ -468,9 +523,6 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     onDrop,
     carry,
     folderSlot,
-    openPage,
-    openSet,
-    pageMenu,
     seat,
     ghost,
     ghostAt: heldAt ?? ghost.ghost?.anchorId ?? null,

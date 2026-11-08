@@ -1,10 +1,7 @@
-import { type ColumnType, PROPERTY_TYPES, type ResolvedColumn } from '../../Properties/properties'
+import { PROPERTY_TYPES, type ResolvedColumn } from '../../Properties/properties'
 import type { ViewRow } from '../viewRow'
 import { holdsValue } from '../../Properties/fieldValue'
 import type { ItemColumns } from '../Pipeline/columns'
-
-/** A blank value of this type fills in place, unless the type is Filedata, which has no fill path. */
-export const fillsBlank = (type: ColumnType): boolean => PROPERTY_TYPES[type].origin !== 'filedata'
 
 /** Compact's label-less flow can't render an empty value, so it drops blanks, except a type whose blank draws, such as a checkbox's unchecked box, the on-card toggle. */
 export function shownColumnsFor(

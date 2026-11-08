@@ -1,6 +1,6 @@
 import { useMemo, useRef } from 'react'
 
-type Handlers = Record<string, (...args: never[]) => unknown>
+export type StableHandlers = Record<string, (...args: never[]) => unknown>
 
 /** A ref holding the latest render's value, for a stable callback or effect that reads it later. */
 export function useLatest<T>(value: T): { readonly current: T } {
@@ -10,7 +10,7 @@ export function useLatest<T>(value: T): { readonly current: T } {
 }
 
 /** One identity for the component's lifetime over handlers rebuilt every render, so memoized rows take the api without re-rendering; the key set is fixed at mount. */
-export function useStableApi<T extends Handlers>(handlers: T): T {
+export function useStableApi<T extends StableHandlers>(handlers: T): T {
   const ref = useLatest(handlers)
   return useMemo(
     () =>

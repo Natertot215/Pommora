@@ -973,13 +973,12 @@ describe('a create placed ahead of its reply', () => {
     expect(saveSpy).toHaveBeenCalledTimes(1)
   })
 
-  it('a refused create leaves no seed and no row, its order naming an id nothing paints', async () => {
+  it('a refused create leaves no row, its order naming an id nothing paints', async () => {
     const { flight } = await createAboveFirst()
     await act(async () => {
       reply({ ok: false, error: { code: 'exists', message: 'Taken.' } })
       await flight
     })
-    expect(api?.effectiveValues.p3).toBeUndefined()
     expect(api?.view.manual_order).toEqual(['p2', 'p3', 'p1'])
     expect(api?.paintOrder.map((r) => r.id)).toEqual(['p2', 'p1'])
   })

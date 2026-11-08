@@ -1,7 +1,6 @@
 // The page exists on disk as Untitled the moment the gesture fires — seeds riding the create, its order written at the gesture — and its name field opens under the id minted there.
 
 import { type ViewRow, UNGROUPED } from '../viewRow'
-import { patchOverride } from '../../Properties/valueOverride'
 import { isBlankValue, type PropertyValue } from '../../Properties/propertyValue'
 import { groupKeyToValue, viewSpecOf } from '../valueKinds'
 import { type ViewPatch, viewOption } from '../views'
@@ -81,19 +80,10 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
         ...(parentSetId !== undefined ? { parentSetId } : {}),
         picked: gestureSeeds,
       },
-      schema: c.schema,
+      schema: c.ctx.schema,
       setTree: c.source.sets ?? [],
       identity: c.identity,
     })
-  }
-  // The created page's seeds reach the pipeline the way a band-drop's reassign does.
-  const patchSeedValues = (
-    pageId: string,
-    seeds: Record<string, PropertyValue>,
-    landed: Promise<boolean>,
-  ): void => {
-    if (Object.keys(seeds).length === 0) return
-    patchOverride(cfg().setValueOverride, pageId, seeds, landed)
   }
   const glideToRow = (pageId: string): void => {
     const viewEl = cfg().viewRootRef.current
@@ -148,11 +138,12 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
     if (order) void c.persistView(order, { viewState: true })
     const flight = mutate(req)
     c.beginNaming(req.id, flight)
-    patchSeedValues(
-      req.id,
-      req.seeds ?? {},
-      flight.then((done) => done !== null),
-    )
+    if (req.seeds)
+      c.overrideValues(
+        req.id,
+        req.seeds,
+        flight.then((done) => done !== null),
+      )
     const path = flight.then((done) => {
       const created = done?.created
       return created && 'path' in created ? created.path : null
@@ -195,7 +186,7 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
       if (v !== null) seeds[c.groupPropId] = v
     }
     for (const criterion of c.view.sort ?? []) {
-      const column = resolveColumn(criterion.property_id, c.schema, c.identity.contextIds)
+      const column = resolveColumn(criterion.property_id, c.ctx.schema, c.identity.contextIds)
       if (column?.kind !== 'property' || !viewSpecOf(column.type)?.sortSeeds) continue
       const v = resolveFieldValue(row, column)
       if (!isBlankValue(v)) seeds[criterion.property_id] = v

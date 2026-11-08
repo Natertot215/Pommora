@@ -15,7 +15,7 @@ import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import { popMenu } from '../../Actions/menuActions'
 import { numberBarCapable } from '../../Properties/formatValue'
 import type { ViewHostApi } from '../Host/useViewHost'
-import { hideShown, placeInShown } from '../Pipeline/columns'
+import { placeInShown } from '../Pipeline/columns'
 
 // ── Widths and Alignment ────────────────────────────────────────────────────
 
@@ -196,7 +196,7 @@ export function useColumns(host: ViewHostApi) {
   const commitHide = (): void => {
     if (!collapsing) return
     setCollapsing(null)
-    void persistView(hideShown(view, collapsing))
+    host.hideProperty(collapsing)
   }
   const setColumnAlign = (id: string, align: ColumnAlign): void => {
     void persistView({ column_alignments: { [id]: align } })

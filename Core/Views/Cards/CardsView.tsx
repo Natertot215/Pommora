@@ -4,9 +4,8 @@ import type { SetNode } from '../../Nexus/tree'
 import { isBlankValue, type PropertyValue } from '../../Properties/propertyValue'
 import { type CardBanner, isCompact, type SavedView, viewOption } from '../views'
 import type { ColumnStyle } from '../../Properties/columnStyles'
-import { Icon } from '@pommora/uix/Symbols'
 import { isCmd } from '@pommora/uix/Interactions/chords'
-import { entityIcon } from '../../Assets/entityIconPolicy'
+import { EntityIcon } from '../../Assets/EntityIcon'
 import { text } from '@pommora/uix/Theme/typography.css'
 import {
   CardBody,
@@ -28,12 +27,10 @@ import {
 } from '@pommora/uix/Interactions/drag'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { useElementZoom } from '@pommora/uix/Utilities/zoom'
-import { useStableApi } from '@pommora/uix/Utilities/stableApi'
 import { EmptyValue } from '@pommora/uix/Elements/EmptyValue'
 import { useThumb } from '../../Assets/useThumb'
 import { coverOf } from '../../Pages/pageDetail'
 import { useSession } from '../../Session/store'
-import { personalizationOf } from '../../Session/configSlice'
 import { AssetImage } from '../../Assets/AssetImage'
 import { useBannerMenu } from '../../Interface/Header/useBannerMenu'
 import { navKey, selectTargetOf } from '../../Navigation/navRef'
@@ -44,23 +41,28 @@ import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { columnLabel } from '../../Properties/columnDisplay'
 import { GroupBand } from '../Bands/GroupBand'
 import { orderedChildren } from '../Pipeline/group'
-import { rowHover, useViewInteractions, type ViewInteractions } from '../Host/useViewInteractions'
+import {
+  type ItemApi,
+  rowHover,
+  useViewInteractions,
+  type ViewInteractions,
+} from '../Host/useViewInteractions'
 import type { ValueContext } from '../../Properties/valueContext'
 import { NO_TRAIL, type TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { ancestryOf } from '../../Nexus/treeIndex'
 import { stabilize } from '../../Nexus/treeStabilize'
 import { Cell } from '../../Properties/Cells/Cell'
-import { ValueSeat, type ValueSeatApi } from '../../Properties/Pickers/ValueSeat'
+import { ValueSeat } from '../../Properties/Pickers/ValueSeat'
 import { borderedField } from '@pommora/uix/Fields/fields.css'
 import { overScrollEllipsis } from '@pommora/uix/Interactions/OverScroll'
-import { type Personalization, TENTHS_SCALE } from '../../Settings/personalization'
-import { cardAddColumns, fillsBlank, shownColumnsFor } from './cardColumns'
+import { TENTHS_SCALE } from '../../Settings/personalization'
+import { cardAddColumns, shownColumnsFor } from './cardColumns'
 import { itemColumns } from '../Pipeline/columns'
 import { RenamableName } from '../../Interface/RenamableTitle'
 import { titleInput } from '@pommora/uix/Menus/menu-row.css'
 import { useGhostFlip } from './useGhostFlip'
 import './cards-view.css'
-import type { ResolvedColumn } from '../../Properties/properties'
+import { PROPERTY_TYPES, type ResolvedColumn } from '../../Properties/properties'
 
 // ── Types and constants ─────────────────────────────────────────────────────
 
@@ -72,25 +74,11 @@ type BannerRequest = {
   mode: 'menu' | 'edit'
 }
 
-/** Every gesture a card hands back, as one identity-stable object. */
-type CardApi = {
-  commitValue: (row: ViewRow, column: ResolvedColumn, value: PropertyValue | null) => void
-  click: ValueSeatApi['click']
-  menu: ValueSeatApi['menu']
-  pane: ValueSeatApi['pane']
-  editor: ValueSeatApi['editor']
-  open: (row: ViewRow, newTab: boolean) => void
-  openAdd: ValueSeatApi['openAdd']
-  hover: (id: string, entering: boolean) => void
-  pageMenu: (row: ViewRow, anchor: HTMLElement, editImage?: () => void) => Promise<void>
-  endNaming: () => void
-  openSet: (set: SetNode, newTab: boolean) => void
-  banner: (req: BannerRequest) => void
-}
+type CardItem = ItemApi & { banner: (req: BannerRequest) => void }
 
 type ValueApi = Pick<
-  CardApi,
-  'commitValue' | 'click' | 'menu' | 'pane' | 'editor' | 'banner' | 'endNaming'
+  CardItem,
+  'commit' | 'click' | 'menu' | 'pane' | 'editor' | 'banner' | 'endNaming'
 >
 
 const previewKeyOf = (row: ViewRow, banner: CardBanner): string | undefined =>
@@ -102,7 +90,7 @@ const NOOP = (): void => {}
 const OVERLAY_FILL = { width: '100%', height: '100%' }
 
 const INERT_API: ValueApi = {
-  commitValue: NOOP,
+  commit: NOOP,
   click: NOOP,
   menu: () => Promise.resolve(),
   pane: NOOP,
@@ -126,11 +114,10 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     hideProperty,
     revealProperty,
     commitValue,
-    tree,
     styleById,
   } = host
-  const nexusId = useSession((s) => s.tree?.nexus.id ?? '')
-  const defaultIcons = useSession((s) => personalizationOf(s).defaultIcons)
+  const tree = useSession((s) => s.tree)
+  const nexusId = tree?.nexus.id ?? ''
 
   // ── Set cards ─────────────────────────────────────────────────────────────
 
@@ -160,6 +147,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     if (!isBlankValue(v)) revealProperty(column.id)
     commitValue(row, column, v)
   }
+  const [bannerRequest, setBannerRequest] = useState<BannerRequest | null>(null)
   const interactions = useViewInteractions(host, {
     ghost: {
       graceMs: CARDS_GHOST_GRACE_MS,
@@ -181,8 +169,9 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
       },
     },
     newPages: 'single',
+    item: { banner: setBannerRequest },
   })
-  const { seat } = interactions
+  const { seat, item } = interactions
   const effectiveZoom = useElementZoom(host.viewRootRef)
   const reorderSets = (id: string, beforeId: string | null): boolean =>
     interactions.bandDrop(
@@ -192,7 +181,6 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
 
   // ── The root banner seat ──────────────────────────────────────────────────
 
-  const [bannerRequest, setBannerRequest] = useState<BannerRequest | null>(null)
   const bannerFrameRef = useRef<HTMLElement | null>(null)
   // Resolved every render rather than snapshotted into the request: a cover written while the seat is open must reach the editor, and a vanished owner closes it.
   const bannerOwner = ((): { path: string; value: string | undefined } | null => {
@@ -228,29 +216,13 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     else openBannerEditor()
   }, [bannerRequest])
 
-  // ── The card api ──────────────────────────────────────────────────────────
-
-  const cardApi = useStableApi<CardApi>({
-    commitValue: commitOnCard,
-    click: seat.click,
-    menu: seat.menu,
-    pane: seat.pane,
-    editor: seat.editor,
-    open: interactions.openPage,
-    openAdd: seat.openAdd,
-    hover: interactions.ghost.onHover,
-    pageMenu: interactions.pageMenu,
-    endNaming: host.endNaming,
-    openSet: interactions.openSet,
-    banner: setBannerRequest,
-  })
   const trailHeld = useRef<Record<string, TrailSegment[]>>({})
   const trailBySet = useMemo(() => {
     const m: Record<string, TrailSegment[]> = {}
     if (!hideLocation)
       for (const { parentSetId } of rowById.values()) {
         if (!parentSetId || parentSetId in m) continue
-        const chain = ancestryOf(tree, { kind: 'set', id: parentSetId })
+        const chain = tree && ancestryOf(tree, { kind: 'set', id: parentSetId })
         if (chain) m[parentSetId] = chain.slice(host.plan.kind === 'sets' ? 2 : 1)
       }
     trailHeld.current = stabilize(m, trailHeld.current)
@@ -271,7 +243,6 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
       view={view}
       columns={columns}
       ctx={ctx}
-      iconName={entityIcon('page', undefined, defaultIcons)}
       rootProps={interactions.ghostRootProps}
     />
   )
@@ -308,7 +279,6 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
             ctx={ctx}
             crumbs={trailBySet[r.parentSetId ?? ''] ?? NO_TRAIL}
             cover={coverOf(r)}
-            iconName={entityIcon('page', r.icon, defaultIcons)}
             columns={columns}
             nexusId={nexusId}
             styleById={styleById}
@@ -323,16 +293,14 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     return overlayShell(
       rect,
       <CardRoot className="card-overlay" locked style={OVERLAY_FILL}>
-        <SetFace set={set} defaultIcons={defaultIcons} />
+        <SetFace set={set} />
       </CardRoot>,
     )
   }
 
   return (
     <div
-      ref={(el) => {
-        host.viewRootRef.current = el
-      }}
+      ref={host.viewRootRef}
       className={shellClass}
       data-view-id={view.id}
       style={{ '--card-scale': cardScale } as React.CSSProperties}
@@ -354,7 +322,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
           >
             <DropSlot />
             {sets.map((s) => (
-              <SetCard key={s.id} set={s} defaultIcons={defaultIcons} api={cardApi} />
+              <SetCard key={s.id} set={s} api={item} />
             ))}
           </SortableZone>
         </div>
@@ -387,9 +355,8 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
                     columns={columns}
                     ctx={ctx}
                     loc={trailBySet[row.parentSetId ?? '']}
-                    defaultIcons={defaultIcons}
                     styleById={styleById}
-                    api={cardApi}
+                    api={item}
                     allowInlineRemove={effectiveZoom >= 0.8}
                     naming={host.naming?.id === row.id ? host.naming : null}
                     editing={
@@ -433,14 +400,12 @@ function GhostCard({
   view,
   columns,
   ctx,
-  iconName,
   rootProps,
 }: {
   banner: CardBanner
   view: SavedView
   columns: ResolvedColumn[]
   ctx: ValueContext
-  iconName: string
   rootProps: ViewInteractions['ghostRootProps']
 }): React.JSX.Element {
   const props = isCompact(view) ? [] : columns.filter((c) => c.kind !== 'title')
@@ -450,13 +415,13 @@ function GhostCard({
         {banner !== 'none' && (
           <CardThumb>
             <CardPlaceholder>
-              <Icon name={iconName} size="titleMedium" />
+              <EntityIcon kind="page" size="titleMedium" />
             </CardPlaceholder>
           </CardThumb>
         )}
         <CardText>
           <CardTitle mode="static">
-            <Icon name={iconName} className="card-title-icon" />
+            <EntityIcon kind="page" className="card-title-icon" />
             <span>New Page</span>
           </CardTitle>
           {props.length > 0 && (
@@ -482,17 +447,15 @@ function GhostCard({
 
 interface SetCardProps {
   set: SetNode
-  defaultIcons: Personalization['defaultIcons']
-  api: Pick<CardApi, 'openSet' | 'banner'>
+  api: Pick<CardItem, 'openSet' | 'banner'>
 }
 
-function SetCard({ set, defaultIcons, api }: SetCardProps): React.JSX.Element {
+function SetCard({ set, api }: SetCardProps): React.JSX.Element {
   const drag = useDragItem(set.id, { open: () => api.openSet(set, false) })
   return (
     <CardRoot drag={drag} locked onClick={(e) => api.openSet(set, isCmd(e))}>
       <SetFace
         set={set}
-        defaultIcons={defaultIcons}
         onThumbMenu={(e) => {
           e.preventDefault()
           e.stopPropagation()
@@ -505,14 +468,11 @@ function SetCard({ set, defaultIcons, api }: SetCardProps): React.JSX.Element {
 
 function SetFace({
   set,
-  defaultIcons,
   onThumbMenu,
 }: {
   set: SetNode
-  defaultIcons: Personalization['defaultIcons']
   onThumbMenu?: (e: React.MouseEvent<HTMLDivElement>) => void
 }): React.JSX.Element {
-  const iconName = entityIcon('set', set.icon, defaultIcons)
   return (
     <CardBody>
       <CardThumb onContextMenu={onThumbMenu}>
@@ -520,14 +480,14 @@ function SetFace({
           value={set.banner}
           fallback={
             <CardPlaceholder>
-              <Icon name={iconName} size="titleLarge" />
+              <EntityIcon kind="set" icon={set.icon} size="titleLarge" />
             </CardPlaceholder>
           }
         />
       </CardThumb>
       <CardText>
         <CardTitle>
-          <Icon name={iconName} className="card-title-icon" />
+          <EntityIcon kind="set" icon={set.icon} className="card-title-icon" />
           <span>{set.title}</span>
         </CardTitle>
       </CardText>
@@ -545,9 +505,8 @@ interface PageCardProps {
   columns: ResolvedColumn[]
   ctx: ValueContext
   loc?: TrailSegment[]
-  defaultIcons: Personalization['defaultIcons']
   styleById: Map<string, ColumnStyle>
-  api: CardApi
+  api: CardItem
   allowInlineRemove: boolean
   naming: ViewHostApi['naming']
   editing: string | null
@@ -588,11 +547,11 @@ function CardProperties({
           ctx={ctx}
           style={styleById.get(c.id)!}
           empty={
-            fillsBlank(c.type) ? (
+            PROPERTY_TYPES[c.type].origin !== 'filedata' ? (
               <EmptyValue className={cx('cell-empty', text.caption.emphasized)} />
             ) : undefined
           }
-          commit={(v) => api.commitValue(row, c, v)}
+          commit={(v) => api.commit(row, c, v)}
           hideRemove={!allowInlineRemove}
           onPane={(anchor) => api.pane(row, c, anchor)}
         />
@@ -637,7 +596,6 @@ const CardFace = memo(function CardFace({
   crumbs,
   src,
   cover,
-  iconName,
   columns,
   allowInlineRemove,
   naming,
@@ -657,7 +615,6 @@ const CardFace = memo(function CardFace({
   crumbs: TrailSegment[]
   src: string | undefined
   cover?: string
-  iconName: string
   columns: ResolvedColumn[]
   allowInlineRemove: boolean
   onImgError?: () => void
@@ -670,7 +627,7 @@ const CardFace = memo(function CardFace({
 }): React.JSX.Element {
   const shown = useMemo(() => shownColumnsFor(row, columns, isCompact(view)), [columns, row, view])
   const titleIcon = !viewOption(view, 'hide_page_icons') && (
-    <Icon name={iconName} className="card-title-icon" />
+    <EntityIcon kind="page" icon={row.icon} className="card-title-icon" />
   )
   const titleRow = (
     <CardTitle
@@ -691,7 +648,7 @@ const CardFace = memo(function CardFace({
   )
   const ph = (
     <CardPlaceholder>
-      <Icon name={iconName} size="titleMedium" />
+      <EntityIcon kind="page" icon={row.icon} size="titleMedium" />
     </CardPlaceholder>
   )
   return (
@@ -755,7 +712,6 @@ function OverlayFace({
   styleById,
   crumbs,
   cover,
-  iconName,
   columns,
   nexusId,
 }: {
@@ -766,7 +722,6 @@ function OverlayFace({
   styleById: Map<string, ColumnStyle>
   crumbs: TrailSegment[]
   cover?: string
-  iconName: string
   columns: ResolvedColumn[]
   nexusId: string
 }): React.JSX.Element {
@@ -781,7 +736,6 @@ function OverlayFace({
       crumbs={crumbs}
       src={src}
       cover={cover}
-      iconName={iconName}
       columns={columns}
       allowInlineRemove={false}
       naming={null}
@@ -801,7 +755,6 @@ const PageCard = memo(function PageCard({
   columns,
   ctx,
   loc,
-  defaultIcons,
   styleById,
   api,
   allowInlineRemove,
@@ -824,12 +777,15 @@ const PageCard = memo(function PageCard({
   const cover = coverOf(row)
 
   const onCardContextMenu = (e: React.MouseEvent): void => {
-    e.preventDefault()
-    e.stopPropagation()
-    if (drag.isDragging) return
+    if (drag.isDragging) {
+      e.preventDefault()
+      e.stopPropagation()
+      return
+    }
     const anchor = textRef.current ?? (e.currentTarget as HTMLElement)
     void api.pageMenu(
       row,
+      e,
       anchor,
       banner === 'banner' && cover
         ? () =>
@@ -842,8 +798,6 @@ const PageCard = memo(function PageCard({
         : undefined,
     )
   }
-
-  const iconName = entityIcon('page', row.icon, defaultIcons)
 
   return (
     <CardRoot
@@ -870,7 +824,6 @@ const PageCard = memo(function PageCard({
             crumbs={loc ?? NO_TRAIL}
             src={src}
             cover={cover}
-            iconName={iconName}
             columns={columns}
             allowInlineRemove={allowInlineRemove}
             naming={naming}

@@ -2,12 +2,16 @@ import { memo } from 'react'
 import type { ResolvedGroup, ViewRow } from '../viewRow'
 import type { ColumnStyle } from '../../Properties/columnStyles'
 import { type ColumnAlign, viewOption } from '../views'
-import type { PropertyValue } from '../../Properties/propertyValue'
 import { pickKindOf, type ResolvedColumn } from '../../Properties/properties'
 import { fillInput } from '@pommora/uix/Fields/fields.css'
 import { ValueSeat } from '../../Properties/Pickers/ValueSeat'
 import type { ViewHostApi } from '../Host/useViewHost'
-import { rowHover, useViewInteractions, type ViewInteractions } from '../Host/useViewInteractions'
+import {
+  type ItemApi,
+  rowHover,
+  useViewInteractions,
+  type ViewInteractions,
+} from '../Host/useViewInteractions'
 import { useSession } from '../../Session/store'
 import { RenamableName } from '../../Interface/RenamableTitle'
 import type { ValueContext } from '../../Properties/valueContext'
@@ -24,17 +28,14 @@ import { type ColumnDrag, gapShift, useColumns } from './useColumns'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
 import { overScrollLabel } from '@pommora/uix/Interactions/OverScroll'
-import { useStableApi } from '@pommora/uix/Utilities/stableApi'
 import { text } from '@pommora/uix/Theme'
 import { Icon } from '@pommora/uix/Symbols'
 import './table-view.css'
-import type { GhostAnchor } from '@pommora/uix/Interactions/ghostCreate'
 import { useCellSweep } from './useCellSweep'
 import { LineRow, LineZone } from '@pommora/uix/Interactions/drag'
 
 export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
-  const { view, columns, groups, ctx, rowById, bands, collapsed, dragDisabled, commitValue } = host
-  const selection = useSession((s) => s.selection)
+  const { view, columns, groups, ctx, rowById, bands, collapsed, dragDisabled } = host
   const {
     iconsShown,
     alignByCol,
@@ -52,62 +53,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     onTrackTransitionEnd,
   } = useColumns(host)
 
-  const titleCol = columns.find((c) => c.kind === 'title')
-  const titleColId = titleCol?.id
-
-  const interactions = useViewInteractions(host, {
-    ghost: { graceMs: 0 },
-    seat: {
-      anchor: (el) => el.closest<HTMLElement>('.data-cell') ?? el,
-      onClose: () => cellSweep.clear(),
-    },
-    newPages: 'pair',
-  })
-  const { seat } = interactions
-
-  // ── Cell click ────────────────────────────────────────────────────────────
-
-  const onCellClick = (row: ViewRow, col: ResolvedColumn, e: React.MouseEvent): void => {
-    // A secondary-click fires `click` alongside `contextmenu`, so bail and let the right-click menu win.
-    if (isSecondaryClick(e)) return
-    if (col.kind === 'title') {
-      e.stopPropagation()
-      interactions.openPage(row, isCmd(e))
-      return
-    }
-    seat.click(row, col, e)
-  }
-
-  // ── The title cell ────────────────────────────────────────────────────────
-
-  const titleCell = (row: ViewRow, naming: boolean, hideIcon: boolean): React.ReactNode => (
-    <span className={naming ? 'cell-rename' : cx(overScrollLabel, 'cell-title')}>
-      {hideIcon ? null : <EntityIcon kind="page" icon={row.icon} size="body" />}
-      <RenamableName
-        title={row.title}
-        kind="page"
-        rename={{ path: row.path, editing: naming, onEnd: host.endNaming }}
-        create={naming && host.naming?.create}
-        className={fillInput}
-        renames="title"
-      >
-        {(shown) => <span className="cell-title-text">{shown}</span>}
-      </RenamableName>
-    </span>
-  )
-
-  // ── The page menu ─────────────────────────────────────────────────────────
-
-  const openPageMenu = (row: ViewRow, e: React.MouseEvent): void => {
-    e.preventDefault()
-    e.stopPropagation()
-    const el = e.currentTarget as HTMLElement
-    const cell = el.closest<HTMLElement>('.data-cell') ?? el
-    void interactions.pageMenu(
-      row,
-      cell.querySelector<HTMLElement>('.cell-title > :first-child') ?? cell,
-    )
-  }
+  const titleColId = columns.find((c) => c.kind === 'title')?.id
 
   // ── The sweep ─────────────────────────────────────────────────────────────
 
@@ -131,42 +77,36 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     return true
   }
 
-  // ── The row api ───────────────────────────────────────────────────────────
-
-  const cellApi = useStableApi<RowCellApi>({
-    menu: (row, col, e) =>
-      void (col.kind === 'title' ? openPageMenu(row, e) : seat.menu(row, col, e)),
-    click: onCellClick,
-    pane: seat.pane,
-    title: titleCell,
-    overlay: seat.editor,
-    commit: commitValue,
-    grip: openPageMenu,
-    sweep: startSweep,
-    hover: interactions.ghost.onHover,
-    open: (row) => interactions.openPage(row, false),
+  const interactions = useViewInteractions(host, {
+    ghost: { graceMs: 0 },
+    seat: {
+      anchor: (el) => el.closest<HTMLElement>('.data-cell') ?? el,
+      onClose: () => cellSweep.clear(),
+    },
+    newPages: 'pair',
+    item: { sweep: startSweep },
   })
+  const { seat } = interactions
+
   const open = seat.open
-  const overlayTarget =
-    host.naming && titleColId
-      ? { rowId: host.naming.id, colId: titleColId }
-      : open?.mode === 'editor'
-        ? { rowId: open.rowId, colId: open.columnId }
-        : null
+  const editorTarget = open?.mode === 'editor' ? { rowId: open.rowId, colId: open.columnId } : null
   const popoverTarget =
     open?.mode === 'popover' ? { rowId: open.rowId, colId: open.columnId } : null
   const activeCell =
-    overlayTarget ??
-    (open?.mode === 'picker' ? { rowId: open.rowId, colId: open.columnId } : popoverTarget)
+    host.naming && titleColId
+      ? { rowId: host.naming.id, colId: titleColId }
+      : (editorTarget ??
+        (open?.mode === 'picker' ? { rowId: open.rowId, colId: open.columnId } : popoverTarget))
 
   // ── The render ────────────────────────────────────────────────────────────
 
   const indent = (depth: number): string =>
     depth > 0 ? `calc(var(--loose-inset) + ${rowIndent(depth)})` : 'var(--loose-inset)'
 
+  const hideIcon = viewOption(view, 'hide_page_icons')
   const ghostRowProps = {
     columns,
-    hideIcon: viewOption(view, 'hide_page_icons'),
+    hideIcon,
     onClosed: interactions.ghost.closed,
     rootProps: interactions.ghostRootProps,
   }
@@ -190,12 +130,12 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
             dragShift={dragShift}
             alignByCol={alignByCol}
             styleByCol={styleByCol}
-            api={cellApi}
-            overlayCol={overlayTarget?.rowId === row.id ? overlayTarget.colId : null}
+            api={interactions.item}
+            naming={host.naming?.id === row.id ? host.naming : null}
+            editingCol={editorTarget?.rowId === row.id ? editorTarget.colId : null}
             popoverCol={popoverTarget?.rowId === row.id ? popoverTarget.colId : null}
             activeCol={activeCell?.rowId === row.id ? activeCell.colId : null}
-            hideIcon={viewOption(view, 'hide_page_icons')}
-            selected={selection.kind === 'page' && selection.id === row.id}
+            hideIcon={hideIcon}
             dragDisabled={dragDisabled}
             sweepCol={cellSweep.sweep?.rows.has(row.id) ? cellSweep.sweep.colId : null}
             lead={lead}
@@ -226,12 +166,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     ]
   }
   return (
-    <div
-      ref={(el) => {
-        host.viewRootRef.current = el
-      }}
-      className={cx('table table-shell', overflowing && 'overflowing')}
-    >
+    <div ref={host.viewRootRef} className={cx('table table-shell', overflowing && 'overflowing')}>
       <LineZone {...interactions.listZone(rowIndent)}>
         <div
           className={cx(
@@ -277,17 +212,13 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   )
 }
 
-type RowCellApi = {
-  menu: (row: ViewRow, col: ResolvedColumn, e: React.MouseEvent) => void
-  click: (row: ViewRow, col: ResolvedColumn, e: React.MouseEvent) => void
-  pane: (row: ViewRow, col: ResolvedColumn, anchor: HTMLElement) => void
-  title: (row: ViewRow, renaming: boolean, hideIcon: boolean) => React.ReactNode
-  overlay: (row: ViewRow, col: ResolvedColumn) => React.ReactNode
-  commit: (row: ViewRow, col: ResolvedColumn, next: PropertyValue | null) => void
-  grip: (row: ViewRow, e: React.MouseEvent) => void
-  open: (row: ViewRow) => void
+type RowApi = ItemApi & {
   sweep: (row: ViewRow, col: ResolvedColumn, e: React.PointerEvent) => boolean
-  hover: GhostAnchor['onHover']
+}
+
+const titleGlyph = (el: HTMLElement): HTMLElement => {
+  const cell = el.closest<HTMLElement>('.data-cell') ?? el
+  return cell.querySelector<HTMLElement>('.cell-title > :first-child') ?? cell
 }
 
 function GhostRow({
@@ -343,11 +274,11 @@ const DataRow = memo(function DataRow({
   alignByCol,
   styleByCol,
   api,
-  overlayCol,
+  naming,
+  editingCol,
   popoverCol,
   activeCol,
   hideIcon,
-  selected,
   dragDisabled,
   sweepCol,
   lead,
@@ -359,20 +290,23 @@ const DataRow = memo(function DataRow({
   dragShift: ColumnDrag | null
   alignByCol: ColumnAlign[]
   styleByCol: ColumnStyle[]
-  api: RowCellApi
-  overlayCol: string | null
+  api: RowApi
+  naming: ViewHostApi['naming']
+  editingCol: string | null
   popoverCol: string | null
   activeCol: string | null
   hideIcon: boolean
-  selected: boolean
   dragDisabled: boolean
   sweepCol: string | null
   lead: boolean
 }): React.JSX.Element {
+  const selected = useSession((s) => s.selection.kind === 'page' && s.selection.id === row.id)
+  const pageMenu = (e: React.MouseEvent): void =>
+    void api.pageMenu(row, e, titleGlyph(e.currentTarget as HTMLElement))
   return (
     <LineRow
       id={row.id}
-      open={() => api.open(row)}
+      open={() => api.open(row, false)}
       data-rid={row.id}
       data-reveal-host=""
       className={cx('data-row', selected && 'selected', lead && 'row-lead')}
@@ -385,21 +319,34 @@ const DataRow = memo(function DataRow({
         }
         if (i === 0 && alignByCol[i] === 'left') style.paddingLeft = padLeft
         const stateCx = activeCol === c.id && 'cell-active'
-        const opened = overlayCol === c.id
         const content =
-          c.kind === 'title'
-            ? api.title(row, opened, hideIcon)
-            : ((opened ? api.overlay(row, c) : null) ?? (
-                <Cell
-                  row={row}
-                  column={c}
-                  ctx={ctx}
-                  style={styleByCol[i]}
-                  showFullLink={popoverCol === c.id}
-                  commit={(next) => api.commit(row, c, next)}
-                  onPane={(anchor) => api.pane(row, c, anchor)}
-                />
-              ))
+          c.kind === 'title' ? (
+            <span className={naming ? 'cell-rename' : cx(overScrollLabel, 'cell-title')}>
+              {hideIcon ? null : <EntityIcon kind="page" icon={row.icon} size="body" />}
+              <RenamableName
+                title={row.title}
+                kind="page"
+                rename={{ path: row.path, editing: naming !== null, onEnd: api.endNaming }}
+                create={naming?.create}
+                className={fillInput}
+                renames="title"
+              >
+                {(shown) => <span className="cell-title-text">{shown}</span>}
+              </RenamableName>
+            </span>
+          ) : (
+            ((editingCol === c.id ? api.editor(row, c) : null) ?? (
+              <Cell
+                row={row}
+                column={c}
+                ctx={ctx}
+                style={styleByCol[i]}
+                showFullLink={popoverCol === c.id}
+                commit={(next) => api.commit(row, c, next)}
+                onPane={(anchor) => api.pane(row, c, anchor)}
+              />
+            ))
+          )
         return (
           // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix
           <div
@@ -412,11 +359,17 @@ const DataRow = memo(function DataRow({
               stateCx,
             )}
             style={style}
-            onContextMenu={(e) => api.menu(row, c, e)}
+            onContextMenu={(e) => (c.kind === 'title' ? pageMenu(e) : void api.menu(row, c, e))}
             onPointerDown={(e) => {
               if (api.sweep(row, c, e)) e.stopPropagation()
             }}
-            onClick={(e) => api.click(row, c, e)}
+            onClick={(e) => {
+              if (c.kind !== 'title') return api.click(row, c, e)
+              // A secondary-click fires `click` alongside `contextmenu`, so bail and let the right-click menu win.
+              if (isSecondaryClick(e)) return
+              e.stopPropagation()
+              api.open(row, isCmd(e))
+            }}
           >
             {i === 0 && <RowRail />}
             {i === 0 && (
@@ -427,7 +380,7 @@ const DataRow = memo(function DataRow({
                 onPointerDown={(e) => {
                   if (e.button === 2) e.preventDefault()
                 }}
-                onContextMenu={(e) => api.grip(row, e)}
+                onContextMenu={pageMenu}
                 onClick={(e) => e.stopPropagation()}
                 title={dragDisabled ? undefined : 'Drag to reorder'}
               >
