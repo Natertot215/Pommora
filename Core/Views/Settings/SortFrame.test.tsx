@@ -6,7 +6,7 @@ import type { CollectionNode } from '../../Nexus/tree'
 import type { PropertyDefinition } from '../../Properties/properties'
 import { LOCATION_SORT, type SavedView } from '../views'
 import { useSession } from '../../Session/store'
-import { SortFrame } from './SortFrame'
+import { ViewPane } from './ViewPane'
 import { stubDialer } from '../../vitest.setup'
 import { MenuDoorHost } from '../../Testing/MenuDoorHost'
 import { mountEachTest } from '../../Testing/viewHarness'
@@ -79,7 +79,8 @@ const mount = async (v: SavedView): Promise<void> => {
   await act(async () => {
     root.render(
       <MenuDoorHost>
-        <SortFrame
+        <ViewPane
+          id="sort"
           source={source}
           view={v}
           schema={schema}

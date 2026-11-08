@@ -16,6 +16,7 @@ export interface ViewKindRecord {
   Renderer: (p: { host: ViewHostApi }) => React.JSX.Element
   nests: boolean
   layout: {
+    leaf: 'visibility' | 'switches'
     switches: SwitchEntry[]
     rows?: (view: SavedView, write: ViewWriter) => MenuRow[]
   }

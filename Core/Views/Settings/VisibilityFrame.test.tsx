@@ -2,7 +2,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import type { Root } from 'react-dom/client'
-import type { CollectionNode } from '../../Nexus/tree'
 import type { PropertyDefinition } from '../../Properties/properties'
 import type { SavedView } from '../views'
 import { firePointer, stubRect } from '@pommora/uix/Utilities/pointerHarness'
@@ -10,8 +9,7 @@ import { useSession } from '../../Session/store'
 import { mountEachTest } from '../../Testing/viewHarness'
 import { VisibilityFrame } from './VisibilityFrame'
 
-const save = vi.hoisted(() => vi.fn())
-vi.mock('../Host/liveView', () => ({ useSaveView: () => save }))
+const save = vi.fn()
 
 const schema: PropertyDefinition[] = [
   { id: 'prop_a', label: 'Alpha', key: 'Alpha', type: 'number' },
@@ -25,7 +23,6 @@ const view: SavedView = {
   property_order: ['_title', 'prop_a', 'prop_b'],
   hidden_properties: ['prop_c'],
 }
-const source = { kind: 'collection', id: 'col1', path: 'Col', views: [view] } as never
 
 let root: Root
 mountEachTest((_h, r) => {
@@ -47,11 +44,10 @@ const drag = async (name: string, from: number, ...to: number[]): Promise<void> 
   await act(async () => {
     root.render(
       <VisibilityFrame
-        source={source as CollectionNode}
         schema={schema}
         view={view}
         back={{ label: 'Settings', onBack: () => {} }}
-        current="Visibility"
+        save={save}
       />,
     )
   })
@@ -74,7 +70,7 @@ const drag = async (name: string, from: number, ...to: number[]): Promise<void> 
 describe('VisibilityFrame — the pane drag', () => {
   it('reorders a shown property at the slot', async () => {
     await drag('Beta', 50, 35, 22)
-    expect(save).toHaveBeenCalledExactlyOnceWith(view, {
+    expect(save).toHaveBeenCalledExactlyOnceWith({
       property_order: ['_title', 'prop_b', 'prop_a'],
       hidden_properties: ['prop_c'],
     })
@@ -83,7 +79,7 @@ describe('VisibilityFrame — the pane drag', () => {
   it('hides a shown property dropped in the hidden zone', async () => {
     await drag('Alpha', 30, 50, 90)
     expect(save).toHaveBeenCalledOnce()
-    expect(save.mock.calls[0][1].hidden_properties).toContain('prop_a')
+    expect(save.mock.calls[0][0].hidden_properties).toContain('prop_a')
   })
 
   it('a release on its own slot writes nothing', async () => {
@@ -104,11 +100,10 @@ describe('VisibilityFrame — the rows', () => {
     await act(async () => {
       root.render(
         <VisibilityFrame
-          source={source as CollectionNode}
           schema={schema}
           view={{ ...view, property_order: [...(view.property_order ?? []), 'ctx_areas'] }}
           back={{ label: 'Settings', onBack: () => {} }}
-          current="Visibility"
+          save={save}
         />,
       )
     })

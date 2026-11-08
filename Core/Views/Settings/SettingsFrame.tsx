@@ -1,19 +1,16 @@
 import { useState } from 'react'
 import { ZOOM } from '../../Settings/personalization'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
-import { Icon } from '@pommora/uix/Symbols'
 import { entityIcon } from '../../Assets/entityIconPolicy'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
 import { trailOf, findCollection, findSet } from '../../Nexus/treeIndex'
-import { ICON, SETTINGS_PANE_FLOOR } from '@pommora/uix/Menus/frames.css'
+import { SETTINGS_PANE_FLOOR } from '@pommora/uix/Menus/frames.css'
 import { useSession } from '../../Session/store'
 import { personalizationOf } from '../../Session/configSlice'
 import { containerSchema, owningCollection } from '../../Nexus/treePatch'
 import { viewGlyph } from '../viewIcon'
 import { PropertyFrame } from '../../Properties/Schema/PropertyFrame'
-import { VisibilityFrame } from './VisibilityFrame'
-import { LayoutFrame, VIEW_ROWS, type ViewRow, type ViewRowId } from './LayoutFrame'
-import { ViewLeaf } from './ViewLeaf'
+import { chevronRows, type SettingsPane, VIEW_PANES, ViewPane, type ViewPaneId } from './ViewPane'
 import { ScalePicker } from '../../Settings/ScalePicker'
 import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
 import { MenuIndex } from '@pommora/uix/Menus/MenuIndex'
@@ -31,12 +28,11 @@ import { useViewTileScope } from '../ViewTileScope'
 import { useActiveView, useSaveView } from '../Host/liveView'
 import { lockLabel } from '../../Actions/toggleLabels'
 
-type FrameId = 'properties' | 'visibility' | ViewRowId
+type PaneId = 'properties' | ViewPaneId
 
-const ENTRIES: ViewRow<FrameId>[] = [
+const ENTRIES: SettingsPane<PaneId>[] = [
   { id: 'properties', label: 'Properties', icon: 'server' },
-  { id: 'visibility', label: 'Visibility', icon: 'eye' },
-  ...VIEW_ROWS,
+  ...VIEW_PANES,
 ]
 
 export function SettingsFrame(): React.JSX.Element | null {
@@ -66,7 +62,7 @@ function ContainerSettings({
   const tree = useSession((st) => st.tree)
   const submitRename = useSession((st) => st.submitRename)
   const mutate = useSession((st) => st.mutate)
-  const [pane, setPane] = useState<FrameId | 'root'>('root')
+  const [pane, setPane] = useState<PaneId | 'root'>('root')
   const scope = useViewTileScope()
   const saveView = useSaveView(node)
 
@@ -77,7 +73,7 @@ function ContainerSettings({
     else void mutate({ op: 'setIcon', path: node.path, kind: node.kind, icon })
   })
   const configLocked = scope?.locked ?? false
-  const frozen = (id: FrameId): boolean => configLocked && id !== 'properties'
+  const frozen = (id: PaneId): boolean => configLocked && id !== 'properties'
 
   const toRoot: MenuBack = { label: 'Settings', onBack: () => setPane('root') }
   const detailPane = pane === 'root' || frozen(pane) ? null : pane
@@ -102,20 +98,7 @@ function ContainerSettings({
         }}
       />
       <MenuSeparator flush />
-      <MenuIndex
-        sections={[
-          {
-            rows: ENTRIES.map((e) => ({
-              kind: 'item',
-              icon: <Icon name={e.icon} size={ICON.rootEntry} />,
-              label: e.label,
-              trailing: { kind: 'chevron' },
-              disabled: frozen(e.id),
-              onSelect: () => setPane(e.id),
-            })),
-          },
-        ]}
-      />
+      <MenuIndex sections={[{ rows: chevronRows(ENTRIES, setPane, frozen) }]} />
     </>
   )
 
@@ -150,33 +133,17 @@ function ContainerSettings({
     </MenuScrollFrame>
   )
 
-  const detailFor = (id: FrameId): React.JSX.Element => {
-    switch (id) {
-      case 'properties':
-        return (
-          <PropertyFrame
-            collectionPath={schemaCollection.path}
-            schema={schema}
-            back={toRoot}
-            source={node}
-          />
-        )
-      case 'visibility':
-        return (
-          <VisibilityFrame
-            source={node}
-            schema={schema}
-            view={view}
-            back={toRoot}
-            current="Visibility"
-          />
-        )
-      case 'layout':
-        return <LayoutFrame door="flat" source={node} view={view} back={toRoot} />
-      default:
-        return <ViewLeaf id={id} source={node} view={view} schema={schema} back={toRoot} />
-    }
-  }
+  const detailFor = (id: PaneId): React.JSX.Element =>
+    id === 'properties' ? (
+      <PropertyFrame
+        collectionPath={schemaCollection.path}
+        schema={schema}
+        back={toRoot}
+        source={node}
+      />
+    ) : (
+      <ViewPane id={id} source={node} view={view} schema={schema} back={toRoot} />
+    )
 
   return (
     <FrameSlide

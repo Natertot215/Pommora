@@ -1,10 +1,8 @@
 import type { ReactNode } from 'react'
-import type { CollectionNode, SetNode } from '../../Nexus/tree'
-import { FILEDATA, type PropertyDefinition } from '../../Properties/properties'
-import type { SavedView } from '../views'
+import { FILEDATA } from '../../Properties/properties'
 import { useSession } from '../../Session/store'
 import { MenuRowView } from '@pommora/uix/Menus/MenuIndex'
-import { type MenuBack, MenuTopRow, MenuScrollFrame } from '@pommora/uix/Menus/MenuRows'
+import { MenuTopRow, MenuScrollFrame } from '@pommora/uix/Menus/MenuRows'
 import {
   hiddenListIds,
   hideShown,
@@ -13,7 +11,6 @@ import {
   resolveColumns,
   unhide,
 } from '../Pipeline/columns'
-import { useSaveView } from '../Host/liveView'
 import { LineGroup, LineRow, LineZone } from '@pommora/uix/Interactions/drag'
 import { PaneRestGroup, type PaneDrop, paneSpec } from '@pommora/uix/Menus/paneDrop'
 import { contextIdsOf, contextsByIdOf } from '../../Contexts/contextIdentity'
@@ -21,6 +18,7 @@ import { EyeToggle } from '@pommora/uix/Elements/EyeToggle'
 import { columnIcon, columnLabel } from '../../Properties/columnDisplay'
 import { Icon } from '@pommora/uix/Symbols'
 import * as s from '@pommora/uix/Menus/frames.css'
+import type { PaneProps } from './ViewPane'
 
 function VisibilityGroups({
   shownIds,
@@ -81,21 +79,13 @@ function VisibilityGroups({
 }
 
 export function VisibilityFrame({
-  source,
   schema,
   view,
   back,
+  save,
   footer,
-  current,
-}: {
-  source: CollectionNode | SetNode
-  schema: PropertyDefinition[]
-  view: SavedView
-  back: MenuBack
-  footer?: ReactNode
-  current: string
-}): React.JSX.Element | null {
-  const saveView = useSaveView(source)
+  current = 'Visibility',
+}: PaneProps & { footer?: ReactNode; current?: string }): React.JSX.Element | null {
   const tree = useSession((st) => st.tree)
   if (!tree) return null
 
@@ -108,7 +98,6 @@ export function VisibilityFrame({
   const nameFor = (id: string): string => columnLabel(columnOf(id), contextsByIdOf(tree))
   const iconFor = (id: string): string => columnIcon(columnOf(id), contextsByIdOf(tree))
 
-  const save = (patch: Partial<SavedView>): void => void saveView(view, patch)
   // The hidden list holds no order (`ordersRest: false`), so no drop reorders it.
   const handleDrop = (drop: PaneDrop): void => {
     switch (drop.kind) {

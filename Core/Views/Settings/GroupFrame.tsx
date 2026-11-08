@@ -26,7 +26,6 @@ import { MenuRowView, pickerRow } from '@pommora/uix/Menus/MenuIndex'
 import {
   FootingItem,
   MenuSeparator,
-  type MenuBack,
   MenuTopRow,
   MenuScrollFrame,
   MenuFooting,
@@ -51,7 +50,7 @@ import { NUMERIC_FORMATS } from '../../Properties/formatValue'
 import { bandModelOf, dateLabeller, nodeLabel, springsInto } from '../Bands/bandModel'
 import { bandRouting } from '../Bands/bandRouter'
 import { bandSpec } from '../Bands/GroupBand'
-import { dropIO, useSaveView } from '../Host/liveView'
+import { dropIO } from '../Host/liveView'
 import { useBandHeads } from '../Host/useBandHeads'
 import { EntityIcon } from '../../Assets/EntityIcon'
 import { cx } from '@pommora/uix/Utilities/cx'
@@ -72,6 +71,7 @@ import { type HideControls, orderOptions, rowEye, SUB_LOOK } from './paneRows'
 import { OptionChip } from '../../Properties/Cells/OptionChip'
 import { styleFor } from '../../Properties/columnStyles'
 import { groupable } from '../valueKinds'
+import type { PaneProps } from './ViewPane'
 
 const STRUCTURAL_ORDER: PickerOption<StructuralOrderMode>[] = [
   { value: 'custom', label: 'Custom' },
@@ -110,16 +110,10 @@ export function GroupFrame({
   view,
   schema,
   back,
-}: {
-  source: CollectionNode | SetNode
-  view: SavedView
-  schema: PropertyDefinition[]
-  back: MenuBack
-}): React.JSX.Element {
+  save,
+}: PaneProps & { source: CollectionNode | SetNode }): React.JSX.Element {
   const forms = useDateForms()
-  const saveView = useSaveView(source)
-  const save = (patch: Partial<SavedView>): void => void saveView(view, patch)
-  const saveGroup = (group: GroupConfig): void => save({ group })
+  const saveGroup = (group: GroupConfig): void => void save({ group })
 
   const held = view.hidden_groups ?? []
   const hidden = new Set(held)
@@ -174,7 +168,7 @@ export function GroupFrame({
     ...propertyOptions,
   ]
 
-  const saveSub = (sub: SubGroupConfig | undefined): void => save({ sub_group: sub })
+  const saveSub = (sub: SubGroupConfig | undefined): void => void save({ sub_group: sub })
 
   const footings = (
     <MenuFooting>
@@ -324,7 +318,7 @@ export function GroupFrame({
             view={view}
             plan={plan}
             sub={sub}
-            persist={(patch) => saveView(view, patch)}
+            persist={save}
             {...setControls}
             subControls={subDef ? bucketControls('sub', subDef.id) : {}}
           />

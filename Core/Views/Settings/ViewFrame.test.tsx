@@ -17,6 +17,7 @@ import { stubDialer } from '../../vitest.setup'
 import { mountEachTest } from '../../Testing/viewHarness'
 import { firePointer, stubRect } from '@pommora/uix/Utilities/pointerHarness'
 import { itemPicked } from '@pommora/uix/Menus/menu-row.css'
+import { presentedKind } from '../Host/viewKinds'
 
 const schema: PropertyDefinition[] = [
   { id: 'prop_status', label: 'Status', key: 'Status', type: 'status' },
@@ -281,6 +282,35 @@ describe('ViewFrame — the view editor’s menu', () => {
     await act(async () => trigger.click())
     const choice = useSession.getState().pendingChoice
     expect([choice?.of, choice?.trigger === trigger, choice?.value]).toEqual(['icon', true, 'star'])
+  })
+})
+
+describe('ViewFrame — the panes the editor reaches', () => {
+  const press = async (label: string): Promise<void> => {
+    const el = [...document.querySelectorAll('[role="button"], button')]
+      .filter((e) => e.textContent === label)
+      .at(-1)
+    await act(async () => (el as HTMLElement).click())
+  }
+
+  it.each([
+    { type: 'table', list: true, shape: 'with the Visibility list above them' },
+    { type: 'cards', list: false, shape: 'without the Visibility list' },
+  ] as const)('a $type view’s Layout row opens the kind’s switches $shape', async ({
+    type,
+    list,
+  }) => {
+    useSession.setState({
+      tree: { contexts: [], collections: [], config: { personalization: {} } } as never,
+    })
+    await mount(source([view('view_a', 'Table'), { ...view('view_b', 'Board'), type }]))
+    await act(async () => {
+      ;(document.querySelector('[aria-label="Edit Board"]') as HTMLElement).click()
+    })
+    await press('Layout')
+    expect(document.querySelector('[aria-label="Always Shown"]') !== null).toBe(list)
+    for (const { label } of presentedKind(type).layout.switches)
+      expect(document.querySelector(`[aria-label="${label}"]`)).not.toBeNull()
   })
 })
 

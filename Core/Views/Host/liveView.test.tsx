@@ -11,7 +11,7 @@ import { fault, ok } from '../../Contract/result'
 import { useSession } from '../../Session/store'
 import { stubDialer } from '../../vitest.setup'
 import { ViewTileScopeProvider, type ViewTileScopeValue } from '../ViewTileScope'
-import { GroupFrame } from '../Settings/GroupFrame'
+import { ViewPane } from '../Settings/ViewPane'
 import { SettingsFrame } from '../Settings/SettingsFrame'
 
 const base = (over: Partial<SavedView> = {}): SavedView =>
@@ -490,7 +490,8 @@ describe('useSaveView', () => {
   it('a locked tile drops nothing to the source container either', async () => {
     await render(
       <ViewTileScopeProvider value={scope(true)}>
-        <GroupFrame
+        <ViewPane
+          id="group"
           source={source}
           view={view}
           schema={[statusDef]}

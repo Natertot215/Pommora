@@ -7,7 +7,7 @@ import type { PropertyDefinition } from '../../Properties/properties'
 import type { SavedView } from '../views'
 import { firePointer, stubRect } from '@pommora/uix/Utilities/pointerHarness'
 import { useSession } from '../../Session/store'
-import { GroupFrame } from './GroupFrame'
+import { ViewPane } from './ViewPane'
 import * as group from '../Pipeline/group'
 import { stubDialer } from '../../vitest.setup'
 import { MenuDoorHost } from '../../Testing/MenuDoorHost'
@@ -69,7 +69,8 @@ const mount = async (v: SavedView): Promise<void> => {
   await act(async () => {
     root.render(
       <MenuDoorHost>
-        <GroupFrame
+        <ViewPane
+          id="group"
           source={source}
           view={v}
           schema={schema}
@@ -180,7 +181,8 @@ describe('GroupFrame rows', () => {
     await act(async () => {
       root.render(
         <MenuDoorHost>
-          <GroupFrame
+          <ViewPane
+            id="group"
             source={nested}
             view={view()}
             schema={[statusDef, dateDef]}
@@ -202,7 +204,8 @@ describe('GroupFrame rows', () => {
     await act(async () => {
       root.render(
         <MenuDoorHost>
-          <GroupFrame
+          <ViewPane
+            id="group"
             source={nested}
             view={view({ sub_group: { property_id: 'prop_status', order_mode: 'configured' } })}
             schema={[statusDef, dateDef]}
@@ -382,7 +385,8 @@ describe('GroupFrame lists — dragging in the pane', () => {
     act(async () => {
       root.render(
         <MenuDoorHost>
-          <GroupFrame
+          <ViewPane
+            id="group"
             source={src}
             view={v}
             schema={[twoStatus, dateDef]}

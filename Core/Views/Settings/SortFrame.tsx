@@ -1,15 +1,7 @@
-import type { CollectionNode, SetNode } from '../../Nexus/tree'
-import type { PropertyDefinition } from '../../Properties/properties'
-import { LOCATION_SORT, type SavedView, type SortCriterion, viewOption } from '../views'
+import { LOCATION_SORT, type SortCriterion, viewOption } from '../views'
 import { presentedKind } from '../Host/viewKinds'
 import { MenuRowView, pickerRow } from '@pommora/uix/Menus/MenuIndex'
-import {
-  type MenuBack,
-  MenuScrollFrame,
-  MenuTopRow,
-  MenuSeparator,
-} from '@pommora/uix/Menus/MenuRows'
-import { useSaveView } from '../Host/liveView'
+import { MenuScrollFrame, MenuTopRow, MenuSeparator } from '@pommora/uix/Menus/MenuRows'
 import { resolveColumn } from '../Pipeline/columns'
 import { contextIdsOf } from '../../Contexts/contextIdentity'
 import { useSession } from '../../Session/store'
@@ -20,6 +12,7 @@ import { liveBucketOrder } from '../Pipeline/group'
 import { FILEDATA_TARGETS, schemaTargets } from '../paneTargets'
 import { chipRegion, middleRegion, SETTINGS_PANE_MAX_HEIGHT } from '@pommora/uix/Menus/frames.css'
 import { viewSpecOf } from '../valueKinds'
+import type { PaneProps } from './ViewPane'
 
 type OrderChoice = SortCriterion['direction'] | 'custom'
 const LOCATION_ORDERS: PickerOption<'location' | 'custom'>[] = [
@@ -27,20 +20,9 @@ const LOCATION_ORDERS: PickerOption<'location' | 'custom'>[] = [
   { value: 'custom', label: 'Custom' },
 ]
 
-export function SortFrame({
-  source,
-  view,
-  schema,
-  back,
-}: {
-  source: CollectionNode | SetNode
-  view: SavedView
-  schema: PropertyDefinition[]
-  back: MenuBack
-}): React.JSX.Element {
-  const saveView = useSaveView(source)
+export function SortFrame({ view, schema, back, save }: PaneProps): React.JSX.Element {
   const contextIds = contextIdsOf(useSession((st) => st.tree))
-  const save = (sort: SortCriterion[] | undefined): void => void saveView(view, { sort })
+  const saveSort = (sort: SortCriterion[] | undefined): void => void save({ sort })
 
   const primary = view.sort?.[0]
   const sub = view.sort?.[1]
@@ -53,31 +35,31 @@ export function SortFrame({
 
   const pickPrimary = (id: string | null): void => {
     if (id === null) {
-      if (primary) save(undefined)
+      if (primary) saveSort(undefined)
       return
     }
     if (primary?.property_id === id) return
     const fresh: SortCriterion = { property_id: id, direction: 'ascending' }
     const next = sub && sub.property_id !== id ? [fresh, sub] : [fresh]
-    if (id === LOCATION_SORT) void saveView(view, { sort: next, location_order_mode: 'location' })
-    else save(next)
+    if (id === LOCATION_SORT) void save({ sort: next, location_order_mode: 'location' })
+    else saveSort(next)
   }
 
   const pickSub = (id: string | null): void => {
     if (!primary) return
     if (id === null) {
-      if (sub) save([primary])
+      if (sub) saveSort([primary])
       return
     }
     if (sub?.property_id === id) return
-    save([primary, { property_id: id, direction: 'ascending' }])
+    saveSort([primary, { property_id: id, direction: 'ascending' }])
   }
 
   const primaryColumn = primary && resolveColumn(primary.property_id, schema, contextIds)
   const finiteDef =
     viewSpecOf(primaryColumn?.type)?.directions === 'option' ? primaryColumn?.def : undefined
 
-  const savePrimary = (next: SortCriterion): void => save(sub ? [next, sub] : [next])
+  const savePrimary = (next: SortCriterion): void => saveSort(sub ? [next, sub] : [next])
   const ordering = primary?.order
     ? { order_mode: 'manual' as const, order: primary.order }
     : {
@@ -128,7 +110,7 @@ export function SortFrame({
                 'Order',
                 viewOption(view, 'location_order_mode'),
                 LOCATION_ORDERS,
-                (v) => void saveView(view, { location_order_mode: v }),
+                (v) => void save({ location_order_mode: v }),
                 sub ? SUB_LOOK : undefined,
               )}
             />
@@ -168,7 +150,7 @@ export function SortFrame({
                   'ascending',
                   'descending',
                 ]),
-                (d) => save([primary, { ...sub, direction: d }]),
+                (d) => saveSort([primary, { ...sub, direction: d }]),
                 SUB_LOOK,
               )}
             />

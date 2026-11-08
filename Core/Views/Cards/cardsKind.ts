@@ -23,6 +23,7 @@ export const CARDS_KIND: ViewKindRecord = {
   Renderer: CardsView,
   nests: false,
   layout: {
+    leaf: 'switches',
     switches: [
       { icon: 'map', label: 'Hide Location', key: 'hide_location' },
       { icon: 'wrap-text', label: 'Wrap Titles', key: 'wrap_titles' },

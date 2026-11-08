@@ -1,0 +1,84 @@
+// @vitest-environment jsdom
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { act } from 'react'
+import type { Root } from 'react-dom/client'
+import type { CollectionNode } from '../../Nexus/tree'
+import type { SavedView } from '../views'
+import { mountEachTest } from '../../Testing/viewHarness'
+import { useSession } from '../../Session/store'
+import { ViewTileScopeProvider } from '../ViewTileScope'
+import { presentedKind } from '../Host/viewKinds'
+import { makeTree } from '../../Testing/testTree'
+import { SettingsFrame } from './SettingsFrame'
+
+const view: SavedView = {
+  id: 'view_a',
+  name: 'Board',
+  type: 'cards',
+  property_order: ['_title'],
+  hidden_properties: [],
+}
+const source = {
+  kind: 'collection',
+  id: 'col1',
+  title: 'Col',
+  path: 'Col',
+  sets: [],
+  pages: [],
+  propertyIds: [],
+  views: [view],
+} as unknown as CollectionNode
+
+let host: HTMLDivElement
+let root: Root
+mountEachTest((h, r) => {
+  host = h
+  root = r
+})
+
+beforeEach(() => {
+  useSession.setState({ tree: { ...makeTree(), collections: [source] } })
+})
+
+const mount = (): Promise<void> =>
+  act(async () => {
+    root.render(
+      <ViewTileScopeProvider
+        value={{ source, view, persist: vi.fn(), locked: false, setLocked: vi.fn() }}
+      >
+        <SettingsFrame />
+      </ViewTileScopeProvider>,
+    )
+  })
+const open = async (entry: string): Promise<void> => {
+  await mount()
+  const row = [...host.querySelectorAll('[role="button"], button')].find(
+    (e) => e.textContent === entry,
+  )
+  await act(async () => (row as HTMLElement).click())
+}
+const has = (label: string): boolean => host.querySelector(`[aria-label="${label}"]`) !== null
+const switches = presentedKind(view.type).layout.switches.map((s) => s.label)
+
+describe('SettingsFrame — the panes Settings reaches', () => {
+  it('lists Properties and every view pane, Visibility and Layout apart', async () => {
+    await mount()
+    const labels = [...host.querySelectorAll('[role="button"]')].map((e) => e.textContent)
+    expect(labels).toEqual(
+      expect.arrayContaining(['Properties', 'Visibility', 'Layout', 'Group', 'Filter', 'Sort']),
+    )
+  })
+
+  it('Visibility is the list alone', async () => {
+    await open('Visibility')
+    expect(has('Always Shown')).toBe(true)
+    expect(switches.some(has)).toBe(false)
+  })
+
+  it('Layout is the type grid and the kind’s switches, without the list', async () => {
+    await open('Layout')
+    expect(has('Table')).toBe(true)
+    expect(switches.every(has)).toBe(true)
+    expect(has('Always Shown')).toBe(false)
+  })
+})

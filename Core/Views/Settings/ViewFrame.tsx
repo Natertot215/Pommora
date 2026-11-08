@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import type { PropertyDefinition } from '../../Properties/properties'
-import { DEFAULT_VIEW_ID, mintNewView, pickView, type SavedView } from '../views'
+import { DEFAULT_VIEW_ID, mintNewView, pickView, type SavedView, type ViewWriter } from '../views'
 import { notifyDeleted, reportRefusal } from '../../Interface/Notifications/notifications'
 import { askDeleteView } from '../../Interface/Confirm/confirmations'
 import { viewGlyph } from '../viewIcon'
@@ -13,19 +13,25 @@ import {
   MenuSeparator,
   MenuFooting,
   MenuScrollFrame,
+  MenuTopRow,
+  type MenuBack,
   AccessoryButton,
   FootingCreate,
   menuDropLine,
 } from '@pommora/uix/Menus/MenuRows'
+import { MenuIndex } from '@pommora/uix/Menus/MenuIndex'
+import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
 import { titleInput } from '@pommora/uix/Menus/menu-row.css'
 import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
-import { LayoutFrame } from './LayoutFrame'
+import { kindRows, kindSwitches, typeGrid } from './LayoutFrame'
+import { chevronRows, VIEW_PANES, ViewPane, type ViewPaneId } from './ViewPane'
+import { presentedKind } from '../Host/viewKinds'
 import { LineRow, LineZone, lineList } from '@pommora/uix/Interactions/drag'
 import { moveBefore } from '@pommora/uix/Utilities/moveItem'
 import * as s from '@pommora/uix/Menus/frames.css'
 import { useLiveView, useSaveView } from '../Host/liveView'
 import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
-import { chooseColor, chooseIcon } from '../../Assets/IdentityChoice'
+import { chooseColor, chooseIcon, useIconChoice } from '../../Assets/IdentityChoice'
 import { ARCHIVE_ICON, ARCHIVE_TITLE } from '../../Archive/archiveLabel'
 import { useSession } from '../../Session/store'
 import * as vd from '../../Interface/Toolbar/toolbar-menu.css'
@@ -45,6 +51,84 @@ async function deleteViewWithUndo(
     reportRefusal(await dialer().ask('views:restore', source.path, source.kind, res.value))
   })
   return true
+}
+
+const EDITOR_PANES = VIEW_PANES.filter((p) => p.id !== 'visibility')
+
+function ViewEditor({
+  source,
+  view,
+  schema,
+  back,
+  onMenu,
+}: {
+  source: CollectionNode | SetNode
+  view: SavedView
+  schema: PropertyDefinition[]
+  back: MenuBack
+  onMenu: (trigger: HTMLElement) => void
+}): React.JSX.Element {
+  const [pane, setPane] = useState<ViewPaneId | null>(null)
+  const saveView = useSaveView(source)
+  const save: ViewWriter = (patch) => saveView(view, patch)
+  const iconChoice = useIconChoice(view.icon, (icon) => void save({ icon }))
+
+  const root = (
+    <MenuScrollFrame
+      header={
+        <MenuTopRow
+          {...back}
+          trailing={
+            <AccessoryButton
+              icon="ellipsis-vertical"
+              size={s.ICON.editorMenu}
+              ariaLabel="View Menu"
+              onClick={(e) => onMenu(e.currentTarget)}
+            />
+          }
+        />
+      }
+      footer={kindRows(view, save)}
+      maxHeight={s.SETTINGS_PANE_MAX_HEIGHT}
+    >
+      <InlineEditHeader
+        value={view.name}
+        icon={viewGlyph(view)}
+        onCommit={(name) => {
+          if (name && name !== view.name) void save({ name })
+        }}
+        {...iconChoice}
+      />
+      <MenuSeparator flush />
+      {typeGrid(view, save)}
+      <MenuIndex sections={[{ rows: chevronRows(EDITOR_PANES, setPane) }]} />
+    </MenuScrollFrame>
+  )
+
+  const toViews: MenuBack = { label: 'Views', onBack: () => setPane(null) }
+  const detail =
+    pane === 'layout' && presentedKind(view.type).layout.leaf === 'switches' ? (
+      <MenuScrollFrame
+        header={<MenuTopRow {...toViews} current="Layout" />}
+        maxHeight={s.SETTINGS_PANE_MAX_HEIGHT}
+      >
+        {kindSwitches(view, save)}
+      </MenuScrollFrame>
+    ) : (
+      pane && (
+        <ViewPane
+          {...(pane === 'layout'
+            ? { id: 'visibility', current: 'Layout', switches: true }
+            : { id: pane })}
+          source={source}
+          view={view}
+          schema={schema}
+          back={toViews}
+        />
+      )
+    )
+
+  return <FrameSlide {...s.SETTINGS_PANE_FLOOR} open={pane !== null} root={root} detail={detail} />
 }
 
 export function ViewFrame({
@@ -214,8 +298,7 @@ export function ViewFrame({
   )
 
   const detail = editing ? (
-    <LayoutFrame
-      door="full"
+    <ViewEditor
       source={node}
       view={editingLive}
       schema={schema}
