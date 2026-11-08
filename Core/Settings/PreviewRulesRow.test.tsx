@@ -6,6 +6,7 @@ import { PreviewRulesRow } from './PreviewRulesRow'
 import { useSession } from '../Session/store'
 import { stubDialer } from '../vitest.setup'
 import { makeTree } from '../Testing/testTree'
+import { MenuDoorHost } from '../Testing/MenuDoorHost'
 import type { FilterGroup, FilterRule, StandaloneFilter } from '../Views/filterRules'
 import { FILEDATA } from '../Properties/properties'
 import { trailingFigure } from '@pommora/uix/Menus/menu-row.css'
@@ -36,7 +37,11 @@ const render = async (openInPreview?: StandaloneFilter): Promise<void> => {
   document.body.appendChild(host)
   root = createRoot(host)
   await act(async () =>
-    root.render(<PreviewRulesRow row={{ kind: 'previewRules', label: 'Open In Preview' }} />),
+    root.render(
+      <MenuDoorHost>
+        <PreviewRulesRow row={{ kind: 'previewRules', label: 'Open In Preview' }} />
+      </MenuDoorHost>,
+    ),
   )
 }
 

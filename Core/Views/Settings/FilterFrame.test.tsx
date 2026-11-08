@@ -12,6 +12,7 @@ import { linkedSpacesTree } from '../../Testing/testTree'
 import { itemPicked, menuCompact } from '@pommora/uix/Menus/menu-row.css'
 import { FILEDATA_TARGETS } from '../paneTargets'
 import { useSession } from '../../Session/store'
+import { MenuDoorHost } from '../../Testing/MenuDoorHost'
 
 const statusDef: PropertyDefinition = {
   id: 'prop_status',
@@ -73,19 +74,21 @@ let current: SavedView
 let currentTree: NexusTree | null
 let seams: Pick<React.ComponentProps<typeof FilterFrame>, 'back' | 'targets'>
 const frame = (): React.JSX.Element => (
-  <FilterFrame
-    locations={source.sets}
-    view={current}
-    read={() => current}
-    schema={schema}
-    tree={currentTree}
-    {...seams}
-    onCommit={(patch) => {
-      current = { ...current, ...patch }
-      saveSpy(current)
-      root.render(frame())
-    }}
-  />
+  <MenuDoorHost>
+    <FilterFrame
+      locations={source.sets}
+      view={current}
+      read={() => current}
+      schema={schema}
+      tree={currentTree}
+      {...seams}
+      onCommit={(patch) => {
+        current = { ...current, ...patch }
+        saveSpy(current)
+        root.render(frame())
+      }}
+    />
+  </MenuDoorHost>
 )
 const mount = async (v: SavedView, tree: NexusTree | null = null): Promise<void> => {
   current = v
@@ -141,7 +144,7 @@ describe('FilterFrame', () => {
     expect(texts()).toContain('All')
     expect(texts()).toContain('Status')
     expect(texts()).toContain('Archived')
-    expect(texts()).toContain('Is Checked')
+    expect(texts()).toContain('Checked')
   })
 
   it('the pane carries the compact row rule itself, whatever hosts it', async () => {
@@ -955,7 +958,7 @@ describe('FilterFrame value editors', () => {
         filter: { match: 'all', rules: [{ property_id: 'prop_check', op: 'is', value: 'no' }] },
       }),
     )
-    expect(texts()).toContain("Isn't Checked")
+    expect(texts()).toContain('Unchecked')
     expect([...host.querySelectorAll('input')]).toHaveLength(0)
     // Tag-agnostic: the chips trigger is a div, so querying `button` would pass vacuously.
     expect(host.querySelector('[aria-label="Filter values"]')).toBeNull()

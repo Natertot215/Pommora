@@ -101,7 +101,7 @@ describe('the Matrix menu', () => {
     expect(patch).toHaveBeenCalledWith({ forces: { connection: { gravity: 2 } } })
   })
 
-  it('opens Filtering behind a back row, and an added rule patches the filter', () => {
+  it('opens Filtering behind a back row, and an added rule patches the filter', async () => {
     mount()
     const backRow = (): Element | undefined =>
       [...host.querySelectorAll('[role="button"]')].find(
@@ -114,8 +114,8 @@ describe('the Matrix menu', () => {
       ) as Element,
     )
     expect(backRow()).toBeDefined()
-    click(control('Filter property'))
-    click(document.querySelector('[data-picker-portal] [role="button"]') as Element)
+    door.mockImplementationOnce(async (rows) => rows[0]?.action ?? null)
+    await act(async () => control('Filter property').click())
     expect(patch).toHaveBeenCalledWith({
       filter: {
         rules: { match: 'any', rules: [expect.objectContaining({ op: expect.any(String) })] },

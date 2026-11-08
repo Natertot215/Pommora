@@ -30,6 +30,7 @@ export interface OperatorChoice {
   label: string
   slot: ValueSlot
   impliedValue?: string
+  icon?: string
   /** A typed folder name is an operand as well as a picked folder. */
   names?: true
 }
@@ -115,8 +116,8 @@ const OPTION_OPS: OperatorChoice[] = [
 ]
 
 const CHECKBOX_OPS: OperatorChoice[] = [
-  { op: FILTER_OPS.is, label: 'Is Checked', slot: 'none', impliedValue: 'true' },
-  { op: FILTER_OPS.is, label: "Isn't Checked", slot: 'none', impliedValue: 'false' },
+  { op: FILTER_OPS.is, label: 'Checked', icon: 'square-check', slot: 'none', impliedValue: 'true' },
+  { op: FILTER_OPS.is, label: 'Unchecked', icon: 'square', slot: 'none', impliedValue: 'false' },
 ]
 
 const LIST_OPS: ReadonlySet<string> = new Set([FILTER_OPS.containsAny, FILTER_OPS.containsAll])

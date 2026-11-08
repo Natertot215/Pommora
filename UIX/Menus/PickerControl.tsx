@@ -39,6 +39,25 @@ const labelOf = <T extends string>(opts: readonly PickerOption<T>[], v: T): stri
 const stepsWith = (steps: readonly number[], current: number): number[] =>
   steps.some((f) => f === current) ? [...steps] : [...steps, current].sort((a, b) => a - b)
 
+export const popOptions = async <T extends string>(
+  options: readonly PickerOption<T>[],
+  current: T | undefined,
+  trigger: HTMLElement,
+  solid = false,
+): Promise<T | null> => {
+  if (!door) return null
+  const rows = options.map((o) => ({
+    label: o.label,
+    action: o.value,
+    checked: o.value === current,
+    icon: o.icon,
+    disabled: o.disabled,
+  }))
+  const picked = await door(rows, trigger, { solid, compact: true })
+  // Resolved through the options rather than cast: the reply crosses as a bare string.
+  return options.find((o) => o.value === picked)?.value ?? null
+}
+
 // Every stepped number control — a list of step rows, and the same field behind a right press; a typed value is divided back by `scale` and held within the range.
 export function steppedPickerProps({
   range,
@@ -107,19 +126,10 @@ export function PickerControl<T extends string>({
       return
     }
     const el = ref.current
-    if (!door || !el) return
-    const rows = options.map((o) => ({
-      label: o.label,
-      action: o.value,
-      checked: o.value === value,
-      icon: o.icon,
-      disabled: o.disabled,
-    }))
-    void door(rows, el, { solid, compact: true }).then((picked) => {
-      // Resolved through the options rather than cast: the reply crosses as a bare string.
-      const chosen = options.find((o) => o.value === picked)
+    if (!el) return
+    void popOptions(options, value, el, solid).then((chosen) => {
       // Picking the value already shown is not a change, and a consumer that rebuilds on every pick would do it for nothing.
-      if (chosen && chosen.value !== value) onPick(chosen.value)
+      if (chosen !== null && chosen !== value) onPick(chosen)
     })
   }
 

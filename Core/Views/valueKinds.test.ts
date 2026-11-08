@@ -94,7 +94,7 @@ describe('operatorsFor', () => {
 
   it('checkbox operators carry the whole clause (slot none, implied values)', () => {
     const ops = operatorsFor('prop_done', 'checkbox')
-    expect(ops.map((o) => o.label)).toEqual(['Is Checked', "Isn't Checked"])
+    expect(ops.map((o) => o.label)).toEqual(['Checked', 'Unchecked'])
     expect(ops.every((o) => o.slot === 'none')).toBe(true)
     expect(ops.map((o) => o.impliedValue)).toEqual(['true', 'false'])
   })

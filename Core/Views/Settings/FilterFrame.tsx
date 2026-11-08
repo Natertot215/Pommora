@@ -16,7 +16,6 @@ import { leading } from '@pommora/uix/Fields/fields.css'
 import {
   MenuFooting,
   MenuDesc,
-  MenuItem,
   FootingCreate,
   FootingItem,
   MenuScrollFrame,
@@ -38,10 +37,9 @@ import { resolveColumn } from '../Pipeline/columns'
 import { checkboxWord } from '../../Properties/propertyValue'
 import { PropertyOptionRows } from '../../Properties/Pickers/PropertyPicker'
 import { pickGroups } from '../../Properties/Pickers/pickModel'
-import { CheckboxGlyph } from '../../Properties/Cells/CheckboxGlyph'
 import { onActivateKey } from '@pommora/uix/Interactions/activate'
 import { cx } from '@pommora/uix/Utilities/cx'
-import { PickerControl, type PickerOption } from '@pommora/uix/Menus/PickerControl'
+import { PickerControl, type PickerOption, popOptions } from '@pommora/uix/Menus/PickerControl'
 import { SETTINGS_PANE_MAX_HEIGHT } from '@pommora/uix/Menus/frames.css'
 import { type OperatorChoice, operatorsFor } from '../valueKinds'
 import * as fp from './filter-frame.css'
@@ -64,30 +62,31 @@ function RuleField({
   ariaLabel,
   display,
   icon,
-  iconColor,
-  lead,
   placeholder,
   chevron = false,
   className,
-  children,
+  ...opens
 }: {
   ariaLabel: string
   display: string | null
-  icon?: React.ComponentProps<typeof Icon>['name']
-  iconColor?: string
-  lead?: React.ReactNode
+  icon?: string
   placeholder: string
   chevron?: boolean
   className?: string
-  children: (close: () => void) => React.ReactNode
-}): React.JSX.Element {
+} & (
+  | { pane: React.ReactNode }
+  | { choices: PickerOption<string>[]; current?: string; onPick: (value: string) => void }
+)): React.JSX.Element {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLButtonElement>(null)
-  const leadGlyph =
-    lead ??
-    (icon ? (
-      <Icon name={icon} size="body" {...(iconColor ? { style: { color: iconColor } } : {})} />
-    ) : null)
+  const press = (trigger: HTMLElement): void => {
+    if ('pane' in opens) {
+      setOpen(true)
+      return
+    }
+    const { choices, current, onPick } = opens
+    void popOptions(choices, current, trigger).then((v) => v !== null && onPick(v))
+  }
   return (
     <>
       <button
@@ -95,17 +94,23 @@ function RuleField({
         type="button"
         className={className ?? fp.cellField}
         aria-label={ariaLabel}
-        onClick={() => setOpen(true)}
+        onClick={(e) => press(e.currentTarget)}
       >
-        {leadGlyph ? <span className={leading}>{leadGlyph}</span> : null}
+        {icon ? (
+          <span className={leading}>
+            <Icon name={icon} size="body" />
+          </span>
+        ) : null}
         <OverScroll className={cx(fp.fieldLabel, display === null && fp.placeholder)}>
           {display ?? placeholder}
         </OverScroll>
         {chevron ? <Icon name="chevrons-up-down" size="control" className={fp.chevron} /> : null}
       </button>
-      <PickerMenu ownShield open={open} onDismiss={() => setOpen(false)} triggerRef={ref}>
-        {open ? children(() => setOpen(false)) : null}
-      </PickerMenu>
+      {'pane' in opens && (
+        <PickerMenu ownShield open={open} onDismiss={() => setOpen(false)} triggerRef={ref}>
+          {open ? opens.pane : null}
+        </PickerMenu>
+      )}
     </>
   )
 }
@@ -283,25 +288,6 @@ export function FilterFrame({
     save(mode, [...liveRules(), mintRule(targetId, schema, contextIds)])
   }
 
-  const targetOptions = (
-    onPick: (id: string) => void,
-    close: () => void,
-    current?: string,
-  ): React.ReactNode =>
-    targets.map((t) => (
-      <MenuItem
-        key={t.value}
-        picked={t.value === current ? 'solo' : undefined}
-        leading={t.icon && <Icon name={t.icon} size="body" />}
-        onClick={() => {
-          close()
-          onPick(t.value)
-        }}
-      >
-        {t.label}
-      </MenuItem>
-    ))
-
   const valueCell = (
     rule: FilterRule,
     index: number,
@@ -344,16 +330,15 @@ export function FilterFrame({
           className={fp.valueField}
           display={operand ? formatDate(operand, fmt, 'none') : null}
           placeholder="Date"
-        >
-          {() => (
+          pane={
             <DateTimeValuePicker
               value={operand ? { kind: 'dateTime', value: operand } : null}
               dateFormat={style.date_format}
               timeFormat={style.time_format}
               onCommit={(v) => patch({ value: v?.kind === 'dateTime' ? v.value : undefined })}
             />
-          )}
-        </RuleField>
+          }
+        />
       )
     }
 
@@ -388,16 +373,23 @@ export function FilterFrame({
           checkboxWord(o.impliedValue) === checkboxWord(ruleOperands(rule)[0])),
     )
     const target = targetById.get(rule.property_id)
-    const isCheckbox = column?.type === 'checkbox'
-    const checkboxColor = column?.def?.checkbox_color
-    const checkboxLook = column && styleFor(column, view, forms).look
-    const checkboxBox = (o: OperatorChoice): React.JSX.Element => (
-      <CheckboxGlyph
-        checked={o.impliedValue === 'true'}
-        color={checkboxColor}
-        look={checkboxLook}
-      />
-    )
+    const pickOp = (o: OperatorChoice): void => {
+      const keep = o.slot === current?.slot
+      const values =
+        o.slot === 'set' && !o.names ? rule.values?.filter((v) => folderById.has(v)) : rule.values
+      replaceRule(index, {
+        property_id: rule.property_id,
+        op: o.op,
+        ...(o.impliedValue !== undefined
+          ? { value: o.impliedValue }
+          : keep
+            ? {
+                ...(rule.value !== undefined ? { value: rule.value } : {}),
+                ...(values?.length ? { values } : {}),
+              }
+            : {}),
+      })
+    }
     const id = ids.current[index]
     return (
       <Reveal key={id} open enterOnMount={entering(id)} fill>
@@ -407,58 +399,26 @@ export function FilterFrame({
             display={target?.label ?? rule.property_id}
             icon={target?.icon}
             placeholder="Property"
-          >
-            {(close) =>
-              targetOptions(
-                (id) =>
-                  id !== rule.property_id && replaceRule(index, mintRule(id, schema, contextIds)),
-                close,
-                rule.property_id,
-              )
+            choices={targets}
+            current={rule.property_id}
+            onPick={(id) =>
+              id !== rule.property_id && replaceRule(index, mintRule(id, schema, contextIds))
             }
-          </RuleField>
+          />
           <RuleField
             ariaLabel="Filter operator"
             chevron
             className={current?.slot === 'none' ? fp.controlFieldWide : fp.controlField}
             display={current?.label ?? rule.op}
-            {...(isCheckbox && current ? { lead: checkboxBox(current) } : {})}
+            icon={current?.icon}
             placeholder="Condition"
-          >
-            {(close) =>
-              ops.map((o) => {
-                const values =
-                  o.slot === 'set' && !o.names
-                    ? rule.values?.filter((v) => folderById.has(v))
-                    : rule.values
-                return (
-                  <MenuItem
-                    key={o.label}
-                    picked={o === current ? 'solo' : undefined}
-                    {...(isCheckbox ? { leading: checkboxBox(o) } : {})}
-                    onClick={() => {
-                      close()
-                      const keep = o.slot === current?.slot
-                      replaceRule(index, {
-                        property_id: rule.property_id,
-                        op: o.op,
-                        ...(o.impliedValue !== undefined
-                          ? { value: o.impliedValue }
-                          : keep
-                            ? {
-                                ...(rule.value !== undefined ? { value: rule.value } : {}),
-                                ...(values?.length ? { values } : {}),
-                              }
-                            : {}),
-                      })
-                    }}
-                  >
-                    {o.label}
-                  </MenuItem>
-                )
-              })
-            }
-          </RuleField>
+            choices={ops.map((o) => ({ value: o.label, label: o.label, icon: o.icon }))}
+            current={current?.label}
+            onPick={(label) => {
+              const o = ops.find((x) => x.label === label)
+              if (o) pickOp(o)
+            }}
+          />
           {valueCell(rule, index, current, column)}
           <RowRemove ariaLabel="Remove filter" onClick={() => removeRow(index)} />
         </div>
@@ -475,9 +435,9 @@ export function FilterFrame({
           className={cx(fp.cellField, fp.blankWide)}
           display={null}
           placeholder={lead ? 'Where' : ''}
-        >
-          {(close) => targetOptions((id) => completeDraft(id), close)}
-        </RuleField>
+          choices={targets}
+          onPick={completeDraft}
+        />
         <span className={cx(fp.controlField, fp.blankNarrow)} />
         <span className={fp.valueField} />
         {!lead && <RowRemove ariaLabel="Remove filter" onClick={() => setDraft(null)} />}

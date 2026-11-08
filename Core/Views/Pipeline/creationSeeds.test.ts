@@ -97,7 +97,7 @@ describe('filterSeeds', () => {
     expect(seedsOf(filter)).toEqual({ p_sel: { kind: 'select', value: 'opt_note' } })
   })
 
-  it("derives nothing from Isn't Checked", () => {
+  it('derives nothing from Unchecked', () => {
     const filter: FilterGroup = {
       match: 'all',
       rules: [{ property_id: 'p_check', op: 'is', value: 'false' }],
