@@ -28,33 +28,16 @@
 }
 
 /* The heading keeps its own place: reaching back over the gutter to the frame's inset, where its divider and File Name begin, its first track taking up the width so its column line meets the rows'. */
-.trash-frame .trash-head {
+.trash-frame .table-head {
   flex-shrink: 0;
   margin-left: calc(var(--surface-inset) - var(--rail-inset));
 }
-.trash-frame .trash-head-name {
+/* File Name keeps a plain lead at that inset, without the bar a table's first heading draws at its gutter. */
+.trash-frame .col-header:first-child {
   padding-left: 0;
 }
-.trash-frame .trash-head-date {
-  padding-left: 8px; /* KNOB — clears the column line */
-}
-/* The heading keeps its plain lead, without the bar a table's first heading draws at its gutter. */
-.trash-head .col-header:first-child::before {
+.trash-frame .col-header:first-child::before {
   content: none;
-}
-.trash-frame .trash-head-name,
-.trash-frame .trash-head-date {
-  display: flex;
-  align-items: center;
-}
-.trash-head-glyph {
-  display: flex;
-  margin-right: 8px;
-}
-.trash-head-label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
 }
 
 /* Reaching back across the gutter, so the rows' checkboxes sit inside the scroller that clips them. */

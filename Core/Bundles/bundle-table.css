@@ -1,4 +1,4 @@
-/* The bundle table's own layout over the table vocabulary: its rows in a virtual window, each title line with its chevron, the trail it left at its right, its partial mark, and its date centered in its column. */
+/* The bundle table's own layout over the table vocabulary: its rows in a virtual window, each title line with its chevron, the trail it left at its right, and its partial mark. */
 .bundle-rows {
   position: relative;
 }
@@ -28,7 +28,4 @@
 .bundle-partial {
   flex: none;
   color: var(--label-secondary);
-}
-.bundle-date {
-  justify-content: center;
 }

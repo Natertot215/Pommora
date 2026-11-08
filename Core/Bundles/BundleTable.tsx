@@ -106,48 +106,53 @@ type DateColumn = ReturnType<typeof useDateColumn>
 /** TableView's row as it draws, measured live: the cell's padding around a body line its inline title stands a little taller than, and the hairline between rows. */
 const ROW_H = 29.75
 
-/** The table's grid in its body type, each skin setting its own heading and rows in it: the title track, at least TableView's title width, and the date track, the date column's measured width inside the cell's padding; narrower than both, it scrolls sideways. */
+type Heading = { icon: string; label: string }
+
+/** The table's grid in its body type: its heading, the title's label and the date's over the column's widest date, drawn unseen in the rows' type so the column measures whichever is wider. The title track takes at least TableView's title width, and the date track the date column's measured width inside the cell's padding; narrower than both, it scrolls sideways. */
 export function BundleTable({
-  date: { width },
+  date,
+  titleHead,
+  dateHead,
   children,
 }: {
   date: DateColumn
+  titleHead: Heading
+  dateHead: Heading
   children: ReactNode
 }): React.JSX.Element {
   const track =
-    width === null
+    date.width === null
       ? `${COLUMN_LAYOUT.dateTime.width}px`
-      : `calc(${width}px + 2 * var(--cell-padding-x))`
+      : `calc(${date.width}px + 2 * var(--cell-padding-x))`
   const style = {
     '--cols': `minmax(${COLUMN_LAYOUT.title.width}px, 1fr) ${track}`,
     minWidth: `calc(${COLUMN_LAYOUT.title.width}px + ${track})`,
   } as React.CSSProperties
   return (
     <div className={cx('table-grid', text.body.standard)} style={style}>
+      <div className="table-head">
+        <div className="col-header">
+          <span className="col-header-icon">
+            <Icon name={titleHead.icon} size="body" />
+          </span>
+          {titleHead.label}
+        </div>
+        {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a column label, as TableView's headings are */}
+        <div className="col-header" onContextMenu={date.onContextMenu}>
+          <span ref={date.measureRef} className="col-measure">
+            <span>
+              <span className="col-header-icon">
+                <Icon name={dateHead.icon} size="body" />
+              </span>
+              {dateHead.label}
+            </span>
+            <span className={text.body.standard} aria-hidden>
+              {date.sample}
+            </span>
+          </span>
+        </div>
+      </div>
       {children}
-    </div>
-  )
-}
-
-/** A store's date heading: `label` over the column's widest date, drawn unseen in the rows' type, so the column measures whichever is wider; a right-click picks the date's style. */
-export function DateHeading({
-  date,
-  label,
-  className,
-}: {
-  date: DateColumn
-  label: ReactNode
-  className: string
-}): React.JSX.Element {
-  return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a column label, as TableView's headings are
-    <div className={cx('col-header', className)} onContextMenu={date.onContextMenu}>
-      <span ref={date.measureRef} className="col-measure">
-        {label}
-        <span className={text.body.standard} aria-hidden>
-          {date.sample}
-        </span>
-      </span>
     </div>
   )
 }

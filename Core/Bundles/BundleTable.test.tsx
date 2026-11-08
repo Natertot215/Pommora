@@ -16,7 +16,7 @@ import { makeTree } from '../Testing/testTree'
 import { useSession } from '../Session/store'
 import { personalizationOf } from '../Session/configSlice'
 import type { Personalization } from '../Settings/personalization'
-import { BundleRows, BundleTable, DateHeading, useDateColumn } from './BundleTable'
+import { BundleRows, BundleTable, useDateColumn } from './BundleTable'
 import type { TreeRow } from './browser'
 import type { BundleRow } from './rows'
 
@@ -247,14 +247,18 @@ describe('the date column', () => {
   const DateTable = (): React.JSX.Element => {
     const date = useDateColumn('trash')
     return (
-      <BundleTable date={date}>
-        <DateHeading date={date} className="date-head" label="Time Deleted" />
+      <BundleTable
+        date={date}
+        titleHead={{ icon: 'file-text', label: 'File Name' }}
+        dateHead={{ icon: 'clock-fading', label: 'Time Deleted' }}
+      >
+        {null}
       </BundleTable>
     )
   }
   const pickFromDateMenu = async (action: string): Promise<unknown> => {
     channels.picked = action
-    const head = host.querySelector('.date-head') as HTMLElement
+    const head = host.querySelector('.col-header:last-child') as HTMLElement
     await act(async () => {
       head.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
     })
@@ -268,7 +272,7 @@ describe('the date column', () => {
     )
   const sampleOf = async (trashColumnStyle: Personalization['trashColumnStyle']) => {
     await personalize({ trashColumnStyle })
-    return host.querySelector('.date-head [aria-hidden]')?.textContent ?? ''
+    return host.querySelector('.col-measure > [aria-hidden]')?.textContent ?? ''
   }
 
   beforeEach(async () => {

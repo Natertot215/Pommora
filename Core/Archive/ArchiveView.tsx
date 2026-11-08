@@ -1,14 +1,7 @@
 import { useState } from 'react'
-import { Icon } from '@pommora/uix/Symbols'
 import { entityIcon } from '../Assets/entityIconPolicy'
 import { crumbSegments, useBundleBrowser } from '../Bundles/browser'
-import {
-  BundleFooting,
-  BundleRows,
-  BundleTable,
-  DateHeading,
-  useDateColumn,
-} from '../Bundles/BundleTable'
+import { BundleFooting, BundleRows, BundleTable, useDateColumn } from '../Bundles/BundleTable'
 import type { BundleRow } from '../Bundles/rows'
 import { InterfaceScaffold } from '../Interface/InterfaceScaffold'
 import { useContentHost, useHostShown } from '../Interface/contentHost'
@@ -65,27 +58,11 @@ export function ArchiveView({
       scrollRef={setScrollEl}
     >
       <div className="table table-view">
-        <BundleTable date={date}>
-          <div className="table-head">
-            <div className="col-header">
-              <span className="col-header-icon">
-                <Icon name={propertyTypeIconName('title')} size="body" />
-              </span>
-              Title
-            </div>
-            <DateHeading
-              date={date}
-              className="archive-date"
-              label={
-                <span>
-                  <span className="col-header-icon">
-                    <Icon name={propertyTypeIconName('dateTime')} size="body" />
-                  </span>
-                  Archived
-                </span>
-              }
-            />
-          </div>
+        <BundleTable
+          date={date}
+          titleHead={{ icon: propertyTypeIconName('title'), label: 'Title' }}
+          dateHead={{ icon: propertyTypeIconName('dateTime'), label: 'Archived' }}
+        >
           {visible.length > 0 && <BundleRows browser={browser} date={date} scrollEl={scrollEl} />}
         </BundleTable>
         <BundleFooting

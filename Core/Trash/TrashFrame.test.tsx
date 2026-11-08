@@ -100,7 +100,7 @@ describe('the Trash pane', () => {
     channels.picked = 'style:time_format:none'
     await act(async () => {
       host
-        .querySelector('.trash-head-date')
+        .querySelector('.table-head > .col-header:last-child')
         ?.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
     })
     expect(personalizationOf(useSession.getState()).trashColumnStyle).toEqual({

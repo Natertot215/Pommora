@@ -2,18 +2,11 @@ import { useState } from 'react'
 import { SearchField } from '@pommora/uix/Fields/SearchField'
 import { Scrollbar } from '@pommora/uix/Interactions/Scrollbar'
 import { cx } from '@pommora/uix/Utilities/cx'
-import { Icon } from '@pommora/uix/Symbols'
 import { text } from '@pommora/uix/Theme'
 import { propertyTypeIconName } from '../Properties/typeDisplay'
 import { useSession } from '../Session/store'
 import { useBundleBrowser } from '../Bundles/browser'
-import {
-  BundleFooting,
-  BundleRows,
-  BundleTable,
-  DateHeading,
-  useDateColumn,
-} from '../Bundles/BundleTable'
+import { BundleFooting, BundleRows, BundleTable, useDateColumn } from '../Bundles/BundleTable'
 import '../Navigation/nav-list.css'
 import './trash-frame.css'
 
@@ -36,25 +29,11 @@ function TrashBody(): React.JSX.Element {
         <SearchField className={text.body.standard} value={query} onValueChange={setQuery} />
       </div>
       <div className="trash-table">
-        <BundleTable date={date}>
-          <div className="trash-head table-head">
-            <span className="trash-head-name col-header">
-              <span className="trash-head-glyph">
-                <Icon name={propertyTypeIconName('title')} size="body" />
-              </span>
-              File Name
-            </span>
-            <DateHeading
-              date={date}
-              className="trash-head-date"
-              label={
-                <span className="trash-head-label">
-                  <Icon name="clock-fading" size="body" />
-                  Time Deleted
-                </span>
-              }
-            />
-          </div>
+        <BundleTable
+          date={date}
+          titleHead={{ icon: propertyTypeIconName('title'), label: 'File Name' }}
+          dateHead={{ icon: 'clock-fading', label: 'Time Deleted' }}
+        >
           {visible.length > 0 && (
             <div ref={setScrollEl} className="trash-scroll scroll-fade">
               <BundleRows browser={browser} date={date} scrollEl={scrollEl} />

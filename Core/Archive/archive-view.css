@@ -1,7 +1,4 @@
-/* ArchiveView's own heading over the bundle table, its Archived label centered over its column, and its empty line. */
-.col-header.archive-date {
-  text-align: center;
-}
+/* ArchiveView's empty line. */
 .archive-empty {
   padding: var(--cell-padding-y) var(--cell-padding-x);
   color: var(--label-tertiary);

@@ -44,7 +44,7 @@ import {
 import './settings-window.css'
 
 const DRAG_SURFACES =
-  '.settings-rail-list, .settings-section, .settings-heading, .trash-frame, .trash-head, .trash-head-name, .trash-head-date'
+  '.settings-rail-list, .settings-section, .settings-heading, .trash-frame, .trash-frame .table-head, .trash-frame .col-header'
 
 export function SettingsWindow(): React.JSX.Element | null {
   const open = useSession((s) => s.settingsOpen)
