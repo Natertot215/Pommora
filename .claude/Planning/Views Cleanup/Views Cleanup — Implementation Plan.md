@@ -18,7 +18,7 @@
 
 | Phase | Estimate | Tests at the Phase's Head | Measured |
 |-------|----------|---------------------------|----------|
-| 1 · The Kind Record | +11, +11 its own | 9,269 | |
+| 1 · The Kind Record | +11, +11 its own | 9,269 | +11 (+146 / -135); 9,269; comments 3,517 |
 | 2 · The Views Root and the Live View | -82, -93 its own | 9,256 | |
 | 3 · One Pane Route | -158, -76 its own | 9,261 | |
 | 4 · The Table and the Second Table | -304, -146 its own | 9,259 | |
@@ -327,9 +327,9 @@ The order lets each signature land once. The kind record goes first because the 
 
 - [x] `[Stop: ratified; placements approved; no code changes before this]`
 - [ ] **Phase 1** — The Kind Record
-  - [ ] Task 1-1 · One record per built kind
-  - [ ] Task 1-2 · The host reads the active view once
-  - [ ] Review Checkpoint
+  - [x] Task 1-1 · One record per built kind
+  - [x] Task 1-2 · The host reads the active view once
+  - [x] Review Checkpoint
 - [ ] **Phase 2** — The Views Root and the Live View
   - [ ] Task 2-1 · The root's dissolutions
   - [ ] Task 2-2 · The page record's home
@@ -424,7 +424,7 @@ export const presentedKind = (type: ViewType): ViewKindRecord => BUILT_KINDS[typ
 
 #### Review Checkpoint
 
-- [ ] Adding a kind is one record and one import; both reviewers' findings folded or recorded.
+- [x] Adding a kind is one record and one import; both reviewers' findings folded or recorded.
 
 ---
 
@@ -887,7 +887,7 @@ The reviews run over `<BASELINE>..HEAD`, each wave closed before the next opens,
 
 **Documents, Task 11-1:**
 
-- `.claude/Features/ViewTypesPM.md` — rewritten shorter as a user-facing summary: `:4` (`VIEW_RENDERERS`, "page tiles"), `:14` ("the renderer opens its own naming field"), `:16` ("a persisted ghosted page", "are use"), `:26` (`filterModel.ts`), `:34` (the Checkbox operators), `:47`, `:71` (*§The View Host*: paths, `pendingView.ts`, the policy's ghost and naming, "scroll root", "one policy"), `:79` ("the cell renderers live in `UIX/Table/`"), `:83` (the filler track and resolved widths), `:87` ("the reorder helper"), `:95` ("which ArchiveView wears too"), `:103`–`:104` (`--labels-gap`, `--row-indent`), `:118` ("Hide Icons"), *§The Pipeline*'s "four pure stages", *§Surfaces*' LayoutFrame, Filtering, and ViewFrame bullets, and "Grouping/Sorting/Filtering" against the UI's Group/Sort/Filter at `:55`, `:64-66`, `:130`; `:162` holds (`presentedKind` seats Table for a kind with no renderer).
+- `.claude/Features/ViewTypesPM.md` — rewritten shorter as a user-facing summary: `:4` (`VIEW_RENDERERS`, `nests`, "page tiles"), `:14` ("the renderer opens its own naming field"), `:16` ("a persisted ghosted page", "are use"), `:26` (`filterModel.ts`), `:34` (the Checkbox operators), `:47`, `:71` (*§The View Host*: paths, `pendingView.ts`, the policy's ghost and naming, "scroll root", "one policy"), `:79` ("the cell renderers live in `UIX/Table/`"), `:83` (the filler track and resolved widths), `:87` ("the reorder helper"), `:95` ("which ArchiveView wears too"), `:103`–`:104` (`--labels-gap`, `--row-indent`), `:118` ("Hide Icons"), *§The Pipeline*'s "four pure stages", *§Surfaces*' LayoutFrame, Filtering, and ViewFrame bullets, and "Grouping/Sorting/Filtering" against the UI's Group/Sort/Filter at `:55`, `:64-66`, `:130`; `:162` holds (`presentedKind` seats Table for a kind with no renderer).
 - `.claude/Features/PommoraDND.md:38` — "Grouping and Sorting panes" reads Group and Sort.
 - `.claude/Features/SymbolsPM.md:18` — view-type glyphs live in `VIEW_KINDS`, and the frame glyphs in `VIEW_PANES`.
 - `.claude/Features/InteractionPM.md:36` — `dropOutline` is `DisclosureChevron`; `:20` and `:46` keep `pickerBloom` and "a picker pane's free edges" as they read.
@@ -915,4 +915,6 @@ Nothing else survives ratification once the placements are approved. *Morning Re
 
 #### Deviations
 
-Empty at ratification. Planning's own folds, and where each landed, sit in *Scouts/Planning/Phases/Wave One — Fold Ledger* and *Wave Two — Fold Ledger*.
+Planning's own folds, and where each landed, sit in *Scouts/Planning/Phases/Wave One — Fold Ledger* and *Wave Two — Fold Ledger*.
+
+- **Phase 1 checkpoint (11-08-2026):** both reviewers found `GroupFrame.tsx:353`'s `persist` prop spelling the bound view save by hand, `(patch: ViewPatch) => Promise<Result<unknown>>`, where Task 1-1 made `ViewWriter` the one spelling; it becomes `persist: ViewWriter` with the `Result` import gone (net 0), landing at Phase 7's checkpoint, since `GroupFrame.tsx`'s import block and that prop sit in the context of patches 2b, 2c, 3a, 3c, 5c, 6b, 7a, and 7d and no patch after 7d touches the file. `bandRouter.ts:45`'s `persistView` keeps its own type, since it receives the host's `Result<unknown>`-returning `persistView` and can't narrow. Not taken: `void` on `LayoutFrame.tsx:83` and `:122`'s discarded `write(...)` calls, since Task 3-1 rewrites both lines as `void save(...)`.
