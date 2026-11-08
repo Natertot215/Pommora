@@ -94,7 +94,7 @@ export function useColumns(host: ViewHostApi) {
   const [collapsing, setCollapsing] = useState<string | null>(null)
   const [sliding, setSliding] = useState<ReadonlySet<string>>(() => new Set())
   const [colDrag, setColDrag] = useState<ColumnDrag | null>(null)
-  const [resizing, setResizing] = useState(false)
+  const resizing = dragWidth !== null
   const [overflowing, setOverflowing] = useState(false)
 
   useEffect(() => {
@@ -163,13 +163,12 @@ export function useColumns(host: ViewHostApi) {
     return () => ro.disconnect()
   }, [])
 
-  /** On the skeleton like its GFM sibling: cancel reverts instead of committing, and a zero-move click ends through teardown alone. The strip stops propagation so a resize never starts a reorder, and its pointer delta is divided by the live zoom so a screen drag maps onto the grid's pre-zoom track width. */
+  /** A cancel reverts rather than committing, and the strip stops propagation so a resize never starts a reorder. */
   const startResize = (e: React.PointerEvent, id: string): void => {
     e.preventDefault()
     e.stopPropagation()
     const grip = e.currentTarget as HTMLElement
-    const grid = grip.closest('.table-grid')
-    const zoom = grid ? currentZoom(grid) : 1
+    const zoom = currentZoom(grip.closest('.table-grid')!)
     const startX = e.clientX
     // The rendered width, so a Title stretched past its floor resizes from where its edge sits.
     const width = grip.parentElement!.getBoundingClientRect().width / zoom
@@ -178,10 +177,6 @@ export function useColumns(host: ViewHostApi) {
       el: grip,
       event: e,
       activation: 0,
-      onActivate: () => {
-        setResizing(true)
-        return true
-      },
       onDragMove: (ev) => {
         last = clampWidth(
           Math.round(width + (ev.clientX - startX) / zoom),
@@ -191,13 +186,8 @@ export function useColumns(host: ViewHostApi) {
         )
         setDragWidth({ id, width: last })
       },
-      onDrop: () => {
-        setDragWidth(null)
-        void persistView({ column_widths: { [id]: last } })
-      },
-      // Cleared by whichever end fires, never by teardown — the skeleton runs teardown BEFORE onAbort.
-      onAbort: () => setDragWidth(null),
-      teardown: () => setResizing(false),
+      onDrop: () => void persistView({ column_widths: { [id]: last } }),
+      teardown: () => setDragWidth(null),
     })
   }
   const hideColumn = (id: string): void => {
@@ -243,8 +233,7 @@ export function useColumns(host: ViewHostApi) {
     if (e.button !== 0) return
     e.preventDefault()
     const header = e.currentTarget as HTMLElement
-    const grid = header.closest('.table-grid') as HTMLElement | null
-    if (!grid) return
+    const grid = header.closest<HTMLElement>('.table-grid')!
     // Snapshot in the activation, not the press: a per-move rect loop forces layout in the drag hot path, and a pending-phase scroll would strand a press-time origin.
     let zoom = 1
     let startCenter = 0

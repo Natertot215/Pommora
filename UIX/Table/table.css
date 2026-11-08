@@ -129,12 +129,9 @@
 }
 .table-grid.no-borders .data-cell {
   border-right: none;
-}
-
-/* With body lines gone, structure surfaces only while columns change: resizing or reordering fades the dividers back in. */
-.table-grid.no-borders .data-cell {
   position: relative;
 }
+/* With body lines gone, structure surfaces only while columns change: resizing or reordering fades the dividers back in. */
 .table-grid.no-borders .data-cell::after {
   content: "";
   position: absolute;

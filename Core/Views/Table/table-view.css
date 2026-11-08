@@ -1,4 +1,4 @@
-/* The table shell TableView and ArchiveView wear over the Tables chrome, ArchiveView importing it from here: shell width, grid density, hide/slide beat, and group-band rhythm. Values live in UIX/Table/table-tokens.css. */
+/* The table shell TableView and ArchiveView wear over the Tables chrome (ArchiveView imports it from Views/Table): shell width, grid zoom, the hide and slide beat, the cell sweep, and group-band rhythm. Values live in UIX/Table/table-tokens.css. */
 
 .table-shell {
   /* Width is auto so the negative side margins widen the box to both glass edges while the grid's content box (and so every row) stays exactly where it was. */

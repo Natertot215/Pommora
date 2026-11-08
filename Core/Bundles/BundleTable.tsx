@@ -108,7 +108,7 @@ const ROW_H = 29.75
 
 type Heading = { icon: string; label: string }
 
-/** The table's grid in its body type: its heading, the title's label and the date's over the column's widest date, drawn unseen in the rows' type so the column measures whichever is wider. The title track takes at least TableView's title width, and the date track the date column's measured width inside the cell's padding; narrower than both, it scrolls sideways. */
+/** The table's grid in its body type under its heading: the title track at least TableView's title width, and the date track the date column's measured width inside the cell's padding; narrower than both, it scrolls sideways. */
 export function BundleTable({
   date,
   titleHead,
@@ -137,7 +137,7 @@ export function BundleTable({
           </span>
           {titleHead.label}
         </div>
-        {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a column label, as TableView's headings are */}
+        {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics */}
         <div className="col-header" onContextMenu={date.onContextMenu}>
           <span ref={date.measureRef} className="col-measure">
             <span>
@@ -161,7 +161,7 @@ type RowApi = Pick<Browser, 'toggle' | 'rowClick' | 'openMenu'> & {
   focus: (address: string) => void
 }
 
-/** A store's rows under its skin's heading, drawn in a window of `scrollEl` that keeps the row focus last stood on: one Tab stop whose arrows step between rows, whose Space toggles a row's check and whose Enter acts as a keyboard's click, each row a tree item that discloses, checks, and opens through the browser. */
+/** A store's rows under the table's heading, drawn in a window of `scrollEl` that keeps the row focus last stood on: one Tab stop whose arrows step between rows, whose Space toggles a row's check and whose Enter acts as a keyboard's click, each row a tree item that discloses, checks, and opens through the browser. */
 export function BundleRows({
   browser: { visible, checked, picked, toggle, rowClick, openMenu },
   date,

@@ -32,8 +32,6 @@
 /* A date heading's label stacked over its column's widest value, drawn unseen and taking no height, so the column measures whichever is wider. */
 .col-measure {
   display: inline-grid;
-  flex: none;
-  white-space: nowrap;
 }
 .col-measure > * {
   grid-area: 1 / 1;
