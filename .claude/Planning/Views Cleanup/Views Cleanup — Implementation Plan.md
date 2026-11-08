@@ -20,7 +20,7 @@
 |-------|----------|---------------------------|----------|
 | 1 · The Kind Record | +11, +11 its own | 9,269 | +11 (+146 / -135); 9,269; comments 3,517 |
 | 2 · The Views Root and the Live View | -82, -93 its own | 9,256 | -82 (+907 / -989); 9,256; comments 3,514; after the checkpoint's fold -92 (+901 / -993); 9,257; comments 3,513 |
-| 3 · One Pane Route | -158, -76 its own | 9,261 | |
+| 3 · One Pane Route | -158, -76 its own | 9,261 | -168 (+1569 / -1737); 9,262; comments 3,514; after the checkpoint's fold -176 (+1573 / -1749); 9,262; comments 3,514 |
 | 4 · The Table and the Second Table | -304, -146 its own | 9,259 | |
 | 5 · The Host and Its Renderers | -393, -89 its own | 9,259 | |
 | 6 · The Pipeline and the Bands | -439, -46 its own | 9,258 | |
@@ -336,11 +336,11 @@ The order lets each signature land once. The kind record goes first because the 
   - [x] Task 2-3 · The live view
   - [x] Review Checkpoint
 - [ ] **Phase 3** — One Pane Route
-  - [ ] Task 3-1 · One pane route
-  - [ ] Task 3-2 · The Settings root and the toolbar's view button
-  - [ ] Task 3-3 · The rows and their words
-  - [ ] Task 3-4 · The Filter's lists go through the menu door
-  - [ ] Review Checkpoint
+  - [x] Task 3-1 · One pane route
+  - [x] Task 3-2 · The Settings root and the toolbar's view button
+  - [x] Task 3-3 · The rows and their words
+  - [x] Task 3-4 · The Filter's lists go through the menu door
+  - [x] Review Checkpoint
   - [ ] Compaction Checkpoint
 - [ ] **Phase 4** — The Table and the Second Table
   - [ ] Task 4-1 · The Bundle table draws its heading
@@ -539,8 +539,8 @@ The Filter pane's property and operator lists should pop through the kit's menu 
 
 #### Review Checkpoint
 
-- [ ] Every pane is reached one way, every switch and picker is the kit's row, and the Filter follows the setting; both reviewers' findings folded or recorded.
-- [ ] The Properties Drive's E and F groups green from a worktree of this head.
+- [x] Every pane is reached one way, every switch and picker is the kit's row, and the Filter follows the setting; both reviewers' findings folded or recorded.
+- [x] The Properties Drive's E and F groups green from a worktree of this head.
 
 ---
 
@@ -919,3 +919,4 @@ Planning's own folds, and where each landed, sit in *Scouts/Planning/Phases/Wave
 
 - **Phase 1 checkpoint (11-08-2026):** both reviewers found `GroupFrame.tsx:353`'s `persist` prop spelling the bound view save by hand, `(patch: ViewPatch) => Promise<Result<unknown>>`, where Task 1-1 made `ViewWriter` the one spelling; it becomes `persist: ViewWriter` with the `Result` import gone (net 0), landing at Phase 7's checkpoint, since `GroupFrame.tsx`'s import block and that prop sit in the context of patches 2b, 2c, 3a, 3c, 5c, 6b, 7a, and 7d and no patch after 7d touches the file. `bandRouter.ts:45`'s `persistView` keeps its own type, since it receives the host's `Result<unknown>`-returning `persistView` and can't narrow. Not taken: `void` on `LayoutFrame.tsx:83` and `:122`'s discarded `write(...)` calls, since Task 3-1 rewrites both lines as `void save(...)`.
 - **Phase 2 checkpoint (11-08-2026), fold `7dac30394`, -10 Actionable and -1 comment; every later row's Measured reads 10 below its Estimate by it:** the I-070 arm re-placed a row whenever its successor-anchored place in the live order differed from the drop's, so a write from another device during the round trip could move a row nobody moved and save it; `priorSlotOf` now re-places only where the live order still carries the drop's slot (the row beside the neighbor its own patch gave it), a row a later write removed from the order stays removed, and a new pin in `liveView.test.tsx` holds the gate. Simplification folds: `pickedStyle` inlined into `columnStylePatch` (-8); `ViewRow extends PageValues` (-3); `setViewButton` writes through `setOrDrop` as `setDisclosureLock` does (-1); `orderInTree`'s comment, a repeat of two headers, left (-1 comment); `TITLE_OPS` reads `TEXT_OPS`; one import re-ordered; `writePathRace.test.ts`'s third writer drives the `setViewButton` op again. Scheduled for Phase 5's checkpoint, since 5a to 5c rewrite `useViewInteractions.tsx`: the arm skips a row the stored `manual_order` never ranked, the default state of a property-grouped view, where the drawn order at the drop is its prior slot, so `placeInView` hands `dropIO` that order. Not taken: `ViewWriter` moving to `liveView.ts` and widening with `ViewWriteOpts` (Wave Two's Fold 7 placed it beside `ViewPatch`, and the option is the host's persist's alone); `useSaveView`'s two closures merged (they separate the write from its one refusal report). The fold's commit carries an Opus trailer where the plan's rule names Fable; the executor read the session's attribution reminder over the brief, and the commit stands as pushed.
+- **Phase 3 checkpoint (11-08-2026), fold `fc8b3b4bf`, -8 Actionable; every later row's Measured now reads 18 below its Estimate:** the morning's ruling had left the editor's Layout leaf spelled in the record, `ViewEditor`'s branch, and two editor-only props on the shared dispatcher (`current`, `switches`), so `ViewEditor` now owns both leaf arms (the Table leaf reaches `VisibilityFrame` with its `Layout` title and switches footer from the editor rather than through the dispatcher) and `ViewPane` is `PaneProps & { id, source }`, binding no save of its own; `SettingsFrame` binds `save` once and `detailFor` inlined; the "Visibility is the list alone" pin reddens when `ViewPane`'s visibility case passes a switches footer. The Filter's operator list is keyed by position rather than its wording; `PickerRowLook` is `RowLook`, since `switchRow` and `steppedRow` take it too; `FilterFrame.test.tsx`'s Checked case compares exact operator texts, since "Unchecked" contained "Checked". Tests that mounted `ViewPane` for its own save mount `SavingViewPane` from `viewHarness.tsx` (+7, the fold's -15 reading -8), except `liveView.test.tsx`'s locked-tile case, which binds its save inline because patch 8a carries its `ViewPane` import as context; it moves to the helper at Phase 8's checkpoint, with the helper's return type declared. The Properties Drive's groups 18 and 19 held 67 of 67 from a worktree of `4c66b4171`, `~/Test` restored. Scheduled for Phase 8's checkpoint, since 8a rewrites both: the dropdown's rows read the saved view while the toolbar button reads the live one, so a rename from a row shows the old name under the new one until the write lands (`ViewListRow`'s `onCommit` returns the save, and the row reads the live view); `viewButtonMenuItems(labeled)` in place of recomputing `=== 'labeled'`, which 8a's `viewMenus.ts` hunk blocks today. Scheduled for Phase 10's checkpoint, the last patch touching `OptionOrderList.tsx` and `GroupFrame.tsx`: the hide controls travel both spread as two props and whole as `hide`, so every consumer takes `hide?: HideControls`. Not taken: gathering `SettingsFrame`'s header identity once (+11 measured against the -3 estimated); exporting `lookRow` to delete `typeRows.tsx`'s two-caller `item` (the plan keeps `lookRow` private); `hideEye`'s `dim` as an options object (the E-4 comment carries the reason where it's read); dropping the `// PLACEHOLDER` marker over the dropdown's More button (the markers are the owner's own).

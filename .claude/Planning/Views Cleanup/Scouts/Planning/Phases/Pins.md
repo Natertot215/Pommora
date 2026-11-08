@@ -6,7 +6,7 @@ Every test the planning build added or rewrote as a pin, by task, with the code 
 |---|---|---|
 | 2-3 | `Core/Views/Host/liveView.test.tsx` · "a refused drop that a later write composed over returns its row to its prior slot" | The refusal arm's re-placement in `dropIO(...).persistAfter` (`after`, `back`, and the `persist(back)` call) is removed |
 | 3-1 | `Core/Views/Settings/ViewFrame.test.tsx` · "a 'table' view's Layout row opens the kind's switches 'with the Visibility list above them'" and "a 'cards' view's Layout row opens the kind's switches 'without the Visibility list'" | `ViewEditor`'s Layout routing ignores `presentedKind(view.type).layout.leaf`: every kind sent to the Visibility pane reddens the Cards case, every kind sent to the switches reddens the Table case |
-| 3-1 | `Core/Views/Settings/SettingsFrame.test.tsx` · "Visibility is the list alone" | `ViewPane`'s `switches` defaults to `true` |
+| 3-1 | `Core/Views/Settings/SettingsFrame.test.tsx` · "Visibility is the list alone" | `ViewPane`'s visibility case passes `kindSwitches` as the footer (the Phase 3 checkpoint's fold moved the editor's leaf out of the dispatcher) |
 | 3-1 | `Core/Views/Settings/SettingsFrame.test.tsx` · "Layout is the type grid and the kind's switches, without the list" | `kindSwitches` is removed from `LayoutFrame` |
 | 3-1 | `Core/Views/Settings/SettingsFrame.test.tsx` · "lists Properties and every view pane" | Visibility is filtered out of `ENTRIES` |
 | 5-1 | `Core/Views/Table/cellGestures.test.tsx` · "a create opens its name field on the newborn's row, empty, before the reply" | `beginNaming` moves back after the reply, into `flight.then(...)` |
