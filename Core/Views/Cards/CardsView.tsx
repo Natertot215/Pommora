@@ -212,7 +212,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
   useEffect(() => {
     if (!bannerRequest) return
     bannerFrameRef.current = bannerRequest.frame
-    if (bannerRequest.mode === 'menu') void interactions.ghost.suppressWrap(openBannerMenu)
+    if (bannerRequest.mode === 'menu') void interactions.holdGhost(openBannerMenu)
     else openBannerEditor()
   }, [bannerRequest])
 
@@ -231,12 +231,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
 
   // ── The ghost's seat and its FLIP ─────────────────────────────────────────
 
-  const ghostShown = useGhostFlip(
-    host.viewRootRef,
-    interactions.ghostAt,
-    interactions.ghostAt === null,
-    effectiveZoom,
-  )
+  const ghostShown = useGhostFlip(host.viewRootRef, interactions.ghostAt, effectiveZoom)
   const ghostCard = (
     <GhostCard
       banner={banner}
@@ -374,7 +369,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
                     key={`ghost-${row.id}`}
                     open={!interactions.ghostClosing}
                     fill
-                    onCollapsed={interactions.ghost.closed}
+                    onCollapsed={interactions.onGhostClosed}
                   >
                     {ghostCard}
                   </Reveal>,

@@ -11,7 +11,7 @@ export function RenamableTitle({
   kind,
   title,
   className,
-  renames = 'row',
+  renames,
   autoSize,
   host,
   doubleClick = true,

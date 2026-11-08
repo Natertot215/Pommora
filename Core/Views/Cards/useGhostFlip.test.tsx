@@ -47,9 +47,9 @@ const measured = (key: string) => (el: HTMLElement | null) => {
   el.dataset.key = key
 }
 
-function Board({ liveId, gone }: { liveId: string | null; gone: boolean }): React.JSX.Element {
+function Board({ liveId }: { liveId: string | null }): React.JSX.Element {
   const ref = useRef<HTMLDivElement>(null)
-  const shown = useGhostFlip(ref, liveId, gone, 1)
+  const shown = useGhostFlip(ref, liveId, 1)
   shownLayout = shown === null || flat ? REST : LIFTED
   return (
     <div ref={ref}>
@@ -68,8 +68,8 @@ function Board({ liveId, gone }: { liveId: string | null; gone: boolean }): Reac
   )
 }
 
-const render = (liveId: string | null, gone = false): Promise<void> =>
-  act(async () => root.render(<Board liveId={liveId} gone={gone} />))
+const render = (liveId: string | null): Promise<void> =>
+  act(async () => root.render(<Board liveId={liveId} />))
 
 beforeEach(async () => {
   flat = false
@@ -108,8 +108,10 @@ describe('useGhostFlip', () => {
   })
 
   it('measures nothing when the ghost is gone', async () => {
+    await render('c1')
     reads = 0
-    await render('c1', true)
+    animate.mockClear()
+    await render(null)
     expect(reads).toBe(0)
     expect(animate).not.toHaveBeenCalled()
   })

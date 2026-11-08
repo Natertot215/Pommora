@@ -188,7 +188,7 @@ const priorSlotOf = (prior: unknown, now: unknown, dropped: unknown, id: string)
 type Persist = (patch: ViewPatch, opts?: ViewWriteOpts) => Promise<Result<unknown>>
 
 export function dropIO(
-  { id, name }: { id: string; name: string },
+  { id, name, prior }: { id: string; name: string; prior?: ViewPatch },
   {
     source,
     view,
@@ -221,7 +221,7 @@ export function dropIO(
         const back = Object.fromEntries(
           Object.keys(patch).flatMap((k) => {
             const key = k as keyof SavedView
-            const slot = priorSlotOf(view[key], after[key], patch[key], id)
+            const slot = priorSlotOf(prior?.[key] ?? view[key], after[key], patch[key], id)
             return slot ? [[k, slot]] : []
           }),
         )

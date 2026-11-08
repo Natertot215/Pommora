@@ -19,10 +19,10 @@ import type { ViewHostApi } from './useViewHost'
 import { personalizationOf } from '../../Session/configSlice'
 import { pageValuesOf } from '../pageValues'
 
-function mergedRanking(
+export function mergedRanking(
   existing: string[] | undefined,
   allIds: string[],
-  excludeId: string,
+  excludeId?: string,
 ): string[] {
   const base = existing ?? []
   const inBase = new Set(base)

@@ -25,7 +25,6 @@ function seats(root: HTMLElement, from: string | null, to: string | null): Map<E
 export function useGhostFlip(
   rootRef: RefObject<HTMLElement | null>,
   liveId: string | null,
-  gone: boolean,
   zoom: number,
 ): string | null {
   const [shown, setShown] = useState<string | null>(null)
@@ -33,7 +32,7 @@ export function useGhostFlip(
   useLayoutEffect(() => {
     if (liveId === shown) return
     const root = rootRef.current
-    before.current = root && !gone ? seats(root, shown, liveId) : null
+    before.current = root && liveId !== null ? seats(root, shown, liveId) : null
     setShown(liveId)
   }, [liveId, shown])
   useLayoutEffect(() => {

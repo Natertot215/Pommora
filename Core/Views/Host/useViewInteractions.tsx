@@ -36,7 +36,7 @@ import { type BandView, bandSpec } from '../Bands/GroupBand'
 import { sameItems } from '@pommora/uix/Utilities/same'
 import { useViewTileScope } from '../ViewTileScope'
 import type { ViewHostApi } from './useViewHost'
-import { tieOrderWith, useViewCreation } from './useViewCreation'
+import { mergedRanking, tieOrderWith, useViewCreation } from './useViewCreation'
 import { dropIO } from './liveView'
 import { mutateAhead, refusedDrop } from './paintAhead'
 
@@ -250,16 +250,12 @@ export function useViewInteractions<Own extends StableHandlers>(
   }
   const placeInView = (row: ViewRow, beforeId: string | null, landed?: Promise<boolean>): void => {
     if (pageOrder !== 'custom') return
-    const patch = {
-      manual_order: tieOrderWith(
-        view.manual_order,
-        rows.map((r) => r.id),
-        row.id,
-        beforeId,
-        'above',
-      ),
-    }
-    const io = dropIO({ id: row.id, name: row.title }, host)
+    const ranked = mergedRanking(
+      view.manual_order,
+      rows.map((r) => r.id),
+    )
+    const patch = { manual_order: tieOrderWith(ranked, ranked, row.id, beforeId, 'above') }
+    const io = dropIO({ id: row.id, name: row.title, prior: { manual_order: ranked } }, host)
     if (landed) io.persistAfter(patch, landed, { viewState: true })
     else void io.persistView(patch, { viewState: true })
   }
@@ -524,9 +520,10 @@ export function useViewInteractions<Own extends StableHandlers>(
     carry,
     folderSlot,
     seat,
-    ghost,
     ghostAt: heldAt ?? ghost.ghost?.anchorId ?? null,
     ghostClosing: heldAt === null && ghost.ghost?.closing === true,
+    onGhostClosed: ghost.closed,
+    holdGhost: ghost.suppressWrap,
     ghostRootProps: { ...ghostRootProps(ghost), onClick: ghostCreate },
     ghostStanding,
   }

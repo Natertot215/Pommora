@@ -190,20 +190,10 @@ export function useColumns(host: ViewHostApi) {
       teardown: () => setDragWidth(null),
     })
   }
-  const hideColumn = (id: string): void => {
-    setCollapsing(id)
-  }
   const commitHide = (): void => {
     if (!collapsing) return
     setCollapsing(null)
     host.hideProperty(collapsing)
-  }
-  const setColumnAlign = (id: string, align: ColumnAlign): void => {
-    void persistView({ column_alignments: { [id]: align } })
-  }
-  const runStyleAction = (column: ResolvedColumn, action: string): void => {
-    const parsed = parseStyleAction(action)
-    if (parsed) setStylePatch(column, parsed.key, parsed.value)
   }
   const openHeaderMenu = async (column: ResolvedColumn, e: React.MouseEvent): Promise<void> => {
     e.preventDefault()
@@ -223,11 +213,14 @@ export function useColumns(host: ViewHostApi) {
         style,
       }),
     )
-    if (action === 'column:hide') hideColumn(id)
+    const parsed = action ? parseStyleAction(action) : undefined
+    if (action === 'column:hide') setCollapsing(id)
     else if (action === 'column:toggle-icons') void persistView({ hide_column_icons: iconsShown })
     else if (action?.startsWith('align:'))
-      setColumnAlign(id, action.slice('align:'.length) as ColumnAlign)
-    else if (action) runStyleAction(column, action)
+      void persistView({
+        column_alignments: { [id]: action.slice('align:'.length) as ColumnAlign },
+      })
+    else if (parsed) setStylePatch(column, parsed.key, parsed.value)
   }
   const startColumnDrag = (e: React.PointerEvent, from: number): void => {
     if (e.button !== 0) return

@@ -316,6 +316,30 @@ describe("a view patch riding a drop's write", () => {
     expect(persistView).not.toHaveBeenCalled()
     expect(live.group_order).toEqual(['a', 'd', 'c', 'b'])
   })
+
+  it('a refused drop in a view that never stored its order returns its row to the slot its drop was ranked from', async () => {
+    let land: (landed: boolean) => void = () => {}
+    const persistView = vi.fn(async () => ok({}))
+    await show(base())
+    const io = dropIO(
+      { id: 'x', name: 'Row', prior: { manual_order: ['b1', 'a1', 'a2', 'x', 'b2'] } },
+      { source: { id: 'k' }, view: base(), persistView },
+    )
+    await act(async () =>
+      io.persistAfter(
+        { manual_order: ['x', 'b1', 'a1', 'a2', 'b2'] },
+        new Promise((resolve) => {
+          land = resolve
+        }),
+      ),
+    )
+    await put({ manual_order: ['x', 'b1', 'a2', 'a1', 'b2'] })
+    await act(async () => land(false))
+    expect(persistView).toHaveBeenCalledWith(
+      { manual_order: ['b1', 'a2', 'a1', 'x', 'b2'] },
+      undefined,
+    )
+  })
 })
 
 describe('useActiveView', () => {

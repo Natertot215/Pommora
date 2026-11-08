@@ -107,7 +107,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const ghostRowProps = {
     columns,
     hideIcon,
-    onClosed: interactions.ghost.closed,
+    onClosed: interactions.onGhostClosed,
     rootProps: interactions.ghostRootProps,
   }
   let renderedAnyRow = false
