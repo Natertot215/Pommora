@@ -10,6 +10,7 @@ import {
 } from 'react'
 import {
   type GhostAnchor,
+  ghostRootProps,
   useClearStrandedGhost,
   useGhostAnchor,
 } from '@pommora/uix/Interactions/ghostCreate'
@@ -175,10 +176,8 @@ function GhostLeaf({
     <Reveal open={!closing} enterOnMount onCollapsed={api?.closed}>
       {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a hover-born affordance wearing the row's own chrome — keyboard creation lives in the menus */}
       <div
-        data-ghost-root
+        {...(api && ghostRootProps(api))}
         className="ghost-leaf ghost-worn"
-        onPointerEnter={api?.onGhostEnter}
-        onPointerLeave={api?.onGhostLeave}
         onClick={api?.create}
         onContextMenu={(e) => {
           e.preventDefault()

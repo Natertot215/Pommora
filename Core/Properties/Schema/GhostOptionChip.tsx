@@ -1,5 +1,5 @@
 import { Reveal } from '@pommora/uix/Animations/Reveal'
-import type { GhostAnchor } from '@pommora/uix/Interactions/ghostCreate'
+import { type GhostAnchor, ghostRootProps } from '@pommora/uix/Interactions/ghostCreate'
 import { REVEAL_DWELL_MS } from '@pommora/uix/Interactions/hoverReveal'
 import { cx } from '@pommora/uix/Utilities/cx'
 import * as s from '@pommora/uix/Menus/frames.css'
@@ -27,10 +27,8 @@ export function GhostOptionChip({
     <Reveal open={!ghost.closing} enterOnMount onCollapsed={api.closed}>
       <button
         type="button"
-        data-ghost-root
+        {...ghostRootProps(api)}
         className={s.ghostOptionRow}
-        onPointerEnter={api.onGhostEnter}
-        onPointerLeave={api.onGhostLeave}
         onClick={() => {
           // Claim the anchor as the create begins — the slot leaves in the same act, so a second click can't open a second naming session.
           api.take()

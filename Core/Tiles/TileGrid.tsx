@@ -17,6 +17,7 @@ import { HYSTERESIS } from '@pommora/uix/Interactions/shared'
 import { TILE_MIN_PX } from '@pommora/uix/Utilities/tileMetrics'
 import {
   ghostAnchorProps,
+  ghostRootProps,
   useClearStrandedGhost,
   useGhostAnchor,
 } from '@pommora/uix/Interactions/ghostCreate'
@@ -684,12 +685,10 @@ export function TileGrid({
       {ghost && ghostBox && (
         <button
           type="button"
-          data-ghost-root
+          {...ghostRootProps(ghostApi)}
           data-reveal-held={inserting !== null || undefined}
           className={cx('tile-ghost tile-base ghost-worn', ghost.closing && 'is-closing')}
           style={placementStyle(ghostBox)}
-          onPointerEnter={ghostApi.onGhostEnter}
-          onPointerLeave={ghostApi.onGhostLeave}
           onTransitionEnd={(e) => {
             if (ghost.closing && e.target === e.currentTarget && e.propertyName === 'opacity')
               ghostApi.closed()

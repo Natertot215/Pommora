@@ -176,6 +176,18 @@ export function ghostAnchorProps(
   }
 }
 
+export function ghostRootProps(api: Pick<GhostAnchor, 'onGhostEnter' | 'onGhostLeave'>): {
+  'data-ghost-root': true
+  onPointerEnter: () => void
+  onPointerLeave: () => void
+} {
+  return {
+    'data-ghost-root': true,
+    onPointerEnter: api.onGhostEnter,
+    onPointerLeave: api.onGhostLeave,
+  }
+}
+
 /** An anchor gone from the consumer's pipeline strands `closing`, which reopens with no dwell. */
 export function useClearStrandedGhost(
   api: GhostAnchor,

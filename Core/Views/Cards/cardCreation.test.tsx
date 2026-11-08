@@ -176,6 +176,7 @@ it('a value’s inline field closes the ghost and keeps it down until the field 
     v.textContent?.includes('words'),
   )
   await act(async () => {
+    textValue?.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }))
     textValue?.click()
   })
   await tick(500)

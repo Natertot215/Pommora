@@ -4,7 +4,11 @@ import { Icon } from '@pommora/uix/Symbols'
 import { AccessoryButton, MenuItem, MenuSeparator, menuDropLine } from '@pommora/uix/Menus/MenuRows'
 import { heading } from '@pommora/uix/Menus/menu-row.css'
 import { ICON } from '@pommora/uix/Menus/frames.css'
-import { ghostAnchorProps, useGhostAnchor } from '@pommora/uix/Interactions/ghostCreate'
+import {
+  ghostAnchorProps,
+  ghostRootProps,
+  useGhostAnchor,
+} from '@pommora/uix/Interactions/ghostCreate'
 import { LineRow, LineZone, lineList } from '@pommora/uix/Interactions/drag'
 import { fullOrderIndex, moveItem } from '@pommora/uix/Utilities/moveItem'
 import { cx } from '@pommora/uix/Utilities/cx'
@@ -329,11 +333,9 @@ export function PropertyPanel({
                         onCollapsed={ghostApi.closed}
                       >
                         <div
-                          data-ghost-root
+                          {...ghostRootProps(ghostApi)}
                           data-reveal-held={rowOpened || undefined}
                           className={cx(s.addSlot, 'ghost-worn')}
-                          onPointerEnter={ghostApi.onGhostEnter}
-                          onPointerLeave={ghostApi.onGhostLeave}
                         >
                           <MenuItem
                             className={s.row}

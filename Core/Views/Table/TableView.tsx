@@ -5,9 +5,9 @@ import { type ColumnAlign, viewOption } from '../views'
 import type { PropertyValue } from '../../Properties/propertyValue'
 import { pickKindOf, type ResolvedColumn } from '../../Properties/properties'
 import { fillInput } from '@pommora/uix/Fields/fields.css'
-import { useValueSeat, ValueSeat } from '../../Properties/Pickers/ValueSeat'
+import { ValueSeat } from '../../Properties/Pickers/ValueSeat'
 import type { ViewHostApi } from '../Host/useViewHost'
-import { rowHover, useViewInteractions } from '../Host/useViewInteractions'
+import { rowHover, useViewInteractions, type ViewInteractions } from '../Host/useViewInteractions'
 import { useSession } from '../../Session/store'
 import { RenamableName } from '../../Interface/RenamableTitle'
 import type { ValueContext } from '../../Properties/valueContext'
@@ -56,18 +56,14 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const titleColId = titleCol?.id
 
   const interactions = useViewInteractions(host, {
-    ghost: {
-      graceMs: 0,
-      suppressed: () => seat.open !== null || host.naming !== null,
+    ghost: { graceMs: 0 },
+    seat: {
+      anchor: (el) => el.closest<HTMLElement>('.data-cell') ?? el,
+      onClose: () => cellSweep.clear(),
     },
     newPages: 'pair',
   })
-  const seat = useValueSeat({
-    ...host.seatHost,
-    anchor: (el) => el.closest<HTMLElement>('.data-cell') ?? el,
-    hold: interactions.ghost.suppressWrap,
-    onClose: () => cellSweep.clear(),
-  })
+  const { seat } = interactions
 
   // ── Cell click ────────────────────────────────────────────────────────────
 
@@ -168,14 +164,11 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const indent = (depth: number): string =>
     depth > 0 ? `calc(var(--loose-inset) + ${rowIndent(depth)})` : 'var(--loose-inset)'
 
-  const ghost = interactions.ghost.ghost
   const ghostRowProps = {
     columns,
     hideIcon: viewOption(view, 'hide_page_icons'),
     onClosed: interactions.ghost.closed,
-    onEnter: interactions.ghost.onGhostEnter,
-    onLeave: interactions.ghost.onGhostLeave,
-    onCreate: () => void interactions.ghostCreate(),
+    rootProps: interactions.ghostRootProps,
   }
   let renderedAnyRow = false
   const renderRows = (g: ResolvedGroup, depth: number, visible: boolean): React.JSX.Element[] => {
@@ -208,12 +201,12 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
             lead={lead}
           />,
         ]
-        if (itemsVisible && ghost?.anchorId === row.id && !open && !host.naming)
+        if (itemsVisible && interactions.ghostAt === row.id)
           rendered.push(
             <GhostRow
               key={`ghost-${row.id}`}
               padLeft={memberIndent(itemDepth)}
-              closing={ghost.closing}
+              closing={interactions.ghostClosing}
               {...ghostRowProps}
             />,
           )
@@ -303,31 +296,24 @@ function GhostRow({
   hideIcon,
   closing,
   onClosed,
-  onEnter,
-  onLeave,
-  onCreate,
+  rootProps,
 }: {
   padLeft: string | undefined
   columns: ResolvedColumn[]
   hideIcon: boolean
   closing: boolean
   onClosed: () => void
-  onEnter: () => void
-  onLeave: () => void
-  onCreate: () => void
+  rootProps: ViewInteractions['ghostRootProps']
 }): React.JSX.Element {
   return (
     <Reveal open={!closing} enterOnMount onCollapsed={onClosed}>
-      {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/useSemanticElements: a hover-born affordance that must use the row grid's own chrome — a real <button> can't host a .data-row, and keyboard creation lives in the menus */}
+      {/* biome-ignore lint/a11y/useSemanticElements: a hover-born affordance that must use the row grid's own chrome — a real <button> can't host a .data-row, and keyboard creation lives in the menus */}
       <div
-        data-ghost-root
+        {...rootProps}
         className="data-row ghost-row"
         role="button"
         tabIndex={-1}
         aria-label="New Page"
-        onPointerEnter={onEnter}
-        onPointerLeave={onLeave}
-        onClick={onCreate}
       >
         {columns.map((c, i) => (
           <div

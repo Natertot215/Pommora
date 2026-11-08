@@ -1,6 +1,6 @@
-// Everything a row, a band, or a page does in answer to the pointer, defined once for every view kind: band drops, row drops and where the order lands, opening a page, the hover ghost, and the page menu. A kind supplies the policy below and its own presentation, nothing else.
+// Everything a row, a band, or a page does in answer to the pointer, defined once for every view kind: band drops, row drops and where the order lands, opening a page, the value seat, the hover ghost, and the page menu. A kind supplies the policy below and its own presentation, nothing else.
 
-import { useMemo, useRef } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import { UNGROUPED, type ViewRow } from '../viewRow'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
@@ -9,6 +9,7 @@ import { type PageTarget, selectTargetOf } from '../../Navigation/navRef'
 import { nextOrder } from '@pommora/uix/Utilities/moveItem'
 import {
   type GhostAnchor,
+  ghostRootProps,
   useClearStrandedGhost,
   useGhostAnchor,
 } from '@pommora/uix/Interactions/ghostCreate'
@@ -25,6 +26,8 @@ import { useSession } from '../../Session/store'
 import { pickOpen } from '../../Session/chromeSlice'
 import { glanceShown, hoverGlance, leaveGlance } from '../../Interface/Glance/glanceAction'
 import { showPageMenu } from '../../Interface/Menus/pageMenuActions'
+import { type SeatHost, useValueSeat } from '../../Properties/Pickers/ValueSeat'
+import { holderOf } from '../../Properties/valueContext'
 import { type BandNode, memberDepth, nodeLabel, springsInto } from '../Bands/bandModel'
 import { bandRouting, bucketValueAt } from '../Bands/bandRouter'
 import { bucketKey } from '../Pipeline/group'
@@ -33,16 +36,17 @@ import { type BandView, bandSpec } from '../Bands/GroupBand'
 import { sameItems } from '@pommora/uix/Utilities/same'
 import { useViewTileScope } from '../ViewTileScope'
 import type { ViewHostApi } from './useViewHost'
-import { type CreateFlight, tieOrderWith, useViewCreation } from './useViewCreation'
+import { tieOrderWith, useViewCreation } from './useViewCreation'
 import { dropIO } from './liveView'
 import { mutateAhead, refusedDrop } from './paintAhead'
 
 interface ViewInteractionPolicy {
   ghost: {
     graceMs: number
-    suppressed: () => boolean
     travelHold?: { inZone: (enteringId: string) => boolean; holdMs: number }
   }
+  seat: Pick<SeatHost, 'anchor'> &
+    Partial<Pick<SeatHost, 'commit' | 'centered' | 'add' | 'hide' | 'onClose'>>
   newPages: NewPageRows
 }
 
@@ -83,6 +87,8 @@ export function rowHover(
   }
 }
 
+export type ViewInteractions = ReturnType<typeof useViewInteractions>
+
 export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPolicy) {
   const {
     source,
@@ -114,6 +120,7 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     commitGroupValue,
     openTarget,
     styleOf,
+    setStylePatch,
   } = host
 
   const tile = useViewTileScope()
@@ -419,28 +426,39 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
   const ghost = useGhostAnchor({
     dwellMs: REVEAL_DWELL_MS,
     graceMs: policy.ghost.graceMs,
-    suppressed: () => pickOpen(useSession.getState()) || glanceShown() || policy.ghost.suppressed(),
+    suppressed: () =>
+      pickOpen(useSession.getState()) ||
+      glanceShown() ||
+      seat.open !== null ||
+      host.naming !== null,
     travelHold: policy.ghost.travelHold,
+  })
+  const seat = useValueSeat({
+    rowOf: (id) => rowById.get(id),
+    columnOf: (id) => resolveColumn(id, schema, identity.contextIds),
+    commit: commitValue,
+    holder: (row) => holderOf(row, ctx),
+    connections: ctx.connections,
+    style: styleOf,
+    setStyle: setStylePatch,
+    hold: ghost.suppressWrap,
+    ...policy.seat,
   })
   useClearStrandedGhost(ghost, rowById)
   // The container itself holds nothing, so the ghost stands on its own as its first New Page instead of waiting on a hover anchor. Reading the container rather than the pipeline keeps it off a view whose filter is what emptied the paint — there the create would land a page the filter hides again.
   const ghostStanding = rows.length === 0
-  const standingFlight = useRef<CreateFlight | null>(null)
-  /** Claims the ghost's anchor and creates below it, or creates the container's first page under a standing ghost; undefined when no ghost stands. */
-  const ghostCreate = (): CreateFlight | undefined => {
+  // The ghost holds its place for its create's whole flight, until the newborn's row lands there; a click on it meanwhile creates nothing.
+  const [held, setHeld] = useState<{ anchorId: string | null; id: string } | null>(null)
+  const ghostCreate = (): void => {
+    if (held) return
     const anchorId = ghost.take()
     const anchor = anchorId ? rowById.get(anchorId) : undefined
-    if (anchor) return creation.createAfter(anchor)
-    if (!ghostStanding) return undefined
-    // The standing ghost stays mounted until the row lands, so the create is claimed for its whole flight.
-    if (standingFlight.current) return standingFlight.current
-    const flight = creation.createFirst()
-    standingFlight.current = flight
-    void flight.path.finally(() => {
-      standingFlight.current = null
-    })
-    return flight
+    if (!anchor && !ghostStanding) return
+    const flight = anchor ? creation.createAfter(anchor) : creation.createFirst()
+    setHeld({ anchorId: anchor?.id ?? null, id: flight.id })
+    void flight.path.finally(() => setHeld((h) => (h?.id === flight.id ? null : h)))
   }
+  const heldAt = held && !rowById.has(held.id) ? held.anchorId : null
 
   return {
     bandView,
@@ -453,8 +471,11 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     openPage,
     openSet,
     pageMenu,
+    seat,
     ghost,
+    ghostAt: heldAt ?? ghost.ghost?.anchorId ?? null,
+    ghostClosing: heldAt === null && ghost.ghost?.closing === true,
+    ghostRootProps: { ...ghostRootProps(ghost), onClick: ghostCreate },
     ghostStanding,
-    ghostCreate,
   }
 }

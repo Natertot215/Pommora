@@ -44,7 +44,7 @@ export function tieOrderWith(
   return spliceBeside(mergedRanking(existing, allIds, newId), anchorId, newId, where)
 }
 
-export interface CreateFlight {
+interface CreateFlight {
   id: string
   path: Promise<string | null>
 }

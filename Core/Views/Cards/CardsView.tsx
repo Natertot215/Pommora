@@ -44,13 +44,13 @@ import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { columnLabel } from '../../Properties/columnDisplay'
 import { GroupBand } from '../Bands/GroupBand'
 import { orderedChildren } from '../Pipeline/group'
-import { rowHover, useViewInteractions } from '../Host/useViewInteractions'
+import { rowHover, useViewInteractions, type ViewInteractions } from '../Host/useViewInteractions'
 import type { ValueContext } from '../../Properties/valueContext'
 import { NO_TRAIL, type TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { ancestryOf } from '../../Nexus/treeIndex'
 import { stabilize } from '../../Nexus/treeStabilize'
 import { Cell } from '../../Properties/Cells/Cell'
-import { useValueSeat, ValueSeat, type ValueSeatApi } from '../../Properties/Pickers/ValueSeat'
+import { ValueSeat, type ValueSeatApi } from '../../Properties/Pickers/ValueSeat'
 import { borderedField } from '@pommora/uix/Fields/fields.css'
 import { overScrollEllipsis } from '@pommora/uix/Interactions/OverScroll'
 import { type Personalization, TENTHS_SCALE } from '../../Settings/personalization'
@@ -146,7 +146,6 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const shellClass = cx('cards-view', banner === 'none' && 'is-compact')
   const hideLocation = viewOption(view, 'hide_location')
 
-  const [pendingSeat, setPendingSeat] = useState<{ anchor: string; id: string } | null>(null)
   const ghostRowmate = (enteringId: string): boolean => {
     const root = host.viewRootRef.current
     const ghostEl = root?.querySelector('.ghost-card')
@@ -156,53 +155,40 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     return Math.abs(g.top - cardEl.getBoundingClientRect().top) < g.height / 2
   }
 
+  // A value from a card's Add shows its property; a right-click pick runs through `MenuSeat` and leaves the view alone.
+  const commitOnCard = (row: ViewRow, column: ResolvedColumn, v: PropertyValue | null): void => {
+    if (!isBlankValue(v)) revealProperty(column.id)
+    commitValue(row, column, v)
+  }
   const interactions = useViewInteractions(host, {
     ghost: {
       graceMs: CARDS_GHOST_GRACE_MS,
-      suppressed: () => seat.open !== null || host.naming !== null,
       travelHold: { inZone: ghostRowmate, holdMs: GHOST_TRAVEL_HOLD_MS },
+    },
+    seat: {
+      commit: commitOnCard,
+      anchor: (el) => el.closest<HTMLElement>('.value-seat') ?? el,
+      centered: true,
+      hide: { from: 'view', run: (_, column) => hideProperty(column.id) },
+      add: {
+        columns: (row) =>
+          cardAddColumns(
+            itemColumns(tree, ctx.schema, row.id),
+            row,
+            shownColumnsFor(row, columns, isCompact(view)),
+          ),
+        show: (column) => revealProperty(column.id),
+      },
     },
     newPages: 'single',
   })
+  const { seat } = interactions
   const effectiveZoom = useElementZoom(host.viewRootRef)
   const reorderSets = (id: string, beforeId: string | null): boolean =>
     interactions.bandDrop(
       { kind: 'set', key: id, depth: 0, parentKey: null },
       { kind: 'before', beforeKey: beforeId, parentKey: null },
     )
-
-  // ── The value seat ────────────────────────────────────────────────────────
-
-  // A value from a card's Add shows its property; a right-click pick runs through `MenuSeat` and leaves the view alone.
-  const commitOnCard = (row: ViewRow, column: ResolvedColumn, v: PropertyValue | null): void => {
-    if (!isBlankValue(v)) revealProperty(column.id)
-    commitValue(row, column, v)
-  }
-  const seat = useValueSeat({
-    ...host.seatHost,
-    commit: commitOnCard,
-    anchor: (el) => el.closest<HTMLElement>('.value-seat') ?? el,
-    centered: true,
-    hold: interactions.ghost.suppressWrap,
-    hide: { from: 'view', run: (_, column) => hideProperty(column.id) },
-    add: {
-      columns: (row) =>
-        cardAddColumns(
-          itemColumns(tree, ctx.schema, row.id),
-          row,
-          shownColumnsFor(row, columns, isCompact(view)),
-        ),
-      show: (column) => revealProperty(column.id),
-    },
-  })
-  // The ghost stands down while a value's inline field owns the pointer.
-  const inline = seat.open?.mode === 'editor'
-  useEffect(() => {
-    if (!inline) return
-    let done = (): void => {}
-    void interactions.ghost.suppressWrap(() => new Promise<void>((settle) => (done = settle)))
-    return () => done()
-  }, [inline])
 
   // ── The root banner seat ──────────────────────────────────────────────────
 
@@ -275,18 +261,10 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
 
   const ghostShown = useGhostFlip(
     host.viewRootRef,
-    interactions.ghost.ghost && !host.naming ? interactions.ghost.ghost.anchorId : null,
-    interactions.ghost.ghost === null,
+    interactions.ghostAt,
+    interactions.ghostAt === null,
     effectiveZoom,
   )
-  const ghostCreate = (): void => {
-    const anchor = interactions.ghost.ghost?.anchorId
-    const flight = interactions.ghostCreate()
-    if (!flight || !anchor) return
-    setPendingSeat({ anchor, id: flight.id })
-    void flight.path.finally(() => setPendingSeat(null))
-  }
-  const ghostSeat = pendingSeat && !rowById.has(pendingSeat.id) ? pendingSeat.anchor : null
   const ghostCard = (
     <GhostCard
       banner={banner}
@@ -294,9 +272,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
       columns={columns}
       ctx={ctx}
       iconName={entityIcon('page', undefined, defaultIcons)}
-      onEnter={interactions.ghost.onGhostEnter}
-      onLeave={interactions.ghost.onGhostLeave}
-      onCreate={ghostCreate}
+      rootProps={interactions.ghostRootProps}
     />
   )
   const cardScale = view.card_size ?? TENTHS_SCALE.default
@@ -423,13 +399,13 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
                     }
                   />
                 )
-                if (ghostShown !== row.id && ghostSeat !== row.id) return [card]
+                if (ghostShown !== row.id) return [card]
                 return [
                   card,
                   // FLIP seats the ghost among its neighbors on the way in; Reveal collapses it on the way out, so an aborted ghost animates away like the sidebar and table ones instead of vanishing.
                   <Reveal
                     key={`ghost-${row.id}`}
-                    open={!interactions.ghost.ghost?.closing}
+                    open={!interactions.ghostClosing}
                     fill
                     onCollapsed={interactions.ghost.closed}
                   >
@@ -458,28 +434,18 @@ function GhostCard({
   columns,
   ctx,
   iconName,
-  onEnter,
-  onLeave,
-  onCreate,
+  rootProps,
 }: {
   banner: CardBanner
   view: SavedView
   columns: ResolvedColumn[]
   ctx: ValueContext
   iconName: string
-  onEnter: () => void
-  onLeave: () => void
-  onCreate: () => void
+  rootProps: ViewInteractions['ghostRootProps']
 }): React.JSX.Element {
   const props = isCompact(view) ? [] : columns.filter((c) => c.kind !== 'title')
   return (
-    <CardRoot
-      data-ghost-root
-      className="ghost-card"
-      onPointerEnter={onEnter}
-      onPointerLeave={onLeave}
-      onClick={onCreate}
-    >
+    <CardRoot {...rootProps} className="ghost-card">
       <CardBody pop={false} className="ghost-worn">
         {banner !== 'none' && (
           <CardThumb>
