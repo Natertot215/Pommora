@@ -19,7 +19,7 @@
 | Phase | Estimate | Tests at the Phase's Head | Measured |
 |-------|----------|---------------------------|----------|
 | 1 · The Kind Record | +11, +11 its own | 9,269 | +11 (+146 / -135); 9,269; comments 3,517 |
-| 2 · The Views Root and the Live View | -82, -93 its own | 9,256 | |
+| 2 · The Views Root and the Live View | -82, -93 its own | 9,256 | -82 (+907 / -989); 9,256; comments 3,514; after the checkpoint's fold -92 (+901 / -993); 9,257; comments 3,513 |
 | 3 · One Pane Route | -158, -76 its own | 9,261 | |
 | 4 · The Table and the Second Table | -304, -146 its own | 9,259 | |
 | 5 · The Host and Its Renderers | -393, -89 its own | 9,259 | |
@@ -331,10 +331,10 @@ The order lets each signature land once. The kind record goes first because the 
   - [x] Task 1-2 · The host reads the active view once
   - [x] Review Checkpoint
 - [ ] **Phase 2** — The Views Root and the Live View
-  - [ ] Task 2-1 · The root's dissolutions
-  - [ ] Task 2-2 · The page record's home
-  - [ ] Task 2-3 · The live view
-  - [ ] Review Checkpoint
+  - [x] Task 2-1 · The root's dissolutions
+  - [x] Task 2-2 · The page record's home
+  - [x] Task 2-3 · The live view
+  - [x] Review Checkpoint
 - [ ] **Phase 3** — One Pane Route
   - [ ] Task 3-1 · One pane route
   - [ ] Task 3-2 · The Settings root and the toolbar's view button
@@ -476,7 +476,7 @@ The view write should be one act in `Host/liveView.ts`: the pending record, `use
 
 #### Review Checkpoint
 
-- [ ] The engine graph from `Core/Contract/serve.ts` reaches no renderer, and every file at the Views root is the views' own; both reviewers' findings folded or recorded.
+- [x] The engine graph from `Core/Contract/serve.ts` reaches no renderer, and every file at the Views root is the views' own; both reviewers' findings folded or recorded.
 
 ---
 
@@ -918,3 +918,4 @@ Nothing else survives ratification once the placements are approved. *Morning Re
 Planning's own folds, and where each landed, sit in *Scouts/Planning/Phases/Wave One — Fold Ledger* and *Wave Two — Fold Ledger*.
 
 - **Phase 1 checkpoint (11-08-2026):** both reviewers found `GroupFrame.tsx:353`'s `persist` prop spelling the bound view save by hand, `(patch: ViewPatch) => Promise<Result<unknown>>`, where Task 1-1 made `ViewWriter` the one spelling; it becomes `persist: ViewWriter` with the `Result` import gone (net 0), landing at Phase 7's checkpoint, since `GroupFrame.tsx`'s import block and that prop sit in the context of patches 2b, 2c, 3a, 3c, 5c, 6b, 7a, and 7d and no patch after 7d touches the file. `bandRouter.ts:45`'s `persistView` keeps its own type, since it receives the host's `Result<unknown>`-returning `persistView` and can't narrow. Not taken: `void` on `LayoutFrame.tsx:83` and `:122`'s discarded `write(...)` calls, since Task 3-1 rewrites both lines as `void save(...)`.
+- **Phase 2 checkpoint (11-08-2026), fold `7dac30394`, -10 Actionable and -1 comment; every later row's Measured reads 10 below its Estimate by it:** the I-070 arm re-placed a row whenever its successor-anchored place in the live order differed from the drop's, so a write from another device during the round trip could move a row nobody moved and save it; `priorSlotOf` now re-places only where the live order still carries the drop's slot (the row beside the neighbor its own patch gave it), a row a later write removed from the order stays removed, and a new pin in `liveView.test.tsx` holds the gate. Simplification folds: `pickedStyle` inlined into `columnStylePatch` (-8); `ViewRow extends PageValues` (-3); `setViewButton` writes through `setOrDrop` as `setDisclosureLock` does (-1); `orderInTree`'s comment, a repeat of two headers, left (-1 comment); `TITLE_OPS` reads `TEXT_OPS`; one import re-ordered; `writePathRace.test.ts`'s third writer drives the `setViewButton` op again. Scheduled for Phase 5's checkpoint, since 5a to 5c rewrite `useViewInteractions.tsx`: the arm skips a row the stored `manual_order` never ranked, the default state of a property-grouped view, where the drawn order at the drop is its prior slot, so `placeInView` hands `dropIO` that order. Not taken: `ViewWriter` moving to `liveView.ts` and widening with `ViewWriteOpts` (Wave Two's Fold 7 placed it beside `ViewPatch`, and the option is the host's persist's alone); `useSaveView`'s two closures merged (they separate the write from its one refusal report). The fold's commit carries an Opus trailer where the plan's rule names Fable; the executor read the session's attribution reminder over the brief, and the commit stands as pushed.
