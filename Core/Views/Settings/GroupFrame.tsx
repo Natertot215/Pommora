@@ -1,5 +1,4 @@
 import { useMemo } from 'react'
-import type { Result } from '../../Contract/result'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import type { PropertyDefinition, SelectOption, ResolvedColumn } from '../../Properties/properties'
 import { findOption } from '../../Properties/propertyValue'
@@ -16,7 +15,7 @@ import {
   type StructuralOrderMode,
   type SubGroupConfig,
   toggleHiddenBucket,
-  type ViewPatch,
+  type ViewWriter,
   viewOption,
 } from '../views'
 import { type ResolvedGroup, flattenContainer } from '../viewRow'
@@ -345,7 +344,7 @@ function LocationHierarchy({
   view: SavedView
   plan: GroupPlan
   sub: Grouping | undefined
-  persist: (patch: ViewPatch) => Promise<Result<unknown>>
+  persist: ViewWriter
   subControls: HideControls
 } & HideControls): React.JSX.Element {
   const expanded = useDisclosureSet()
@@ -382,12 +381,13 @@ function LocationHierarchy({
     return bandModelOf(walk(null), heads)
   }, [heads, sets, plan, subDef, subChips, view])
 
-  const base = { view, plan, sets, sourcePath: painted.path }
-  const routing = bandRouting(model, base, (dragged) =>
-    dropIO(
-      { id: dragged.key, name: nodeLabel(model.byKey.get(dragged.key)) },
-      { source, view, persistView: persist },
-    ),
+  const routing = bandRouting(
+    { view, plan, sets, sourcePath: painted.path, bands: model },
+    (dragged, prior) =>
+      dropIO(
+        { id: dragged.key, name: nodeLabel(model.byKey.get(dragged.key)), prior },
+        { source, view, persistView: persist },
+      ),
   )
 
   const subChipRow = (

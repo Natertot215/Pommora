@@ -33,8 +33,6 @@ export type IconSize = keyof typeof size.icon
 /** The names are the public knob; the numbers behind each live in button-base.css.ts. */
 export type ButtonSize = 'button-inline' | 'button-small' | 'button-medium' | 'button-large'
 
-const DISCLOSURE_INDENT = 14
-
 export const DROP_LINE_INSET = 2
 
 /** KNOB — a resizable tile's height before a persisted one exists. */
@@ -113,7 +111,7 @@ globalStyle(':root', {
     '--app-radius': '12px',
     '--surface-inset': '10px',
     '--icon-body': size.icon.body,
-    '--disclosure-indent': `${DISCLOSURE_INDENT}px`,
+    '--disclosure-indent': '14px',
     '--rail-inset-base': '20px',
     '--rail-inset': 'var(--rail-inset-base)',
     '--park-clearance': '14px',

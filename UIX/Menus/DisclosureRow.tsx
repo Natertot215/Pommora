@@ -13,7 +13,7 @@ export type Disclosure = {
 
 const NO_FLIPS: ReadonlySet<string> = new Set()
 
-// The set holds the exceptions to `defaultOpen`, never the open nodes, so a default-open tree needs no seed and stays right as nodes appear and vanish beneath it; a new `resetOn` drops them.
+// The set holds the exceptions to `defaultOpen`, never the open nodes, so a default-open tree needs no seed and stays right as nodes appear and vanish beneath it; a new `resetOn` sets them aside.
 export function useDisclosureSet(
   defaultOpen: boolean | ReadonlySet<string> = false,
   resetOn?: unknown,

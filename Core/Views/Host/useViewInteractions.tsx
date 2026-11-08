@@ -185,22 +185,24 @@ export function useViewInteractions<Own extends StableHandlers>(
   // ── Bands ─────────────────────────────────────────────────────────────────
 
   const valueAt = bucketValueAt(bands.byKey)
-  const bandBase = { view, plan, sets, sourcePath: source.path }
-  const bandRoutes = bandRouting(bands, bandBase, (dragged, prior) => {
-    const node = bands.byKey.get(dragged.key)
-    const name = node ? nodeLabel(node) : (sets.node.get(dragged.key)?.title ?? '')
-    return {
-      ...dropIO({ id: dragged.key, name, prior }, host),
-      switched: ({ propertyId, prior: undo }) =>
-        notify(
-          `Switched to custom ${columnLabel(resolveColumn(propertyId, schema, identity.contextIds)!, ctx.contexts)} order`,
-          () =>
-            void persistView(undo).then((r) => {
-              if (r.ok) announceDrag('return', name)
-            }),
-        ),
-    }
-  })
+  const bandRoutes = bandRouting(
+    { view, plan, sets, sourcePath: source.path, bands },
+    (dragged, prior) => {
+      const node = bands.byKey.get(dragged.key)
+      const name = node ? nodeLabel(node) : (sets.node.get(dragged.key)?.title ?? '')
+      return {
+        ...dropIO({ id: dragged.key, name, prior }, host),
+        switched: ({ propertyId, prior: undo }) =>
+          notify(
+            `Switched to custom ${columnLabel(resolveColumn(propertyId, schema, identity.contextIds)!, ctx.contexts)} order`,
+            () =>
+              void persistView(undo).then((r) => {
+                if (r.ok) announceDrag('return', name)
+              }),
+          ),
+      }
+    },
+  )
   const creation = useViewCreation(() => ({ ...host, bandBucket: valueAt }))
   const openSet = (set: SetNode, newTab: boolean): void => {
     openTarget(selectTargetOf(set), { newTab })

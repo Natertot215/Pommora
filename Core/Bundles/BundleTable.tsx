@@ -278,20 +278,16 @@ const BundleRowView = memo(function BundleRowView({
         void api.openMenu(row)
       }}
     >
-      <RowLead
-        indent={`calc(var(--cell-padding-x) + ${rowIndent(depth)})`}
-        slotted={
-          <span className={cx('row-check', revealTarget)}>
-            <Checkbox
-              size="compact"
-              state={checked}
-              tabIndex={-1}
-              onChange={() => api.toggle(row.bundlePath)}
-              ariaLabel={`Select ${row.title}`}
-            />
-          </span>
-        }
-      >
+      <RowLead indent={`calc(var(--cell-padding-x) + ${rowIndent(depth)})`}>
+        <span className={cx('row-check', revealTarget)}>
+          <Checkbox
+            size="compact"
+            state={checked}
+            tabIndex={-1}
+            onChange={() => api.toggle(row.bundlePath)}
+            ariaLabel={`Select ${row.title}`}
+          />
+        </span>
         <span className="bundle-title">
           {depth > 0 && chevron && <span className="row-chevron">{chevron}</span>}
           <span className={cx(overScrollLabel, 'cell-title')}>
@@ -317,7 +313,7 @@ const BundleRowView = memo(function BundleRowView({
           />
         )}
       </RowLead>
-      <div className="data-cell bundle-date">{when}</div>
+      <div className="data-cell">{when}</div>
     </LineRow>
   )
 })

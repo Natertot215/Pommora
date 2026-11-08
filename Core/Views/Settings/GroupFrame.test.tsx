@@ -11,6 +11,7 @@ import * as group from '../Pipeline/group'
 import { stubDialer } from '../../vitest.setup'
 import { MenuDoorHost } from '../../Testing/MenuDoorHost'
 import { mountEachTest, SavingViewPane } from '../../Testing/viewHarness'
+import { useLiveView } from '../Host/liveView'
 import { makeTree } from '../../Testing/testTree'
 
 const statusDef: PropertyDefinition = {
@@ -478,6 +479,55 @@ describe('GroupFrame lists — dragging in the pane', () => {
     await dragRow(1, 5)
     expect(lineRows().map((r) => r.textContent)).toEqual(['Beta', 'Alpha'])
     await act(async () => land(null))
+  })
+
+  it('a refused nest of a Set group_order never ranked, after another Set write, returns it to the slot its drop was ranked from', async () => {
+    const set = (id: string, title: string, sets: unknown[] = []) => ({
+      kind: 'set',
+      id,
+      title,
+      path: `Col/${title}`,
+      pages: [],
+      sets,
+    })
+    const sets = {
+      ...source,
+      sets: [set('sA', 'A', [set('sA1', 'A1')]), set('sB', 'B'), set('sC', 'C'), set('sD', 'D')],
+    } as unknown as CollectionNode
+    let refuse: (outcome: null) => void = () => {}
+    useSession.setState({
+      tree: { ...makeTree(), collections: [sets] },
+      mutate: vi.fn(() => new Promise((resolve) => (refuse = resolve))) as never,
+    })
+    const stored = view({ group_order: ['sA', 'sA1', 'sB', 'sC'] })
+    function LivePane(): React.JSX.Element {
+      return (
+        <SavingViewPane
+          id="group"
+          source={sets}
+          view={useLiveView(sets.id, stored)}
+          schema={schema}
+          back={{ label: 'Settings', onBack: () => {} }}
+        />
+      )
+    }
+    await act(async () => {
+      root.render(
+        <MenuDoorHost>
+          <LivePane />
+        </MenuDoorHost>,
+      )
+    })
+    lay()
+    await dragRow(3, 15)
+    expect(lineRows().map((r) => r.textContent)).toEqual(['A', 'B', 'C'])
+    lay()
+    await dragRow(1, 89)
+    expect(lineRows().map((r) => r.textContent)).toEqual(['A', 'C', 'B'])
+    await act(async () => refuse(null))
+    await act(async () => {})
+    expect(lineRows().map((r) => r.textContent)).toEqual(['A', 'C', 'B', 'D'])
+    expect(lastSaved().group_order).toEqual(['sA', 'sA1', 'sC', 'sB', 'sD'])
   })
 
   it('the pane lists and moves Sets in the view order under Group By None', async () => {

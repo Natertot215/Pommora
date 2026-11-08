@@ -636,7 +636,7 @@ async function group5(cdp) {
     short && picked && full && returned, show({ short, full, style: trashStyle() }))
 
   const { chosen: widest } = await chooseNative(cdp, sel('.trash-frame .col-header:last-child'), 'Full')
-  const fit = await settles(() => cdp.evaluate(`(() => { const cells = [...document.querySelectorAll('.trash-frame .bundle-date')]; const head = document.querySelector('.trash-frame .col-header:last-child'); return cells.length > 0 && cells.every((c) => /day, /.test(c.textContent) && c.scrollWidth <= c.clientWidth) && !!head && head.scrollWidth <= head.clientWidth })()`))
+  const fit = await settles(() => cdp.evaluate(`(() => { const cells = [...document.querySelectorAll('.trash-frame .bundle-rows .data-cell:last-child')]; const head = document.querySelector('.trash-frame .col-header:last-child'); return cells.length > 0 && cells.every((c) => /day, /.test(c.textContent) && c.scrollWidth <= c.clientWidth) && !!head && head.scrollWidth <= head.clientWidth })()`))
   const { chosen: unweekdayed } = await chooseNative(cdp, sel('.trash-frame .col-header:last-child'), 'Hide Day')
   const settled = await settles(async () => !('trashColumnStyle' in (settingsOnDisk().personalization ?? {})))
   item(5, 'G-1', 'under its widest style no Trash date and not its heading is cut',
@@ -1000,7 +1000,7 @@ const arcRow = (title) => `[...document.querySelectorAll('.bundle-rows .data-row
 const arcTitles = (cdp) => cdp.evaluate(`[...document.querySelectorAll('.bundle-rows .data-row')].filter((r) => !r.closest('[inert]')).map((r) => r.querySelector('.cell-title-text')?.textContent)`)
 const arcChecked = (cdp, title) => cdp.evaluate(`(${arcRow(title)})?.querySelector('[role=checkbox]')?.getAttribute('aria-checked') === 'true'`)
 /** A press on the row's Archived cell, outside its title, as a user checks a row. */
-const checkArc = (cdp, title) => mouseClick(cdp, `(${arcRow(title)}).querySelector('.bundle-date')`)
+const checkArc = (cdp, title) => mouseClick(cdp, `(${arcRow(title)}).querySelector('.bundle-rows .data-cell:last-child')`)
 const trailOf = (cdp, expr) => cdp.evaluate(`(${expr})?.textContent.split('›') ?? null`)
 const READER = `document.querySelector('[aria-label="Archived Page"]')`
 const tabCount = (cdp) => cdp.evaluate(`document.querySelectorAll('[role=tab]').length`)
@@ -1091,7 +1091,7 @@ async function group6B() {
   await until('the archived rows', async () => (await arcTitles(cdp)).length === 4).catch(() => {})
   const listed = await arcTitles(cdp)
   const arc1Trail = await trailOf(cdp, `(${arcRow('Drive Arc 1')})?.querySelector('.bundle-trail')`)
-  const dates = await cdp.evaluate(`[...document.querySelectorAll('.bundle-rows .bundle-date')].filter((c) => !c.closest('[inert]')).map((c) => c.textContent)`)
+  const dates = await cdp.evaluate(`[...document.querySelectorAll('.bundle-rows .data-cell:last-child')].filter((c) => !c.closest('[inert]')).map((c) => c.textContent)`)
   const counted = await cdp.evaluate(`(${live('[title="Results"]')})?.textContent.trim() ?? null`)
   item('6B', 'G-1, G-2', 'rows list each archived item with its trail and time, newest first',
     same(listed, ['Drive Arc Set', 'Drive Arc Root', 'Drive Arc 2', 'Drive Arc 1']) && same(arc1Trail, [COLLECTION, 'Set Alpha']) && dates.length === 4 && dates.every((d) => d !== '') && counted === '4',
@@ -1220,7 +1220,7 @@ async function group6B() {
 
   const archiveStyle = () => personal().archiveColumnStyle
   const HEADING = live('.table-head .col-header:last-child')
-  const firstDate = () => cdp.evaluate(`(${live('.bundle-rows .bundle-date')})?.textContent ?? null`)
+  const firstDate = () => cdp.evaluate(`(${live('.bundle-rows .data-cell:last-child')})?.textContent ?? null`)
   const dateBefore = await firstDate()
   const { chosen: short } = await chooseNative(cdp, HEADING, 'Short Date')
   const styled = await settles(async () => same(archiveStyle(), { date_format: 'short' }))
@@ -1231,7 +1231,7 @@ async function group6B() {
     short && styled && changed && full && unstyled, show({ short, full, dateBefore, style: archiveStyle() }))
 
   const { chosen: widest } = await chooseNative(cdp, HEADING, 'Full')
-  const fit = await settles(() => cdp.evaluate(`(() => { const cells = [...document.querySelectorAll('.bundle-rows .bundle-date')].filter((c) => !c.closest('[inert]')); const head = ${HEADING}; return cells.length > 0 && cells.every((c) => /day, /.test(c.textContent) && c.scrollWidth <= c.clientWidth) && !!head && head.scrollWidth <= head.clientWidth })()`))
+  const fit = await settles(() => cdp.evaluate(`(() => { const cells = [...document.querySelectorAll('.bundle-rows .data-cell:last-child')].filter((c) => !c.closest('[inert]')); const head = ${HEADING}; return cells.length > 0 && cells.every((c) => /day, /.test(c.textContent) && c.scrollWidth <= c.clientWidth) && !!head && head.scrollWidth <= head.clientWidth })()`))
   const { chosen: unweekdayed } = await chooseNative(cdp, HEADING, 'Hide Day')
   const restyled = await settles(async () => !('archiveColumnStyle' in personal()))
   item('6B', 'G-1', 'under its widest style no Archived date and not its heading is cut',
@@ -1309,7 +1309,7 @@ async function trashRowShown(cdp, title) {
   return trashRowEl(title)
 }
 /** A press on the row's date cell, outside its title, as a user checks a Trash row. */
-const checkTrash = async (cdp, title) => mouseClick(cdp, `(${await trashRowShown(cdp, title)}).querySelector('.bundle-date')`)
+const checkTrash = async (cdp, title) => mouseClick(cdp, `(${await trashRowShown(cdp, title)}).querySelector('.bundle-rows .data-cell:last-child')`)
 const boxIn = (expr) => `(${expr}).querySelector('[role=checkbox]')`
 const titleIn = (expr) => `(${expr}).querySelector('.cell-title-text')`
 /** The notice while its label is up, reading `text` with no button. */
@@ -1724,12 +1724,12 @@ async function group7B(cdp) {
     const { chosen } = await chooseNative(cdp, DATE_HEAD, label)
     return chosen && (await settles(async () => (trashStyle() ?? {})[key] === value))
   }
-  const firstDate = () => cdp.evaluate(`document.querySelector('.trash-frame .bundle-date')?.textContent ?? ''`)
+  const firstDate = () => cdp.evaluate(`document.querySelector('.trash-frame .bundle-rows .data-cell:last-child')?.textContent ?? ''`)
   const styles = {}
   styles.monthDayYear = (await styled('MM/DD/YYYY', 'date_format', 'monthDayYear')) && /^\d{2}\/\d{2}\/\d{4}/.test(await firstDate())
   styles.dayMonthYear = await styled('DD/MM/YYYY', 'date_format', 'dayMonthYear')
   styles.twentyFourHour = (await styled('24 Hours', 'time_format', 'twentyFourHour')) &&
-    (await cdp.evaluate(`[...document.querySelectorAll('.trash-frame .bundle-date')].every((c) => !/AM|PM/.test(c.textContent))`))
+    (await cdp.evaluate(`[...document.querySelectorAll('.trash-frame .bundle-rows .data-cell:last-child')].every((c) => !/AM|PM/.test(c.textContent))`))
   styles.hideTime = await styled('Hide Time', 'time_format', 'none')
   styles.relative = await styled('Relative', 'date_format', 'relative')
   styles.short = (await styled('Short Date', 'date_format', 'short')) && (await styled('Short', 'weekday', 'short'))
@@ -1737,11 +1737,11 @@ async function group7B(cdp) {
   styles.returned = await settles(async () => trashStyle() === undefined)
   item('7B', 'G-1', "the date column's other styles write their keys and draw their forms", Object.values(styles).every(Boolean), show({ styles, style: trashStyle() }))
 
-  const look = await cdp.evaluate(`(() => { const hd = document.querySelector('.trash-frame .col-header:last-child').getBoundingClientRect(); const cell = document.querySelector('.trash-frame .bundle-date').getBoundingClientRect(); const name = document.querySelector('.trash-frame .col-header').firstElementChild.getBoundingClientRect(); const box = document.querySelector('.trash-frame .data-row [role=checkbox]').getBoundingClientRect(); return { column: Math.abs(hd.left - cell.left), nameLeft: name.left, box: [box.left, box.right], heights: [...document.querySelectorAll('.trash-frame .data-row')].every((r) => Math.abs(r.getBoundingClientRect().height - 29.75) < 0.01) } })()`)
+  const look = await cdp.evaluate(`(() => { const hd = document.querySelector('.trash-frame .col-header:last-child').getBoundingClientRect(); const cell = document.querySelector('.trash-frame .bundle-rows .data-cell:last-child').getBoundingClientRect(); const name = document.querySelector('.trash-frame .col-header').firstElementChild.getBoundingClientRect(); const box = document.querySelector('.trash-frame .data-row [role=checkbox]').getBoundingClientRect(); return { column: Math.abs(hd.left - cell.left), nameLeft: name.left, box: [box.left, box.right], heights: [...document.querySelectorAll('.trash-frame .data-row')].every((r) => Math.abs(r.getBoundingClientRect().height - 29.75) < 0.01) } })()`)
   await chooseNative(cdp, DATE_HEAD, 'Full')
   await resizeBy(cdp, sel('.settings-window .resize-edge-se'), { dx: -400 })
   const narrowWidth = await settingsWidth(cdp)
-  const narrow = await cdp.evaluate(`(() => { const t = document.querySelector('.trash-table'); const head = document.querySelector('.trash-frame .table-head'); const row = document.querySelector('.trash-frame .data-row'); const at = () => ({ head: head.getBoundingClientRect().left, row: row.getBoundingClientRect().left }); const before = at(); t.scrollLeft = 120; const after = at(); const out = { over: t.scrollWidth > t.clientWidth, scrolled: t.scrollLeft, head: before.head - after.head, row: before.row - after.row, fit: [...document.querySelectorAll('.trash-frame .bundle-date')].every((c) => c.scrollWidth <= c.clientWidth) }; return out })()`)
+  const narrow = await cdp.evaluate(`(() => { const t = document.querySelector('.trash-table'); const head = document.querySelector('.trash-frame .table-head'); const row = document.querySelector('.trash-frame .data-row'); const at = () => ({ head: head.getBoundingClientRect().left, row: row.getBoundingClientRect().left }); const before = at(); t.scrollLeft = 120; const after = at(); const out = { over: t.scrollWidth > t.clientWidth, scrolled: t.scrollLeft, head: before.head - after.head, row: before.row - after.row, fit: [...document.querySelectorAll('.trash-frame .bundle-rows .data-cell:last-child')].every((c) => c.scrollWidth <= c.clientWidth) }; return out })()`)
   await shot(cdp, 'g7b-narrow-trash')
   await cdp.evaluate(`document.querySelector('.trash-table').scrollLeft = 0`)
   await resizeBy(cdp, sel('.settings-window .resize-edge-se'), { dx: startWidth - narrowWidth })
@@ -1753,7 +1753,7 @@ async function group7B(cdp) {
       narrow.over && narrow.scrolled === 120 && Math.abs(narrow.head - 120) < 0.5 && Math.abs(narrow.row - 120) < 0.5 && narrow.fit,
     show({ look, startWidth, narrowWidth, narrow, widthBack }))
 
-  const ctrl = await popNative(cdp, await boxOf(cdp, `(${trashRowEl('Key Loose A')}).querySelector('.bundle-date')`), 'left', 2)
+  const ctrl = await popNative(cdp, await boxOf(cdp, `(${trashRowEl('Key Loose A')}).querySelector('.bundle-rows .data-cell:last-child')`), 'left', 2)
   await pickNative([])
   item('7B', 'Clicks', "a ctrl-press opens a row's menu and checks nothing",
     same(labels(ctrl), ['Restore', 'Delete']) && !(await trashChecked(cdp, 'Key Loose A')), show({ ctrl: labels(ctrl) }))
@@ -1888,7 +1888,7 @@ async function group7B(cdp) {
     const moved = before - row.getBoundingClientRect().left
     if (scroller) scroller.scrollLeft = scroller.scrollWidth
     const edge = scroller ? scroller.getBoundingClientRect().right : innerWidth
-    const dates = [...document.querySelectorAll('.bundle-rows .bundle-date')].filter((c) => !c.closest('[inert]'))
+    const dates = [...document.querySelectorAll('.bundle-rows .data-cell:last-child')].filter((c) => !c.closest('[inert]'))
     return {
       viewport: innerWidth,
       gridWidth: g.getBoundingClientRect().width,

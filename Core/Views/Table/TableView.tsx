@@ -224,7 +224,7 @@ function GhostRow({
   onClosed,
   rootProps,
 }: {
-  padLeft: string | undefined
+  padLeft: string
   columns: ResolvedColumn[]
   hideIcon: boolean
   closing: boolean
@@ -284,7 +284,7 @@ const DataRow = memo(function DataRow({
   row: ViewRow
   columns: ResolvedColumn[]
   ctx: ValueContext
-  padLeft: string | undefined
+  padLeft: string
   dragShift: ColumnDrag | null
   alignByCol: ColumnAlign[]
   styleByCol: ColumnStyle[]
@@ -370,26 +370,20 @@ const DataRow = memo(function DataRow({
             </div>
           )
         return (
-          <RowLead
-            key={c.id}
-            {...cell}
-            indent={alignByCol[i] === 'left' ? padLeft : undefined}
-            slotted={
-              // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a bubble guard, not a control
-              <span
-                className={cx('row-grip', revealTarget)}
-                // A right-press is defaulted away here — preventing only the context menu comes too late to stop a seated caret.
-                onPointerDown={(e) => {
-                  if (e.button === 2) e.preventDefault()
-                }}
-                onContextMenu={pageMenu}
-                onClick={(e) => e.stopPropagation()}
-                title={dragDisabled ? undefined : 'Drag to reorder'}
-              >
-                <Icon name="grip-vertical" size="body" />
-              </span>
-            }
-          >
+          <RowLead key={c.id} {...cell} indent={alignByCol[i] === 'left' ? padLeft : undefined}>
+            {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a bubble guard, not a control */}
+            <span
+              className={cx('row-grip', revealTarget)}
+              // A right-press is defaulted away here — preventing only the context menu comes too late to stop a seated caret.
+              onPointerDown={(e) => {
+                if (e.button === 2) e.preventDefault()
+              }}
+              onContextMenu={pageMenu}
+              onClick={(e) => e.stopPropagation()}
+              title={dragDisabled ? undefined : 'Drag to reorder'}
+            >
+              <Icon name="grip-vertical" size="body" />
+            </span>
             {content}
           </RowLead>
         )

@@ -4,9 +4,10 @@ import type { SetNode } from '../../Nexus/tree'
 import type { PropertyDefinition } from '../../Properties/properties'
 import type { SavedView } from '../views'
 import { type BandScope, routeBandDrop, runBandEffect } from './bandRouter'
-import type { BucketRef } from './bandModel'
+import { type BucketRef, bandModelOf, headContextOf } from './bandModel'
 import { setIndexOf } from './setIndex'
-import { groupPlan } from '../Pipeline/group'
+import { bucketGroupingOf, groupPlan } from '../Pipeline/group'
+import type { ResolvedGroup } from '../viewRow'
 
 const set = (id: string, path: string, sets: SetNode[] = []): SetNode => ({
   kind: 'set',
@@ -59,15 +60,30 @@ const view = (patch: Partial<SavedView> = {}): SavedView =>
     ...patch,
   }) as SavedView
 const LOCATION = view({ structural_order_mode: 'location' })
-const scope = ({ view: v = LOCATION, ...patch }: Partial<BandScope> = {}): BandScope => ({
-  view: v,
-  plan: groupPlan(v, [statusDef], true),
-  sets: setIndexOf(source),
-  sourcePath: 'Col',
-  valueAt: (key) => key?.split('/').at(-1) ?? null,
-  shown: [],
-  ...patch,
+const band = (value: string, parent?: string): ResolvedGroup => ({
+  key: parent ? `${parent}/${value}` : value,
+  kind: 'bucket',
+  value,
+  items: [],
 })
+const BUCKETS: ResolvedGroup[] = [
+  band('opt_open'),
+  band('opt_active'),
+  { key: 'sB', kind: 'set', items: [], children: [band('opt_closed', 'sB')] },
+]
+const scope = ({ view: v = LOCATION, ...patch }: Partial<BandScope> = {}): BandScope => {
+  const plan = groupPlan(v, [statusDef], true)
+  const sets = setIndexOf(source)
+  const grouping = bucketGroupingOf(plan)
+  return {
+    view: v,
+    plan,
+    sets,
+    sourcePath: 'Col',
+    bands: bandModelOf(grouping ? BUCKETS : [], headContextOf(sets, grouping, v, undefined, false)),
+    ...patch,
+  }
+}
 const setRef = (key: string, parentKey: string | null, depth = parentKey ? 1 : 0) =>
   ({ kind: 'set', key, depth, parentKey }) as const
 const bucket = (value: string, parentKey: string | null = null): BucketRef => ({
@@ -196,7 +212,7 @@ describe('routeBandDrop — buckets', () => {
     const effect = routeBandDrop(
       bucket('opt_closed'),
       { kind: 'before', beforeKey: 'opt_open', parentKey: null },
-      scope({ view: grouped('configured'), shown: ['opt_active'] }),
+      scope({ view: grouped('configured') }),
     )
     expect(effect).toEqual({
       kind: 'view',

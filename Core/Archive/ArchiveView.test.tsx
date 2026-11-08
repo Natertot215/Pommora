@@ -143,7 +143,9 @@ describe('ArchiveView', () => {
     expect(channels.list).toHaveBeenCalledWith({ kind: 'archive', id: 'c1' }, undefined)
     expect(titles()).toEqual(['Newer', 'Older'])
     expect(rowOf(host, 'Newer').querySelector('.bundle-trail')?.textContent).toBe('Notes›Ideas')
-    const dates = rowEls().map((r) => r.querySelector('.bundle-date')?.textContent ?? '')
+    const dates = rowEls().map(
+      (r) => r.querySelector('.bundle-rows .data-cell:last-child')?.textContent ?? '',
+    )
     expect(dates.every((d) => d !== '')).toBe(true)
     expect(dates[0]).not.toBe(dates[1])
   })

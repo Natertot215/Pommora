@@ -18,8 +18,7 @@ export interface BandScope {
   plan: GroupPlan
   sets: SetIndex
   sourcePath: string
-  valueAt: (key: string | null) => string | null
-  shown: readonly string[]
+  bands: BandModel
 }
 
 interface Switched {
@@ -102,8 +101,9 @@ function routeBucket(dragged: BucketRef, drop: BandDrop, scope: BandScope): Band
   if (drop.kind === 'into' || !grouping) return null
   const { config, column } = grouping
   const top = scope.plan.kind === 'property'
-  const current = liveBucketOrder(config, column.def, scope.shown)
-  const before = scope.valueAt(drop.beforeKey)
+  const shown = scope.bands.nodes.flatMap((n) => (n.kind === 'bucket' ? [n.value] : []))
+  const current = liveBucketOrder(config, column.def, shown)
+  const before = bucketValueAt(scope.bands.byKey)(drop.beforeKey)
   const order = nextOrder(current, dragged.value, before)
   if (sameItems(order, current)) return null
   const next = { ...config, order_mode: 'manual' as const, order }
@@ -137,31 +137,19 @@ export async function runBandEffect(effect: BandEffect | null, io: BandIO): Prom
   }
 }
 
-type BandBase = Omit<BandScope, 'valueAt' | 'shown'>
-
-const bandScopeOf = (bands: BandModel, base: BandBase): BandScope => ({
-  ...base,
-  valueAt: bucketValueAt(bands.byKey),
-  shown: bands.nodes.flatMap((n) => (n.kind === 'bucket' ? [n.value] : [])),
-})
-
 export interface BandRouting {
   moves: (dragged: BandRef) => (drop: BandDrop) => boolean
   drop: (dragged: BandRef, drop: BandDrop) => boolean
 }
 
 export function bandRouting(
-  bands: BandModel,
-  base: BandBase,
+  scope: BandScope,
   io: (dragged: BandRef, prior?: ViewPatch) => BandIO,
 ): BandRouting {
   return {
-    moves: (dragged) => {
-      const scope = bandScopeOf(bands, base)
-      return (drop) => routeBandDrop(dragged, drop, scope) !== null
-    },
+    moves: (dragged) => (drop) => routeBandDrop(dragged, drop, scope) !== null,
     drop: (dragged, drop) => {
-      const effect = routeBandDrop(dragged, drop, bandScopeOf(bands, base))
+      const effect = routeBandDrop(dragged, drop, scope)
       void runBandEffect(effect, io(dragged, effect?.kind === 'fs' ? effect.prior : undefined))
       return effect !== null
     },
