@@ -5,7 +5,6 @@
   --cell-padding-x: 12px;
   --cell-padding-y: 6px;
   --cell-icon-gap: 6px;
-  --row-indent: var(--disclosure-indent);
   --loose-inset: 8px; /* tucked left of the column inset */
   --band-clearance: var(--cell-padding-y);
 

@@ -20,7 +20,7 @@ import { Cell } from '../../Properties/Cells/Cell'
 import { EntityIcon } from '../../Assets/EntityIcon'
 import { GroupBand } from '../Bands/GroupBand'
 import { rowIndent } from '@pommora/uix/Table/rowIndent'
-import { RowRail } from '@pommora/uix/Table/RowRail'
+import { RowLead } from '@pommora/uix/Table/RowLead'
 import { memberDepth, memberIndent } from '../Bands/bandModel'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { columnIcon, columnLabel } from '../../Properties/columnDisplay'
@@ -241,20 +241,23 @@ function GhostRow({
         tabIndex={-1}
         aria-label="New Page"
       >
-        {columns.map((c, i) => (
-          <div
-            key={c.id}
-            className={cx('data-cell', 'ghost-worn', i === 0 && 'cell-lead')}
-            style={i === 0 ? { paddingLeft: padLeft } : undefined}
-          >
-            {c.kind === 'title' && (
-              <span className="cell-title">
-                {hideIcon ? null : <EntityIcon kind="page" size="body" />}
-                <span className="cell-title-text">New Page</span>
-              </span>
-            )}
-          </div>
-        ))}
+        {columns.map((c, i) => {
+          const title = c.kind === 'title' && (
+            <span className="cell-title">
+              {hideIcon ? null : <EntityIcon kind="page" size="body" />}
+              <span className="cell-title-text">New Page</span>
+            </span>
+          )
+          return i === 0 ? (
+            <RowLead key={c.id} className="ghost-worn" indent={padLeft}>
+              {title}
+            </RowLead>
+          ) : (
+            <div key={c.id} className="data-cell ghost-worn">
+              {title}
+            </div>
+          )
+        })}
       </div>
     </Reveal>
   )
@@ -312,8 +315,6 @@ const DataRow = memo(function DataRow({
           transform: gapShift(dragShift, i),
           textAlign: alignByCol[i],
         }
-        if (i === 0 && alignByCol[i] === 'left') style.paddingLeft = padLeft
-        const stateCx = activeCol === c.id && 'cell-active'
         const content =
           c.kind === 'title' ? (
             <span className={naming ? 'cell-rename' : cx(overScrollLabel, 'cell-title')}>
@@ -342,32 +343,38 @@ const DataRow = memo(function DataRow({
               />
             ))
           )
+        const cell = {
+          className: cx(
+            dragShift?.from === i && 'col-dragging',
+            sweepCol === c.id && 'cell-sweep',
+            activeCol === c.id && 'cell-active',
+          ),
+          style,
+          onContextMenu: (e: React.MouseEvent) =>
+            c.kind === 'title' ? pageMenu(e) : void api.menu(row, c, e),
+          onPointerDown: (e: React.PointerEvent) => {
+            if (api.sweep(row, c, e)) e.stopPropagation()
+          },
+          onClick: (e: React.MouseEvent) => {
+            if (c.kind !== 'title') return api.click(row, c, e)
+            // A secondary-click fires `click` alongside `contextmenu`, so bail and let the right-click menu win.
+            if (isSecondaryClick(e)) return
+            e.stopPropagation()
+            api.open(row, isCmd(e))
+          },
+        }
+        if (i > 0)
+          return (
+            <div key={c.id} {...cell} className={cx('data-cell', cell.className)}>
+              {content}
+            </div>
+          )
         return (
-          // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix
-          <div
+          <RowLead
             key={c.id}
-            className={cx(
-              'data-cell',
-              i === 0 && 'cell-lead',
-              dragShift?.from === i && 'col-dragging',
-              sweepCol === c.id && 'cell-sweep',
-              stateCx,
-            )}
-            style={style}
-            onContextMenu={(e) => (c.kind === 'title' ? pageMenu(e) : void api.menu(row, c, e))}
-            onPointerDown={(e) => {
-              if (api.sweep(row, c, e)) e.stopPropagation()
-            }}
-            onClick={(e) => {
-              if (c.kind !== 'title') return api.click(row, c, e)
-              // A secondary-click fires `click` alongside `contextmenu`, so bail and let the right-click menu win.
-              if (isSecondaryClick(e)) return
-              e.stopPropagation()
-              api.open(row, isCmd(e))
-            }}
-          >
-            {i === 0 && <RowRail />}
-            {i === 0 && (
+            {...cell}
+            indent={alignByCol[i] === 'left' ? padLeft : undefined}
+            slotted={
               // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a bubble guard, not a control
               <span
                 className={cx('row-grip', revealTarget)}
@@ -381,9 +388,10 @@ const DataRow = memo(function DataRow({
               >
                 <Icon name="grip-vertical" size="body" />
               </span>
-            )}
+            }
+          >
             {content}
-          </div>
+          </RowLead>
         )
       })}
     </LineRow>

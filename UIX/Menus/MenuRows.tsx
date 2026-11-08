@@ -1,5 +1,6 @@
 import type { ReactNode, MouseEvent, PointerEvent, CSSProperties, Ref } from 'react'
-import { DISCLOSURE_INDENT, type IconSize } from '../Theme/theme-vars.css'
+import type { IconSize } from '../Theme/theme-vars.css'
+import { rowIndent } from '../Table/rowIndent'
 import { Button } from '../Buttons/Button'
 import { Icon, type IconName, LockGlyph } from '../Symbols'
 import * as s from './menu-row.css'
@@ -12,8 +13,8 @@ import type { PickRun } from './pickRuns'
 const BAR_GLYPH = 12 // KNOB
 const INDENT_BASE = 8 // KNOB
 
-const rowLead = (depth: number): number | string =>
-  depth ? INDENT_BASE + depth * DISCLOSURE_INDENT : s.ROW_LEAD
+const rowLead = (depth: number): string =>
+  depth ? `calc(${INDENT_BASE}px + ${rowIndent(depth)})` : s.ROW_LEAD
 
 export const menuDropLine = ({
   edge,

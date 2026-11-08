@@ -73,7 +73,7 @@ describe('BundleRows', () => {
   const chevronOf = (title: string): Element | null =>
     rowOf(host, title).querySelector('[data-chevron]')
   const indentOf = (title: string): string =>
-    (rowOf(host, title).querySelector('.bundle-title') as HTMLElement).style.marginLeft
+    (rowOf(host, title).querySelector('.cell-lead') as HTMLElement).style.paddingLeft
   const key = async (el: HTMLElement, k: string): Promise<void> =>
     act(async () => {
       el.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true }))
@@ -103,11 +103,9 @@ describe('BundleRows', () => {
       true,
       false,
     ])
-    expect([indentOf('Notes'), indentOf('Ideas'), indentOf('P')]).toEqual([
-      rowIndent(0),
-      rowIndent(1),
-      rowIndent(1),
-    ])
+    expect([indentOf('Notes'), indentOf('Ideas'), indentOf('P')]).toEqual(
+      [0, 1, 1].map((depth) => `calc(var(--cell-padding-x) + ${rowIndent(depth)})`),
+    )
   })
 
   it('draws each row’s icon at TableView’s body size: an item’s own ahead of its kind’s, and a property’s by its type', async () => {

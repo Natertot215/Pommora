@@ -208,7 +208,7 @@ describe('sidebar drag — Esc abort', () => {
   })
 })
 
-const indentAt = (depth: number): string => `${menuDropLine({ edge: 0, depth }).left}px`
+const indentAt = (depth: number): string => String(menuDropLine({ edge: 0, depth }).left)
 
 describe('sidebar drag — the line', () => {
   it("draws at the slot's edge in the content's own coordinates, indented to the slot's depth", async () => {

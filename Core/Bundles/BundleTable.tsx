@@ -10,7 +10,7 @@ import { useVirtualRows } from '@pommora/uix/Interactions/virtualRows'
 import { DisclosureChevron } from '@pommora/uix/Elements/DisclosureChevron'
 import { Icon } from '@pommora/uix/Symbols'
 import { rowIndent } from '@pommora/uix/Table/rowIndent'
-import { RowRail } from '@pommora/uix/Table/RowRail'
+import { RowLead } from '@pommora/uix/Table/RowLead'
 import { text } from '@pommora/uix/Theme'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { useStableApi } from '@pommora/uix/Utilities/stableApi'
@@ -278,18 +278,21 @@ const BundleRowView = memo(function BundleRowView({
         void api.openMenu(row)
       }}
     >
-      <div className="data-cell cell-lead">
-        <RowRail />
-        <span className={cx('row-check', revealTarget)}>
-          <Checkbox
-            size="compact"
-            state={checked}
-            tabIndex={-1}
-            onChange={() => api.toggle(row.bundlePath)}
-            ariaLabel={`Select ${row.title}`}
-          />
-        </span>
-        <span className="bundle-title" style={{ marginLeft: rowIndent(depth) }}>
+      <RowLead
+        indent={`calc(var(--cell-padding-x) + ${rowIndent(depth)})`}
+        slotted={
+          <span className={cx('row-check', revealTarget)}>
+            <Checkbox
+              size="compact"
+              state={checked}
+              tabIndex={-1}
+              onChange={() => api.toggle(row.bundlePath)}
+              ariaLabel={`Select ${row.title}`}
+            />
+          </span>
+        }
+      >
+        <span className="bundle-title">
           {depth > 0 && chevron && <span className="row-chevron">{chevron}</span>}
           <span className={cx(overScrollLabel, 'cell-title')}>
             <Icon name={rowIcon(row, icons)} size="body" />
@@ -313,7 +316,7 @@ const BundleRowView = memo(function BundleRowView({
             className="bundle-partial"
           />
         )}
-      </div>
+      </RowLead>
       <div className="data-cell bundle-date">{when}</div>
     </LineRow>
   )

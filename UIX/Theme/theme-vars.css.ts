@@ -33,7 +33,7 @@ export type IconSize = keyof typeof size.icon
 /** The names are the public knob; the numbers behind each live in button-base.css.ts. */
 export type ButtonSize = 'button-inline' | 'button-small' | 'button-medium' | 'button-large'
 
-export const DISCLOSURE_INDENT = 14
+const DISCLOSURE_INDENT = 14
 
 export const DROP_LINE_INSET = 2
 
