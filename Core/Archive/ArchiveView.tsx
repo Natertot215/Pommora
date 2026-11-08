@@ -57,7 +57,7 @@ export function ArchiveView({
       ready={listing.status !== 'loading'}
       scrollRef={setScrollEl}
     >
-      <div className="table table-view">
+      <div className="table table-shell">
         <BundleTable
           date={date}
           titleHead={{ icon: propertyTypeIconName('title'), label: 'Title' }}

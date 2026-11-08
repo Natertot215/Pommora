@@ -137,7 +137,7 @@ export const bodyFlush = style({
   vars: { '--scroll-fade': STRIP_PAD_Y },
 })
 
-globalStyle(`${body} .table-view`, {
+globalStyle(`${body} .table-shell`, {
   vars: { '--zoom': `var(--view-embed-zoom, ${viewEmbedZoom(SETTING_DEFAULTS.embedScale)})` },
 })
 

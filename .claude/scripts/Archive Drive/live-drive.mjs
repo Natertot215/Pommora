@@ -1245,7 +1245,7 @@ async function group6B() {
   item('6B', 'G-3 ruling 12', "the toolbar's settings pane is the empty one", pane.spacer && !pane.frame, show(pane))
 
   await mouseClick(cdp, sel('button[title="Back"]'))
-  const backed = await settles(async () => !(await cdp.evaluate(`!!(${live('.detail-title-trailing')})`)) && (await cdp.evaluate(`!!(${live('.table-view .data-row')})`)))
+  const backed = await settles(async () => !(await cdp.evaluate(`!!(${live('.detail-title-trailing')})`)) && (await cdp.evaluate(`!!(${live('.table-shell .data-row')})`)))
   await mouseClick(cdp, sel('button[title="Forward"]'))
   const forwarded = await settles(() => cdp.evaluate(`!!(${live('.detail-title-trailing')})`))
   item('6B', 'G-5', 'Back returns to the view and Forward to the archive', backed && forwarded, show({ backed, forwarded }))

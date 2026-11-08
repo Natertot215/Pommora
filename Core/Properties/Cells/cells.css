@@ -1,0 +1,101 @@
+/* A property value as every cell draws it, in a table, on a card, in the Properties panel, or in a row's value seat. */
+.cell-text-scroll {
+  display: inline-block;
+  max-width: 100%;
+  vertical-align: middle;
+}
+/* The value and the pen it reveals. The pen overlays the text's trailing edge rather than holding a slot, so at rest the text runs to the edge a Link value does. */
+.cell-text-host {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+}
+.cell-pen {
+  position: absolute;
+  inset-block: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+}
+.cell-text-clip {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.cell-text-clip > .cell-text {
+  --scroll-fade: var(--fade-base);
+  white-space: pre;
+}
+.cell-text.is-continued::after {
+  content: "…";
+}
+/* The room the pen takes while it shows: its box and one step. */
+.cell-text-host:has(> .cell-pen) {
+  --pen-room: calc(var(--reveal, 0) * (20px + 4px));
+}
+/* A margin, not padding: a scrolled line runs under its own padding. */
+.cell-text-host:has(> .cell-pen) .cell-text {
+  margin-right: var(--pen-room);
+  transition: margin-right var(--reveal-fade) var(--ease-base);
+}
+/* Only a value that fits slides aside; an overflowing one's pen lands over its clipped tail at once. */
+.cell-text-host[data-overflowing] .cell-text {
+  transition: none;
+}
+/* In a table cell the pen overlays the text, which fades out across one --fade-base as it meets the pen; the end padding brings a scrolled line's tail clear of the pen. */
+.data-cell .cell-text-host:has(> .cell-pen) .cell-text {
+  margin-right: 0;
+  padding-right: var(--pen-room);
+}
+.data-cell .cell-text-host:has(> .cell-pen) > .cell-text-clip {
+  mask-image: linear-gradient(
+    to right,
+    var(--system-black) calc(100% - var(--reveal, 0) * (20px + var(--fade-base))),
+    transparent calc(100% - var(--reveal, 0) * 20px)
+  );
+}
+/* A row's value seat insets a plain value as a chip insets its label, so the two read on one edge. */
+.value-seat .cell-text-scroll,
+.value-seat .cell-text-host,
+.value-seat .cell-control,
+.value-seat .cell-empty,
+.value-seat > input,
+.value-seat > :has(input) {
+  padding: 0 var(--label-pad-x);
+}
+.value-seat:has(.cell-checkbox, .cell-switch) {
+  padding-inline: var(--label-pad-x);
+}
+.cell-chips {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--labels-gap);
+  max-width: 100%;
+  min-width: 0;
+}
+.cell-chips > * {
+  flex: none;
+}
+.cell-link {
+  text-decoration: none;
+}
+.cell-link-underline {
+  text-decoration: underline;
+}
+.cell-control {
+  color: var(--label-control);
+}
+/* Scaled to the Links pane's switch, so a toggle never shifts the row height. */
+.cell-switch {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+}
+
+.cell-bar {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}

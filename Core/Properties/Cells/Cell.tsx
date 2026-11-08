@@ -19,6 +19,7 @@ import { FileChip } from '@pommora/uix/Labels/recipes'
 import { SortableZone, useDragItem } from '@pommora/uix/Interactions/drag'
 import { moveBefore } from '@pommora/uix/Utilities/moveItem'
 import type { ResolvedColumn } from '../properties'
+import './cells.css'
 
 export function Cell({
   row,

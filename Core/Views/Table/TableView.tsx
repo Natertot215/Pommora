@@ -270,7 +270,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       ref={(el) => {
         host.viewRootRef.current = el
       }}
-      className={cx('table table-view', overflowing && 'overflowing')}
+      className={cx('table table-shell', overflowing && 'overflowing')}
     >
       <LineZone {...interactions.listZone(rowIndent)}>
         <div
