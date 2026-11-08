@@ -10,7 +10,7 @@ import { dropIO, useActiveView, useLiveView, useSaveView, type ViewWriteOpts } f
 import { fault, ok } from '../../Contract/result'
 import { useSession } from '../../Session/store'
 import { stubDialer } from '../../vitest.setup'
-import { ViewTileScopeProvider, type ViewTileScopeValue } from '../ViewTileScope'
+import { ViewTileScopeProvider } from '../ViewTileScope'
 import { ViewPane } from '../Settings/ViewPane'
 import { SettingsFrame } from '../Settings/SettingsFrame'
 
@@ -399,7 +399,7 @@ describe('useSaveView', () => {
   }
   let persist: Mock<(patch: Partial<SavedView>) => void>
   let sourceSave: Mock
-  const scope = (locked: boolean): ViewTileScopeValue => ({
+  const scope = (locked: boolean) => ({
     source,
     view,
     persist,
@@ -412,7 +412,7 @@ describe('useSaveView', () => {
     return null
   }
   const saveIn = async (
-    scoped: ViewTileScopeValue | null,
+    scoped: ReturnType<typeof scope> | null,
     patch: ViewPatch,
     opts?: ViewWriteOpts,
   ): Promise<unknown> => {

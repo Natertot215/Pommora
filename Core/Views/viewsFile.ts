@@ -2,7 +2,9 @@ import { isPlainObject } from '../Contract/validators'
 import type { ContainerKind } from '../Nexus/entities'
 import {
   applyViewPatch,
+  canDeleteView,
   containerViewIds,
+  insertDuplicate,
   mergeViewEdit,
   mintViewId,
   ownViewId,
@@ -16,7 +18,6 @@ import { ok, fail, type Result, fault } from '../Contract/result'
 import { readJsonObject, setOrDrop } from '../Files/atomicWrite'
 import { patchSidecar, type Refuse } from '../Files/sidecar'
 import type { Json } from '../Files/stableJson'
-import { freeName } from '../Paths/names'
 import { sidecarPath } from '../Paths/paths'
 
 interface ViewsDoc {
@@ -101,7 +102,7 @@ export async function duplicateView(
     const src = views[at]
     if (!isPlainObject(src)) return refuse(fail('not-found', 'View not found.'))
     const names = views.map((v) => savedView.safeParse(v).data?.name ?? '')
-    views.splice(at + 1, 0, { ...src, id: mintViewId(), name: freeName(names[at], names) })
+    insertDuplicate(views, at, names, (fresh) => ({ ...src, ...fresh }))
     return { ...cur, views }
   })
   return written.ok ? ok(null) : written
@@ -153,7 +154,7 @@ export async function deleteView(
 ): Promise<Result<RemovedView>> {
   let removed: RemovedView | undefined
   const written = await patchViews(folder, kind, ({ cur, views, ids, resolve }, refuse) => {
-    if (views.length <= 1) return refuse(fault('Cannot delete the last view.'))
+    if (!canDeleteView(views.length)) return refuse(fault('Cannot delete the last view.'))
     const at = ids.indexOf(resolve(viewId))
     if (at < 0) return refuse(fail('not-found', 'View not found.'))
     const active = cur.active_view === ids[at]

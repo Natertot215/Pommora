@@ -1,7 +1,14 @@
 import { useState } from 'react'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import type { PropertyDefinition } from '../../Properties/properties'
-import { DEFAULT_VIEW_ID, mintNewView, pickView, type SavedView, type ViewWriter } from '../views'
+import {
+  canDeleteView,
+  DEFAULT_VIEW_ID,
+  mintNewView,
+  pickView,
+  type SavedView,
+  type ViewWriter,
+} from '../views'
 import { notifyDeleted, reportRefusal } from '../../Interface/Notifications/notifications'
 import { askDeleteView } from '../../Interface/Confirm/confirmations'
 import { viewGlyph } from '../viewIcon'
@@ -33,13 +40,14 @@ import { moveBefore } from '@pommora/uix/Utilities/moveItem'
 import * as s from '@pommora/uix/Menus/frames.css'
 import { useLiveView, useSaveView } from '../Host/liveView'
 import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
-import { chooseColor, chooseIcon, useIconChoice } from '../../Assets/IdentityChoice'
+import { useIconChoice } from '../../Assets/IdentityChoice'
 import { ARCHIVE_ICON, ARCHIVE_TITLE } from '../../Archive/archiveLabel'
 import { useSession } from '../../Session/store'
 import * as vd from './view-frame.css'
 import { dialer } from '../../Platform/dialer'
 import { EDITOR_MENU, popMenu } from '../../Actions/menuActions'
-import { viewItemMenuItems, viewRowMenuItems } from '../../Actions/viewMenus'
+import { runViewRowAction, viewItemMenuItems } from '../../Actions/viewMenus'
+import type { NameRename } from '../../Interface/RenamableTitle'
 import { selectTargetOf } from '../../Navigation/navRef'
 
 async function deleteViewWithUndo(
@@ -53,6 +61,50 @@ async function deleteViewWithUndo(
     reportRefusal(await dialer().ask('views:restore', source.path, source.kind, res.value))
   })
   return true
+}
+
+export function ViewListRow({
+  view,
+  picked,
+  rename,
+  onCommit,
+  onSwitch,
+  onMenu,
+  trailing,
+  tabIndex,
+}: {
+  view: SavedView
+  picked: boolean
+  rename: Omit<NameRename, 'path'>
+  onCommit: (name: string) => void
+  onSwitch: () => void
+  onMenu: (e: React.MouseEvent<HTMLElement>) => void
+  trailing?: React.ReactNode
+  tabIndex?: number
+}): React.JSX.Element {
+  return (
+    <MenuItem
+      picked={picked ? 'solo' : undefined}
+      leading={<Icon name={viewGlyph(view)} size="headline" />}
+      trailing={trailing}
+      tabIndex={tabIndex}
+      onClick={rename.editing ? undefined : onSwitch}
+      onContextMenu={onMenu}
+    >
+      <RenamableLabel
+        renames="title"
+        editing={rename.editing}
+        value={view.name}
+        className={titleInput}
+        onBegin={rename.onBegin}
+        onCommit={(next) => {
+          rename.onEnd()
+          onCommit(next)
+        }}
+        onCancel={rename.onEnd}
+      />
+    </MenuItem>
+  )
 }
 
 const EDITOR_PANES = VIEW_PANES.filter((p) => p.id !== 'visibility')
@@ -175,11 +227,7 @@ export function ViewFrame({
 
   const viewOf = (id: string): SavedView | undefined => rows.find((v) => v.id === id)
 
-  const commitRename = (v: SavedView, next: string): void => {
-    setRenamingId(null)
-    void saveView(v, { name: next })
-  }
-  const itemContext = { deletable: views.length > 1, duplicable: views.length > 0 }
+  const itemContext = { deletable: canDeleteView(views.length), duplicable: views.length > 0 }
   const duplicate = (v: SavedView): void =>
     void dialer().ask('views:duplicate', node.path, node.kind, v.id).then(reportRefusal)
   const editorMenu = async (v: SavedView, trigger: HTMLElement): Promise<void> => {
@@ -187,24 +235,14 @@ export function ViewFrame({
     if (action === 'duplicate') duplicate(v)
     else if (action === 'delete' && (await deleteViewWithUndo(node, v))) onClose()
   }
-  const rowMenu = async (v: SavedView, e: React.MouseEvent<HTMLElement>): Promise<void> => {
+  const rowMenu = (v: SavedView, e: React.MouseEvent<HTMLElement>): void => {
     e.preventDefault()
-    const anchor = e.currentTarget
-    const action = await popMenu(viewRowMenuItems(itemContext))
-    switch (action) {
-      case 'rename':
-        return setRenamingId(v.id)
-      case 'icon':
-        return chooseIcon(anchor, v.icon, (icon) => void saveView(v, { icon }))
-      case 'color':
-        return chooseColor(anchor, v.color, (color) => void saveView(v, { color }))
-      case 'duplicate':
-        return duplicate(v)
-      case 'delete':
-        return void deleteViewWithUndo(node, v)
-      default:
-        return
-    }
+    void runViewRowAction(itemContext, v, e.currentTarget, {
+      rename: () => setRenamingId(v.id),
+      save: (patch) => void saveView(v, patch),
+      duplicate: () => duplicate(v),
+      remove: () => void deleteViewWithUndo(node, v),
+    })
   }
 
   const list = (
@@ -249,12 +287,20 @@ export function ViewFrame({
       >
         <Menu>
           {rows.map((v) => {
-            const open = renamingId === v.id ? undefined : () => switchTo(v.id)
+            const renaming = renamingId === v.id
             return (
-              <LineRow key={v.id} id={v.id} open={open}>
-                <MenuItem
-                  picked={!inArchive && active.id === v.id ? 'solo' : undefined}
-                  leading={<Icon name={viewGlyph(v)} size="headline" />}
+              <LineRow key={v.id} id={v.id} open={renaming ? undefined : () => switchTo(v.id)}>
+                <ViewListRow
+                  view={v}
+                  picked={!inArchive && active.id === v.id}
+                  rename={{
+                    editing: renaming,
+                    onBegin: () => setRenamingId(v.id),
+                    onEnd: () => setRenamingId(null),
+                  }}
+                  onCommit={(name) => void saveView(v, { name })}
+                  onSwitch={() => switchTo(v.id)}
+                  onMenu={(e) => rowMenu(v, e)}
                   trailing={
                     <Button
                       paddingX="0"
@@ -269,19 +315,7 @@ export function ViewFrame({
                     />
                   }
                   tabIndex={-1}
-                  onClick={open}
-                  onContextMenu={(e) => void rowMenu(v, e)}
-                >
-                  <RenamableLabel
-                    renames="title"
-                    editing={renamingId === v.id}
-                    value={v.name}
-                    className={titleInput}
-                    onBegin={() => setRenamingId(v.id)}
-                    onCommit={(next) => commitRename(v, next)}
-                    onCancel={() => setRenamingId(null)}
-                  />
-                </MenuItem>
+                />
               </LineRow>
             )
           })}

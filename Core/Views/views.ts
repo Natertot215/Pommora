@@ -3,6 +3,7 @@
 import { z } from 'zod'
 import { isPlainObject } from '../Contract/validators'
 import { newId } from '../Nexus/ids'
+import { freeName } from '../Paths/names'
 import { columnStyle, holdsStyle } from '../Properties/columnStyles'
 import { eachOf, entriesOf, idArray, index, looseDecoder, numberCheck } from '../Files/decoders'
 import { TENTHS_SCALE, ZOOM } from '../Settings/personalization'
@@ -347,6 +348,18 @@ export type RemovedView = z.infer<typeof removedView>
 export const DEFAULT_VIEW_ID = `${VIEW_ID_PREFIX}default`
 
 export const mintViewId = (): string => `${VIEW_ID_PREFIX}${newId()}`
+
+export const canDeleteView = (count: number): boolean => count > 1
+
+export function insertDuplicate<T>(
+  list: T[],
+  at: number,
+  names: readonly string[],
+  copy: (fresh: { id: string; name: string }) => T,
+): number {
+  list.splice(at + 1, 0, copy({ id: mintViewId(), name: freeName(names[at], names) }))
+  return at + 1
+}
 
 /** A view's own id; an empty or missing one is none, as the placeholder's is. */
 export const ownViewId = (id: unknown): string | undefined =>

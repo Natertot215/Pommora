@@ -5,7 +5,7 @@ import type { ConnPage } from '../Connections/pageIndex'
 import type { CollectionNode, SetNode } from '../Nexus/tree'
 import type { SavedView, ViewPatch } from './views'
 
-export interface ViewTileScopeValue {
+interface ViewTileScopeValue {
   source: CollectionNode | SetNode
   view: SavedView
   persist: (patch: ViewPatch) => void

@@ -1,6 +1,9 @@
 import { type ActionItem, joinGroups } from './menuModel'
 import type { ViewButton, ViewStyle } from '../Nexus/schemas'
 import { shownLabel } from './toggleLabels'
+import { popMenu } from './menuActions'
+import type { SavedView, ViewPatch } from '../Views/views'
+import { chooseColor, chooseIcon } from '../Assets/IdentityChoice'
 
 type ViewStyleAction = 'style-dropdown' | 'style-toolbar'
 
@@ -18,7 +21,6 @@ type EmbedAreaMenuAction = 'show-title' | 'new-view' | 'toggle-views' | ViewStyl
 type ViewRowAction = 'rename' | 'icon' | 'color' | 'titles' | 'duplicate' | 'delete'
 
 interface ViewRowMenuContext {
-  titlesShown?: boolean
   deletable: boolean
   duplicable: boolean
 }
@@ -95,16 +97,50 @@ const itemRows = (ctx: ViewRowMenuContext, glyphs = false): ActionItem<ViewRowAc
 export const viewItemMenuItems = (ctx: ViewRowMenuContext): ActionItem<ViewRowAction>[] =>
   joinGroups(itemRows(ctx, true).map((row) => [row]))
 
-export function viewRowMenuItems(ctx: ViewRowMenuContext): ActionItem<ViewRowAction>[] {
+function viewRowMenuItems(
+  ctx: ViewRowMenuContext,
+  titlesShown: boolean | undefined,
+): ActionItem<ViewRowAction>[] {
   return joinGroups<ViewRowAction>([
     [
       { label: 'Rename', action: 'rename' },
       { label: 'Edit Icon', action: 'icon' },
       { label: 'Edit Color', action: 'color' },
-      ...(ctx.titlesShown === undefined
+      ...(titlesShown === undefined
         ? []
-        : [{ label: shownLabel(ctx.titlesShown, 'Titles'), action: 'titles' as const }]),
+        : [{ label: shownLabel(titlesShown, 'Titles'), action: 'titles' as const }]),
     ],
     itemRows(ctx),
   ])
+}
+
+interface ViewRowRun {
+  rename: () => void
+  save: (patch: ViewPatch) => void
+  duplicate: () => void
+  remove: () => void
+  titles?: { shown: boolean; toggle: () => void }
+}
+
+export async function runViewRowAction(
+  ctx: ViewRowMenuContext,
+  view: SavedView,
+  anchor: Element,
+  run: ViewRowRun,
+  pop: (items: ActionItem<ViewRowAction>[]) => Promise<ViewRowAction | null> = popMenu,
+): Promise<void> {
+  switch (await pop(viewRowMenuItems(ctx, run.titles?.shown))) {
+    case 'rename':
+      return run.rename()
+    case 'icon':
+      return chooseIcon(anchor, view.icon, (icon) => run.save({ icon }))
+    case 'color':
+      return chooseColor(anchor, view.color, (color) => run.save({ color }))
+    case 'duplicate':
+      return run.duplicate()
+    case 'titles':
+      return run.titles?.toggle()
+    case 'delete':
+      return run.remove()
+  }
 }

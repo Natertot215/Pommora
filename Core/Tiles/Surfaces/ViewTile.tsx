@@ -5,6 +5,8 @@ import { isPlainObject } from '../../Contract/validators'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import {
   applyViewPatch,
+  canDeleteView,
+  insertDuplicate,
   mergeViewEdit,
   mintDefaultView,
   mintNewView,
@@ -15,11 +17,10 @@ import {
   viewIdsOf,
   type ViewPatch,
 } from '../../Views/views'
-import { freeName } from '../../Paths/names'
 import { Icon, LockGlyph } from '@pommora/uix/Symbols'
 import { cellRing, colorNameFor } from '@pommora/uix/Theme/ramp'
 import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
-import { FootingCreate, MenuFooting, MenuItem, MenuScrollFrame } from '@pommora/uix/Menus/MenuRows'
+import { FootingCreate, MenuFooting, MenuScrollFrame } from '@pommora/uix/Menus/MenuRows'
 import { titleInput as rowInput, rowDisabled, spacer } from '@pommora/uix/Menus/menu-row.css'
 import { SortableZone, useDragItem } from '@pommora/uix/Interactions/drag'
 import { moveBefore } from '@pommora/uix/Utilities/moveItem'
@@ -28,7 +29,7 @@ import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
 import { Scrollbar } from '@pommora/uix/Interactions/Scrollbar'
 import { PICKER_MAX_HEIGHT } from '@pommora/uix/Pickers/picker-base.css'
 import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
-import { chooseColor, chooseIcon, useChoiceOpen, useIconChoice } from '../../Assets/IdentityChoice'
+import { useChoiceOpen, useIconChoice } from '../../Assets/IdentityChoice'
 import { entityIcon } from '../../Assets/entityIconPolicy'
 import { askDeleteView } from '../../Interface/Confirm/confirmations'
 import { notifyDeleted } from '../../Interface/Notifications/notifications'
@@ -36,6 +37,8 @@ import { findCollection, findSet } from '../../Nexus/treeIndex'
 import { viewGlyph } from '../../Views/viewIcon'
 import { ViewHost } from '../../Views/Host/ViewHost'
 import { SettingsFrame } from '../../Views/Settings/SettingsFrame'
+import { ViewListRow } from '../../Views/Settings/ViewFrame'
+import type { NameRename } from '../../Interface/RenamableTitle'
 import { hostedGutter } from '@pommora/uix/Menus/menu-surface.css'
 import { ViewTileScopeProvider } from '../../Views/ViewTileScope'
 import { inertTile, type MutateEntry } from '../tileKinds'
@@ -59,7 +62,7 @@ import {
 import * as s from './view-tile.css'
 import { popMenu } from '../../Actions/menuActions'
 import { shownLabel } from '../../Actions/toggleLabels'
-import { embedAreaMenuItems, embedTitleMenuItems, viewRowMenuItems } from '../../Actions/viewMenus'
+import { embedAreaMenuItems, embedTitleMenuItems, runViewRowAction } from '../../Actions/viewMenus'
 import { useLatest, useStableApi } from '@pommora/uix/Utilities/stableApi'
 
 function coerceEmbeddedView(raw: unknown, id: string): SavedView {
@@ -185,7 +188,7 @@ function ViewPill({
   renaming: boolean
   label: React.ReactNode
   onSwitch: () => void
-  onMenu: (e: React.MouseEvent) => void
+  onMenu: (e: React.MouseEvent<HTMLElement>) => void
   onAnimEnd: () => void
 }): React.JSX.Element {
   const open = renaming ? undefined : onSwitch
@@ -367,9 +370,11 @@ export function ViewTile({
       const el = arr[i]
       if (!isPlainObject(el)) return null
       const stored = isPlainObject(el.config) ? el.config : src
-      const config = { ...stored, id: mintViewId(), name: freeName(src.name, names) }
-      arr.splice(i + 1, 0, { ...el, config })
-      return { views: arr, active: i + 1 }
+      const at = insertDuplicate(arr, i, names, (fresh) => ({
+        ...el,
+        config: { ...stored, ...fresh },
+      }))
+      return { views: arr, active: at }
     })
   }
   const restoreViewAt = (i: number, el: unknown, wasActive: boolean): void => {
@@ -388,7 +393,7 @@ export function ViewTile({
     mutateEntry(entry.id, (raw) => {
       const arr = rawViews(raw)
       const at = viewAt(arr, id)
-      if (at < 0 || arr.length <= 1) return null
+      if (at < 0 || !canDeleteView(arr.length)) return null
       const cur = rawActive(raw, arr.length)
       const [removed] = arr.splice(at, 1)
       undo = () => restoreViewAt(at, removed, cur === at)
@@ -449,56 +454,34 @@ export function ViewTile({
     else if (action === 'style-dropdown') patchEntry({ view_style: 'dropdown' })
     else if (action === 'style-toolbar') patchEntry({ view_style: null })
   }
-  const rowMenu = async (id: string, e: React.MouseEvent, animate: boolean): Promise<void> => {
+  const renameOf = (v: SavedView): Omit<NameRename, 'path'> => ({
+    editing: renaming === v.id,
+    onBegin: () => setRenaming(v.id),
+    onEnd: () => setRenaming(null),
+  })
+  const rowMenu = (v: SavedView, e: React.MouseEvent<HTMLElement>, animate: boolean): void => {
     e.preventDefault()
     e.stopPropagation()
     if (locked) return
     menuAnchorRef.current = e.currentTarget
-    const action = await popHeld(
-      viewRowMenuItems({
-        titlesShown: labeled,
-        deletable: entry.views.length > 1,
-        duplicable: true,
-      }),
-    )
-    switch (action) {
-      case 'rename':
-        return setRenaming(id)
-      case 'icon':
-        return chooseIcon(menuAnchorRef.current, viewById(id)?.icon, (icon) =>
-          persistConfig(id, { icon }),
-        )
-      case 'color':
-        return chooseColor(menuAnchorRef.current, viewById(id)?.color, (color) =>
-          persistConfig(id, { color }),
-        )
-      case 'duplicate':
-        return duplicate(id)
-      case 'titles':
-        return patchEntry({ view_button: labeled ? 'icon' : null })
-      case 'delete':
-        if (!(await askDeleteView('tile'))) return
-        return animate ? presence.beginExit(id) : deleteView(id)
-      default:
-        return
+    const ctx = { deletable: canDeleteView(views.length), duplicable: true }
+    const run = {
+      rename: () => setRenaming(v.id),
+      save: (patch: ViewPatch) => persistConfig(v.id, patch),
+      duplicate: () => duplicate(v.id),
+      titles: {
+        shown: labeled,
+        toggle: () => patchEntry({ view_button: labeled ? 'icon' : null }),
+      },
+      remove: () =>
+        void askDeleteView('tile').then((yes) => {
+          if (!yes) return
+          if (animate) presence.beginExit(v.id)
+          else deleteView(v.id)
+        }),
     }
+    void runViewRowAction(ctx, v, e.currentTarget, run, popHeld)
   }
-
-  const viewLabel = (v: SavedView): React.JSX.Element => (
-    <RenamableLabel
-      renames="title"
-      editing={renaming === v.id}
-      value={v.name}
-      className={rowInput}
-      autoSize
-      onCommit={(next) => {
-        setRenaming(null)
-        persistConfig(v.id, { name: next })
-      }}
-      onBegin={() => setRenaming(v.id)}
-      onCancel={() => setRenaming(null)}
-    />
-  )
 
   const configButton = (
     <button
@@ -561,21 +544,37 @@ export function ViewTile({
         label={(id) => viewById(id)?.name ?? ''}
         onMove={moveView}
       >
-        {views.map((v, i) => (
-          <ViewPill
-            key={v.id}
-            view={v}
-            active={i === index}
-            entering={presence.entering.has(v.id)}
-            exiting={presence.exiting === v.id}
-            labeled={labeled}
-            renaming={renaming === v.id}
-            label={viewLabel(v)}
-            onSwitch={() => patchEntry({ active: i })}
-            onMenu={(e) => void rowMenu(v.id, e, true)}
-            onAnimEnd={() => presence.onAnimEnd(v.id)}
-          />
-        ))}
+        {views.map((v, i) => {
+          const { onEnd, ...rename } = renameOf(v)
+          return (
+            <ViewPill
+              key={v.id}
+              view={v}
+              active={i === index}
+              entering={presence.entering.has(v.id)}
+              exiting={presence.exiting === v.id}
+              labeled={labeled}
+              renaming={rename.editing}
+              label={
+                <RenamableLabel
+                  renames="title"
+                  {...rename}
+                  value={v.name}
+                  className={rowInput}
+                  autoSize
+                  onCommit={(next) => {
+                    onEnd()
+                    persistConfig(v.id, { name: next })
+                  }}
+                  onCancel={onEnd}
+                />
+              }
+              onSwitch={() => patchEntry({ active: i })}
+              onMenu={(e) => rowMenu(v, e, true)}
+              onAnimEnd={() => presence.onAnimEnd(v.id)}
+            />
+          )
+        })}
       </SortableZone>
       <span className={s.newView}>{newViewButton}</span>
     </>
@@ -658,15 +657,15 @@ export function ViewTile({
               footer={<MenuFooting leading={newViewButton} />}
             >
               {views.map((v, i) => (
-                <MenuItem
+                <ViewListRow
                   key={v.id}
-                  picked={i === index ? 'solo' : undefined}
-                  leading={<Icon name={viewGlyph(v)} size="headline" />}
-                  onClick={renaming === v.id ? undefined : () => patchEntry({ active: i })}
-                  onContextMenu={(e) => void rowMenu(v.id, e, false)}
-                >
-                  {viewLabel(v)}
-                </MenuItem>
+                  view={v}
+                  picked={i === index}
+                  rename={renameOf(v)}
+                  onCommit={(name) => persistConfig(v.id, { name })}
+                  onSwitch={() => patchEntry({ active: i })}
+                  onMenu={(e) => rowMenu(v, e, false)}
+                />
               ))}
             </MenuScrollFrame>
           </div>

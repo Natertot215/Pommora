@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest'
+import type { SavedView } from '../Views/views'
+import type { ActionItem } from './menuModel'
 import {
   embedAreaMenuItems,
   embedTitleMenuItems,
+  runViewRowAction,
   viewButtonMenuItems,
   viewItemMenuItems,
-  viewRowMenuItems,
 } from './viewMenus'
 
 const labels = (rows: { label: string }[]): string[] => rows.map((r) => r.label)
@@ -79,12 +81,34 @@ describe('the view button’s menu', () => {
   })
 })
 
-const rowLabels = (ctx: Parameters<typeof viewRowMenuItems>[0]): string[] =>
-  labels(viewRowMenuItems(ctx))
+const rowMenu = async (
+  ctx: Parameters<typeof runViewRowAction>[0],
+  titlesShown?: boolean,
+): Promise<ActionItem<string>[]> => {
+  let shown: ActionItem<string>[] = []
+  const noop = (): void => {}
+  await runViewRowAction(
+    ctx,
+    {} as SavedView,
+    {} as Element,
+    {
+      rename: noop,
+      save: noop,
+      duplicate: noop,
+      remove: noop,
+      ...(titlesShown === undefined ? {} : { titles: { shown: titlesShown, toggle: noop } }),
+    },
+    async (items) => {
+      shown = items
+      return null
+    },
+  )
+  return shown
+}
 
 describe('a saved view row’s menu', () => {
-  it('offers the rows every host can perform', () => {
-    expect(rowLabels({ deletable: true, duplicable: true })).toEqual([
+  it('offers the rows every host can perform', async () => {
+    expect(labels(await rowMenu({ deletable: true, duplicable: true }))).toEqual([
       'Rename',
       'Edit Icon',
       'Edit Color',
@@ -93,33 +117,26 @@ describe('a saved view row’s menu', () => {
     ])
   })
 
-  it('names the titles toggle after what it does', () => {
-    expect(rowLabels({ titlesShown: true, deletable: true, duplicable: true })).toContain(
-      'Hide Titles',
-    )
-    expect(rowLabels({ titlesShown: false, deletable: true, duplicable: true })).toContain(
-      'Show Titles',
-    )
+  it('names the titles toggle after what it does', async () => {
+    const ctx = { deletable: true, duplicable: true }
+    expect(labels(await rowMenu(ctx, true))).toContain('Hide Titles')
+    expect(labels(await rowMenu(ctx, false))).toContain('Show Titles')
   })
 
-  it('separates the rows that make and unmake a view from those that edit one', () => {
-    const rows = viewRowMenuItems({ deletable: true, duplicable: true })
+  it('separates the rows that make and unmake a view from those that edit one', async () => {
+    const rows = await rowMenu({ deletable: true, duplicable: true })
     expect(rows.filter((r) => r.separatorBefore).map((r) => r.action)).toEqual(['duplicate'])
   })
 
-  it('keeps Delete on a container’s last view, refused rather than absent', () => {
-    const last = viewRowMenuItems({ deletable: false, duplicable: true }).find(
-      (r) => r.action === 'delete',
-    )
-    expect(last?.disabled).toBe(true)
-    expect(
-      viewRowMenuItems({ deletable: true, duplicable: true }).find((r) => r.action === 'delete')
-        ?.disabled,
-    ).toBe(false)
+  it('keeps Delete on a container’s last view, refused rather than absent', async () => {
+    const deleteOf = async (deletable: boolean) =>
+      (await rowMenu({ deletable, duplicable: true })).find((r) => r.action === 'delete')
+    expect((await deleteOf(false))?.disabled).toBe(true)
+    expect((await deleteOf(true))?.disabled).toBe(false)
   })
 
-  it('keeps Duplicate on a row with no stored view, refused rather than absent', () => {
-    const row = viewRowMenuItems({ deletable: false, duplicable: false }).find(
+  it('keeps Duplicate on a row with no stored view, refused rather than absent', async () => {
+    const row = (await rowMenu({ deletable: false, duplicable: false })).find(
       (r) => r.action === 'duplicate',
     )
     expect(row?.disabled).toBe(true)
