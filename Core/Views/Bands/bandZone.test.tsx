@@ -61,7 +61,7 @@ function Bands({
   collapsed?: ReadonlySet<string>
 }): React.JSX.Element {
   const bands: BandView = {
-    collapsed,
+    isOpen: (key) => !collapsed.has(key),
     toggle: toggleSpy,
     add: () => {},
     open: () => {},
@@ -81,7 +81,7 @@ function Bands({
       <LineZone
         {...bandSpec({
           bands: model,
-          collapsed: bands.collapsed,
+          disclosure: bands,
           nests: true,
           routing: { drop: dropSpy, moves: () => () => true },
           disabled,

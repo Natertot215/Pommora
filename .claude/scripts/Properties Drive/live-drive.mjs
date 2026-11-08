@@ -905,7 +905,7 @@ const sidebarRow = (title) => `[...document.querySelectorAll('.row span')].findL
 /** A folded sidebar row's chevron pressed as a pointer presses it, as the Archive Drive's `unfold` does. */
 async function unfold(cdp, title, child) {
   if (await cdp.evaluate(`!!(${sidebarRow(child)})`)) return
-  await mouseClick(cdp, `${sidebarRow(title)}.closest('.row').querySelector('[data-drop-outline]')`)
+  await mouseClick(cdp, `${sidebarRow(title)}.closest('.row').querySelector('[data-chevron]')`)
   await until(`${child} in the sidebar`, () => cdp.evaluate(`!!(${sidebarRow(child)})`))
 }
 /** A panel row's label: the leaf naming it in the row its value seat sits in. */

@@ -26,11 +26,11 @@ import { columnStylePatch, styleFor } from '../../Properties/columnStyles'
 import type { ViewPatch } from '../views'
 import { reassignable } from '../valueKinds'
 import { hideShown, unhide } from '../Pipeline/columns'
+import type { Disclosure } from '@pommora/uix/Menus/DisclosureRow'
+import { toggled } from '@pommora/uix/Utilities/checkSet'
 import type { ResolvedColumn } from '../../Properties/properties'
 
 export type ViewHostApi = NonNullable<ReturnType<typeof useViewHost>>
-
-const NO_COLLAPSE = new Set<string>()
 
 export function useViewHost(source: CollectionNode | SetNode) {
   const tree = useSession((s) => s.tree)
@@ -93,7 +93,6 @@ export function useViewHost(source: CollectionNode | SetNode) {
     () => (keys ? searchGroups(resolvedGroups, needle, keys) : resolvedGroups),
     [resolvedGroups, needle, keys],
   )
-  const shownCollapsed = searching ? NO_COLLAPSE : collapsed
 
   const ctx = useValueContext(tree, schema)
   const bands = useMemo(() => bandModelOf(groups, heads), [groups, heads])
@@ -130,12 +129,13 @@ export function useViewHost(source: CollectionNode | SetNode) {
 
   const persistView = (patch: ViewPatch, opts?: ViewWriteOpts): Promise<Result<{ id: string }>> =>
     saveView(view, patch, opts)
-  const toggleCollapse = (key: string): void => {
-    if (searching) return
-    const next = new Set(collapsed)
-    if (next.has(key)) next.delete(key)
-    else next.add(key)
-    void persistView({ collapsed_groups: next.size ? [...next] : undefined }, { viewState: true })
+  const disclosure: Disclosure = {
+    isOpen: (key) => searching || !collapsed.has(key),
+    toggle: (key) => {
+      if (searching) return
+      const next = toggled(collapsed, key)
+      void persistView({ collapsed_groups: next.size ? [...next] : undefined }, { viewState: true })
+    },
   }
   const setStylePatch = (
     column: ResolvedColumn,
@@ -185,8 +185,7 @@ export function useViewHost(source: CollectionNode | SetNode) {
     rowById,
     rowBand,
     paintOrder,
-    collapsed: shownCollapsed,
-    toggleCollapse,
+    disclosure,
     groupPropId,
     groupPropType,
     canReassign,

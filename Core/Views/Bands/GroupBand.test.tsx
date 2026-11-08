@@ -137,7 +137,7 @@ describe('BandGlyph', () => {
 
 describe('GroupBand', () => {
   const bandView = {
-    collapsed: new Set<string>(),
+    isOpen: () => true,
     toggle: vi.fn(),
     add: vi.fn(),
     open: vi.fn(),
@@ -162,7 +162,7 @@ describe('GroupBand', () => {
     const bands = bandModelOf([group('bucket', 'prop_date/2026-07', '2026-07')], h)
     const spec = bandSpec({
       bands,
-      collapsed: new Set(),
+      disclosure: bandView,
       nests: false,
       routing: { drop: vi.fn(), moves: () => () => true },
     })
@@ -209,7 +209,7 @@ describe('band and row lines grouped in one zone', () => {
     }
     const band = bandSpec({
       bands,
-      collapsed: new Set(),
+      disclosure: { isOpen: () => true, toggle: vi.fn() },
       nests: false,
       routing: { drop: vi.fn(), moves: () => () => true },
     })

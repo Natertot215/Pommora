@@ -5,7 +5,7 @@
 }
 .group-band-row {
   padding-bottom: var(--band-clearance);
-  transition: padding-bottom var(--drop-outline-beat, var(--duration-fast)) var(--ease-base);
+  transition: padding-bottom var(--chevron-beat, var(--duration-fast)) var(--ease-base);
 }
 .group-band-row[data-collapsed],
 .group-band-row[data-empty] {

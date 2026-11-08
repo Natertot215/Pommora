@@ -77,10 +77,7 @@ export const assignedFill = style({
 })
 export const assignedFillNone = style({ flexGrow: 0 })
 
-export const allHeading = style([
-  flushAffordance,
-  { vars: { '--drop-outline-beat': duration.base } },
-])
+export const allHeading = style([flushAffordance, { vars: { '--chevron-beat': duration.base } }])
 
 export const allRow = style({ color: c.label.secondary })
 

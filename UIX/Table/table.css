@@ -176,7 +176,7 @@
   color: var(--label-primary);
 }
 /* A disclosure chevron in a table is muted. */
-.table [data-drop-outline] {
+.table [data-chevron] {
   color: var(--label-tertiary);
 }
 /* The rail slot directly left of a row's icon, centering its grip, its check, or a band's or nested row's chevron. */

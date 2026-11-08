@@ -186,8 +186,8 @@ describe('the model', () => {
   const model: BandModel = { nodes, byKey: new Map(nodes.map((n) => [n.key, n])) }
 
   it('shows heads in preorder, dropping tails and the descendants of a collapsed band', () => {
-    expect(shownHeads(nodes, new Set()).map((n) => n.key)).toEqual(['A', 'A1', 'B'])
-    expect(shownHeads(nodes, new Set(['A'])).map((n) => n.key)).toEqual(['A', 'B'])
+    expect(shownHeads(nodes, () => true).map((n) => n.key)).toEqual(['A', 'A1', 'B'])
+    expect(shownHeads(nodes, (k) => k !== 'A').map((n) => n.key)).toEqual(['A', 'B'])
   })
 
   it('springs a Set only where the drag could land', () => {

@@ -16,6 +16,7 @@ import {
 import type { StepPart } from '@pommora/uix/Interactions/keyboard'
 import { type Geometry, INTO_EDGE, rank, walksTo } from '@pommora/uix/Interactions/reorderModel'
 import { asRenderableIcon } from '@pommora/uix/Symbols'
+import { unfolded } from '@pommora/uix/Menus/DisclosureRow'
 import { rowIndent } from '@pommora/uix/Table/rowIndent'
 import type { OptionChipData } from '../../Properties/Cells/OptionChip'
 import type { SetIndex } from './setIndex'
@@ -232,16 +233,15 @@ export function springsInto(
   }
 }
 
-export function shownHeads(nodes: readonly BandNode[], collapsed: ReadonlySet<string>): BandRef[] {
-  const out: BandRef[] = []
-  let hidden = Number.POSITIVE_INFINITY
-  for (const node of nodes) {
-    if (node.depth > hidden) continue
-    hidden = collapsed.has(node.key) ? node.depth : Number.POSITIVE_INFINITY
-    if (node.kind !== 'tail') out.push(node)
-  }
-  return out
-}
+export const shownHeads = (
+  nodes: readonly BandNode[],
+  isOpen: (key: string) => boolean,
+): BandRef[] =>
+  unfolded(
+    nodes,
+    (n) => n.depth,
+    (n) => isOpen(n.key),
+  ).filter((n) => n.kind !== 'tail')
 
 // ── The slot model ──────────────────────────────────────────────────────────
 

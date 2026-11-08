@@ -778,7 +778,7 @@ describe('FilterFrame location field', () => {
     expect(pickerRows()).toEqual(['Projects', 'Docs', 'Notes'])
     await act(async () => {
       document
-        .querySelector('[data-picker-portal] [data-drop-outline]')
+        .querySelector('[data-picker-portal] [data-chevron]')
         ?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
     })
     await settle()
@@ -792,7 +792,7 @@ describe('FilterFrame location field', () => {
     expect(pickerRows()).toEqual(['Projects', 'Notes'])
     await act(async () => {
       document
-        .querySelector('[data-picker-portal] [data-drop-outline]')
+        .querySelector('[data-picker-portal] [data-chevron]')
         ?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
     })
     await settle()
@@ -827,7 +827,7 @@ describe('FilterFrame location field', () => {
     await focusLocation()
     await act(async () => {
       document
-        .querySelector('[data-picker-portal] [data-drop-outline]')
+        .querySelector('[data-picker-portal] [data-chevron]')
         ?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
     })
     expect(pickerRows()).toEqual(['Projects', 'Docs', 'Notes', 'Archive'])
@@ -881,7 +881,7 @@ describe('FilterFrame value editors', () => {
     ])
     await act(async () => {
       document
-        .querySelector('[data-picker-portal] [data-drop-outline]')
+        .querySelector('[data-picker-portal] [data-chevron]')
         ?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
     })
     expect([row('A'), row('B'), row('C')]).toEqual([

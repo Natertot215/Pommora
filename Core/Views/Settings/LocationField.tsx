@@ -4,13 +4,12 @@ import { Icon } from '@pommora/uix/Symbols'
 import { TokenField } from '@pommora/uix/Fields/TokenField'
 import { foldKey, matches, matchKey, matchQuery } from '../../Paths/caseFold'
 import { EntityIcon } from '../../Assets/EntityIcon'
-import { DisclosureRow, useDisclosureSet } from '@pommora/uix/Menus/DisclosureRow'
+import { type Disclosure, DisclosureRow, useDisclosureSet } from '@pommora/uix/Menus/DisclosureRow'
 import { MenuDesc, MenuScrollFrame } from '@pommora/uix/Menus/MenuRows'
 import { pickRuns } from '@pommora/uix/Menus/pickRuns'
 import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
 import { PICKER_MAX_HEIGHT, treePane } from '@pommora/uix/Pickers/picker-base.css'
 import { useKeepInView, usePaneCtl } from '@pommora/uix/Interactions/paneCtl'
-import { toggled } from '@pommora/uix/Utilities/checkSet'
 import * as fp from './filter-frame.css'
 import { useMultiValue } from './useMultiValue'
 
@@ -46,7 +45,7 @@ function LocationTree({
 }: {
   nodes: Folder[]
   shown: string[]
-  disclosure: { has: (id: string) => boolean; toggle: (id: string) => void }
+  disclosure: Disclosure
   activeId: string | null
   keepInView: (el: HTMLElement | null) => void
   onPick: (id: string) => void
@@ -54,7 +53,7 @@ function LocationTree({
   const renderLevel = (ns: Folder[]): React.JSX.Element[] => {
     const runs = pickRuns(
       ns.map((n) => shown.includes(n.id)),
-      ns.map((n) => disclosure.has(n.id) && (n.sets?.length ?? 0) > 0),
+      ns.map((n) => disclosure.isOpen(n.id) && (n.sets?.length ?? 0) > 0),
     )
     return ns.map((n, i) => {
       const kids = n.sets ?? []
@@ -65,8 +64,8 @@ function LocationTree({
           ref={active ? keepInView : undefined}
           title={n.title}
           icon={<EntityIcon kind={n.kind} icon={n.icon} size="body" />}
-          dropOutline={kids.length > 0 ? 'chevron' : 'spacer'}
-          open={disclosure.has(n.id)}
+          chevron={kids.length > 0 ? 'chevron' : 'spacer'}
+          open={disclosure.isOpen(n.id)}
           onToggle={() => disclosure.toggle(n.id)}
           onClick={() => onPick(n.id)}
           active={active}
@@ -83,8 +82,6 @@ function LocationTree({
     </MenuScrollFrame>
   )
 }
-
-const NO_FLIPS: ReadonlySet<string> = new Set()
 
 export function LocationField({
   values,
@@ -103,22 +100,15 @@ export function LocationField({
   const [draft, setDraft] = useState('')
   const ref = useRef<HTMLDivElement>(null)
   const { shown, toggle } = useMultiValue(values, onCommit)
-  const expanded = useDisclosureSet()
-  const [narrow, setNarrow] = useState({ q: '', ids: NO_FLIPS })
   const q = matchQuery(draft)
   const tree = useMemo(
     () => (q ? narrowed(nodes, q) : { nodes, leads: new Set<string>() }),
     [nodes, q],
   )
-  const flipped = narrow.q === q ? narrow.ids : NO_FLIPS
-  const disclosure = q
-    ? {
-        has: (id: string) => tree.leads.has(id) !== flipped.has(id),
-        toggle: (id: string) =>
-          setNarrow((prev) => ({ q, ids: toggled(prev.q === q ? prev.ids : NO_FLIPS, id) })),
-      }
-    : expanded
-  const rows = shownRows(tree.nodes, disclosure.has)
+  const expanded = useDisclosureSet()
+  const narrowedOpen = useDisclosureSet(tree.leads, q)
+  const disclosure = q ? narrowedOpen : expanded
+  const rows = shownRows(tree.nodes, disclosure.isOpen)
   const pick = (id: string): void => {
     toggle(id)
     setDraft('')

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { DisclosureRow, useDisclosureSet } from '@pommora/uix/Menus/DisclosureRow'
+import { type Disclosure, DisclosureRow, useDisclosureSet } from '@pommora/uix/Menus/DisclosureRow'
 import { MenuDropdown } from '@pommora/uix/Menus/MenuDropdown'
 import { MenuDesc, MenuScrollFrame, menuDropLine } from '@pommora/uix/Menus/MenuRows'
 import { itemEmphasized, titleInput } from '@pommora/uix/Menus/menu-row.css'
@@ -16,8 +16,6 @@ import { type OutlineHeading, sectionEnd } from '../../MarkdownPM/Engine/heading
 import { LineRow, LineZone, lineList } from '@pommora/uix/Interactions/drag'
 import * as s from './toolbar-menu.css'
 import * as o from './outline-menu.css'
-
-type Disclosure = ReturnType<typeof useDisclosureSet>
 
 // KNOB — the gap the pane keeps from the window's right edge at full width.
 const EDGE_INSET = 10
@@ -103,7 +101,7 @@ function OutlineRow({
   children?: React.ReactNode
 }): React.JSX.Element {
   const nested = node.children.length > 0
-  const open = disclosure.has(node.key)
+  const open = disclosure.isOpen(node.key)
   const editing = renaming === node.key
   const travel = editing ? undefined : () => travelPageTo(node.from)
   return (
@@ -125,7 +123,7 @@ function OutlineRow({
       }
       icon={null}
       className={itemEmphasized}
-      dropOutline={nested ? 'chevron' : 'spacer'}
+      chevron={nested ? 'chevron' : 'spacer'}
       open={open}
       tabIndex={-1}
       onToggle={() => disclosure.toggle(node.key)}

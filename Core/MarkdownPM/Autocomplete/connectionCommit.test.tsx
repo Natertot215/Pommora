@@ -516,7 +516,7 @@ describe('the chevron slides in a page’s headings', () => {
     })
     const pane = document.querySelector('.mdpm-ac') as HTMLElement
     expect(pane.textContent).toBe('IntroSetupUsage')
-    expect(pane.querySelectorAll('[data-drop-outline]')).toHaveLength(1)
+    expect(pane.querySelectorAll('[data-chevron]')).toHaveLength(1)
   })
 
   it('a bare # lists a heading typed moments ago', async () => {
@@ -680,7 +680,7 @@ describe('the chevron slides in a page’s headings', () => {
         userEvent: 'input.type',
       })
     })
-    expect(document.querySelector('.mdpm-ac [data-drop-outline-spacer]')).not.toBeNull()
+    expect(document.querySelector('.mdpm-ac [data-chevron-spacer]')).not.toBeNull()
     expect(document.querySelector('.mdpm-ac')?.textContent).toContain('Setup')
   })
 

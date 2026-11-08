@@ -381,10 +381,6 @@ function LocationHierarchy({
       )
     return bandModelOf(walk(null), heads)
   }, [heads, sets, plan, subDef, subChips, view])
-  const collapsed = useMemo(
-    () => new Set(sets.preorder.filter((id) => !expanded.has(id))),
-    [sets, expanded],
-  )
 
   const base = { view, plan, sets, sourcePath: painted.path }
   const routing = bandRouting(model, base, (dragged) =>
@@ -426,8 +422,8 @@ function LocationHierarchy({
         key={s.id}
         title={s.title}
         icon={<EntityIcon kind="set" icon={s.icon} size="body" />}
-        dropOutline={disclosable && !hideChevrons ? 'chevron' : 'none'}
-        open={expanded.has(s.id)}
+        chevron={disclosable && !hideChevrons ? 'chevron' : 'none'}
+        open={expanded.isOpen(s.id)}
         onToggle={toggle}
         onClick={disclosable ? toggle : undefined}
         className={cx(setHidden && hiddenRow)}
@@ -438,7 +434,7 @@ function LocationHierarchy({
           <LineRow
             id={s.id}
             spring={
-              disclosable && !expanded.has(s.id)
+              disclosable && !expanded.isOpen(s.id)
                 ? (dragged) => {
                     if (node && springsInto(model, dragged, node, true)) toggle()
                   }
@@ -459,7 +455,7 @@ function LocationHierarchy({
     <LineZone
       {...bandSpec({
         bands: model,
-        collapsed,
+        disclosure: expanded,
         // The pane's tree arranges the folders themselves, so a Set drops into a Set whatever the view's kind draws.
         nests: true,
         routing,

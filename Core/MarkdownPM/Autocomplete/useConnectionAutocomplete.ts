@@ -6,12 +6,12 @@ import {
   aliasRows,
   commitEdit,
   headingRows,
-  openHeadingRows,
   pageRow,
   type AcRow,
   type AutocompleteQuery,
 } from './autocomplete'
 import { toggled } from '@pommora/uix/Utilities/checkSet'
+import { unfolded } from '@pommora/uix/Menus/DisclosureRow'
 import { docOutline } from '../docCache'
 import { normalizeTitle } from '../../Paths/caseFold'
 import { restedOnLink } from '../Links/linkReveal'
@@ -120,7 +120,11 @@ export function useConnectionAutocomplete(
       return []
     const found = heading
       ? query === ''
-        ? openHeadingRows(allHeadingRows, collapsed)
+        ? unfolded(
+            allHeadingRows,
+            (r) => r.level,
+            (r) => !collapsed.has(r.value),
+          )
         : allHeadingRows
       : lookup(query)
     if (finished && part !== 'title' && found.some((r) => normalizeTitle(r.value) === q)) return []

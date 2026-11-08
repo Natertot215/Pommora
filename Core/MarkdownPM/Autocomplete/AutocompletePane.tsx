@@ -129,7 +129,7 @@ export function AutocompletePane({
       title={row.value}
       icon={null}
       className={itemEmphasized}
-      dropOutline={children ? 'chevron' : 'spacer'}
+      chevron={children ? 'chevron' : 'spacer'}
       open={!v.collapsed.has(row.value)}
       onToggle={() => onToggleHeading(row.value)}
       active={i === v.index}
@@ -139,7 +139,7 @@ export function AutocompletePane({
           ref={i === v.index ? keepInView : undefined}
           onMouseDown={(e) => {
             // The chevron toggles on click; a mousedown there must not commit the row.
-            if ((e.target as HTMLElement).closest?.('[data-drop-outline]')) return
+            if ((e.target as HTMLElement).closest?.('[data-chevron]')) return
             onPick(row)
           }}
         >

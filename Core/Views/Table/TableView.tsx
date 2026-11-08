@@ -35,7 +35,7 @@ import { useCellSweep } from './useCellSweep'
 import { LineRow, LineZone } from '@pommora/uix/Interactions/drag'
 
 export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
-  const { view, columns, groups, ctx, rowById, bands, collapsed, dragDisabled } = host
+  const { view, columns, groups, ctx, rowById, bands, disclosure, dragDisabled } = host
   const {
     iconsShown,
     alignByCol,
@@ -109,8 +109,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   }
   let renderedAnyRow = false
   const renderRows = (g: ResolvedGroup, depth: number, visible: boolean): React.JSX.Element[] => {
-    const isCollapsed = collapsed.has(g.key)
-    const itemsVisible = visible && !isCollapsed
+    const itemsVisible = visible && disclosure.isOpen(g.key)
     const itemDepth = memberDepth(g.kind, depth)
     const members: React.JSX.Element[] = [
       ...g.items.flatMap((row, i) => {

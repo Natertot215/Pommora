@@ -171,7 +171,7 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
     const c = cfg()
     const setPath = c.sets.node.get(setKey)?.path
     if (!setPath) return
-    if (c.collapsed.has(setKey)) c.toggleCollapse(setKey)
+    if (!c.disclosure.isOpen(setKey)) c.disclosure.toggle(setKey)
     addIn(setPath, setKey)
   }
 

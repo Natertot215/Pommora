@@ -1,6 +1,6 @@
 import { Icon } from '@pommora/uix/Symbols'
 import { cx } from '@pommora/uix/Utilities/cx'
-import { DropOutline } from '@pommora/uix/Menus/DisclosureRow'
+import { DisclosureChevron } from '@pommora/uix/Elements/DisclosureChevron'
 import { MenuItem } from '@pommora/uix/Menus/MenuRows'
 import { titleInput } from '@pommora/uix/Menus/menu-row.css'
 import type { HeldKind } from '../../Nexus/entities'
@@ -62,7 +62,7 @@ export function Leaf({
       tabIndex={-1}
       onClick={onSelect}
       onContextMenu={ctxHandler(onContextMenu)}
-      leading={<DropOutline kind="spacer" />}
+      leading={<DisclosureChevron kind="spacer" />}
     >
       <Icon name={icon} size="headline" className="row-icon" />
       {rename ? <RowTitle path={rename.path} kind={rename.kind} title={title} /> : title}

@@ -4,7 +4,7 @@ import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { useVirtualRows } from '@pommora/uix/Interactions/virtualRows'
-import { dropOutlineOpen } from '@pommora/uix/Menus/listed-outline.css'
+import { chevronOpen } from '@pommora/uix/Elements/disclosure.css'
 import { Icon } from '@pommora/uix/Symbols'
 import { rowIndent } from '@pommora/uix/Table/rowIndent'
 import { text } from '@pommora/uix/Theme'
@@ -71,7 +71,7 @@ describe('BundleRows', () => {
     )
   const rowEls = (): HTMLElement[] => [...host.querySelectorAll<HTMLElement>('.data-row')]
   const chevronOf = (title: string): Element | null =>
-    rowOf(host, title).querySelector('[data-drop-outline]')
+    rowOf(host, title).querySelector('[data-chevron]')
   const indentOf = (title: string): string =>
     (rowOf(host, title).querySelector('.bundle-title') as HTMLElement).style.marginLeft
   const key = async (el: HTMLElement, k: string): Promise<void> =>
@@ -99,9 +99,10 @@ describe('BundleRows', () => {
     const emphasized = (title: string): boolean | undefined =>
       rowOf(host, title).querySelector('.cell-title-text')?.classList.contains(text.body.emphasized)
     expect([emphasized('Notes'), emphasized('Ideas'), emphasized('P')]).toEqual([true, true, false])
-    expect(
-      ['Notes', 'Ideas'].map((t) => chevronOf(t)?.classList.contains(dropOutlineOpen)),
-    ).toEqual([true, false])
+    expect(['Notes', 'Ideas'].map((t) => chevronOf(t)?.classList.contains(chevronOpen))).toEqual([
+      true,
+      false,
+    ])
     expect([indentOf('Notes'), indentOf('Ideas'), indentOf('P')]).toEqual([
       rowIndent(0),
       rowIndent(1),

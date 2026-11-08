@@ -7,7 +7,7 @@ import { LineRow, LineZone, lineList } from '@pommora/uix/Interactions/drag'
 import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
 import { overScrollLabel } from '@pommora/uix/Interactions/OverScroll'
 import { useVirtualRows } from '@pommora/uix/Interactions/virtualRows'
-import { DropOutline } from '@pommora/uix/Menus/DisclosureRow'
+import { DisclosureChevron } from '@pommora/uix/Elements/DisclosureChevron'
 import { Icon } from '@pommora/uix/Symbols'
 import { rowIndent } from '@pommora/uix/Table/rowIndent'
 import { RowRail } from '@pommora/uix/Table/RowRail'
@@ -257,7 +257,8 @@ const BundleRowView = memo(function BundleRowView({
   icons: Personalization['defaultIcons']
   api: RowApi
 }): React.JSX.Element {
-  const chevron = open === null ? null : <DropOutline open={open} />
+  const chevron =
+    open === null ? null : <DisclosureChevron open={open} onToggle={() => api.rowClick(row, 1)} />
   return (
     <LineRow
       id={row.bundlePath}

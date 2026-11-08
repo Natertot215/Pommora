@@ -5,7 +5,8 @@ import { Button } from '@pommora/uix/Buttons/Button'
 import { base } from '@pommora/uix/Fields/fields.css'
 import { isCmd } from '@pommora/uix/Interactions/chords'
 import { LineRow, type LineSpec, useLineGroup, useLineSpring } from '@pommora/uix/Interactions/drag'
-import { DropOutline } from '@pommora/uix/Menus/DisclosureRow'
+import { DisclosureChevron } from '@pommora/uix/Elements/DisclosureChevron'
+import type { Disclosure } from '@pommora/uix/Menus/DisclosureRow'
 import { Icon } from '@pommora/uix/Symbols'
 import { text } from '@pommora/uix/Theme'
 import { cx } from '@pommora/uix/Utilities/cx'
@@ -32,9 +33,7 @@ import './group-band.css'
 
 // ── The spec ────────────────────────────────────────────────────────────────
 
-export interface BandView {
-  collapsed: ReadonlySet<string>
-  toggle: (key: string) => void
+export interface BandView extends Disclosure {
   add: (key: string) => void
   open: (set: SetNode, newTab: boolean) => void
   springs: (dragged: string, node: BandNode) => boolean
@@ -42,14 +41,14 @@ export interface BandView {
 
 export function bandSpec({
   bands,
-  collapsed,
+  disclosure,
   nests,
   routing,
   indent,
   disabled,
 }: {
   bands: BandModel
-  collapsed: ReadonlySet<string>
+  disclosure: Disclosure
   nests: boolean
   routing: BandRouting
   indent?: (depth: number) => CSSProperties
@@ -60,7 +59,7 @@ export function bandSpec({
     snap: (key, g) => {
       const node = nodeOf(key)
       return node && draggable(node)
-        ? bandSnap(g, shownHeads(bands.nodes, collapsed), key, nests, routing.moves)
+        ? bandSnap(g, shownHeads(bands.nodes, disclosure.isOpen), key, nests, routing.moves)
         : null
     },
     resolve: (_key, p, s) => bandSlot(s, p.y),
@@ -127,15 +126,15 @@ function HeadedBand({
   fill: boolean
   children: ReactNode
 }): React.JSX.Element {
-  const collapsed = bands.collapsed.has(node.key)
+  const open = bands.isOpen(node.key)
   const toggle = (): void => bands.toggle(node.key)
   const box = useLineGroup(bandBox(node.key))
   const springRow = useLineSpring(
-    collapsed
-      ? (dragged) => {
+    open
+      ? undefined
+      : (dragged) => {
           if (bands.springs(dragged, node)) toggle()
-        }
-      : undefined,
+        },
   )
   const set = node.kind === 'set' ? node : undefined
   const outsideRename = (e: React.MouseEvent): boolean =>
@@ -148,7 +147,7 @@ function HeadedBand({
       <div
         ref={springRow}
         className="group-band-row"
-        data-collapsed={collapsed ? '' : undefined}
+        data-collapsed={open ? undefined : ''}
         data-empty={node.empty ? '' : undefined}
         style={indent ? { paddingLeft: indent } : undefined}
       >
@@ -157,7 +156,7 @@ function HeadedBand({
           open={toggle}
           className={cx('group-band-head', text.body.emphasized)}
           role="treeitem"
-          aria-expanded={!collapsed}
+          aria-expanded={open}
           aria-label={nodeLabel(node)}
           onContextMenu={
             set
@@ -178,9 +177,9 @@ function HeadedBand({
             type="button"
             className="group-band-drop-outline row-chevron"
             onClick={toggle}
-            aria-label={collapsed ? 'Expand group' : 'Collapse group'}
+            aria-label={open ? 'Collapse group' : 'Expand group'}
           >
-            <DropOutline open={!collapsed} />
+            <DisclosureChevron open={open} />
           </button>
           {/* biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: pointer shortcuts over the title — the head carries the keyboard */}
           <span
@@ -212,7 +211,7 @@ function HeadedBand({
           ) : null}
         </LineRow>
       </div>
-      <Reveal open={!collapsed} fill={fill}>
+      <Reveal open={open} fill={fill}>
         {children}
       </Reveal>
     </div>

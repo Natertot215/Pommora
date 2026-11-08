@@ -137,21 +137,6 @@ export function headingRows(outline: readonly PageHeading[], query: string): Hea
   return ranked(rows, query)
 }
 
-// The rows a collapsed heading hides: everything deeper than it, up to the next heading at its level or above.
-export function openHeadingRows(
-  rows: readonly HeadingRow[],
-  collapsed: ReadonlySet<string>,
-): HeadingRow[] {
-  const out: HeadingRow[] = []
-  let hiddenBelow: number | null = null
-  for (const row of rows) {
-    if (hiddenBelow !== null && row.level > hiddenBelow) continue
-    hiddenBelow = collapsed.has(row.value) ? row.level : null
-    out.push(row)
-  }
-  return out
-}
-
 export function aliasRows(
   aliases: EditorHost['aliases'],
   pageId: string | undefined,

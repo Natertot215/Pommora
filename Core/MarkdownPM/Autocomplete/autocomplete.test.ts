@@ -1,11 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import {
-  autocompleteQuery as queryOf,
-  commitEdit,
-  headingRows,
-  openHeadingRows,
-  type HeadingRow,
-} from './autocomplete'
+import { autocompleteQuery as queryOf, commitEdit, headingRows } from './autocomplete'
 import { tokenize } from '../Engine/tokens'
 import { scanDoc } from '../Engine/docScan'
 
@@ -675,30 +669,5 @@ describe('a typed § arms a prose heading query', () => {
         query: 'Set',
       })
     }
-  })
-})
-
-describe('openHeadingRows', () => {
-  const row = (value: string, level: number): HeadingRow => ({
-    kind: 'heading',
-    value,
-    level,
-  })
-  it('hides everything deeper than a collapsed heading, up to its next sibling', () => {
-    const rows = [row('A', 2), row('A1', 3), row('A1a', 4), row('B', 2), row('B1', 3)]
-    expect(openHeadingRows(rows, new Set(['A'])).map((r) => r.value)).toEqual(['A', 'B', 'B1'])
-    expect(openHeadingRows(rows, new Set(['A1'])).map((r) => r.value)).toEqual([
-      'A',
-      'A1',
-      'B',
-      'B1',
-    ])
-    expect(openHeadingRows(rows, new Set()).map((r) => r.value)).toEqual([
-      'A',
-      'A1',
-      'A1a',
-      'B',
-      'B1',
-    ])
   })
 })

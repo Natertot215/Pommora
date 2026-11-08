@@ -129,8 +129,7 @@ export function useViewInteractions<Own extends StableHandlers>(
     sets,
     bands,
     nests,
-    collapsed,
-    toggleCollapse,
+    disclosure,
     identity,
     ctx,
     groupPropId,
@@ -207,8 +206,7 @@ export function useViewInteractions<Own extends StableHandlers>(
     openTarget(selectTargetOf(set), { newTab })
   }
   const bandView: BandView = {
-    collapsed,
-    toggle: toggleCollapse,
+    ...disclosure,
     add: creation.bandAdd,
     open: openSet,
     springs: (dragged: string, node: BandNode) =>
@@ -220,7 +218,7 @@ export function useViewInteractions<Own extends StableHandlers>(
   const bandZone = (indent?: (depth: number) => string) =>
     bandSpec({
       bands,
-      collapsed,
+      disclosure,
       nests,
       routing: bandRoutes,
       indent: indent && ((depth) => ({ left: `calc(var(--drop-line-inset) + ${indent(depth)})` })),

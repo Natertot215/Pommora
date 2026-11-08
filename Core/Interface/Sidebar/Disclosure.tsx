@@ -3,7 +3,7 @@ import { lockLabel } from '../../Actions/toggleLabels'
 import { Icon, type IconName, LockGlyph } from '@pommora/uix/Symbols'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { emitter } from '@pommora/uix/Utilities/subscribable'
-import { DropOutline } from '@pommora/uix/Menus/DisclosureRow'
+import { DisclosureChevron } from '@pommora/uix/Elements/DisclosureChevron'
 import { MenuItem } from '@pommora/uix/Menus/MenuRows'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { useHoverReveal } from '@pommora/uix/Interactions/hoverReveal'
@@ -174,7 +174,7 @@ export function Disclosure({
         dismissOnLeave(e)
       }}
       trailing={lockToggle}
-      leading={<DropOutline open={open} onToggle={toggle} />}
+      leading={<DisclosureChevron open={open} onToggle={toggle} />}
     >
       {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: the surrounding row is the control; this narrows its hit area */}
       <span onClick={openView}>

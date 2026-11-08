@@ -207,7 +207,7 @@ describe('the persist fold', () => {
         column_widths: { _title: 300 },
       }),
     )
-    act(() => api?.toggleCollapse('g1'))
+    act(() => api?.disclosure.toggle('g1'))
     act(() => api?.setStylePatch(propertyColumn(statusDef), 'date_format', 'relative'))
     act(() => void api?.persistView({ column_widths: { prop_status: 120 } }))
     act(() => void api?.persistView({ hide_borders: true, column_widths: { prop_status: 90 } }))
@@ -227,7 +227,7 @@ describe('the persist fold', () => {
   it('a persist fired after a round-trip folds the fire-time live view, not its closure', async () => {
     await mount(collection())
     const early = api?.persistView
-    act(() => api?.toggleCollapse('g1'))
+    act(() => api?.disclosure.toggle('g1'))
     act(() => void early?.({ hide_borders: true }))
     expect(lastSavedView().collapsed_groups).toEqual(['g1'])
     expect(lastSavedView().hide_borders).toBe(true)
@@ -254,33 +254,33 @@ describe('the persist fold', () => {
     ])
     await mount(collection({ group: { ...CONFIGURED, order_mode: 'reversed' } }))
     expect(bandKeys()).toEqual([...configured].reverse())
-    act(() => api?.toggleCollapse('g1'))
+    act(() => api?.disclosure.toggle('g1'))
     expect(lastSavedView().group).toEqual({ ...CONFIGURED, order_mode: 'reversed' })
   })
 
   it('D-2: a staged collapse the walker rewrote paints and saves the new key', async () => {
     await mount(collection())
-    act(() => api?.toggleCollapse('Old'))
+    act(() => api?.disclosure.toggle('Old'))
     await mount(collection({ collapsed_groups: ['New'] }))
-    expect([...(api?.collapsed ?? [])]).toEqual(['New'])
+    expect(['Old', 'New'].map((k) => api?.disclosure.isOpen(k))).toEqual([true, false])
     act(() => void api?.persistView({}))
     expect(lastSavedView().collapsed_groups).toEqual(['New'])
   })
 
   it('two collapses before the first save lands never paint the first alone, and the second save carries both', async () => {
     await mount(collection())
-    act(() => api?.toggleCollapse('g1'))
-    act(() => api?.toggleCollapse('g2'))
+    act(() => api?.disclosure.toggle('g1'))
+    act(() => api?.disclosure.toggle('g2'))
     expect(lastSavedView().collapsed_groups).toEqual(['g1', 'g2'])
     await mount(collection({ collapsed_groups: ['g1'] }))
-    expect([...(api?.collapsed ?? [])]).toEqual(['g1', 'g2'])
+    expect(['g1', 'g2'].map((k) => api?.disclosure.isOpen(k))).toEqual([false, false])
     await mount(collection({ collapsed_groups: ['g1', 'g2'] }))
-    expect([...(api?.collapsed ?? [])]).toEqual(['g1', 'g2'])
+    expect(['g1', 'g2'].map((k) => api?.disclosure.isOpen(k))).toEqual([false, false])
   })
 
   it('expanding the last collapsed band drops collapsed_groups rather than writing it empty', async () => {
     await mount(collection({ collapsed_groups: ['g1'] }))
-    act(() => api?.toggleCollapse('g1'))
+    act(() => api?.disclosure.toggle('g1'))
     expect(saveSpy).toHaveBeenCalledOnce()
     expect(lastSavedView().collapsed_groups).toBeUndefined()
   })
@@ -331,11 +331,11 @@ describe('the reset keys', () => {
     await mount(a)
     act(() => void api?.persistView({ property_order: ['prop_status', '_title'] }))
     act(() => api?.setStylePatch(propertyColumn(statusDef), 'look', 'label'))
-    act(() => api?.toggleCollapse('gA'))
+    act(() => api?.disclosure.toggle('gA'))
     expect(api?.view.property_order).toEqual(['prop_status', '_title'])
     await mount(b)
     expect(api?.view.property_order).not.toEqual(['prop_status', '_title'])
-    expect(api?.collapsed.size).toBe(0)
+    expect(api?.disclosure.isOpen('gA')).toBe(true)
     saveSpy.mockClear()
     await act(async () => void api?.persistView({}))
     const saved = lastSavedView()
@@ -613,7 +613,7 @@ describe('the cards seam (nests off)', () => {
 
   it('a cards persist mid-collapse keeps the collapse, and a landed style patch yields to a later write', async () => {
     await mount(setCollection({ type: 'cards' }))
-    act(() => api?.toggleCollapse('sA'))
+    act(() => api?.disclosure.toggle('sA'))
     await act(async () => void api?.persistView({}))
     expect(lastSavedView().collapsed_groups).toEqual(['sA'])
     act(() => api?.setStylePatch(propertyColumn(statusDef), 'look', 'compact'))
@@ -658,7 +658,7 @@ describe('the manual order fold', () => {
   it('a reorder under a sort rides every later save', async () => {
     await mount(collection(SORTED))
     act(() => void api?.persistView({ manual_order: ['p2', 'p1'] }, { viewState: true }))
-    act(() => api?.toggleCollapse('g1'))
+    act(() => api?.disclosure.toggle('g1'))
     expect(lastSavedView().manual_order).toEqual(['p2', 'p1'])
   })
 
@@ -680,7 +680,7 @@ describe('the manual order fold', () => {
     expect(paintOrder()).toEqual(['p1', 'p2'])
     act(() => void mutateAhead(moveP2First, 'Two'))
     expect(paintOrder()).toEqual(['p2', 'p1'])
-    act(() => api?.toggleCollapse('g1'))
+    act(() => api?.disclosure.toggle('g1'))
     expect(lastSavedView().collapsed_groups).toEqual(['g1'])
     expect(lastSavedView().manual_order).toEqual(['p2', 'p1'])
     await act(async () => settle())
@@ -1076,14 +1076,14 @@ describe('view search', () => {
 
   it('shows every kept group open, ignores the chevron, and leaves the saved collapse alone', async () => {
     await mount(setCollection({ collapsed_groups: ['sA'] }))
-    expect(api?.collapsed.has('sA')).toBe(true)
+    expect(api?.disclosure.isOpen('sA')).toBe(false)
     act(() => search('in a'))
-    expect(api?.collapsed.size).toBe(0)
+    expect(api?.disclosure.isOpen('sA')).toBe(true)
     saveSpy.mockClear()
-    act(() => api?.toggleCollapse('sA'))
+    act(() => api?.disclosure.toggle('sA'))
     expect(saveSpy).not.toHaveBeenCalled()
     act(() => search(''))
-    expect(api?.collapsed.has('sA')).toBe(true)
+    expect(api?.disclosure.isOpen('sA')).toBe(false)
   })
 
   it('turns row drag off only while a query is active', async () => {

@@ -81,7 +81,7 @@ const drawn = (cdp, title) => cdp.evaluate(`!!(${sidebarRow(title)})`)
 /** A folded row's chevron pressed as a pointer presses it, since the chevron is an svg, which takes no `.click()`. */
 async function unfold(cdp, title, child) {
   if (await drawn(cdp, child)) return
-  await mouseClick(cdp, `${sidebarRow(title)}.closest('.row').querySelector('[data-drop-outline]')`)
+  await mouseClick(cdp, `${sidebarRow(title)}.closest('.row').querySelector('[data-chevron]')`)
   await until(`${child} in the sidebar`, () => drawn(cdp, child))
   await sleep(400)
 }
@@ -1384,7 +1384,7 @@ async function group7(cdp) {
   const revealedAll = (on) => cdp.evaluate(`[...document.querySelectorAll('.trash-frame .data-row')].every((r) => r.dataset.revealHost === ${JSON.stringify(on)})`)
   await mouseClick(cdp, boxIn(trashRowEl('Nest Set')))
   const boxed = { checked: await trashChecked(cdp, 'Nest Set'), expanded: await expandedOf(cdp, trashRowEl('Nest Set')), deep: (await listedTitles(cdp)).includes('Nest Deep'), revealed: await revealedAll('on') }
-  const topChevron = await cdp.evaluate(`(() => { const t = (${trashRowEl('Nest Coll')}).querySelector('.bundle-title'); const last = t?.lastElementChild; return !!last?.matches('[data-drop-outline]') && !!last.previousElementSibling?.matches('.cell-title') })()`)
+  const topChevron = await cdp.evaluate(`(() => { const t = (${trashRowEl('Nest Coll')}).querySelector('.bundle-title'); const last = t?.lastElementChild; return !!last?.matches('[data-chevron]') && !!last.previousElementSibling?.matches('.cell-title') })()`)
   await mouseClick(cdp, boxIn(trashRowEl('Nest Set')))
   const unboxed = { checked: await trashChecked(cdp, 'Nest Set'), revealed: await revealedAll('') }
   await mouseClick(cdp, titleIn(trashRowEl('Nest Set')))
@@ -2253,7 +2253,7 @@ async function group7D(cdp) {
     show({ liveTrail, strayTrail, strayMenu: labels(strayMenu), strayChosen, strayLanded }))
 
   const singles = ['Drive Ctx', 'Drive Spc', 'Drive Prop']
-  const singleShape = async (title) => cdp.evaluate(`(() => { const r = ${await trashRowShown(cdp, title)}; return { expanded: r.getAttribute('aria-expanded'), outline: !!r.querySelector('[data-drop-outline]'), chevron: !!r.querySelector('.row-chevron') } })()`)
+  const singleShape = async (title) => cdp.evaluate(`(() => { const r = ${await trashRowShown(cdp, title)}; return { expanded: r.getAttribute('aria-expanded'), outline: !!r.querySelector('[data-chevron]'), chevron: !!r.querySelector('.row-chevron') } })()`)
   const shapes = {}
   const checkedOnClick = {}
   for (const t of singles) {

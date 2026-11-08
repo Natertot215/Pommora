@@ -16,7 +16,7 @@ import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import { useActiveView, useSaveView } from '../../Views/Host/liveView'
 import { columnStylePatch, styleFor } from '../columnStyles'
 import { propertyColumn } from '../../Views/Pipeline/columns'
-import { DropOutline } from '@pommora/uix/Menus/DisclosureRow'
+import { DisclosureChevron } from '@pommora/uix/Elements/DisclosureChevron'
 import { MenuIndex } from '@pommora/uix/Menus/MenuIndex'
 import {
   MenuItem,
@@ -123,7 +123,7 @@ function ListGroups({
       </LineGroup>
       <PaneRestGroup>
         <button type="button" className={cx(actionRow, s.allHeading)} onClick={onToggleAll}>
-          <DropOutline open={allOpen} />
+          <DisclosureChevron open={allOpen} />
           <span>{TITLES.rest}</span>
         </button>
         <Reveal open={allOpen} duration="base">

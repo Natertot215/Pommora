@@ -1,68 +1,60 @@
 import { useMemo, useState, type ReactNode, type Ref } from 'react'
-import { Icon } from '../Symbols'
-import { cx } from '../Utilities/cx'
 import { toggled } from '../Utilities/checkSet'
 import { Reveal } from '../Animations/Reveal'
 import { MenuItem } from './MenuRows'
 import type { PickRun } from './pickRuns'
-import { railRow, dropOutline, dropOutlineOpen, dropOutlineSpacer } from './listed-outline.css'
+import { type ChevronKind, DisclosureChevron } from '../Elements/DisclosureChevron'
+import { railRow } from '../Elements/disclosure.css'
 
-// The set holds the exceptions to `defaultOpen`, never the open nodes, so a default-open tree needs no seed and stays right as nodes appear and vanish beneath it.
-export function useDisclosureSet(defaultOpen = false): {
-  has: (id: string) => boolean
-  toggle: (id: string) => void
-} {
-  const [flipped, setFlipped] = useState<ReadonlySet<string>>(new Set())
-  // Identity-stable until the state flips, so consumers can key derivations on it.
-  return useMemo(
-    () => ({
-      has: (id: string) => flipped.has(id) !== defaultOpen,
-      toggle: (id: string) => setFlipped((prev) => toggled(prev, id)),
-    }),
-    [flipped, defaultOpen],
-  )
+export type Disclosure = {
+  isOpen: (key: string) => boolean
+  toggle: (key: string) => void
 }
 
-/** 'spacer' keeps a leaf's glyph in the chevron's column; 'none' renders nothing. */
-type DropOutlineKind = 'chevron' | 'spacer' | 'none'
+const NO_FLIPS: ReadonlySet<string> = new Set()
 
-export function DropOutline({
-  kind = 'chevron',
-  open = false,
-  onToggle,
-}: {
-  kind?: DropOutlineKind
-  open?: boolean
-  onToggle?: () => void
-}): React.JSX.Element | null {
-  switch (kind) {
-    case 'chevron':
-      return (
-        <Icon
-          name="chevron-right"
-          size="control"
-          className={cx(dropOutline, open && dropOutlineOpen)}
-          data-drop-outline
-          {...(onToggle && {
-            onClick: (e: React.MouseEvent) => {
-              e.stopPropagation()
-              onToggle()
-            },
-            'data-drag-slop': '',
-          })}
-        />
-      )
-    case 'spacer':
-      return <span className={dropOutlineSpacer} data-drop-outline-spacer />
-    case 'none':
-      return null
+// The set holds the exceptions to `defaultOpen`, never the open nodes, so a default-open tree needs no seed and stays right as nodes appear and vanish beneath it; a new `resetOn` drops them.
+export function useDisclosureSet(
+  defaultOpen: boolean | ReadonlySet<string> = false,
+  resetOn?: unknown,
+): Disclosure {
+  const [held, setHeld] = useState({ on: resetOn, flipped: NO_FLIPS })
+  const flipped = held.on === resetOn ? held.flipped : NO_FLIPS
+  // Identity-stable until the state flips, so consumers can key derivations on it.
+  return useMemo(() => {
+    const opens = (key: string): boolean =>
+      typeof defaultOpen === 'boolean' ? defaultOpen : defaultOpen.has(key)
+    return {
+      isOpen: (key) => flipped.has(key) !== opens(key),
+      toggle: (key) =>
+        setHeld((prev) => ({
+          on: resetOn,
+          flipped: toggled(prev.on === resetOn ? prev.flipped : NO_FLIPS, key),
+        })),
+    }
+  }, [flipped, defaultOpen, resetOn])
+}
+
+/** The rows a flat outline shows: everything deeper than a closed row is hidden, up to the next row at its depth or above. */
+export function unfolded<R>(
+  rows: readonly R[],
+  depthOf: (row: R) => number,
+  isOpen: (row: R) => boolean,
+): R[] {
+  const out: R[] = []
+  let hidden = Number.POSITIVE_INFINITY
+  for (const row of rows) {
+    if (depthOf(row) > hidden) continue
+    hidden = isOpen(row) ? Number.POSITIVE_INFINITY : depthOf(row)
+    out.push(row)
   }
+  return out
 }
 
 export function DisclosureRow({
   title,
   icon,
-  dropOutline: kind,
+  chevron,
   open,
   onToggle,
   onClick,
@@ -78,7 +70,7 @@ export function DisclosureRow({
 }: {
   title: ReactNode
   icon: ReactNode
-  dropOutline: DropOutlineKind
+  chevron: ChevronKind
   open: boolean
   onToggle: () => void
   onClick?: () => void
@@ -102,7 +94,7 @@ export function DisclosureRow({
       tabIndex={tabIndex}
       leading={
         <>
-          <DropOutline kind={kind} open={open} onToggle={onToggle} />
+          <DisclosureChevron kind={chevron} open={open} onToggle={onToggle} />
           {icon}
         </>
       }

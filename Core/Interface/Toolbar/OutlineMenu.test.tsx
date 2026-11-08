@@ -50,7 +50,7 @@ describe('OutlineMenu — the heading drag', () => {
     await open()
     await act(async () => {
       row('Alpha')
-        .querySelector('[data-drop-outline]')!
+        .querySelector('[data-chevron]')!
         .dispatchEvent(new MouseEvent('click', { bubbles: true }))
     })
     await act(async () => {
