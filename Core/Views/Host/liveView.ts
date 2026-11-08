@@ -3,23 +3,23 @@ import {
   applyViewPatch,
   type EntryKey,
   foldView,
+  pickView,
   type SavedView,
   slotsOf,
   type ViewPatch,
-  type ViewWriteOpts,
 } from '../views'
 import { same } from '../../Files/stableJson'
-import type { Result } from '../../Contract/result'
+import { fault, ok, type Result } from '../../Contract/result'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
-import type { CollectionNode, NexusTree, SetNode } from '../../Nexus/tree'
-import { isContainer } from '../../Nexus/entities'
-import { announceDrag } from '@pommora/uix/Interactions/a11y'
-import { channel, emitter } from '@pommora/uix/Utilities/subscribable'
+import { nextOrder } from '@pommora/uix/Utilities/moveItem'
+import { sameItems } from '@pommora/uix/Utilities/same'
+import type { CollectionNode, SetNode } from '../../Nexus/tree'
+import { emitter } from '@pommora/uix/Utilities/subscribable'
 import type { OrderRequest } from '../../Nexus/mutateRequest'
-import { resolveOrder } from '../../Nexus/order'
-import { containerAt, moveNodeInTree, updateNodeInTree } from '../../Nexus/treePatch'
-import { basename, relJoin } from '../../Paths/posix'
-import { useSession } from '../../Session/store'
+import { reportRefusal } from '../../Interface/Notifications/notifications'
+import { dialer } from '../../Platform/dialer'
+import { useViewTileScope } from '../ViewTileScope'
+import { mutateAhead, refusedDrop } from './paintAhead'
 
 interface Slot {
   value: unknown
@@ -107,7 +107,7 @@ export function readLiveView(sourceId: string, view: SavedView): SavedView {
   return entry ? foldStaged(entry.base, entry.staged) : view
 }
 
-export function stageView(sourceId: string, view: SavedView, patch: ViewPatch): SavedView {
+function stageView(sourceId: string, view: SavedView, patch: ViewPatch): SavedView {
   const live = readLiveView(sourceId, view)
   const entry = pending.get(keyOf(sourceId, view.id))
   if (entry) restage(entry, stageOver(entry.staged, entry.base, patch))
@@ -115,7 +115,7 @@ export function stageView(sourceId: string, view: SavedView, patch: ViewPatch): 
 }
 
 /** Takes back this patch's own stage alone, so a stage made over it since keeps painting. */
-export function unstageView(sourceId: string, viewId: string, patch: ViewPatch): void {
+function unstageView(sourceId: string, viewId: string, patch: ViewPatch): void {
   const entry = pending.get(keyOf(sourceId, viewId))
   if (!entry) return
   const next = { ...entry.staged }
@@ -131,75 +131,63 @@ export function unstageView(sourceId: string, viewId: string, patch: ViewPatch):
   restage(entry, next)
 }
 
-// ── Orders painted ahead ────────────────────────────────────────────────────
-
-function withChildOrder(
-  tree: NexusTree,
-  parentPath: string,
-  key: 'pageOrder' | 'setOrder',
-  order: string[],
-): NexusTree | null {
-  return updateNodeInTree(tree, parentPath, (parent) => {
-    if (!isContainer(parent)) return parent
-    return key === 'pageOrder'
-      ? { ...parent, pageOrder: order, pages: resolveOrder(parent.pages, order) }
-      : { ...parent, setOrder: order, sets: resolveOrder(parent.sets ?? [], order) }
-  })
+export function useActiveView(source: CollectionNode | SetNode): SavedView {
+  // Inside a view embed the tile payload IS the view; the container's own choice doesn't reach it.
+  const scope = useViewTileScope()
+  return useLiveView(source.id, scope ? scope.view : pickView(source))
 }
 
-// A drag's order as the tree holds it once the drag's write lands, shown before then.
-function orderInTree(tree: NexusTree, req: OrderRequest): NexusTree | null {
-  if (req.op === 'reorderChildren')
-    return withChildOrder(tree, req.parentPath, 'setOrder', req.order)
-  const to = relJoin(req.newParentPath, basename(req.path))
-  const moved = to === req.path ? tree : moveNodeInTree(tree, req.path, to)
-  if (!moved || !req.order) return moved
-  const key = req.op === 'movePage' ? 'pageOrder' : 'setOrder'
-  return withChildOrder(moved, req.newParentPath, key, req.order)
+const VIEW_STATE_KEYS = ['collapsed_groups', 'manual_order'] as const
+
+export type ViewWriteOpts = { viewState?: boolean }
+
+const pickViewState = (patch: ViewPatch): ViewPatch =>
+  Object.fromEntries(VIEW_STATE_KEYS.filter((k) => k in patch).map((k) => [k, patch[k]]))
+
+const VIEW_CONFIG_LOCKED = 'The view configuration is locked on this embed.'
+
+export function useSaveView(
+  source: CollectionNode | SetNode,
+): (view: SavedView, patch: ViewPatch, opts?: ViewWriteOpts) => Promise<Result<{ id: string }>> {
+  const scope = useViewTileScope()
+  const write = async (
+    view: SavedView,
+    patch: ViewPatch,
+    opts?: ViewWriteOpts,
+  ): Promise<Result<{ id: string }>> => {
+    if (!scope) {
+      const base = stageView(source.id, view, patch)
+      const r = await dialer().ask('views:save', source.path, source.kind, base, patch)
+      if (!r.ok) unstageView(source.id, view.id, patch)
+      return r
+    }
+    // A locked tile refuses a config write but still folds a state-only one, so a refused config override can't ride in on the state it's allowed.
+    const allowed = !scope.locked ? patch : opts?.viewState ? pickViewState(patch) : null
+    if (!allowed) return fault(VIEW_CONFIG_LOCKED)
+    stageView(source.id, view, allowed)
+    scope.persist(allowed)
+    return ok({ id: view.id })
+  }
+  // A refusal reaches the user here, so no caller reports it again.
+  return (view, patch, opts) =>
+    write(view, patch, opts).then((r) => {
+      reportRefusal(r)
+      return r
+    })
 }
 
-const ahead = channel<readonly OrderRequest[]>([])
-
-export function usePainted(source: CollectionNode | SetNode): CollectionNode | SetNode {
-  const tree = useSession((s) => s.tree)
-  const orders = useSyncExternalStore(ahead.subscribe, ahead.get)
-  return useMemo(
-    () =>
-      tree && orders.length > 0
-        ? (containerAt(
-            orders.reduce((t, req) => orderInTree(t, req) ?? t, tree),
-            source.path,
-          ) ?? source)
-        : source,
-    [tree, source, orders],
-  )
-}
-
-export function refusedDrop(landed: boolean, name: string): boolean {
-  if (!landed) announceDrag('return', name)
-  return landed
-}
-
-export function mutateAhead(
-  req: OrderRequest,
-  name: string,
-  after?: Promise<boolean>,
-): Promise<boolean> {
-  ahead.set([...ahead.get(), req])
-  const write = (): Promise<boolean> =>
-    useSession
-      .getState()
-      .mutate(req)
-      .then((outcome) => refusedDrop(outcome !== null, name))
-  return (after ? after.then((ok) => ok && write()) : write()).finally(() =>
-    ahead.set(ahead.get().filter((r) => r !== req)),
-  )
+const priorSlotOf = (prior: unknown, now: unknown, id: string): string[] | undefined => {
+  if (!Array.isArray(prior) || !Array.isArray(now)) return undefined
+  const at = prior.indexOf(id)
+  if (at < 0) return undefined
+  const placed = nextOrder(now, id, prior.slice(at + 1).find((x) => now.includes(x)) ?? null)
+  return sameItems(placed, now) ? undefined : placed
 }
 
 type Persist = (patch: ViewPatch, opts?: ViewWriteOpts) => Promise<Result<unknown>>
 
 export function dropIO(
-  name: string,
+  { id, name }: { id: string; name: string },
   {
     source,
     view,
@@ -208,7 +196,7 @@ export function dropIO(
 ): {
   persistView: Persist
   mutate: (req: OrderRequest) => Promise<boolean>
-  /** Painted at once, saved once `landed` as the view then shows it, so a write composed on it since stands, and taken back on a refusal of either. */
+  /** Painted at once, saved once `landed` as the view then shows it, so a write composed on it since stands; a refusal of either takes the stage back, and returns the row to its prior slot where a write composed over the stage had carried it. */
   persistAfter: (patch: ViewPatch, landed: Promise<boolean>, opts?: ViewWriteOpts) => void
 } {
   const persistView: Persist = (patch, opts) =>
@@ -221,12 +209,21 @@ export function dropIO(
     mutate: (req) => mutateAhead(req, name),
     persistAfter: (patch, landed, opts) => {
       stageView(source.id, view, patch)
-      void landed.then(async (ok) => {
+      void landed.then(async (wrote) => {
         const live = readLiveView(source.id, view)
         const shown = Object.fromEntries(
           Object.keys(patch).map((k) => [k, live[k as keyof SavedView]]),
         )
-        if (!(ok && (await persistView(shown, opts)).ok)) unstageView(source.id, view.id, patch)
+        if (wrote && (await persistView(shown, opts)).ok) return
+        unstageView(source.id, view.id, patch)
+        const after = readLiveView(source.id, view)
+        const back = Object.fromEntries(
+          Object.keys(patch).flatMap((k) => {
+            const slot = priorSlotOf(view[k as keyof SavedView], after[k as keyof SavedView], id)
+            return slot ? [[k, slot]] : []
+          }),
+        )
+        if (Object.keys(back).length) void persist(back, opts)
       })
     },
   }

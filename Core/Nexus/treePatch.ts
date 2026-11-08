@@ -14,6 +14,7 @@ import type { StoredReach } from './heldPages'
 import { basename, isAtOrUnder, relDirname, relJoin, titleFromPath } from '../Paths/posix'
 import { ARCHIVE_DIR_REL, CONTEXTS_DIR_REL, contextDirRel } from '../Paths/nexusPaths'
 import { asStringArray } from './coerce'
+import type { OrderRequest } from './mutateRequest'
 import { resolveOrder } from './order'
 import { type ContainerKind, isContainer, isContainerKind } from './entities'
 import { isPlainObject } from '../Contract/validators'
@@ -326,3 +327,28 @@ export const damagedFolders = (
   listed: readonly Unreadable[] = [],
 ): (Unreadable & { kind: ContainerKind })[] =>
   listed.filter((u) => u.reason === 'unparsed').filter(isContainer)
+
+function withChildOrder(
+  tree: NexusTree,
+  parentPath: string,
+  key: 'pageOrder' | 'setOrder',
+  order: string[],
+): NexusTree | null {
+  return updateNodeInTree(tree, parentPath, (parent) => {
+    if (!isContainer(parent)) return parent
+    return key === 'pageOrder'
+      ? { ...parent, pageOrder: order, pages: resolveOrder(parent.pages, order) }
+      : { ...parent, setOrder: order, sets: resolveOrder(parent.sets ?? [], order) }
+  })
+}
+
+// A drag's order as the tree holds it once the drag's write lands, shown before then.
+export function orderInTree(tree: NexusTree, req: OrderRequest): NexusTree | null {
+  if (req.op === 'reorderChildren')
+    return withChildOrder(tree, req.parentPath, 'setOrder', req.order)
+  const to = relJoin(req.newParentPath, basename(req.path))
+  const moved = to === req.path ? tree : moveNodeInTree(tree, req.path, to)
+  if (!moved || !req.order) return moved
+  const key = req.op === 'movePage' ? 'pageOrder' : 'setOrder'
+  return withChildOrder(moved, req.newParentPath, key, req.order)
+}

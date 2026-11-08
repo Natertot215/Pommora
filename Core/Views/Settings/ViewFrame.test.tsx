@@ -4,7 +4,12 @@ import { act } from 'react'
 import type { Root } from 'react-dom/client'
 import type { CollectionNode } from '../../Nexus/tree'
 import type { PropertyDefinition } from '../../Properties/properties'
-import type { SavedView } from '../views'
+import type { RemovedView, SavedView } from '../views'
+import { rm, writeFile } from 'node:fs/promises'
+import { join } from '../../Paths/posix'
+import { readJsonAt, tempRoot } from '../../Testing/hostFs'
+import { deleteView, restoreView } from '../viewsFile'
+import { currentNotification } from '../../Interface/Notifications/notifications'
 import { useSession } from '../../Session/store'
 import type { ChromeSlice } from '../../Session/chromeSlice'
 import { ViewFrame } from './ViewFrame'
@@ -221,6 +226,50 @@ describe('ViewFrame — the view editor’s menu', () => {
     expect(presentMenu.mock.calls[0]?.[1]).toBe(trigger)
     expect(deleted.mock.calls).toEqual(confirmed ? [['Col', 'collection', 'view_b']] : [])
     expect(onClose).toHaveBeenCalledTimes(confirmed ? 1 : 0)
+  })
+
+  it("the delete notice's Undo seats the view back in its place and re-selects it", async () => {
+    const folder = tempRoot('pom-view-undo-')
+    await writeFile(
+      join(folder, '_pagecollection.json'),
+      JSON.stringify({
+        id: 'col1',
+        views: [view('view_a', 'Table'), view('view_b', 'Board')],
+        active_view: 'view_b',
+      }),
+    )
+    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+      'views:delete': (_p: string, _k: string, id: string) => deleteView(folder, 'collection', id),
+      'views:restore': (_p: string, _k: string, removed: RemovedView) =>
+        restoreView(folder, 'collection', removed),
+    })
+    useSession.setState({
+      devicePrefs: {},
+      presentMenu: vi.fn<ChromeSlice['presentMenu']>(async () => 'delete'),
+      askConfirm: vi.fn(async () => true) as never,
+    })
+    const sidecar = async () =>
+      (await readJsonAt(join(folder, '_pagecollection.json'))) as {
+        views: SavedView[]
+        active_view?: string
+      }
+    await mount(source([view('view_a', 'Table'), view('view_b', 'Board')]))
+    await act(async () => {
+      ;(document.querySelector('[aria-label="Edit Board"]') as HTMLElement).click()
+    })
+    await act(async () =>
+      (document.querySelector('[aria-label="View Menu"]') as HTMLElement).click(),
+    )
+    await vi.waitFor(async () =>
+      expect((await sidecar()).views.map((v) => v.id)).toEqual(['view_a']),
+    )
+    currentNotification()?.action?.run()
+    await vi.waitFor(async () => {
+      const back = await sidecar()
+      expect(back.views.map((v) => v.id)).toEqual(['view_a', 'view_b'])
+      expect(back.active_view).toBe('view_b')
+    })
+    await rm(folder, { recursive: true, force: true })
   })
 
   it("the editor's header icon requests the view's icon choice at itself", async () => {

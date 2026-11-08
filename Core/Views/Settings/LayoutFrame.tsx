@@ -12,7 +12,7 @@ import {
   MenuScrollFrame,
 } from '@pommora/uix/Menus/MenuRows'
 import { ICON, SETTINGS_PANE_FLOOR, SETTINGS_PANE_MAX_HEIGHT } from '@pommora/uix/Menus/frames.css'
-import { useSaveView } from '../viewWrite'
+import { useSaveView } from '../Host/liveView'
 import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
 import { useIconChoice } from '../../Assets/IdentityChoice'
 import { VisibilityFrame } from './VisibilityFrame'

@@ -28,8 +28,7 @@ import {
 import { useIconChoice } from '../../Assets/IdentityChoice'
 import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
 import { useViewTileScope } from '../ViewTileScope'
-import { useSaveView } from '../viewWrite'
-import { useActiveView } from '../Host/useActiveView'
+import { useActiveView, useSaveView } from '../Host/liveView'
 import { lockLabel } from '../../Actions/toggleLabels'
 
 type FrameId = 'properties' | 'visibility' | ViewRowId

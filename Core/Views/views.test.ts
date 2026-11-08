@@ -9,7 +9,6 @@ import {
   mintDefaultView,
   mintNewView,
   pickView,
-  pickViewState,
   mapTiles,
   mapViews,
   bandKey,
@@ -126,22 +125,6 @@ describe('SavedView decode', () => {
     ])
     expect(savedView.parse({ ...base, manual_order: 'nonsense' }).manual_order).toEqual([])
     expect(savedView.parse(base).manual_order).toBeUndefined()
-  })
-
-  it('pickViewState carries manual_order beside collapsed_groups', () => {
-    const view: SavedView = {
-      id: 'view_m',
-      name: 'M',
-      type: 'table',
-      property_order: [],
-      hidden_properties: [],
-      collapsed_groups: ['g1'],
-      manual_order: ['p2', 'p1'],
-    }
-    expect(pickViewState(view)).toEqual({
-      collapsed_groups: ['g1'],
-      manual_order: ['p2', 'p1'],
-    })
   })
 })
 

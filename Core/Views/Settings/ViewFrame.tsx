@@ -2,8 +2,8 @@ import { useState } from 'react'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import type { PropertyDefinition } from '../../Properties/properties'
 import { DEFAULT_VIEW_ID, mintNewView, pickView, type SavedView } from '../views'
-import { reportRefusal } from '../../Interface/Notifications/notifications'
-import { deleteViewWithUndo } from '../deleteViewWithUndo'
+import { notifyDeleted, reportRefusal } from '../../Interface/Notifications/notifications'
+import { askDeleteView } from '../../Interface/Confirm/confirmations'
 import { viewGlyph } from '../viewIcon'
 import { Button } from '@pommora/uix/Buttons/Button'
 import { Icon } from '@pommora/uix/Symbols'
@@ -23,8 +23,7 @@ import { LayoutFrame } from './LayoutFrame'
 import { LineRow, LineZone, lineList } from '@pommora/uix/Interactions/drag'
 import { moveBefore } from '@pommora/uix/Utilities/moveItem'
 import * as s from '@pommora/uix/Menus/frames.css'
-import { useSaveView } from '../viewWrite'
-import { useLiveView } from '../Host/pendingView'
+import { useLiveView, useSaveView } from '../Host/liveView'
 import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
 import { chooseColor, chooseIcon } from '../../Assets/IdentityChoice'
 import { ARCHIVE_ICON, ARCHIVE_TITLE } from '../../Archive/archiveLabel'
@@ -34,6 +33,19 @@ import { dialer } from '../../Platform/dialer'
 import { EDITOR_MENU, popMenu } from '../../Actions/menuActions'
 import { viewItemMenuItems, viewRowMenuItems } from '../../Actions/viewRowMenu'
 import { selectTargetOf } from '../../Navigation/navRef'
+
+async function deleteViewWithUndo(
+  source: CollectionNode | SetNode,
+  view: SavedView,
+): Promise<boolean> {
+  if (!(await askDeleteView())) return false
+  const res = await dialer().ask('views:delete', source.path, source.kind, view.id)
+  if (!reportRefusal(res)) return false
+  notifyDeleted(view.name, async () => {
+    reportRefusal(await dialer().ask('views:restore', source.path, source.kind, res.value))
+  })
+  return true
+}
 
 export function ViewFrame({
   node,

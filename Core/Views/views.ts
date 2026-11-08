@@ -111,14 +111,6 @@ export function mapTiles(doc: Json, fn: (tile: Json) => Json | null): Json | nul
 const GROUP_ORDER_MODE_SET = new Set<string>(GROUP_ORDER_MODES)
 const DATE_GRANULARITY_SET = new Set<string>(DATE_GRANULARITIES)
 
-const VIEW_STATE_KEYS = ['collapsed_groups', 'manual_order'] as const
-
-export type ViewWriteOpts = { viewState?: boolean }
-
-export function pickViewState(view: Partial<SavedView>): Partial<SavedView> {
-  return Object.fromEntries(VIEW_STATE_KEYS.filter((k) => k in view).map((k) => [k, view[k]]))
-}
-
 function asEnum<T extends string>(value: unknown, allowed: ReadonlySet<string>): T | undefined {
   return typeof value === 'string' && allowed.has(value) ? (value as T) : undefined
 }

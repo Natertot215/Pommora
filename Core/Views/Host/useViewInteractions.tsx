@@ -34,7 +34,8 @@ import { sameItems } from '@pommora/uix/Utilities/same'
 import { useViewTileScope } from '../ViewTileScope'
 import type { ViewHostApi } from './useViewHost'
 import { type CreateFlight, tieOrderWith, useViewCreation } from './useViewCreation'
-import { dropIO, mutateAhead, refusedDrop } from './pendingView'
+import { dropIO } from './liveView'
+import { mutateAhead, refusedDrop } from './paintAhead'
 
 interface ViewInteractionPolicy {
   ghost: {
@@ -148,7 +149,7 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     const node = bands.byKey.get(dragged.key)
     const name = node ? nodeLabel(node) : (sets.node.get(dragged.key)?.title ?? '')
     return {
-      ...dropIO(name, host),
+      ...dropIO({ id: dragged.key, name }, host),
       switched: ({ propertyId, prior }) =>
         notify(
           `Switched to custom ${columnLabel(resolveColumn(propertyId, schema, identity.contextIds)!, ctx.contexts)} order`,
@@ -226,7 +227,7 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
         'above',
       ),
     }
-    const io = dropIO(row.title, host)
+    const io = dropIO({ id: row.id, name: row.title }, host)
     if (landed) io.persistAfter(patch, landed, { viewState: true })
     else void io.persistView(patch, { viewState: true })
   }

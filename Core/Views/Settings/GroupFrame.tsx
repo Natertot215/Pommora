@@ -36,7 +36,6 @@ import { LineRow, LineZone } from '@pommora/uix/Interactions/drag'
 import { EyeToggle } from '@pommora/uix/Elements/EyeToggle'
 import { revealDim } from '@pommora/uix/Interactions/hover-reveal.css'
 import { DualSwitch } from '@pommora/uix/Controls/DualSwitch'
-import { useSaveView } from '../viewWrite'
 import { useContainerValues } from '../Host/useContainerValues'
 import {
   bucketKey,
@@ -52,7 +51,7 @@ import { NUMERIC_FORMATS } from '../../Properties/formatValue'
 import { bandModelOf, dateLabeller, nodeLabel, springsInto } from '../Bands/bandModel'
 import { bandRouting } from '../Bands/bandRouter'
 import { bandSpec } from '../Bands/GroupBand'
-import { dropIO } from '../Host/pendingView'
+import { dropIO, useSaveView } from '../Host/liveView'
 import { useBandHeads } from '../Host/useBandHeads'
 import { EntityIcon } from '../../Assets/EntityIcon'
 import { cx } from '@pommora/uix/Utilities/cx'
@@ -393,7 +392,10 @@ function LocationHierarchy({
 
   const base = { view, plan, sets, sourcePath: painted.path }
   const routing = bandRouting(model, base, (dragged) =>
-    dropIO(nodeLabel(model.byKey.get(dragged.key)), { source, view, persistView: persist }),
+    dropIO(
+      { id: dragged.key, name: nodeLabel(model.byKey.get(dragged.key)) },
+      { source, view, persistView: persist },
+    ),
   )
 
   const subChipRow = (

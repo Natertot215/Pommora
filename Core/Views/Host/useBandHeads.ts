@@ -4,7 +4,7 @@ import type { SavedView } from '../views'
 import { headContextOf } from '../Bands/bandModel'
 import type { Grouping } from '../Pipeline/group'
 import { setIndexOf } from '../Pipeline/setIndex'
-import { usePainted } from './pendingView'
+import { usePainted } from './paintAhead'
 import { styleFor } from '../../Properties/columnStyles'
 import { useDateForms, useSetting } from '../../Session/store'
 

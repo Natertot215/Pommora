@@ -13,7 +13,7 @@ import {
   resolveColumns,
   unhide,
 } from '../Pipeline/columns'
-import { useSaveView } from '../viewWrite'
+import { useSaveView } from '../Host/liveView'
 import { LineGroup, LineRow, LineZone } from '@pommora/uix/Interactions/drag'
 import { PaneRestGroup, type PaneDrop, paneSpec } from '@pommora/uix/Menus/paneDrop'
 import { contextIdsOf, contextsByIdOf } from '../../Contexts/contextIdentity'

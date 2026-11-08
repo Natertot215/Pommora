@@ -11,7 +11,7 @@ import { mountEachTest } from '../../Testing/viewHarness'
 import { VisibilityFrame } from './VisibilityFrame'
 
 const save = vi.hoisted(() => vi.fn())
-vi.mock('../viewWrite', () => ({ useSaveView: () => save }))
+vi.mock('../Host/liveView', () => ({ useSaveView: () => save }))
 
 const schema: PropertyDefinition[] = [
   { id: 'prop_a', label: 'Alpha', key: 'Alpha', type: 'number' },
