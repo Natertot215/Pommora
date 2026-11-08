@@ -1,17 +1,9 @@
 import { useState } from 'react'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import type { PropertyDefinition } from '../../Properties/properties'
-import {
-  type CardBanner,
-  type SavedView,
-  type ViewFormat,
-  VIEW_KINDS,
-  VIEW_TYPES,
-  type ViewType,
-  viewOption,
-} from '../views'
+import { type SavedView, VIEW_KINDS, VIEW_TYPES, type ViewType, type ViewWriter } from '../views'
 import { Icon, type IconName } from '@pommora/uix/Symbols'
-import { MenuIndex, steppedRow, pickerRow } from '@pommora/uix/Menus/MenuIndex'
+import { MenuIndex } from '@pommora/uix/Menus/MenuIndex'
 import {
   AccessoryButton,
   type MenuBack,
@@ -24,44 +16,14 @@ import { useSaveView } from '../viewWrite'
 import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
 import { useIconChoice } from '../../Assets/IdentityChoice'
 import { VisibilityFrame } from './VisibilityFrame'
-import { switchRows, type SwitchEntry } from './switchRows'
-import type { PickerOption } from '@pommora/uix/Menus/PickerControl'
+import { switchRows } from './switchRows'
 import { ViewLeaf, type ViewLeafId } from './ViewLeaf'
 import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
 import { iconForTypeSwitch, viewGlyph } from '../viewIcon'
-import { TENTHS_SCALE } from '../../Settings/personalization'
 import { cx } from '@pommora/uix/Utilities/cx'
 import * as vs from './layout-frame.css'
-
-interface LayoutOptions {
-  switches: SwitchEntry[]
-  cardRows: boolean
-  leaf: 'visibility' | 'switches'
-}
-
-const TABLE_LAYOUT: LayoutOptions = {
-  switches: [
-    { icon: 'columns-3-cog', label: 'Column Icons', key: 'hide_column_icons', invert: true },
-    { icon: 'view-table', label: 'Hide Borders', key: 'hide_borders' },
-    { icon: 'file-text', label: 'Page Icons', key: 'hide_page_icons', invert: true },
-  ],
-  cardRows: false,
-  leaf: 'visibility',
-}
-
-const LAYOUT_OPTIONS: Partial<Record<ViewType, LayoutOptions>> = {
-  table: TABLE_LAYOUT,
-  cards: {
-    switches: [
-      { icon: 'map', label: 'Hide Location', key: 'hide_location' },
-      { icon: 'wrap-text', label: 'Wrap Titles', key: 'wrap_titles' },
-      { icon: 'eye-off', label: 'Hide Icons', key: 'hide_page_icons' },
-      { icon: 'folder-closed', label: 'Set Cards', key: 'set_cards' },
-    ],
-    cardRows: true,
-    leaf: 'switches',
-  },
-}
+import { BUILT_KINDS, presentedKind, type SwitchEntry } from '../Host/viewKinds'
+import { TABLE_KIND } from '../Table/tableKind'
 
 function ViewSwitches({
   source,
@@ -84,19 +46,6 @@ function ViewSwitches({
     </>
   )
 }
-
-const BANNERS: PickerOption<CardBanner>[] = [
-  { value: 'preview', label: 'Preview' },
-  { value: 'banner', label: 'Banner' },
-  { value: 'none', label: 'None' },
-]
-
-const FORMATS: PickerOption<ViewFormat>[] = [
-  { value: 'compact', label: 'Compact' },
-  { value: 'standard', label: 'Standard' },
-]
-
-const CARD_ROW_LOOK = { iconSize: ICON.rootEntry, solid: true } as const
 
 export type ViewRowId = 'layout' | ViewLeafId
 export interface ViewRow<Id extends string = ViewRowId> {
@@ -125,52 +74,19 @@ export function LayoutFrame(
   const { source, view, back } = props
   const [frame, setFrame] = useState<ViewRowId | null>(null)
   const saveView = useSaveView(source)
-  const write = (patch: Partial<SavedView>): void => void saveView(view, patch)
+  const write: ViewWriter = (patch) => saveView(view, patch)
   const iconChoice = useIconChoice(view.icon, (icon) => write({ icon }))
-  const options = LAYOUT_OPTIONS[view.type] ?? TABLE_LAYOUT
+  const kind = presentedKind(view.type)
   const setType = (type: ViewType): void => {
     if (type === view.type) return
     const icon = iconForTypeSwitch(view, type)
     write(icon ? { type, icon } : { type })
   }
 
-  const cardsRows = options.cardRows ? (
+  const kindRows = kind.layout.rows ? (
     <>
       <MenuSeparator flush />
-      <MenuIndex
-        sections={[
-          {
-            rows: [
-              pickerRow(
-                'image',
-                'Card Image',
-                viewOption(view, 'card_banner'),
-                BANNERS,
-                (v) => write({ card_banner: v }),
-                CARD_ROW_LOOK,
-              ),
-              pickerRow(
-                'palette',
-                'Card Style',
-                viewOption(view, 'format'),
-                FORMATS,
-                (v) => write({ format: v }),
-                CARD_ROW_LOOK,
-              ),
-              steppedRow(
-                'scaling',
-                'Card Scale',
-                {
-                  range: TENTHS_SCALE,
-                  value: view.card_size ?? TENTHS_SCALE.default,
-                  onPick: (v) => write({ card_size: v === TENTHS_SCALE.default ? undefined : v }),
-                },
-                CARD_ROW_LOOK,
-              ),
-            ],
-          },
-        ]}
-      />
+      <MenuIndex sections={[{ rows: kind.layout.rows(view, write) }]} />
     </>
   ) : null
 
@@ -182,7 +98,7 @@ export function LayoutFrame(
           type="button"
           className={cx(vs.tile, t === view.type && vs.tileSelected)}
           aria-label={VIEW_KINDS[t].label}
-          onClick={() => t in LAYOUT_OPTIONS && setType(t)}
+          onClick={() => t in BUILT_KINDS && setType(t)}
         >
           <Icon name={VIEW_KINDS[t].icon} size="titleMedium" />
         </button>
@@ -194,11 +110,11 @@ export function LayoutFrame(
     return (
       <MenuScrollFrame
         header={<MenuTopRow {...back} current="Layout" />}
-        footer={cardsRows}
+        footer={kindRows}
         maxHeight={SETTINGS_PANE_MAX_HEIGHT}
       >
         {grid}
-        <ViewSwitches source={source} view={view} switches={options.switches} separated />
+        <ViewSwitches source={source} view={view} switches={kind.layout.switches} separated />
       </MenuScrollFrame>
     )
 
@@ -209,13 +125,13 @@ export function LayoutFrame(
   const leafFor = (id: ViewRowId): React.JSX.Element => {
     if (id !== 'layout')
       return <ViewLeaf id={id} source={source} view={view} schema={props.schema} back={toView} />
-    if (options.leaf === 'switches')
+    if (kind !== TABLE_KIND)
       return (
         <MenuScrollFrame
           header={<MenuTopRow {...toView} current="Layout" />}
           maxHeight={SETTINGS_PANE_MAX_HEIGHT}
         >
-          <ViewSwitches source={source} view={view} switches={options.switches} />
+          <ViewSwitches source={source} view={view} switches={kind.layout.switches} />
         </MenuScrollFrame>
       )
     return (
@@ -225,7 +141,9 @@ export function LayoutFrame(
         view={view}
         back={toView}
         current="Layout"
-        footer={<ViewSwitches source={source} view={view} switches={options.switches} separated />}
+        footer={
+          <ViewSwitches source={source} view={view} switches={kind.layout.switches} separated />
+        }
       />
     )
   }
@@ -245,7 +163,7 @@ export function LayoutFrame(
           }
         />
       }
-      footer={cardsRows}
+      footer={kindRows}
       maxHeight={SETTINGS_PANE_MAX_HEIGHT}
     >
       <InlineEditHeader

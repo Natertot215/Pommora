@@ -1,14 +1,8 @@
-import { type SavedView, type ViewFlag, viewOption } from '../views'
-import { Icon, type IconName } from '@pommora/uix/Symbols'
+import { type SavedView, viewOption } from '../views'
+import type { SwitchEntry } from '../Host/viewKinds'
+import { Icon } from '@pommora/uix/Symbols'
 import type { MenuRow } from '@pommora/uix/Menus/MenuIndex'
 import { ICON } from '@pommora/uix/Menus/frames.css'
-
-export type SwitchEntry = {
-  icon: IconName
-  label: string
-  key: ViewFlag
-  invert?: boolean
-}
 
 export const switchRows = (
   entries: SwitchEntry[],

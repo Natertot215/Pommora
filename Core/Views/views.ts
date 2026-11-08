@@ -9,6 +9,7 @@ import { TENTHS_SCALE, ZOOM } from '../Settings/personalization'
 import { filterGroup } from './filterRules'
 import { mergeKeys } from '../Files/jsonMerge'
 import type { Json } from '../Files/stableJson'
+import type { Result } from '../Contract/result'
 import { FILEDATA } from '../Properties/properties'
 
 export const VIEW_TYPES = ['table', 'cards', 'list', 'gallery', 'calendar', 'timeline'] as const
@@ -18,16 +19,15 @@ export const DEFAULT_VIEW_TYPE: ViewType = 'table'
 interface ViewKind {
   label: string
   icon: string
-  nests: boolean
 }
 
 export const VIEW_KINDS: Record<ViewType, ViewKind> = {
-  table: { label: 'Table', icon: 'view-table', nests: true },
-  cards: { label: 'Cards', icon: 'cards-grid', nests: false },
-  list: { label: 'List', icon: 'list-rounded', nests: true },
-  gallery: { label: 'Gallery', icon: 'layout-dashboard', nests: true },
-  calendar: { label: 'Calendar', icon: 'calendar-days', nests: true },
-  timeline: { label: 'Timeline', icon: 'chart-gantt', nests: true },
+  table: { label: 'Table', icon: 'view-table' },
+  cards: { label: 'Cards', icon: 'cards-grid' },
+  list: { label: 'List', icon: 'list-rounded' },
+  gallery: { label: 'Gallery', icon: 'layout-dashboard' },
+  calendar: { label: 'Calendar', icon: 'calendar-days' },
+  timeline: { label: 'Timeline', icon: 'chart-gantt' },
 }
 
 const VIEW_FORMATS = ['standard', 'compact'] as const
@@ -250,6 +250,7 @@ function withoutEmptyStyles({ column_styles, ...view }: Json): Json {
 }
 
 export type ViewPatch = Partial<SavedView>
+export type ViewWriter = (patch: ViewPatch) => Promise<Result<{ id: string }>>
 
 const ENTRY_KEYS = [
   'column_widths',

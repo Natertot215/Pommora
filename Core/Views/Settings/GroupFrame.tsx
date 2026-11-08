@@ -16,11 +16,11 @@ import {
   type StructuralOrderMode,
   type SubGroupConfig,
   toggleHiddenBucket,
-  VIEW_KINDS,
   type ViewPatch,
   viewOption,
 } from '../views'
 import type { ResolvedColumn, ResolvedGroup } from '../viewRow'
+import { presentedKind } from '../Host/viewKinds'
 import { DisclosureRow, useDisclosureSet } from '@pommora/uix/Menus/DisclosureRow'
 import { MenuRowView, pickerRow } from '@pommora/uix/Menus/MenuIndex'
 import {
@@ -139,7 +139,7 @@ export function GroupFrame({
   })
 
   const group = view.group ?? { kind: 'structural' as const }
-  const nests = VIEW_KINDS[view.type].nests
+  const { nests } = presentedKind(view.type)
   const plan = useMemo(() => groupPlan(view, schema, nests), [view, schema, nests])
   const propertyOptions = schemaTargets(schema, (d) => groupable(d.type)).map(targetOption)
   const activeDef = plan.kind === 'property' ? plan.group.column.def : undefined
@@ -469,6 +469,7 @@ function LocationHierarchy({
       {...bandSpec({
         bands: model,
         collapsed,
+        // The pane's tree arranges the folders themselves, so a Set drops into a Set whatever the view's kind draws.
         nests: true,
         routing,
         indent: (depth) => menuDropLine({ edge: 0, depth }),

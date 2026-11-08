@@ -1,6 +1,7 @@
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import type { PropertyDefinition } from '../../Properties/properties'
-import { LOCATION_SORT, type SavedView, type SortCriterion, VIEW_KINDS, viewOption } from '../views'
+import { LOCATION_SORT, type SavedView, type SortCriterion, viewOption } from '../views'
+import { presentedKind } from '../Host/viewKinds'
 import { MenuRowView, pickerRow } from '@pommora/uix/Menus/MenuIndex'
 import {
   type MenuBack,
@@ -86,7 +87,7 @@ export function SortFrame({
 
   const listed: PickerOption<string>[] = [
     { value: '_none', label: 'None', icon: 'circle-off' as const },
-    ...(!VIEW_KINDS[view.type].nests || primary?.property_id === LOCATION_SORT
+    ...(!presentedKind(view.type).nests || primary?.property_id === LOCATION_SORT
       ? [{ value: LOCATION_SORT, label: 'Location', icon: 'folder' as const }]
       : []),
     ...targets.filter((t) => t.id !== sub?.property_id).map(targetOption),
