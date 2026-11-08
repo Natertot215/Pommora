@@ -187,16 +187,16 @@ export function useViewInteractions<Own extends StableHandlers>(
 
   const valueAt = bucketValueAt(bands.byKey)
   const bandBase = { view, plan, sets, sourcePath: source.path }
-  const bandRoutes = bandRouting(bands, bandBase, (dragged) => {
+  const bandRoutes = bandRouting(bands, bandBase, (dragged, prior) => {
     const node = bands.byKey.get(dragged.key)
     const name = node ? nodeLabel(node) : (sets.node.get(dragged.key)?.title ?? '')
     return {
-      ...dropIO({ id: dragged.key, name }, host),
-      switched: ({ propertyId, prior }) =>
+      ...dropIO({ id: dragged.key, name, prior }, host),
+      switched: ({ propertyId, prior: undo }) =>
         notify(
           `Switched to custom ${columnLabel(resolveColumn(propertyId, schema, identity.contextIds)!, ctx.contexts)} order`,
           () =>
-            void persistView(prior).then((r) => {
+            void persistView(undo).then((r) => {
               if (r.ok) announceDrag('return', name)
             }),
         ),

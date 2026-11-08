@@ -128,6 +128,7 @@ describe('routeBandDrop — Sets', () => {
       kind: 'fs',
       req: { op: 'moveSet', path: 'Col/B', newParentPath: 'Col/A', order: ['sB', 'sA1', 'sA2'] },
       after: { group_order: ['sA', 'sB', 'sA2', 'sA1'] },
+      prior: { group_order: ['sA', 'sA2', 'sA1', 'sB'] },
     })
   })
 

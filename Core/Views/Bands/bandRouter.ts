@@ -29,7 +29,7 @@ interface Switched {
 
 type BandEffect =
   | { kind: 'view'; patch: ViewPatch; switched?: Switched }
-  | { kind: 'fs'; req: OrderRequest; after?: ViewPatch }
+  | { kind: 'fs'; req: OrderRequest; after?: ViewPatch; prior?: ViewPatch }
 
 interface BandIO {
   persistView: (patch: ViewPatch) => Promise<Result<unknown>>
@@ -88,6 +88,7 @@ function routeSet(id: string, drop: BandDrop, scope: BandScope): BandEffect | nu
       kind: 'fs',
       req: { op: 'moveSet', path: set.path, newParentPath: targetPath, order },
       after,
+      prior: after && { group_order: ranked! },
     }
   if (ranked) return after ? { kind: 'view', patch: after } : null
   return {
@@ -152,7 +153,7 @@ export interface BandRouting {
 export function bandRouting(
   bands: BandModel,
   base: BandBase,
-  io: (dragged: BandRef) => BandIO,
+  io: (dragged: BandRef, prior?: ViewPatch) => BandIO,
 ): BandRouting {
   return {
     moves: (dragged) => {
@@ -161,7 +162,7 @@ export function bandRouting(
     },
     drop: (dragged, drop) => {
       const effect = routeBandDrop(dragged, drop, bandScopeOf(bands, base))
-      void runBandEffect(effect, io(dragged))
+      void runBandEffect(effect, io(dragged, effect?.kind === 'fs' ? effect.prior : undefined))
       return effect !== null
     },
   }

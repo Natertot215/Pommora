@@ -127,7 +127,7 @@ describe('column alignment', () => {
   })
 })
 
-describe('column width', () => {
+describe('a resize through the mounted Table', () => {
   const statusDef: PropertyDefinition = {
     id: 'prop_status',
     label: 'Status',

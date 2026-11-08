@@ -41,7 +41,7 @@ export function resolveView(input: {
   )
   const sorter = makeSorter(view.sort, schema, identity.contextIds, manualOrder)
   const hidden = new Set(view.hidden_groups ?? [])
-  let tree = orderSetTree(setTree, viewSetOrder(plan, view))
+  let tree = plan.kind === 'sets' ? orderSetTree(setTree, viewSetOrder(plan, view)) : setTree
   if (plan.kind === 'sets' && hidden.size > 0) tree = pruneHiddenSets(tree, hidden)
   const groups = resolveGroups(
     filtered,

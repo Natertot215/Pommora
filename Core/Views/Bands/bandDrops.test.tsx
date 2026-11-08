@@ -723,6 +723,42 @@ describe('band reparent', () => {
     })
     expect(saveSpy).not.toHaveBeenCalled()
   })
+
+  it('a refused nest of a Set group_order never ranked, after another Set write, returns it to the slot its drop was ranked from', async () => {
+    let refuse: (v: unknown) => void = () => {}
+    mutateSpy.mockImplementation(
+      () =>
+        new Promise((r) => {
+          refuse = r
+        }),
+    )
+    const source = structuralSource({ group_order: ['sA', 'sA1', 'sB', 'sC'] })
+    const set = (id: string, title: string) => ({
+      kind: 'set',
+      id,
+      title,
+      path: `Col/${title}`,
+      pages: [],
+      sets: [],
+    })
+    await mountTable({
+      ...source,
+      sets: [...source.sets, set('sC', 'C'), set('sD', 'D')],
+    } as CollectionNode)
+    await dragBand(4, 12)
+    await drop()
+    expect(headerTexts()).toEqual(['A', 'D', 'A1', 'B', 'C'])
+    stubBandRects()
+    await dragBand(4, 74)
+    await drop()
+    expect(headerTexts()).toEqual(['A', 'D', 'A1', 'C', 'B'])
+    await act(async () => {
+      refuse(null)
+    })
+    await settle()
+    expect(headerTexts()).toEqual(['A', 'A1', 'C', 'B', 'D'])
+    expect(lastSavedView().group_order).toEqual(['sA', 'sA1', 'sC', 'sB', 'sD'])
+  })
 })
 
 describe('band header — the sidebar interaction model', () => {

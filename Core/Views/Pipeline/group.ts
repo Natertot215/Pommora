@@ -86,22 +86,10 @@ export function bucketKey(
   return viewSpecOf(column.type)?.bucket?.(resolveFieldValue(row, column), granularity) ?? null
 }
 
-function schemaOptionOrder(def: PropertyDefinition | undefined): string[] | null {
-  if (!def) return null
-  const values = optionIds(def)
-  return values.length ? values : null
-}
-
 const appendTail = (base: string[], present: Set<string>): string[] => [
   ...base,
   ...[...present].filter((k) => !base.includes(k)).sort(),
 ]
-
-function configuredOrder(def: PropertyDefinition | undefined, present: Set<string>): string[] {
-  const schemaOrder = schemaOptionOrder(def)
-  if (schemaOrder) return appendTail(schemaOrder, present)
-  return [...present].sort()
-}
 
 export function liveBucketOrder(
   config: Pick<PropertyGroup, 'order_mode' | 'order'>,
@@ -117,8 +105,8 @@ export function bucketOrder(
   present: Set<string>,
 ): string[] {
   if (group.order_mode === 'manual') return appendTail(group.order ?? [], present)
-  const configured = configuredOrder(def, present)
-  return group.order_mode === 'reversed' ? [...configured].reverse() : configured
+  const configured = appendTail(def ? optionIds(def) : [], present)
+  return group.order_mode === 'reversed' ? configured.reverse() : configured
 }
 
 function bucketBands(
@@ -135,7 +123,7 @@ function bucketBands(
   const buckets = byBucket as Map<string, ViewRow[]>
 
   // Only a LIVE option earns an empty band: a stale manual-order entry (a deleted option, an old date bucket snapshotted by a band drag) must never render a ghost band.
-  const live = new Set(schemaOptionOrder(def) ?? [])
+  const live = new Set(def ? optionIds(def) : [])
   const groups = liveBucketOrder(config, def, buckets.keys()).flatMap((value): ResolvedGroup[] => {
     const items = buckets.get(value) ?? []
     if (items.length === 0 && !live.has(value)) return []
@@ -147,77 +135,30 @@ function bucketBands(
   return placeTail(groups, noValue, sorter, placement, tail)
 }
 
-function structural(
+function setBands(
   rows: ViewRow[],
   setTree: SetTreeNode[],
+  { nests, sub }: { nests: boolean; sub?: Grouping },
   sorter: Sorter | null,
   placement: EmptyPlacement,
 ): ResolvedGroup[] {
   const bySet = groupRows(rows, (r) => r.parentSetId)
-  const rootRows = bySet.get(undefined) ?? []
-  const build = (node: SetTreeNode): ResolvedGroup => {
-    const children = (node.sets ?? []).map(build)
+  const gathered = (node: SetTreeNode): ViewRow[] =>
+    subtreeIds(node).flatMap((id) => bySet.get(id) ?? [])
+  const band = (node: SetTreeNode): ResolvedGroup => {
+    // A kind that doesn't nest draws each top-level set as ONE flat band, so a manual reorder spans the whole band instead of snapping back within a sub-set.
+    if (!nests) return { key: node.id, kind: 'set', items: applySort(gathered(node), sorter) }
+    const children = sub
+      ? bucketBands(gathered(node), sub, sorter, placement, node.id)
+      : (node.sets ?? []).map(band)
     return {
       key: node.id,
       kind: 'set',
-      items: applySort(bySet.get(node.id) ?? [], sorter),
+      items: sub ? [] : applySort(bySet.get(node.id) ?? [], sorter),
       ...(children.length > 0 ? { children } : {}),
     }
   }
-  const groups = setTree.map(build)
-  return placeTail(groups, rootRows, sorter, placement)
-}
-
-/** A kind that doesn't nest draws each top-level set as ONE flat band, so a manual reorder spans the whole band instead of snapping back within a sub-set. */
-function structuralFlat(
-  rows: ViewRow[],
-  setTree: SetTreeNode[],
-  sorter: Sorter | null,
-  placement: EmptyPlacement,
-): ResolvedGroup[] {
-  const byParent = groupRows(rows, (r) => r.parentSetId)
-  const rootRows = byParent.get(undefined) ?? []
-  const groups: ResolvedGroup[] = setTree.map((node) => ({
-    key: node.id,
-    kind: 'set',
-    items: applySort(
-      subtreeIds(node).flatMap((id) => byParent.get(id) ?? []),
-      sorter,
-    ),
-  }))
-  return placeTail(groups, rootRows, sorter, placement)
-}
-
-function locationFlat(
-  rows: ViewRow[],
-  setTree: SetTreeNode[],
-  sorter: Sorter | null,
-  placement: EmptyPlacement,
-): ResolvedGroup[] {
-  const bands = structuralFlat(rows, setTree, sorter, placement)
-  return [{ key: UNGROUPED, kind: 'tail', items: bands.flatMap((g) => g.items) }]
-}
-
-function structuralSubGrouped(
-  rows: ViewRow[],
-  setTree: SetTreeNode[],
-  grouping: Grouping,
-  sorter: Sorter | null,
-  placement: EmptyPlacement,
-): ResolvedGroup[] {
-  const byParent = groupRows(rows, (r) => r.parentSetId)
-  const rootRows = byParent.get(undefined) ?? []
-  const groups: ResolvedGroup[] = setTree.map((node) => {
-    const pages = subtreeIds(node).flatMap((id) => byParent.get(id) ?? [])
-    const children = bucketBands(pages, grouping, sorter, placement, node.id)
-    return {
-      key: node.id,
-      kind: 'set',
-      items: [],
-      ...(children.length > 0 ? { children } : {}),
-    }
-  })
-  return placeTail(groups, rootRows, sorter, placement)
+  return placeTail(setTree.map(band), bySet.get(undefined) ?? [], sorter, placement)
 }
 
 export function pruneGroups(
@@ -230,11 +171,6 @@ export function pruneGroups(
     const pruned: ResolvedGroup = children?.length ? { ...band, children } : band
     return drops(pruned) ? [] : [pruned]
   })
-}
-
-function flat(rows: ViewRow[], sorter: Sorter | null): ResolvedGroup[] {
-  if (rows.length === 0) return []
-  return [{ key: UNGROUPED, kind: 'tail', items: applySort(rows, sorter) }]
 }
 
 /** A grouping and the column it reads, resolved once when the plan is made. */
@@ -318,14 +254,16 @@ export function resolveGroups(
   switch (plan.kind) {
     case 'none':
       return plan.locationSort === 'location'
-        ? locationFlat(rows, setTree, sorter, placement)
-        : flat(rows, sorter)
+        ? placeTail(
+            [],
+            setBands(rows, setTree, { nests: false }, sorter, placement).flatMap((g) => g.items),
+            null,
+            placement,
+          )
+        : placeTail([], rows, sorter, placement)
     case 'property':
       return bucketBands(rows, plan.group, sorter, placement)
     case 'sets':
-      if (!plan.nests) return structuralFlat(rows, setTree, sorter, placement)
-      return plan.sub
-        ? structuralSubGrouped(rows, setTree, plan.sub, sorter, placement)
-        : structural(rows, setTree, sorter, placement)
+      return setBands(rows, setTree, plan, sorter, placement)
   }
 }
