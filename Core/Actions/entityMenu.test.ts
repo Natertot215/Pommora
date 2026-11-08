@@ -43,9 +43,7 @@ describe('the sidebar entity menu', () => {
 
   it('a band set neither opens nor locks and closes on Archive above Delete, and a context without creators starts at Rename', () => {
     expect(
-      shape(
-        entityMenuItems({ kind: 'set', path: 'Notes/S', title: 'S', host: 'detail' }, creators),
-      ),
+      shape(entityMenuItems({ kind: 'set', path: 'Notes/S', title: 'S', host: 'band' }, creators)),
     ).toEqual([
       'New Page',
       '—',

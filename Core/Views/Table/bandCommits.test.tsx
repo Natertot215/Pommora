@@ -810,7 +810,7 @@ describe('band header — the sidebar interaction model', () => {
     })
     expect(contextMenuSpy).toHaveBeenCalledWith({
       items: entityMenuItems(
-        { kind: 'set', path: 'Col/B', title: 'B', host: 'detail' },
+        { kind: 'set', path: 'Col/B', title: 'B', host: 'band' },
         containerCreators('set', 'Col/B'),
       ),
       anchor: undefined,

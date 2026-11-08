@@ -34,7 +34,8 @@ const render = (s?: TitleSearch): Promise<void> =>
     root.render(
       <DetailTitleHeader
         title="Ideas"
-        onRename={vi.fn()}
+        path="Col/Page.md"
+        kind="page"
         requestMenu={async () => null}
         onIconClick={vi.fn()}
         search={s}
@@ -131,7 +132,8 @@ describe('the title search', () => {
       root.render(
         <DetailTitleHeader
           title="Ideas"
-          onRename={vi.fn()}
+          path="Col/Page.md"
+          kind="page"
           requestMenu={async () => 'rename'}
           onIconClick={vi.fn()}
           search={s}

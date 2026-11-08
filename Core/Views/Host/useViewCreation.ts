@@ -1,6 +1,6 @@
-// The page exists on disk as Untitled the moment the gesture fires — seeds riding the create, its order written at the gesture — and the caller's rename opens its naming surface over the row once it lands.
+// The page exists on disk as Untitled the moment the gesture fires — seeds riding the create, its order written at the gesture — and its name field opens under the id minted there.
 
-import { type ViewRow, UNGROUPED, flattenContainer } from '../viewRow'
+import { type ViewRow, UNGROUPED } from '../viewRow'
 import { patchOverride } from '../../Properties/valueOverride'
 import { isBlankValue, type PropertyValue } from '../../Properties/propertyValue'
 import { groupKeyToValue, viewSpecOf } from '../valueKinds'
@@ -49,29 +49,7 @@ export interface CreateFlight {
   path: Promise<string | null>
 }
 
-type ViewCreationConfig = Pick<
-  ViewHostApi,
-  | 'source'
-  | 'view'
-  | 'schema'
-  | 'identity'
-  | 'setValueOverride'
-  | 'effectiveValues'
-  | 'sortKeys'
-  | 'pageOrder'
-  | 'persistView'
-  | 'rowBand'
-  | 'canReassign'
-  | 'groupPropId'
-  | 'groupPropType'
-  | 'sets'
-  | 'collapsed'
-  | 'toggleCollapse'
-  | 'viewRootRef'
-> & {
-  bandBucket: (key: string) => string | null
-  rename: (target: { id: string; path: string }) => void
-}
+type ViewCreationConfig = ViewHostApi & { bandBucket: (key: string) => string | null }
 
 interface ViewCreation {
   bandAdd: (setKey: string) => void
@@ -146,7 +124,7 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
       (c.groupPropId === undefined && c.sortKeys === 0 && !c.view.manual_order)
     )
       return null
-    const allIds = flattenContainer(c.source, c.effectiveValues, {}).rows.map((r) => r.id)
+    const allIds = c.rows.map((r) => r.id)
     // The live view folds the order just written, so the next create composes on this one.
     return { manual_order: tieOrderWith(c.view.manual_order, allIds, createdId, anchorId, where) }
   }
@@ -169,6 +147,7 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
     const order = orderPatch(c, req.id, anchorId, where)
     if (order) void c.persistView(order, { viewState: true })
     const flight = mutate(req)
+    c.beginNaming(req.id, flight)
     patchSeedValues(
       req.id,
       req.seeds ?? {},
@@ -176,9 +155,7 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
     )
     const path = flight.then((done) => {
       const created = done?.created
-      const landed = created && 'path' in created ? created.path : null
-      if (landed !== null) cfg().rename({ id: req.id, path: landed })
-      return landed
+      return created && 'path' in created ? created.path : null
     })
     return { id: req.id, path }
   }

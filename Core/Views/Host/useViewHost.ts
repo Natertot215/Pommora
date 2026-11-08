@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { type ResolvedGroup, type ViewRow, flattenContainer } from '../viewRow'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import type { ColumnStyle } from '../../Properties/columnStyles'
@@ -116,6 +116,19 @@ export function useViewHost(source: CollectionNode | SetNode) {
     return { rowById: byId, rowBand: band, paintOrder: ordered }
   }, [groups])
 
+  const [naming, setNaming] = useState<{ id: string; create: boolean; landing: boolean } | null>(
+    null,
+  )
+  const strandedId = naming && !naming.landing && !rowById.has(naming.id) ? naming.id : null
+  useEffect(() => {
+    if (strandedId !== null) setNaming((n) => (n?.id === strandedId ? null : n))
+  }, [strandedId])
+  const beginNaming = (id: string, flight?: Promise<unknown>): void => {
+    setNaming({ id, create: flight !== undefined, landing: flight !== undefined })
+    void flight?.finally(() => setNaming((n) => (n?.id === id ? { ...n, landing: false } : n)))
+  }
+  const endNaming = (): void => setNaming(null)
+
   const persistView = (patch: ViewPatch, opts?: ViewWriteOpts): Promise<Result<{ id: string }>> =>
     saveView(view, patch, opts)
   const toggleCollapse = (key: string): void => {
@@ -216,5 +229,8 @@ export function useViewHost(source: CollectionNode | SetNode) {
     effectiveValues,
     setValueOverride,
     viewRootRef,
+    naming,
+    beginNaming,
+    endNaming,
   }
 }

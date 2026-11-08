@@ -91,7 +91,6 @@ export function EntityBanner({
   plain?: true
 }): React.JSX.Element {
   const mutate = useSession((s) => s.mutate)
-  const submitRename = useSession((s) => s.submitRename)
   const defaultIcons = useSession((s) => personalizationOf(s).defaultIcons)
   const iconChoice = useIconChoice<Element>(
     owner.icon,
@@ -121,6 +120,8 @@ export function EntityBanner({
     <DetailTitleHeader
       key={owner.path}
       title={owner.title}
+      path={owner.path}
+      kind={owner.kind as RenameKind}
       icon={
         owner.kind === 'homepage'
           ? (nexusIcon.profileIcon ?? DEFAULT_NEXUS_ICON)
@@ -130,7 +131,6 @@ export function EntityBanner({
       iconHidden={iconHidden}
       {...iconChoice}
       iconOpen={iconChoice.iconOpen || (home && nexusIcon.editing !== null)}
-      onRename={(newName) => submitRename(owner.path, owner.kind as RenameKind, newName)}
       requestMenu={async () => {
         if (!home) {
           const items = titleMenuItems({ iconHidden })

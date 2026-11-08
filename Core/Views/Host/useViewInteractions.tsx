@@ -43,8 +43,6 @@ interface ViewInteractionPolicy {
     suppressed: () => boolean
     travelHold?: { inZone: (enteringId: string) => boolean; holdMs: number }
   }
-  /** Opens the renderer's naming surface over a page that already exists on disk. */
-  rename: (target: { id: string; path: string }, fromCreate: boolean) => void
   newPages: NewPageRows
 }
 
@@ -160,11 +158,7 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
         ),
     }
   })
-  const creation = useViewCreation(() => ({
-    ...host,
-    bandBucket: valueAt,
-    rename: (target) => policy.rename(target, true),
-  }))
+  const creation = useViewCreation(() => ({ ...host, bandBucket: valueAt }))
   const openSet = (set: SetNode, newTab: boolean): void => {
     openTarget(selectTargetOf(set), { newTab })
   }
@@ -403,7 +397,7 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     ghost.suppressWrap(() =>
       showPageMenu(row, {
         trigger: anchor,
-        rename: () => policy.rename(row, false),
+        rename: () => host.beginNaming(row.id),
         newPage: {
           rows: policy.newPages,
           create: (where) => void creation.createAdjacent(row, where),

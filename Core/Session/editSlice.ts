@@ -5,7 +5,7 @@ import type { Slice } from './sessionState'
 import { dialer } from '../Platform/dialer'
 import { flushAllSaves } from './nexusSlice'
 
-export type RenameHost = 'detail' | 'sidebar' | 'matrix'
+export type RenameHost = 'band' | 'sidebar' | 'matrix'
 
 interface RenameClaim {
   token: number
@@ -30,7 +30,12 @@ export interface EditSlice {
   releaseRename: (token: number) => void
   beginRename: (path: string, create?: boolean, host?: RenameHost) => void
   cancelRename: () => void
-  submitRename: (path: string, kind: RenameKind, newName: string) => Promise<boolean>
+  submitRename: (
+    path: string,
+    kind: RenameKind,
+    newName: string,
+    fromCreate?: boolean,
+  ) => Promise<boolean>
   resetEdit: () => void
 }
 
@@ -38,7 +43,7 @@ let nextRenameToken = 1
 // The unclaimed-session sweep's beat — long enough for a create's row to arrive and claim.
 const RENAME_CLAIM_BEAT_MS = 2000
 let renameOrphanTimer: number | undefined
-const RENAME_RANK: Record<RenameHost, number> = { detail: 2, sidebar: 1, matrix: 3 }
+const RENAME_RANK: Record<RenameHost, number> = { band: 2, sidebar: 1, matrix: 3 }
 const RENAME_CLEARED = {
   renamingPath: null,
   renamingCreate: false,
@@ -106,9 +111,7 @@ export const createEditSlice: Slice<EditSlice> = (set, get) => ({
     }, RENAME_CLAIM_BEAT_MS)
   },
   cancelRename: () => set(RENAME_CLEARED),
-  submitRename: async (path, kind, newName) => {
-    const fromCreate = get().renamingCreate && kind === 'page'
-    set(RENAME_CLEARED)
+  submitRename: async (path, kind, newName, fromCreate) => {
     // Not a mutate op: the rename re-adopts the root and refuses every write until it lands, so saves flush first.
     if (kind === 'homepage') {
       await flushAllSaves()
@@ -134,7 +137,7 @@ export const createEditSlice: Slice<EditSlice> = (set, get) => ({
       path,
       kind,
       newName,
-      ...(fromCreate ? { fromCreate: true as const } : {}),
+      ...(fromCreate && kind === 'page' ? { fromCreate: true as const } : {}),
     })
   },
 

@@ -34,7 +34,6 @@ export function PageHeader({
   const shown = meta?.title_icon ?? setting
   const coverSrc = useAssetUrl(cover)
   const defaultIcons = useSession((s) => personalizationOf(s).defaultIcons)
-  const submitRename = useSession((s) => s.submitRename)
   const mutate = useSession((s) => s.mutate)
   const [renameSummon, setRenameSummon] = useState(0)
 
@@ -52,10 +51,11 @@ export function PageHeader({
   const titleHeader = (
     <DetailTitleHeader
       title={title}
+      path={path}
+      kind="page"
       icon={glyph}
       iconHidden={!shown}
       {...iconChoice}
-      onRename={(newName) => submitRename(path, 'page', newName)}
       requestMenu={() => popMenu(titleMenuItems({ iconHidden: !shown }))}
       onToggleIcon={toggleTitleIcon}
       renameSummon={renameSummon}

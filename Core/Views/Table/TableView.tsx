@@ -1,15 +1,15 @@
-import { memo, useEffect, useState } from 'react'
+import { memo } from 'react'
 import type { ResolvedGroup, ViewRow } from '../viewRow'
 import type { ColumnStyle } from '../../Properties/columnStyles'
 import { type ColumnAlign, viewOption } from '../views'
 import type { PropertyValue } from '../../Properties/propertyValue'
 import { pickKindOf, type ResolvedColumn } from '../../Properties/properties'
-import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
 import { fillInput } from '@pommora/uix/Fields/fields.css'
 import { useValueSeat, ValueSeat } from '../../Properties/Pickers/ValueSeat'
 import type { ViewHostApi } from '../Host/useViewHost'
 import { rowHover, useViewInteractions } from '../Host/useViewInteractions'
 import { useSession } from '../../Session/store'
+import { RenamableName } from '../../Interface/RenamableTitle'
 import type { ValueContext } from '../../Properties/valueContext'
 import { isCmd, isSecondaryClick } from '@pommora/uix/Interactions/chords'
 import { Cell } from '../../Properties/Cells/Cell'
@@ -33,18 +33,7 @@ import { useCellSweep } from './useCellSweep'
 import { LineRow, LineZone } from '@pommora/uix/Interactions/drag'
 
 export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
-  const {
-    view,
-    columns,
-    groups,
-    ctx,
-    rowById,
-    bands,
-    collapsed,
-    dragDisabled,
-    commitValue,
-    mutate,
-  } = host
+  const { view, columns, groups, ctx, rowById, bands, collapsed, dragDisabled, commitValue } = host
   const selection = useSession((s) => s.selection)
   const {
     iconsShown,
@@ -63,23 +52,14 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     onTrackTransitionEnd,
   } = useColumns(host)
 
-  // ── The title's rename ────────────────────────────────────────────────────
-
-  const [renaming, setRenaming] = useState<{ rowId: string; fromCreate?: true } | null>(null)
-  const strandedEditId = renaming !== null && !rowById.has(renaming.rowId) ? renaming.rowId : null
-  useEffect(() => {
-    if (strandedEditId !== null) setRenaming((r) => (r?.rowId === strandedEditId ? null : r))
-  }, [strandedEditId])
   const titleCol = columns.find((c) => c.kind === 'title')
   const titleColId = titleCol?.id
 
   const interactions = useViewInteractions(host, {
     ghost: {
       graceMs: 0,
-      suppressed: () => seat.open !== null || renaming !== null,
+      suppressed: () => seat.open !== null || host.naming !== null,
     },
-    rename: (target, fromCreate) =>
-      setRenaming({ rowId: target.id, ...(fromCreate ? { fromCreate: true } : {}) }),
     newPages: 'pair',
   })
   const seat = useValueSeat({
@@ -104,34 +84,21 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
 
   // ── The title cell ────────────────────────────────────────────────────────
 
-  const titleCell = (row: ViewRow, opened: boolean, hideIcon: boolean): React.ReactNode => {
-    const fromCreate = opened && renaming?.fromCreate
-    return (
-      <span className={opened ? 'cell-rename' : cx(overScrollLabel, 'cell-title')}>
-        {hideIcon ? null : <EntityIcon kind="page" icon={row.icon} size="body" />}
-        <RenamableLabel
-          renames="title"
-          editing={opened}
-          emptyInitial={fromCreate}
-          value={row.title}
-          className={fillInput}
-          onCommit={(newName) => {
-            setRenaming(null)
-            return mutate({
-              op: 'rename',
-              path: row.path,
-              kind: 'page',
-              newName,
-              ...(fromCreate ? { fromCreate } : {}),
-            })
-          }}
-          onCancel={() => setRenaming(null)}
-        >
-          {(shown) => <span className="cell-title-text">{shown}</span>}
-        </RenamableLabel>
-      </span>
-    )
-  }
+  const titleCell = (row: ViewRow, naming: boolean, hideIcon: boolean): React.ReactNode => (
+    <span className={naming ? 'cell-rename' : cx(overScrollLabel, 'cell-title')}>
+      {hideIcon ? null : <EntityIcon kind="page" icon={row.icon} size="body" />}
+      <RenamableName
+        title={row.title}
+        kind="page"
+        rename={{ path: row.path, editing: naming, onEnd: host.endNaming }}
+        create={naming && host.naming?.create}
+        className={fillInput}
+        renames="title"
+      >
+        {(shown) => <span className="cell-title-text">{shown}</span>}
+      </RenamableName>
+    </span>
+  )
 
   // ── The page menu ─────────────────────────────────────────────────────────
 
@@ -185,8 +152,8 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   })
   const open = seat.open
   const overlayTarget =
-    renaming && titleColId
-      ? { rowId: renaming.rowId, colId: titleColId }
+    host.naming && titleColId
+      ? { rowId: host.naming.id, colId: titleColId }
       : open?.mode === 'editor'
         ? { rowId: open.rowId, colId: open.columnId }
         : null
@@ -241,7 +208,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
             lead={lead}
           />,
         ]
-        if (itemsVisible && ghost?.anchorId === row.id && !open && !renaming)
+        if (itemsVisible && ghost?.anchorId === row.id && !open && !host.naming)
           rendered.push(
             <GhostRow
               key={`ghost-${row.id}`}

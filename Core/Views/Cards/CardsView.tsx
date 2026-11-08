@@ -56,7 +56,7 @@ import { overScrollEllipsis } from '@pommora/uix/Interactions/OverScroll'
 import { type Personalization, TENTHS_SCALE } from '../../Settings/personalization'
 import { cardAddColumns, fillsBlank, shownColumnsFor } from './cardColumns'
 import { itemColumns } from '../Pipeline/columns'
-import { RenamableTitle } from '../../Interface/RenamableTitle'
+import { RenamableName } from '../../Interface/RenamableTitle'
 import { titleInput } from '@pommora/uix/Menus/menu-row.css'
 import { useGhostFlip } from './useGhostFlip'
 import './cards-view.css'
@@ -83,11 +83,15 @@ type CardApi = {
   openAdd: ValueSeatApi['openAdd']
   hover: (id: string, entering: boolean) => void
   pageMenu: (row: ViewRow, anchor: HTMLElement, editImage?: () => void) => Promise<void>
+  endNaming: () => void
   openSet: (set: SetNode, newTab: boolean) => void
   banner: (req: BannerRequest) => void
 }
 
-type ValueApi = Pick<CardApi, 'commitValue' | 'click' | 'menu' | 'pane' | 'editor' | 'banner'>
+type ValueApi = Pick<
+  CardApi,
+  'commitValue' | 'click' | 'menu' | 'pane' | 'editor' | 'banner' | 'endNaming'
+>
 
 const previewKeyOf = (row: ViewRow, banner: CardBanner): string | undefined =>
   banner === 'preview' ? navKey({ kind: 'page', id: row.id }) : undefined
@@ -104,6 +108,7 @@ const INERT_API: ValueApi = {
   pane: NOOP,
   editor: () => null,
   banner: NOOP,
+  endNaming: NOOP,
 }
 
 // ── The view ────────────────────────────────────────────────────────────────
@@ -126,8 +131,6 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
   } = host
   const nexusId = useSession((s) => s.tree?.nexus.id ?? '')
   const defaultIcons = useSession((s) => personalizationOf(s).defaultIcons)
-  const beginRename = useSession((s) => s.beginRename)
-  const anyNaming = useSession((s) => s.renamingPath !== null)
 
   // ── Set cards ─────────────────────────────────────────────────────────────
 
@@ -156,10 +159,9 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const interactions = useViewInteractions(host, {
     ghost: {
       graceMs: CARDS_GHOST_GRACE_MS,
-      suppressed: () => seat.open !== null || useSession.getState().renamingPath !== null,
+      suppressed: () => seat.open !== null || host.naming !== null,
       travelHold: { inZone: ghostRowmate, holdMs: GHOST_TRAVEL_HOLD_MS },
     },
-    rename: (target, fromCreate) => beginRename(target.path, fromCreate, 'detail'),
     newPages: 'single',
   })
   const effectiveZoom = useElementZoom(host.viewRootRef)
@@ -252,6 +254,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     openAdd: seat.openAdd,
     hover: interactions.ghost.onHover,
     pageMenu: interactions.pageMenu,
+    endNaming: host.endNaming,
     openSet: interactions.openSet,
     banner: setBannerRequest,
   })
@@ -272,7 +275,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
 
   const ghostShown = useGhostFlip(
     host.viewRootRef,
-    interactions.ghost.ghost && !anyNaming ? interactions.ghost.ghost.anchorId : null,
+    interactions.ghost.ghost && !host.naming ? interactions.ghost.ghost.anchorId : null,
     interactions.ghost.ghost === null,
     effectiveZoom,
   )
@@ -412,6 +415,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
                     styleById={styleById}
                     api={cardApi}
                     allowInlineRemove={effectiveZoom >= 0.8}
+                    naming={host.naming?.id === row.id ? host.naming : null}
                     editing={
                       seat.open?.mode === 'editor' && seat.open.rowId === row.id
                         ? seat.open.columnId
@@ -579,6 +583,7 @@ interface PageCardProps {
   styleById: Map<string, ColumnStyle>
   api: CardApi
   allowInlineRemove: boolean
+  naming: ViewHostApi['naming']
   editing: string | null
 }
 
@@ -678,7 +683,7 @@ const CardFace = memo(function CardFace({
   editing,
 }: {
   row: ViewRow
-  naming: boolean
+  naming: ViewHostApi['naming']
   view: SavedView
   banner: CardBanner
   ctx: ValueContext
@@ -702,21 +707,20 @@ const CardFace = memo(function CardFace({
     <Icon name={iconName} className="card-title-icon" />
   )
   const titleRow = (
-    <CardTitle mode={viewOption(view, 'wrap_titles') ? 'wrap' : 'scroll'}>
+    <CardTitle
+      mode={naming ? 'static' : viewOption(view, 'wrap_titles') ? 'wrap' : 'scroll'}
+      onPointerDown={naming ? (e) => e.stopPropagation() : undefined}
+    >
       {titleIcon}
-      <span>{row.title}</span>
-    </CardTitle>
-  )
-  const namingRow = naming && (
-    <CardTitle mode="static" onPointerDown={(e) => e.stopPropagation()}>
-      {titleIcon}
-      <RenamableTitle
-        path={row.path}
-        kind="page"
+      <RenamableName
         title={row.title}
+        kind="page"
+        rename={{ path: row.path, editing: naming !== null, onEnd: api.endNaming }}
+        create={naming?.create}
         className={cx(titleInput, 'card-title-input')}
-        host="detail"
-      />
+      >
+        {(shown) => <span>{shown}</span>}
+      </RenamableName>
     </CardTitle>
   )
   const ph = (
@@ -755,7 +759,7 @@ const CardFace = memo(function CardFace({
             : undefined
         }
       >
-        {namingRow || titleRow}
+        {titleRow}
         {shown.length > 0 && (
           <CardProperties
             row={row}
@@ -814,7 +818,7 @@ function OverlayFace({
       iconName={iconName}
       columns={columns}
       allowInlineRemove={false}
-      naming={false}
+      naming={null}
       api={INERT_API}
       editing={null}
     />
@@ -835,10 +839,10 @@ const PageCard = memo(function PageCard({
   styleById,
   api,
   allowInlineRemove,
+  naming,
   editing,
 }: PageCardProps): React.JSX.Element {
   const drag = useDragItem(row.id, { open: () => api.open(row, false) })
-  const naming = useSession((s) => s.renamingPath === row.path && s.renamingHost !== 'sidebar')
   const active = useSession((s) => s.selection.kind === 'page' && s.selection.id === row.id)
   const { src, onError } = useThumb(nexusId, previewKeyOf(row, banner))
 

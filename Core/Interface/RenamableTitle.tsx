@@ -1,9 +1,9 @@
 import type { HeldKind } from '../Nexus/entities'
+import type { RenameKind } from '../Nexus/mutateRequest'
 import type { RenameHost } from '../Session/editSlice'
 import { useEffect, useState } from 'react'
 import { useSession } from '../Session/store'
 import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
-import { titleInput } from '@pommora/uix/Menus/menu-row.css'
 
 /** The fence resolves one winner, so a path visible on two surfaces (a set's sidebar row and its table band) mounts exactly one field. */
 export function RenamableTitle({
@@ -31,7 +31,6 @@ export function RenamableTitle({
   const renamingCreate = useSession((s) => s.renamingPath === path && s.renamingCreate)
   const winner = useSession((s) => (s.renamingPath === path ? s.renameWinner : null))
   const cancelRename = useSession((s) => s.cancelRename)
-  const submitRename = useSession((s) => s.submitRename)
   const beginRename = useSession((s) => s.beginRename)
   const [token, setToken] = useState<number | null>(null)
   useEffect(() => {
@@ -45,49 +44,67 @@ export function RenamableTitle({
   }, [target, path, host])
   const owns = target && token !== null && winner === token
   return (
-    <RenamableLabel
-      renames={renames}
-      editing={owns}
-      emptyInitial={owns && renamingCreate}
-      value={title}
+    <RenamableName
+      title={title}
+      kind={kind}
+      rename={{
+        path,
+        editing: owns,
+        onBegin: doubleClick ? () => beginRename(path, false, host) : undefined,
+        onEnd: cancelRename,
+      }}
+      create={renamingCreate}
       className={className}
+      renames={renames}
       autoSize={autoSize}
-      onBegin={doubleClick ? () => beginRename(path, false, host) : undefined}
-      onCommit={(next) => submitRename(path, kind, next)}
-      onCancel={cancelRename}
     />
   )
 }
 
 /** The surface that shows the label holds its editing state, so no fence picks among twins. */
-export interface PageNameRename {
+export interface NameRename {
   path: string
   editing: boolean
   onBegin?: () => void
   onEnd: () => void
 }
 
-export function RenamablePageName({
+export function RenamableName({
   title,
+  kind,
   rename,
+  create,
+  className,
+  renames = 'row',
+  autoSize,
+  children,
 }: {
   title: string
-  rename: PageNameRename
+  kind: RenameKind
+  rename: NameRename
+  create?: boolean
+  className: string
+  renames?: 'title' | 'row'
+  autoSize?: boolean
+  children?: (shown: string) => React.ReactNode
 }): React.JSX.Element {
   const submitRename = useSession((s) => s.submitRename)
   return (
     <RenamableLabel
-      renames="row"
+      renames={renames}
       editing={rename.editing}
+      emptyInitial={create}
       value={title}
-      className={titleInput}
-      autoSize
+      className={className}
+      autoSize={autoSize}
       onBegin={rename.onBegin}
       onCommit={(next) => {
         rename.onEnd()
-        return submitRename(rename.path, 'page', next)
+        return submitRename(rename.path, kind, next, create)
       }}
       onCancel={rename.onEnd}
-    />
+    >
+      {children}
+    </RenamableLabel>
   )
 }

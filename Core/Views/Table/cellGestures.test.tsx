@@ -481,6 +481,31 @@ describe('menu-entered editing', () => {
     })
   })
 
+  it('a create opens its name field on the newborn’s row, empty, before the reply', async () => {
+    let reply!: (outcome: unknown) => void
+    mutateSpy.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          reply = resolve
+        }),
+    )
+    await mountTable(sourceWith())
+    channels.menu = vi.fn(async () => ok('title:newbelow'))
+    await act(async () => {
+      host
+        .querySelectorAll<HTMLElement>('.data-cell')[0]
+        .dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
+    })
+    const [{ id }] = mutateSpy.mock.calls.find(([req]) => req.op === 'createPage') ?? []
+    const born = sourceWith()
+    born.pages.splice(1, 0, { kind: 'page', id, title: 'Untitled', path: 'Col/Untitled.md' })
+    await mountTable(born)
+    expect(host.querySelector<HTMLInputElement>(`[data-rid="${id}"] input`)?.value).toBe('')
+    await act(async () => {
+      reply({ created: { path: 'Col/Untitled.md' } })
+    })
+  })
+
   it('a title menu’s Date leaf opens the menu seat at the title’s glyph', async () => {
     await mountTable(sourceWith())
     channels.menu = vi.fn(async () => ok(`prop:${dateDef.id}`))

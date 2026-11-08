@@ -34,7 +34,7 @@ describe('a folder answers its path verbs', () => {
     await showEntityMenu({ ...set, host: 'sidebar' })
     expect(copyPath).toHaveBeenCalledWith('Notes/Drafts')
     picked.mockReturnValueOnce('title:reveal')
-    await showEntityMenu({ ...set, host: 'detail' })
+    await showEntityMenu({ ...set, host: 'band' })
     expect(reveal).toHaveBeenCalledWith('Notes/Drafts')
   })
 })
@@ -44,7 +44,7 @@ describe('Archive and Delete reach their confirmations', () => {
     picked.mockReturnValueOnce('title:archive')
     await showEntityMenu({ kind: 'page', id: 'p1', path: 'Notes/A.md', title: 'A' })
     picked.mockReturnValueOnce('title:archive')
-    await showEntityMenu({ kind: 'set', path: 'Notes/S', title: 'S', host: 'detail' })
+    await showEntityMenu({ kind: 'set', path: 'Notes/S', title: 'S', host: 'band' })
     expect(confirmArchive.mock.calls).toEqual([
       [{ path: 'Notes/A.md', kind: 'page', title: 'A' }],
       [{ path: 'Notes/S', kind: 'set', title: 'S' }],

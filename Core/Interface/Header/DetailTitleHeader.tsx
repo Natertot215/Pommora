@@ -5,12 +5,13 @@ import { Button } from '@pommora/uix/Buttons/Button'
 import { labelSlot, labelSlotHidden } from '@pommora/uix/Buttons/button-base.css'
 import { segment } from '@pommora/uix/Elements/segment.css'
 import { titleActionFade, titleActionFadeHidden } from '@pommora/uix/Animations/animations.css'
-import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
 import { SearchField } from '@pommora/uix/Fields/SearchField'
 import { base } from '@pommora/uix/Fields/fields.css'
 import { REVEAL_DWELL_MS, useHoverReveal } from '@pommora/uix/Interactions/hoverReveal'
 import { useEscape } from '@pommora/uix/Interactions/dismissalStack'
 import { useContentHost } from '../contentHost'
+import { RenamableName } from '../RenamableTitle'
+import type { RenameKind } from '../../Nexus/mutateRequest'
 import { overScrollLabel } from '@pommora/uix/Interactions/OverScroll'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { AssetImage } from '../../Assets/AssetImage'
@@ -26,11 +27,11 @@ export interface TitleSearch {
 
 interface Props {
   title: string
+  path: string
+  kind: RenameKind
   icon?: string
   photo?: string | null
   iconRef?: RefObject<Element | null>
-  // biome-ignore lint/suspicious/noConfusingVoidType: the union is deliberate: a caller may hand back nothing or a promise, and `undefined` in place of `void` breaks assignability for the sync handlers.
-  onRename: (newName: string) => void | Promise<boolean | void>
   requestMenu: () => Promise<TitleMenuAction | 'search' | null>
   onIconClick: () => void
   onToggleIcon?: () => void
@@ -44,10 +45,11 @@ interface Props {
 
 export function DetailTitleHeader({
   title,
+  path,
+  kind,
   icon,
   photo,
   iconRef,
-  onRename,
   requestMenu,
   onIconClick,
   onToggleIcon,
@@ -115,17 +117,12 @@ export function DetailTitleHeader({
   }
 
   const label = (
-    <RenamableLabel
-      renames="title"
-      editing={editing}
-      value={title}
+    <RenamableName
+      title={title}
+      kind={kind}
+      rename={{ path, editing, onBegin: beginRename, onEnd: () => setEditing(false) }}
       className={cx(base, 'detail-title-input')}
-      onBegin={beginRename}
-      onCommit={(next) => {
-        setEditing(false)
-        return onRename(next)
-      }}
-      onCancel={() => setEditing(false)}
+      renames="title"
     >
       {(shown) => (
         // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: the title is a right-click affordance and a pointer door to its search — the keyboard reaches the search through the Search command
@@ -137,7 +134,7 @@ export function DetailTitleHeader({
           {shown}
         </span>
       )}
-    </RenamableLabel>
+    </RenamableName>
   )
 
   const glyphClass = cx(

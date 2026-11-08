@@ -9,14 +9,14 @@ import {
 } from '@pommora/uix/Interactions/drag'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { isWindowTarget, type SelectTarget } from './navRef'
-import type { PageNameRename } from '../Interface/RenamableTitle'
+import type { NameRename } from '../Interface/RenamableTitle'
 
 export const TAB_FAMILY: Family<SelectTarget> = { name: 'tabs' }
 
 export interface TabRename {
   begin: () => void
   /** A page tab's label, the active one's unless `tabId` names another; undefined for any tab that isn't a page. */
-  pageLabel: (target: { kind: string; path?: string }, tabId?: string) => PageNameRename | undefined
+  pageLabel: (target: { kind: string; path?: string }, tabId?: string) => NameRename | undefined
 }
 
 /** Only the active tab renames, in its own label; `divert` offers the rename to another surface first and reports whether one took it. */

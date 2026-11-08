@@ -164,12 +164,11 @@ function HeadedBand({
               ? (e) => {
                   e.preventDefault()
                   e.stopPropagation()
-                  void showEntityMenu({
-                    kind: 'set',
-                    path: set.set.path,
-                    title: set.set.title,
-                    host: 'detail',
-                  })
+                  void showEntityMenu(
+                    { kind: 'set', path: set.set.path, title: set.set.title, host: 'band' },
+                    null,
+                    () => bands.add(set.key),
+                  )
                 }
               : undefined
           }
@@ -245,7 +244,7 @@ export function BandGlyph({
             title={node.set.title}
             className={cx(base, 'band-title-input')}
             renames="title"
-            host="detail"
+            host="band"
             doubleClick={false}
           />
         ) : (

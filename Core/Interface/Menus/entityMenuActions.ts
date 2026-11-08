@@ -74,6 +74,7 @@ async function readTarget(
 export async function showEntityMenu(
   target: EntityMenuTarget,
   trigger: HTMLElement | null = null,
+  createPage?: () => void,
 ): Promise<void> {
   const values = trigger && target.id ? await readTarget(target, trigger) : null
   const s = useSession.getState()
@@ -100,7 +101,7 @@ export async function showEntityMenu(
   }
   const action = await popMenu(entityMenuItems(shown, creators))
   if (action === null || (values && runMetadataAction(action, values))) return
-  runEntityAction(shown, creators, action, trigger)
+  runEntityAction(shown, creators, action, trigger, createPage)
 }
 
 function runEntityAction(
@@ -108,6 +109,7 @@ function runEntityAction(
   creators: Creator[],
   action: EntityMenuAction,
   trigger: HTMLElement | null,
+  createPage: (() => void) | undefined,
 ): void {
   const s = useSession.getState()
   const { path, id, kind } = target
@@ -157,7 +159,8 @@ function runEntityAction(
       return
     default: {
       const req = createdRequest(creators, action)
-      if (req) void createNamed(req, target.host)
+      if (req?.op === 'createPage' && createPage) createPage()
+      else if (req) void createNamed(req, target.host)
     }
   }
 }

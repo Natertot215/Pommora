@@ -50,13 +50,11 @@ mountEachTest((h, r) => {
   root = r
 })
 let mutateSpy: ReturnType<typeof vi.fn>
-let renameSpy: ReturnType<typeof vi.fn>
 
 beforeEach(() => {
   mutateSpy = vi.fn(async (req: { op: string; id?: string }) =>
     req.op === 'createPage' ? { created: { path: 'Col/Untitled.md' } } : {},
   )
-  renameSpy = vi.fn()
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
     'view:loadValues': async () => VALUES,
     'views:save': async () => ({ ok: true, value: { id: 'view_1' } }),
@@ -68,7 +66,6 @@ beforeEach(() => {
     renamingPath: null,
     mutate: mutateSpy as never,
     select: vi.fn(async () => {}) as never,
-    beginRename: renameSpy as never,
   })
 })
 
@@ -106,7 +103,14 @@ describe('the cards ghost — dwell, create, and exit', () => {
     expect(ghost()).toBeTruthy()
   })
 
-  it('clicking the ghost creates a page below its anchor and opens the rename', async () => {
+  it('clicking the ghost creates a page below its anchor and opens its name field there, empty', async () => {
+    let reply!: (outcome: unknown) => void
+    mutateSpy.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          reply = resolve
+        }),
+    )
     await dwellOn('p1')
     await act(async () => {
       ghost()?.click()
@@ -119,7 +123,13 @@ describe('the cards ghost — dwell, create, and exit', () => {
         order: ['p1', id, 'p2'],
       }),
     )
-    expect(renameSpy).toHaveBeenCalledWith('Col/Untitled.md', true, 'detail')
+    const born = source()
+    born.pages.splice(1, 0, { kind: 'page', id, title: 'Untitled', path: 'Col/Untitled.md' })
+    await renderView(root, born)
+    expect(card(id).querySelector<HTMLInputElement>('input')?.value).toBe('')
+    await act(async () => {
+      reply({ created: { path: 'Col/Untitled.md' } })
+    })
   })
 
   it('the ghost holds its seat through the flight and retires in the commit its card appears', async () => {

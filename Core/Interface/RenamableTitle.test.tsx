@@ -9,7 +9,7 @@ import { useSession } from '../Session/store'
 
 const PATH = 'Col/Page.md'
 
-function Fields({ sidebar = true, detail = true }: { sidebar?: boolean; detail?: boolean }) {
+function Fields({ sidebar = true, band = true }: { sidebar?: boolean; band?: boolean }) {
   return (
     <>
       {sidebar && (
@@ -17,9 +17,9 @@ function Fields({ sidebar = true, detail = true }: { sidebar?: boolean; detail?:
           <RenamableTitle path={PATH} kind="page" title="Page" className="t" host="sidebar" />
         </span>
       )}
-      {detail && (
-        <span data-host="detail">
-          <RenamableTitle path={PATH} kind="page" title="Page" className="t" host="detail" />
+      {band && (
+        <span data-host="band">
+          <RenamableTitle path={PATH} kind="page" title="Page" className="t" host="band" />
         </span>
       )}
     </>
@@ -52,11 +52,11 @@ const flushMicrotasks = async (): Promise<void> => {
 }
 
 describe('the rename owner fence', () => {
-  it('mounts exactly one field for two hosts, the detail rank winning', async () => {
+  it('mounts exactly one field for two hosts, the band rank winning', async () => {
     await act(async () => root.render(<Fields />))
     await act(async () => useSession.getState().beginRename(PATH))
     expect(inputs()).toHaveLength(1)
-    expect(inputHost()).toBe('detail')
+    expect(inputHost()).toBe('band')
   })
 
   it('a declared host outranks the rank order', async () => {
@@ -67,7 +67,7 @@ describe('the rename owner fence', () => {
   })
 
   it('a lone sidebar claimant wins by default', async () => {
-    await act(async () => root.render(<Fields detail={false} />))
+    await act(async () => root.render(<Fields band={false} />))
     await act(async () => useSession.getState().beginRename(PATH))
     expect(inputs()).toHaveLength(1)
     expect(inputHost()).toBe('sidebar')
@@ -99,8 +99,8 @@ describe('the rename owner fence', () => {
   it('the winner unmounting hands nothing to a lower rank — the rename abandons', async () => {
     await act(async () => root.render(<Fields />))
     await act(async () => useSession.getState().beginRename(PATH))
-    expect(inputHost()).toBe('detail')
-    await act(async () => root.render(<Fields detail={false} />))
+    expect(inputHost()).toBe('band')
+    await act(async () => root.render(<Fields band={false} />))
     await flushMicrotasks()
     expect(useSession.getState().renamingPath).toBeNull()
     expect(inputs()).toHaveLength(0)
@@ -131,7 +131,7 @@ describe('the rename owner fence', () => {
   it('a claim inside the beat keeps the session alive', async () => {
     vi.useFakeTimers()
     try {
-      await act(async () => root.render(<Fields detail={false} />))
+      await act(async () => root.render(<Fields band={false} />))
       await act(async () => useSession.getState().beginRename(PATH))
       await act(async () => {
         vi.advanceTimersByTime(2100)
@@ -147,12 +147,12 @@ describe('the rename owner fence', () => {
     const Twins = ({ first = true }: { first?: boolean }): React.JSX.Element => (
       <>
         {first && (
-          <span data-host="detail">
-            <RenamableTitle path={PATH} kind="page" title="Page" className="t" host="detail" />
+          <span data-host="band">
+            <RenamableTitle path={PATH} kind="page" title="Page" className="t" host="band" />
           </span>
         )}
-        <span data-host="detail">
-          <RenamableTitle path={PATH} kind="page" title="Page" className="t" host="detail" />
+        <span data-host="band">
+          <RenamableTitle path={PATH} kind="page" title="Page" className="t" host="band" />
         </span>
       </>
     )

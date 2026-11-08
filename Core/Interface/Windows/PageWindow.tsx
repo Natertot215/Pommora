@@ -11,7 +11,8 @@ import { NavTrail } from '@pommora/uix/Elements/NavTrail'
 import { resolveIndexOf, trailOf } from '../../Nexus/treeIndex'
 import { useFold, windowTargetOf, useSession } from '../../Session/store'
 import { WindowTabStrip } from './WindowTabStrip'
-import { RenamablePageName } from '../RenamableTitle'
+import { RenamableName } from '../RenamableTitle'
+import { titleInput } from '@pommora/uix/Menus/menu-row.css'
 import { useWindowTabBody } from './WindowTabBody'
 import { useWindowGeometry } from './useWindowGeometry'
 import { useWindowTabSlide } from './useWindowTabSlide'
@@ -60,7 +61,13 @@ function PageWindowBody({
             ...leaf,
             label: (
               <span className="page-window-rename">
-                <RenamablePageName title={leaf.title} rename={leafRename} />
+                <RenamableName
+                  title={leaf.title}
+                  kind="page"
+                  rename={leafRename}
+                  className={titleInput}
+                  autoSize
+                />
               </span>
             ),
           },

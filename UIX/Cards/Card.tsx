@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { cx } from '../Utilities/cx'
 import { text } from '../Theme/typography.css'
-import { OverScroll } from '../Interactions/OverScroll'
+import { overScrollLabel } from '../Interactions/OverScroll'
 import type { DragItem } from '../Interactions/drag'
 import { NavTrail, type TrailSegment } from '../Elements/NavTrail'
 import './cards.css'
@@ -69,8 +69,13 @@ export function CardTitle({
 }: React.HTMLAttributes<HTMLSpanElement> & {
   mode?: 'scroll' | 'wrap' | 'static'
 }): React.JSX.Element {
-  const cls = cx('card-title', mode === 'wrap' && 'is-wrap', text.body.emphasized, className)
-  if (mode === 'scroll') return <OverScroll className={cls}>{children}</OverScroll>
+  const cls = cx(
+    'card-title',
+    mode === 'scroll' && overScrollLabel,
+    mode === 'wrap' && 'is-wrap',
+    text.body.emphasized,
+    className,
+  )
   return (
     <span {...rest} className={cls}>
       {children}

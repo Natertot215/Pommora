@@ -11,7 +11,8 @@ import type { TabTarget, WindowTabTarget } from './navRef'
 import { EntityIcon } from '../Assets/EntityIcon'
 import { hoverGlance, leaveGlance } from '../Interface/Glance/glanceAction'
 import type { ResolvedNav } from './navResolve'
-import { type PageNameRename, RenamablePageName } from '../Interface/RenamableTitle'
+import { type NameRename, RenamableName } from '../Interface/RenamableTitle'
+import { titleInput } from '@pommora/uix/Menus/menu-row.css'
 
 // A page tab is a location: it raises its preview on Shift, never on plain hover. Non-page tabs carry no id/path, so they raise nothing.
 export const glanceHoverProps = (target: TabTarget | WindowTabTarget | undefined) => ({
@@ -38,7 +39,7 @@ export interface TabItemProps {
   iconOnly?: boolean
   slide?: { seq: number; className: string }
   glance?: TabTarget | WindowTabTarget
-  rename?: PageNameRename
+  rename?: NameRename
   onActivate?: () => void
   onClose?: () => void
   onMenu?: (e: React.MouseEvent) => void
@@ -103,8 +104,11 @@ export function TabItem({
         {!iconOnly && !pinned && (
           <span className={cx(overScrollEllipsis, 'tab-label', slide?.className)}>
             {rename ? (
-              <RenamablePageName
+              <RenamableName
                 title={label}
+                kind="page"
+                className={titleInput}
+                autoSize
                 rename={{
                   ...rename,
                   onBegin: rename.onBegin && (() => pressedActive.current && rename.onBegin?.()),
