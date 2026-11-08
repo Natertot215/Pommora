@@ -1,4 +1,4 @@
-import { type ResolvedGroup, type ViewRow, UNGROUPED, isEmptyBand } from '../viewRow'
+import { type ResolvedGroup, type ViewRow, UNGROUPED } from '../viewRow'
 import {
   bandKey,
   type DateGranularity,
@@ -6,7 +6,6 @@ import {
   type EmptyPlacement,
   type GroupConfig,
   granularityOf,
-  isBucketHidden,
   LOCATION_SORT,
   type SavedView,
   type StructuralOrderMode,
@@ -73,23 +72,15 @@ export function pruneHiddenSets(tree: SetTreeNode[], hidden: ReadonlySet<string>
   )
 }
 
-export function dropHiddenGroups(
-  groups: ResolvedGroup[],
-  hidden: ReadonlySet<string>,
-  plan: GroupPlan,
-): ResolvedGroup[] {
-  const top = plan.kind === 'property' ? plan.group.config.property_id : undefined
-  const sub = plan.kind === 'sets' ? plan.sub?.config.property_id : undefined
-  return groups.flatMap((group) => {
-    if (group.kind === 'bucket' && top && isBucketHidden(hidden, 'group', top, group.value))
-      return []
-    const { children: nested, ...band } = group
-    const children = nested?.filter(
-      (c) => c.kind !== 'bucket' || !sub || !isBucketHidden(hidden, 'sub', sub, c.value),
-    )
-    return [children?.length ? { ...band, children } : band]
-  })
-}
+export const orderSetTree = (
+  tree: SetTreeNode[],
+  order: readonly string[] | undefined,
+): SetTreeNode[] =>
+  order?.length
+    ? resolveRowOrder(tree, (node) => node.id, order).map((node) =>
+        node.sets ? { ...node, sets: orderSetTree(node.sets, order) } : node,
+      )
+    : tree
 
 export function formatBucketLabel(
   key: string,
@@ -165,31 +156,30 @@ export function bucketOrder(
   return group.order_mode === 'reversed' ? [...configured].reverse() : configured
 }
 
-function property(
+function bucketBands(
   rows: ViewRow[],
-  { config: group, column }: Grouping<PropertyGroup>,
+  { config, column }: Grouping,
   sorter: Sorter | null,
   placement: EmptyPlacement,
+  scope?: string,
 ): ResolvedGroup[] {
   const { def } = column
-  const granularity = granularityOf(group)
-
-  const byBucket = groupRows(rows, (r) => bucketKey(r, column, granularity))
+  const byBucket = groupRows(rows, (r) => bucketKey(r, column, granularityOf(config)))
   const noValue = byBucket.get(null) ?? []
   byBucket.delete(null)
   const buckets = byBucket as Map<string, ViewRow[]>
 
-  const groups: ResolvedGroup[] = []
   // Only a LIVE option earns an empty band: a stale manual-order entry (a deleted option, an old date bucket snapshotted by a band drag) must never render a ghost band.
   const live = new Set(schemaOptionOrder(def) ?? [])
-  for (const bucket of liveBucketOrder(group, def, buckets.keys())) {
-    const items = buckets.get(bucket) ?? []
-    if (items.length === 0 && !live.has(bucket)) continue
-    const key = bandKey(group.property_id, bucket)
-    groups.push({ key, kind: 'bucket', value: bucket, items: applySort(items, sorter) })
-  }
+  const groups = liveBucketOrder(config, def, buckets.keys()).flatMap((value): ResolvedGroup[] => {
+    const items = buckets.get(value) ?? []
+    if (items.length === 0 && !live.has(value)) return []
+    const key = bandKey(config.property_id, value, scope)
+    return [{ key, kind: 'bucket', value, items: applySort(items, sorter) }]
+  })
   // No "None" band: value-less rows are a flattened, header-less tail placed by the VIEW-level knob — it holds rows, so hide_empty_groups never touches it.
-  return placeTail(groups, noValue, sorter, placement)
+  const tail = scope === undefined ? UNGROUPED : bandKey(config.property_id, UNGROUPED, scope)
+  return placeTail(groups, noValue, sorter, placement, tail)
 }
 
 function structural(
@@ -246,30 +236,15 @@ function locationFlat(
 function structuralSubGrouped(
   rows: ViewRow[],
   setTree: SetTreeNode[],
-  { config: sub, column }: Grouping,
+  grouping: Grouping,
   sorter: Sorter | null,
   placement: EmptyPlacement,
 ): ResolvedGroup[] {
-  const { def } = column
-  const granularity = granularityOf(sub)
   const byParent = groupRows(rows, (r) => r.parentSetId)
   const rootRows = byParent.get(undefined) ?? []
-
   const groups: ResolvedGroup[] = setTree.map((node) => {
     const pages = subtreeIds(node).flatMap((id) => byParent.get(id) ?? [])
-    const byBucket = groupRows(pages, (r) => bucketKey(r, column, granularity))
-    const noValue = byBucket.get(null) ?? []
-    byBucket.delete(null)
-    const buckets = byBucket as Map<string, ViewRow[]>
-
-    let children = bucketOrder(sub, def, new Set(buckets.keys())).flatMap((b): ResolvedGroup[] => {
-      const items = buckets.get(b)
-      if (!items) return []
-      const key = bandKey(sub.property_id, b, node.id)
-      return [{ key, kind: 'bucket', value: b, items: applySort(items, sorter) }]
-    })
-    const tail = bandKey(sub.property_id, UNGROUPED, node.id)
-    children = placeTail(children, noValue, sorter, placement, tail)
+    const children = bucketBands(pages, grouping, sorter, placement, node.id)
     return {
       key: node.id,
       kind: 'set',
@@ -280,23 +255,15 @@ function structuralSubGrouped(
   return placeTail(groups, rootRows, sorter, placement)
 }
 
-/** Compose bucket-first so a set whose sub-buckets all emptied goes with them. */
-export function pruneEmptyBuckets(groups: ResolvedGroup[]): ResolvedGroup[] {
+export function pruneGroups(
+  groups: ResolvedGroup[],
+  drops: (group: ResolvedGroup) => boolean,
+): ResolvedGroup[] {
   return groups.flatMap((group) => {
     const { children: nested, ...band } = group
-    const children = nested ? pruneEmptyBuckets(nested) : undefined
-    if (group.kind === 'bucket' && isEmptyBand({ ...band, children })) return []
-    return [children?.length ? { ...band, children } : band]
-  })
-}
-
-export function pruneEmptyGroups(groups: ResolvedGroup[]): ResolvedGroup[] {
-  return groups.flatMap((group): ResolvedGroup[] => {
-    if (group.kind !== 'set') return [group]
-    const { children: nested, ...band } = group
-    const children = nested ? pruneEmptyGroups(nested) : []
-    if (isEmptyBand({ ...band, children })) return []
-    return [children.length > 0 ? { ...band, children } : band]
+    const children = nested && pruneGroups(nested, drops)
+    const pruned: ResolvedGroup = children?.length ? { ...band, children } : band
+    return drops(pruned) ? [] : [pruned]
   })
 }
 
@@ -397,7 +364,7 @@ export function resolveGroups(
         ? locationFlat(rows, setTree, sorter, placement)
         : flat(rows, sorter)
     case 'property':
-      return property(rows, plan.group, sorter, placement)
+      return bucketBands(rows, plan.group, sorter, placement)
     case 'sets':
       if (!plan.nests) return structuralFlat(rows, setTree, sorter, placement)
       return plan.sub

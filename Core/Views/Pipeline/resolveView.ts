@@ -1,15 +1,12 @@
-// Composes the pure stages: columns (resolver) + filter → group → sort-within-group. VIEW-SOURCE-AGNOSTIC — `view`, `rows`, `schema`, `setTree` are all passed in, so a future context-dashboard embed reuses this verbatim. Never couple the view to its container or read `views[]` here.
-
 import type { PropertyDefinition, ResolvedColumn } from '../../Properties/properties'
 import type { ResolvedGroup, ViewRow } from '../viewRow'
-import { type SavedView, viewOption } from '../views'
+import { isBucketHidden, type SavedView, viewOption } from '../views'
 import { applyFilter } from './filter'
-import { orderGroups } from './bandOrder'
 import {
-  dropHiddenGroups,
+  bucketGroupingOf,
   type GroupPlan,
-  pruneEmptyBuckets,
-  pruneEmptyGroups,
+  orderSetTree,
+  pruneGroups,
   pruneHiddenSets,
   resolveGroups,
   type SetTreeNode,
@@ -18,6 +15,9 @@ import {
 import { makeSorter } from './sort'
 import { resolveColumns } from './columns'
 import type { IdentityMaps } from '../../Contexts/contextIdentity'
+
+const holdsRows = (group: ResolvedGroup): boolean =>
+  group.items.length > 0 || (group.children?.some(holdsRows) ?? false)
 
 export function resolveView(input: {
   rows: ViewRow[]
@@ -41,16 +41,25 @@ export function resolveView(input: {
   )
   const sorter = makeSorter(view.sort, schema, identity.contextIds, manualOrder)
   const hidden = new Set(view.hidden_groups ?? [])
-  let resolved = resolveGroups(
+  let tree = orderSetTree(setTree, viewSetOrder(plan, view))
+  if (plan.kind === 'sets' && hidden.size > 0) tree = pruneHiddenSets(tree, hidden)
+  const groups = resolveGroups(
     filtered,
     plan,
-    plan.kind === 'sets' && hidden.size > 0 ? pruneHiddenSets(setTree, hidden) : setTree,
+    tree,
     sorter,
     viewOption(view, 'ungrouped_placement'),
   )
-  if (hidden.size > 0) resolved = dropHiddenGroups(resolved, hidden, plan)
-  if (viewOption(view, 'hide_empty_groups'))
-    resolved = pruneEmptyGroups(pruneEmptyBuckets(resolved))
-  else if (filtered.length !== rows.length) resolved = pruneEmptyGroups(resolved)
-  return { columns, groups: orderGroups(resolved, viewSetOrder(plan, view)) }
+
+  const hideEmpty = viewOption(view, 'hide_empty_groups')
+  const filtering = filtered.length !== rows.length
+  if (hidden.size === 0 && !hideEmpty && !filtering) return { columns, groups }
+  const grouping = bucketGroupingOf(plan)
+  const level = plan.kind === 'property' ? 'group' : 'sub'
+  const drops = (group: ResolvedGroup): boolean =>
+    (group.kind === 'bucket' &&
+      grouping !== undefined &&
+      isBucketHidden(hidden, level, grouping.config.property_id, group.value)) ||
+    ((hideEmpty ? group.kind !== 'tail' : filtering && group.kind === 'set') && !holdsRows(group))
+  return { columns, groups: pruneGroups(groups, drops) }
 }

@@ -609,8 +609,12 @@ describe('resolveView — hidden groups + Hide Empty Groups', () => {
       groups
         .find((g) => g.key === 'sA')
         ?.children?.map((c) => (c.kind === 'bucket' ? c.value : c.key)),
-    ).toEqual(['opt_Alpha'])
-    expect(groups.find((g) => g.key === 'sB')?.children).toBeUndefined()
+    ).toEqual(['opt_Alpha', 'opt_Gamma'])
+    expect(
+      groups
+        .find((g) => g.key === 'sB')
+        ?.children?.map((c) => (c.kind === 'bucket' ? c.value : c.key)),
+    ).toEqual(['opt_Alpha', 'opt_Gamma'])
   })
 
   it('an encoded date bucket drops by its property and bucket', () => {

@@ -379,7 +379,7 @@ describe('sub-group bucket band drag', () => {
         },
       }),
     )
-    await dragBand(2, 115)
+    await dragBand(3, 187)
     expect(host.querySelector('.drop-line')).toBeNull()
     await drop()
     expect(saveSpy).not.toHaveBeenCalled()
@@ -391,7 +391,7 @@ describe('sub-group bucket band drag', () => {
 
   it('a cross-set bucket drag (a before-slot in another Set) still writes the global sub-order — no moveSet', async () => {
     await mountTable(subGroupSource())
-    await dragBand(2, 98)
+    await dragBand(2, 122)
     await drop()
     expect(saveSpy).toHaveBeenCalledOnce()
     expect(lastSavedView().sub_group).toEqual({
@@ -404,7 +404,7 @@ describe('sub-group bucket band drag', () => {
 
   it('a cross-set slot before the SAME bucket declines — no append-to-end misfire', async () => {
     await mountTable(subGroupSource())
-    await dragBand(1, 98)
+    await dragBand(1, 122)
     await drop()
     expect(saveSpy).not.toHaveBeenCalled()
     expect(mutateSpy).not.toHaveBeenCalled()
@@ -414,7 +414,7 @@ describe('sub-group bucket band drag', () => {
     await mountTable(
       subGroupSource({ sub_group: { property_id: 'prop_status', order_mode: 'configured' } }),
     )
-    await dragBand(2, 26)
+    await dragBand(3, 50)
     await drop()
     expect(saveSpy).toHaveBeenCalledOnce()
     expect(lastSavedView().sub_group).toEqual({

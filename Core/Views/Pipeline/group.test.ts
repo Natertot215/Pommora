@@ -17,13 +17,15 @@ import {
   formatBucketLabel,
   groupPlan,
   pageOrderOf,
-  pruneEmptyBuckets,
+  orderSetTree,
   resolveGroups as resolveGroupsOf,
   type SetTreeNode,
   setOrderOf,
 } from './group'
 import { pageValues, propsAtRoot } from '../../Testing/pageValues'
 import { propertyColumn } from './columns'
+import { resolveView } from './resolveView'
+import { identityFor } from '../../Testing/testTree'
 
 const page = (id: string): PageNode => ({ kind: 'page', id, title: id, path: `${id}.md` })
 const set = (id: string, pages: PageNode[] = [], sets: SetNode[] = []): SetNode => ({
@@ -345,7 +347,7 @@ describe('property grouping — status manual order', () => {
     ])
   })
 
-  it('resolution keeps live empty buckets — dropping them is the orchestrator’s (pruneEmptyBuckets); the no-value tail stays', () => {
+  it('resolution keeps live empty buckets — dropping them is Hide Empty Groups’ prune; the no-value tail stays', () => {
     const { rows, setTree } = flattenContainer(col, values, {})
     const groups = resolveGroups(rows, base, statusSchema, setTree, null, 'bottom')
     expect(keys(groups)).toEqual([
@@ -355,7 +357,18 @@ describe('property grouping — status manual order', () => {
       'prop_status/opt_done',
       '_ungrouped',
     ])
-    expect(keys(pruneEmptyBuckets(groups))).toEqual([
+    const view = {
+      id: 'v',
+      name: 'V',
+      type: 'table',
+      property_order: [],
+      hidden_properties: [],
+      group: base,
+      hide_empty_groups: true,
+    } as SavedView
+    const plan = groupPlan(view, statusSchema, true)
+    const input = { rows, setTree, view, schema: statusSchema, plan, identity: identityFor({}) }
+    expect(keys(resolveView(input).groups)).toEqual([
       'prop_status/opt_in_progress',
       'prop_status/opt_not_started',
       'prop_status/opt_done',
@@ -417,6 +430,29 @@ describe('sub-grouping (structural + view-level sub_group)', () => {
     [],
   )
 
+  it('an empty option band shows under a Set while Hide Empty Groups is off, and leaves once it is on', () => {
+    const { rows, setTree } = flattenContainer(col, values, {})
+    const viewOf = (hide: boolean): SavedView =>
+      ({
+        id: 'v',
+        name: 'V',
+        type: 'table',
+        property_order: [],
+        hidden_properties: [],
+        group: structural,
+        sub_group: sub,
+        hide_empty_groups: hide,
+      }) as SavedView
+    const bucketsUnderB = (hide: boolean): string[] => {
+      const view = viewOf(hide)
+      const plan = groupPlan(view, statusSchema, true)
+      const input = { rows, setTree, view, schema: statusSchema, plan, identity: identityFor({}) }
+      return keys(resolveView(input).groups.find((g) => g.key === 'setB')?.children ?? [])
+    }
+    expect(bucketsUnderB(false)).toContain(bandKey('prop_status', 'opt_in_progress', 'setB'))
+    expect(bucketsUnderB(true)).toEqual([bandKey('prop_status', 'opt_done', 'setB')])
+  })
+
   it('sets stay top bands; sub-set pages roll up and bucket by the property (no sub-set band)', () => {
     const { rows, setTree } = flattenContainer(col, values, {})
     const groups = resolveGroups(rows, structural, statusSchema, setTree, null, 'bottom', sub)
@@ -429,9 +465,11 @@ describe('sub-grouping (structural + view-level sub_group)', () => {
       })),
     ).toEqual([
       { kind: 'bucket', value: 'opt_not_started' },
+      { kind: 'bucket', value: 'opt_opt_open' },
+      { kind: 'bucket', value: 'opt_in_progress' },
       { kind: 'bucket', value: 'opt_done' },
     ])
-    expect(itemIds(setA.children![1])).toEqual(['p_sub'])
+    expect(itemIds(setA.children![3])).toEqual(['p_sub'])
     expect(groups.some((g) => g.key === 'setA1')).toBe(false)
   })
 
@@ -479,6 +517,8 @@ describe('sub-grouping (structural + view-level sub_group)', () => {
     expect(setA.children!.flatMap((c) => (c.kind === 'bucket' ? [c.value] : []))).toEqual([
       'opt_done',
       'opt_not_started',
+      'opt_in_progress',
+      'opt_opt_open',
     ])
   })
 
@@ -491,7 +531,8 @@ describe('sub-grouping (structural + view-level sub_group)', () => {
     const byId = (r: ViewRow[]): ViewRow[] => [...r].sort((x, y) => (x.id < y.id ? -1 : 1))
     const { rows, setTree } = flattenContainer(col3, values3, {})
     const groups = resolveGroups(rows, structural, statusSchema, setTree, byId, 'bottom', sub)
-    expect(itemIds(groups[0].children![0])).toEqual(['p_a2', 'p_z'])
+    const done = groups[0].children!.find((c) => c.kind === 'bucket' && c.value === 'opt_done')!
+    expect(itemIds(done)).toEqual(['p_a2', 'p_z'])
   })
 
   it('an unmappable sub-group property falls back to plain structural', () => {
@@ -811,6 +852,58 @@ describe('setOrderOf and pageOrderOf', () => {
     expect(pageOrderOf(plan, view, 1)).toBe('custom')
     const prop = { group: property } as SavedView
     expect(pageOrderOf(planOf(prop), prop, 0)).toBe('custom')
+  })
+})
+
+describe('orderSetTree', () => {
+  const node = (id: string, sets?: SetTreeNode[]): SetTreeNode => ({
+    id,
+    title: id,
+    ...(sets ? { sets } : {}),
+  })
+  const ids = (tree: SetTreeNode[]): string[] => tree.map((n) => n.id)
+
+  it('reorders top-level Sets by the flat array', () => {
+    const tree = [node('A'), node('B'), node('C')]
+    expect(ids(orderSetTree(tree, ['C', 'A', 'B']))).toEqual(['C', 'A', 'B'])
+  })
+
+  it('reorders nested Sets at every level from the same flat array', () => {
+    const out = orderSetTree(
+      [node('A', [node('A1'), node('A2')]), node('B')],
+      ['B', 'A', 'A2', 'A1'],
+    )
+    expect(ids(out)).toEqual(['B', 'A'])
+    expect(ids(out[1].sets ?? [])).toEqual(['A2', 'A1'])
+  })
+
+  it('keeps unlisted Sets in the Nexus order after the listed ones', () => {
+    const tree = [node('A'), node('B'), node('C'), node('D')]
+    expect(ids(orderSetTree(tree, ['D', 'B']))).toEqual(['D', 'B', 'A', 'C'])
+  })
+
+  it('a custom Set order orders the pages gathered from nested Sets inside one band when nothing sorts them', () => {
+    const top = set('top', [], [set('n1', [page('p1')]), set('n2', [page('p2')])])
+    const { rows, setTree } = flattenContainer(collection([top]), {}, {})
+    const view = {
+      id: 'v',
+      name: 'V',
+      type: 'cards',
+      property_order: [],
+      hidden_properties: [],
+      group: { kind: 'structural' },
+      group_order: ['n2', 'n1'],
+    } as SavedView
+    const plan = groupPlan(view, [], false)
+    const { groups } = resolveView({
+      rows,
+      setTree,
+      view,
+      schema: [],
+      plan,
+      identity: identityFor({}),
+    })
+    expect(itemIds(groups[0])).toEqual(['p2', 'p1'])
   })
 })
 
