@@ -1,6 +1,6 @@
 import { ok, type Result } from '../Contract/result'
 import {
-  type EntryPatch,
+  type EntryOp,
   knownTile,
   type Landed,
   patchEntries,
@@ -312,11 +312,7 @@ export function landTileWrite<T>(
 }
 
 // The patch paints at once and merges into the one entry on disk, so no copy of the list is ever sent back over it.
-export function patchTileEntry(
-  host: TileHostRef,
-  id: string,
-  patchOf: (raw: Record<string, unknown>) => EntryPatch | null,
-): void {
+export function patchTileEntry(host: TileHostRef, id: string, patchOf: EntryOp): void {
   const doc = at(host)
   if (!doc) return
   const raw = doc.state.tiles.find((b) => knownTile(b)?.id === id)

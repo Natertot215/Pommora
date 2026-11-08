@@ -1,29 +1,22 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ConnPage } from '../../Connections/pageIndex'
-import type { EntryPatch, ViewTileEntry } from '../tiles'
-import { isPlainObject } from '../../Contract/validators'
+import type { EntryOp, EntryPatch, ViewTileEntry } from '../tiles'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
+import { canDeleteView, type SavedView, type ViewPatch } from '../../Views/views'
 import {
-  applyViewPatch,
-  canDeleteView,
-  insertDuplicate,
-  mergeViewEdit,
-  mintDefaultView,
-  mintNewView,
-  mintViewId,
-  ownsViewId,
-  savedView,
-  type SavedView,
-  viewIdsOf,
-  type ViewPatch,
-} from '../../Views/views'
+  addView,
+  deleteView,
+  duplicateView,
+  embeddedViews,
+  moveView,
+  writeView,
+} from '../viewTileEntry'
 import { Icon, LockGlyph } from '@pommora/uix/Symbols'
 import { cellRing, colorNameFor } from '@pommora/uix/Theme/ramp'
 import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
 import { FootingCreate, MenuFooting, MenuScrollFrame } from '@pommora/uix/Menus/MenuRows'
 import { titleInput as rowInput, rowDisabled, spacer } from '@pommora/uix/Menus/menu-row.css'
 import { SortableZone, useDragItem } from '@pommora/uix/Interactions/drag'
-import { moveBefore } from '@pommora/uix/Utilities/moveItem'
 import { REVEAL_DWELL_MS, useHoverReveal } from '@pommora/uix/Interactions/hoverReveal'
 import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
 import { Scrollbar } from '@pommora/uix/Interactions/Scrollbar'
@@ -48,6 +41,7 @@ import { cx } from '@pommora/uix/Utilities/cx'
 import { labelSlot, labelSlotHidden, labelText } from '@pommora/uix/Buttons/button-base.css'
 import { titleActionFadeHidden } from '@pommora/uix/Animations/animations.css'
 import { useSettleFallback } from '@pommora/uix/Animations/useExitPresence'
+import { useEntrance } from '@pommora/uix/Animations/useEntrance'
 import {
   VIEW_PILL_ICON,
   viewPill,
@@ -63,56 +57,7 @@ import * as s from './view-tile.css'
 import { popMenu } from '../../Actions/menuActions'
 import { shownLabel } from '../../Actions/toggleLabels'
 import { embedAreaMenuItems, embedTitleMenuItems, runViewRowAction } from '../../Actions/viewMenus'
-import { useLatest, useStableApi } from '@pommora/uix/Utilities/stableApi'
-
-function coerceEmbeddedView(raw: unknown, id: string): SavedView {
-  const r = savedView.safeParse(raw ?? {})
-  return { ...(r.success ? r.data : mintDefaultView()), id }
-}
-
-const configIdOf = (el: unknown): unknown =>
-  (el as { config?: { id?: unknown } } | null)?.config?.id
-
-export const embedViewIds = (els: readonly unknown[], entryId: string): string[] =>
-  viewIdsOf(els.map(configIdOf), (n) => `embed:${entryId}:${n}`)
-
-function usePillPresence(views: SavedView[]): {
-  entering: Set<string>
-  exiting: string | null
-  beginExit: (id: string) => void
-  onAnimEnd: (id: string) => void
-  deleteView: { current: (id: string) => void }
-} {
-  const [exiting, setExiting] = useState<string | null>(null)
-  const deleteView = useRef((_id: string) => {})
-  const [entering, setEntering] = useState<Set<string>>(() => new Set())
-  const prevIdsRef = useRef<Set<string> | null>(null)
-  const ids = views.map((v) => v.id)
-  const idKey = ids.join(',')
-  const idsRef = useLatest(ids)
-
-  useEffect(() => {
-    const prev = prevIdsRef.current
-    const cur = new Set(idsRef.current)
-    if (prev) {
-      const added = [...cur].filter((id) => !prev.has(id))
-      if (added.length) setEntering((s0) => new Set([...s0, ...added]))
-    }
-    prevIdsRef.current = cur
-  }, [idKey])
-
-  const exited = useSettleFallback(exiting !== null, 'menu', () => {
-    if (exiting) deleteView.current(exiting)
-    setExiting(null)
-  })
-
-  const onAnimEnd = (id: string): void => {
-    if (exiting === id) exited()
-    else if (entering.has(id))
-      setEntering((s0) => (s0.has(id) ? new Set([...s0].filter((x) => x !== id)) : s0))
-  }
-  return { entering, exiting, beginExit: setExiting, onAnimEnd, deleteView }
-}
+import { useStableApi } from '@pommora/uix/Utilities/stableApi'
 
 // KNOB — how long the strip's lock stays after locking before it fades
 const STRIP_LOCK_LINGER_MS = 2000
@@ -151,16 +96,6 @@ function inPeekAnchor(anchor: PeekAnchor, target: EventTarget): boolean {
   return false
 }
 
-const rawViews = (raw: Record<string, unknown>): unknown[] =>
-  Array.isArray(raw.views) ? [...(raw.views as unknown[])] : []
-
-// Read as the entry's parse reads it: a non-negative integer, else the first view, clamped to the views held.
-const rawActive = (raw: Record<string, unknown>, count: number): number =>
-  Math.min(
-    Number.isInteger(raw.active) && (raw.active as number) >= 0 ? (raw.active as number) : 0,
-    count - 1,
-  )
-
 const strokeStyle = (v: SavedView): React.CSSProperties | undefined => {
   const key = colorNameFor(v.color)
   if (key === 'default') return undefined
@@ -189,7 +124,7 @@ function ViewPill({
   label: React.ReactNode
   onSwitch: () => void
   onMenu: (e: React.MouseEvent<HTMLElement>) => void
-  onAnimEnd: () => void
+  onAnimEnd?: () => void
 }): React.JSX.Element {
   const open = renaming ? undefined : onSwitch
   const { setNodeRef, style, handle } = useDragItem(view.id, { open })
@@ -255,16 +190,14 @@ export function ViewTile({
     patchEntry({ display_icon: icon }),
   )
 
-  const views = useMemo(() => {
-    if (!source) return []
-    const ids = embedViewIds(entry.views, entry.id)
-    return entry.views.map((v, i) => coerceEmbeddedView(v.config, ids[i]))
-  }, [source, entry.views, entry.id])
+  const views = useMemo(
+    () => (source ? embeddedViews(entry.views, entry.id) : []),
+    [source, entry.views, entry.id],
+  )
   const view = views[index]
   const viewById = (id: string | null | undefined): SavedView | undefined =>
     views.find((v) => v.id === id)
-  const viewAt = (arr: unknown[], id: string): number => embedViewIds(arr, entry.id).indexOf(id)
-  const presence = usePillPresence(views)
+  const entering = useEntrance(views, (v) => v.id)
   const viewsShown = entry.view_band !== false
   const [menuOpen, setMenuOpen] = useState(false)
   const anchoredOpen =
@@ -314,25 +247,28 @@ export function ViewTile({
     mutateEntry(entry.id, () => patch)
   }
   const setLocked = (v: boolean): void => patchEntry({ locked: v ? true : null })
-  const writeConfig = (id: string, patch: ViewPatch): void => {
-    mutateEntry(entry.id, (raw) => {
-      const arr = rawViews(raw)
-      const i = viewAt(arr, id)
-      const el = arr[i]
-      if (!isPlainObject(el)) return null
-      // A view answering to a derived id takes a minted one when first written, so only minted ids reach the file.
-      const own = ownsViewId(configIdOf(el), id)
-      const stored = coerceEmbeddedView(el.config, own ? id : mintViewId())
-      arr[i] = { ...el, config: mergeViewEdit(el.config, applyViewPatch(stored, patch)) }
-      return { views: arr }
-    })
+  const editViews = (op: EntryOp): void => {
+    if (!locked) mutateEntry(entry.id, op)
   }
-  const persistConfig = (id: string, patch: ViewPatch): void => {
-    if (!locked) writeConfig(id, patch)
+  const saveView = (id: string, patch: ViewPatch): void => editViews(writeView(entry.id, id, patch))
+  const removeView = (v: SavedView): void => {
+    let undo: EntryOp | undefined
+    editViews(
+      deleteView(entry.id, v.id, (restore) => {
+        undo = restore
+      }),
+    )
+    const restore = undo
+    if (restore) notifyDeleted(v.name, () => mutateEntry(entry.id, restore))
   }
+  const [exiting, setExiting] = useState<SavedView | null>(null)
+  const exited = useSettleFallback(exiting !== null, 'menu', () => {
+    if (exiting) removeView(exiting)
+    setExiting(null)
+  })
   const scopeApi = useStableApi({
     persist: (patch: ViewPatch) => {
-      if (view) writeConfig(view.id, patch)
+      if (view) mutateEntry(entry.id, writeView(entry.id, view.id, patch))
     },
     setLocked,
   })
@@ -349,71 +285,6 @@ export function ViewTile({
   const labeled = (entry.view_button ?? 'labeled') === 'labeled'
   const dropdown = entry.view_style === 'dropdown'
 
-  const addView = (): void => {
-    if (locked) return
-    mutateEntry(entry.id, (raw) => {
-      const arr = rawViews(raw)
-      arr.push({
-        source_id: source.id,
-        config: mintNewView('Untitled'),
-      })
-      return { views: arr, active: arr.length - 1 }
-    })
-  }
-  const duplicate = (id: string): void => {
-    const src = viewById(id)
-    if (locked || !src) return
-    const names = views.map((v) => v.name)
-    mutateEntry(entry.id, (raw) => {
-      const arr = rawViews(raw)
-      const i = viewAt(arr, id)
-      const el = arr[i]
-      if (!isPlainObject(el)) return null
-      const stored = isPlainObject(el.config) ? el.config : src
-      const at = insertDuplicate(arr, i, names, (fresh) => ({
-        ...el,
-        config: { ...stored, ...fresh },
-      }))
-      return { views: arr, active: at }
-    })
-  }
-  const restoreViewAt = (i: number, el: unknown, wasActive: boolean): void => {
-    mutateEntry(entry.id, (raw) => {
-      const arr = rawViews(raw)
-      const cur = rawActive(raw, arr.length)
-      const at = Math.min(i, arr.length)
-      arr.splice(at, 0, el)
-      return { views: arr, active: wasActive ? at : cur >= at ? cur + 1 : cur }
-    })
-  }
-  const deleteView = (id: string): void => {
-    const name = viewById(id)?.name
-    if (locked || name === undefined) return
-    let undo: (() => void) | undefined
-    mutateEntry(entry.id, (raw) => {
-      const arr = rawViews(raw)
-      const at = viewAt(arr, id)
-      if (at < 0 || !canDeleteView(arr.length)) return null
-      const cur = rawActive(raw, arr.length)
-      const [removed] = arr.splice(at, 1)
-      undo = () => restoreViewAt(at, removed, cur === at)
-      return { views: arr, active: Math.min(cur > at ? cur - 1 : cur, arr.length - 1) }
-    })
-    if (undo) notifyDeleted(name, undo)
-  }
-  presence.deleteView.current = deleteView
-
-  const moveView = (id: string, beforeId: string | null): void => {
-    mutateEntry(entry.id, (raw) => {
-      const arr = rawViews(raw)
-      const indexed = embedViewIds(arr, entry.id).map((v, i) => ({ v, i }))
-      const seq = moveBefore(indexed, (x) => x.v, id, beforeId)
-      if (!seq) return null
-      const cur = rawActive(raw, arr.length)
-      const newActive = seq.findIndex((x) => x.i === cur)
-      return { views: seq.map((x) => arr[x.i]), active: newActive >= 0 ? newActive : 0 }
-    })
-  }
   const commitTitle = (next: string): void => {
     patchEntry({ display_title: !next || next === source.title ? null : next })
   }
@@ -450,13 +321,13 @@ export function ViewTile({
     )
     if (action === 'show-title') patchEntry({ title: null })
     else if (action === 'toggle-views') toggleViews()
-    else if (action === 'new-view') addView()
+    else if (action === 'new-view') editViews(addView(source.id))
     else if (action === 'style-dropdown') patchEntry({ view_style: 'dropdown' })
     else if (action === 'style-toolbar') patchEntry({ view_style: null })
   }
   const renameOf = (v: SavedView): Omit<NameRename, 'path'> => ({
     editing: renaming === v.id,
-    onBegin: () => setRenaming(v.id),
+    onBegin: locked ? undefined : () => setRenaming(v.id),
     onEnd: () => setRenaming(null),
   })
   const rowMenu = (v: SavedView, e: React.MouseEvent<HTMLElement>, animate: boolean): void => {
@@ -467,8 +338,8 @@ export function ViewTile({
     const ctx = { deletable: canDeleteView(views.length), duplicable: true }
     const run = {
       rename: () => setRenaming(v.id),
-      save: (patch: ViewPatch) => persistConfig(v.id, patch),
-      duplicate: () => duplicate(v.id),
+      save: (patch: ViewPatch) => saveView(v.id, patch),
+      duplicate: () => editViews(duplicateView(entry.id, v.id)),
       titles: {
         shown: labeled,
         toggle: () => patchEntry({ view_button: labeled ? 'icon' : null }),
@@ -476,8 +347,8 @@ export function ViewTile({
       remove: () =>
         void askDeleteView('tile').then((yes) => {
           if (!yes) return
-          if (animate) presence.beginExit(v.id)
-          else deleteView(v.id)
+          if (animate) setExiting(v)
+          else removeView(v)
         }),
     }
     void runViewRowAction(ctx, v, e.currentTarget, run, popHeld)
@@ -517,7 +388,7 @@ export function ViewTile({
       ariaLabel="New View"
       disabled={locked}
       className={locked ? rowDisabled : undefined}
-      onClick={addView}
+      onClick={() => editViews(addView(source.id))}
     />
   )
 
@@ -542,7 +413,7 @@ export function ViewTile({
         axis="x"
         disabled={locked}
         label={(id) => viewById(id)?.name ?? ''}
-        onMove={moveView}
+        onMove={(id, beforeId) => editViews(moveView(entry.id, id, beforeId))}
       >
         {views.map((v, i) => {
           const { onEnd, ...rename } = renameOf(v)
@@ -551,8 +422,8 @@ export function ViewTile({
               key={v.id}
               view={v}
               active={i === index}
-              entering={presence.entering.has(v.id)}
-              exiting={presence.exiting === v.id}
+              entering={entering(v.id)}
+              exiting={exiting?.id === v.id}
               labeled={labeled}
               renaming={rename.editing}
               label={
@@ -564,14 +435,14 @@ export function ViewTile({
                   autoSize
                   onCommit={(next) => {
                     onEnd()
-                    persistConfig(v.id, { name: next })
+                    saveView(v.id, { name: next })
                   }}
                   onCancel={onEnd}
                 />
               }
               onSwitch={() => patchEntry({ active: i })}
               onMenu={(e) => rowMenu(v, e, true)}
-              onAnimEnd={() => presence.onAnimEnd(v.id)}
+              onAnimEnd={exiting?.id === v.id ? exited : undefined}
             />
           )
         })}
@@ -662,7 +533,7 @@ export function ViewTile({
                   view={v}
                   picked={i === index}
                   rename={renameOf(v)}
-                  onCommit={(name) => persistConfig(v.id, { name })}
+                  onCommit={(name) => saveView(v.id, { name })}
                   onSwitch={() => patchEntry({ active: i })}
                   onMenu={(e) => rowMenu(v, e, false)}
                 />

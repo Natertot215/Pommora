@@ -13,7 +13,6 @@ import {
 import { useRevealNear } from '@pommora/uix/Interactions/hoverReveal'
 import { slideIn } from '@pommora/uix/Animations/motion'
 import { FooterToggle } from '@pommora/uix/Interactions/FooterToggle'
-import { findCollection, findSet } from '../Nexus/treeIndex'
 import { owningCollection, topContainerOf } from '../Nexus/treePatch'
 import { ContainerView } from '../Views/ContainerView'
 import { ArchiveView } from '../Archive/ArchiveView'
@@ -65,26 +64,9 @@ const HostView = memo(function HostView({ host }: { host: Host }): React.JSX.Ele
       return <HomepageView tree={tree} />
     case 'space':
       return <SpaceView tree={tree} id={target.id} />
-    case 'collection': {
-      const col = findCollection(tree, target.id)
-      return col ? (
-        <ContainerView source={col} />
-      ) : (
-        <div className="detail interface-inset">
-          <div className="detail-placeholder">Collection not found</div>
-        </div>
-      )
-    }
-    case 'set': {
-      const set = findSet(tree, target.id)
-      return set ? (
-        <ContainerView source={set} />
-      ) : (
-        <div className="detail interface-inset">
-          <div className="detail-placeholder">Set not found</div>
-        </div>
-      )
-    }
+    case 'collection':
+    case 'set':
+      return <ContainerView tree={tree} kind={target.kind} id={target.id} />
     case 'page':
       return <PageView tabId={host.tabId} pageId={target.id} parked={host.parked} />
     case 'matrix':

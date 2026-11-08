@@ -172,6 +172,9 @@ export interface TileDoc {
 /** A key set to null leaves the entry, since an absent key is its default. */
 export type EntryPatch = Record<string, unknown>
 
+/** The patch is built from the entry as stored, and null writes nothing. */
+export type EntryOp = (raw: Record<string, unknown>) => EntryPatch | null
+
 export const mergeEntry = (
   raw: Record<string, unknown>,
   patch: EntryPatch,

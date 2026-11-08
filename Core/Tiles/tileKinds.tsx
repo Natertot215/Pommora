@@ -1,22 +1,12 @@
 import { memo } from 'react'
 import type { ConnectionsApi } from '../MarkdownPM/Links/connectionsApi'
 import type { ConnPage } from '../Connections/pageIndex'
-import {
-  type EntryPatch,
-  knownTile,
-  type TileEntry,
-  type TileHostRef,
-  type TileType,
-} from './tiles'
+import { type EntryOp, knownTile, type TileEntry, type TileHostRef, type TileType } from './tiles'
 import { MarkdownTile } from './Surfaces/MarkdownTile'
 import { PageTile } from './Surfaces/PageTile'
 import { ViewTile } from './Surfaces/ViewTile'
 
-/** The patch is built from the entry as stored, and null writes nothing. */
-export type MutateEntry = (
-  id: string,
-  patchOf: (raw: Record<string, unknown>) => EntryPatch | null,
-) => void
+export type MutateEntry = (id: string, patchOf: EntryOp) => void
 
 interface TileBodyProps {
   entry: TileEntry
