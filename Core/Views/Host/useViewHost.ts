@@ -27,6 +27,7 @@ import { matchKey, matchQuery } from '../../Paths/caseFold'
 import { relDirname } from '../../Paths/posix'
 import { resolvedSortCount } from '../Pipeline/sort'
 import { useActiveView } from './useActiveView'
+import { presentedKind } from './viewKinds'
 import { useBandHeads } from './useBandHeads'
 import { useContainerValues } from './useContainerValues'
 import { columnStylePatch, styleFor } from './useColumnStyles'
@@ -39,7 +40,7 @@ export type ViewHostApi = NonNullable<ReturnType<typeof useViewHost>>
 
 const NO_COLLAPSE = new Set<string>()
 
-export function useViewHost(source: CollectionNode | SetNode, nests: boolean) {
+export function useViewHost(source: CollectionNode | SetNode) {
   const tree = useSession((s) => s.tree)
   const openTarget = useSession((s) => s.openTarget)
   const mutate = useSession((s) => s.mutate)
@@ -54,6 +55,7 @@ export function useViewHost(source: CollectionNode | SetNode, nests: boolean) {
 
   const schema = useMemo(() => containerSchema(tree, source), [tree, source])
   const view = useActiveView(source)
+  const { nests } = presentedKind(view.type)
 
   const collapsed = useMemo(() => new Set(view.collapsed_groups ?? []), [view.collapsed_groups])
 

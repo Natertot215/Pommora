@@ -121,18 +121,18 @@ let api: ViewHostApi | null = null
 
 let creation: ReturnType<typeof useViewCreation>
 
-function Probe({ source, nests }: { source: CollectionNode | SetNode; nests: boolean }): null {
-  const host = useViewHost(source, nests)
+function Probe({ source }: { source: CollectionNode | SetNode }): null {
+  const host = useViewHost(source)
   api = host
   creation = useViewCreation(() => ({ ...host!, bandBucket: (key) => key, rename: () => {} }))
   return null
 }
 
-const mount = async (source: CollectionNode | SetNode, nests = true): Promise<void> => {
+const mount = async (source: CollectionNode | SetNode): Promise<void> => {
   await act(async () => {
     root.render(
       <ContentHostContext.Provider value={{ tabId: 't1', key: 'collection:col1', parked: false }}>
-        <Probe source={source} nests={nests} />
+        <Probe source={source} />
       </ContentHostContext.Provider>,
     )
   })
@@ -568,8 +568,8 @@ const setCollection = (view?: Partial<SavedView>): CollectionNode =>
     views: [
       {
         id: 'view_1',
-        name: 'Cards',
-        type: 'cards',
+        name: 'Table',
+        type: 'table',
         property_order: ['_title', 'prop_status'],
         hidden_properties: [],
         group: { kind: 'structural' },
@@ -580,39 +580,41 @@ const setCollection = (view?: Partial<SavedView>): CollectionNode =>
 
 describe('the cards seam (nests off)', () => {
   it('a type-switched view still carrying sub_group never arms reassign — relocation stays the only cross-band write', async () => {
-    const carried = setCollection({
+    const carried: Partial<SavedView> = {
       sub_group: { property_id: 'prop_status', order_mode: 'manual' },
-    })
-    await mount(carried, false)
+    }
+    await mount(setCollection({ ...carried, type: 'cards' }))
     expect(api?.plan.kind === 'sets' && api.plan.sub !== undefined).toBe(false)
     expect(api?.groupPropId).toBeUndefined()
     expect(api?.canReassign).toBe(false)
     expect(api?.canRelocate).toBe(true)
-    await mount(carried, true)
+    await mount(setCollection(carried))
     expect(api?.plan.kind === 'sets' && api.plan.sub !== undefined).toBe(true)
     expect(api?.groupPropId).toBe('prop_status')
   })
 
   it("a Location sort orders pages by folder only where bands don't nest", async () => {
-    const located = setCollection({
+    const located = {
       group: { kind: 'flat' },
       sort: [{ property_id: LOCATION_SORT, direction: 'asc' }],
-    } as unknown as Partial<SavedView>)
-    await mount(located, false)
+    } as unknown as Partial<SavedView>
+    await mount(setCollection({ ...located, type: 'cards' }))
     expect(api?.pageOrder).toBe('location')
-    await mount(located, true)
+    await mount(setCollection(located))
     expect(api?.pageOrder).toBe('custom')
   })
 
   it('a cards persist mid-collapse keeps the collapse, and a landed style patch yields to a later write', async () => {
-    await mount(setCollection(), false)
+    await mount(setCollection({ type: 'cards' }))
     act(() => api?.toggleCollapse('sA'))
     await act(async () => void api?.persistView({}))
     expect(lastSavedView().collapsed_groups).toEqual(['sA'])
     act(() => api?.setStylePatch(propertyColumn(statusDef), 'look', 'compact'))
     expect(api?.view.column_styles?.prop_status).toEqual({ look: 'compact' })
-    await mount(setCollection({ column_styles: { prop_status: { look: 'compact' } } }), false)
-    await mount(setCollection(), false)
+    await mount(
+      setCollection({ type: 'cards', column_styles: { prop_status: { look: 'compact' } } }),
+    )
+    await mount(setCollection({ type: 'cards' }))
     expect(api?.view.column_styles).toBeUndefined()
   })
 })
@@ -718,7 +720,7 @@ describe('the manual order fold', () => {
     })
     const seen: Record<string, string[]> = {}
     function Twin({ id, of }: { id: string; of: CollectionNode | SetNode }): null {
-      const twin = useViewHost(of, true)
+      const twin = useViewHost(of)
       seen[id] = twin?.rows.map((r) => r.id) ?? []
       return null
     }
@@ -886,7 +888,7 @@ describe('a create placed ahead of its reply', () => {
 
   function Recorder(): null {
     const source = useSession((s) => s.tree?.collections.find((c) => c.id === 'col1'))!
-    const host = useViewHost(source, true)
+    const host = useViewHost(source)
     api = host
     creation = useViewCreation(() => ({ ...host!, bandBucket: (key) => key, rename: () => {} }))
     const band = host?.rowBand.get('p3')
@@ -1037,6 +1039,7 @@ describe('the root seat', () => {
 
   it('a cards view over Sets holding no pages mounts the renderer with a standing ghost card', async () => {
     const source = setCollection({
+      type: 'cards',
       hide_empty_groups: true,
       set_cards: false,
     } as unknown as Partial<SavedView>)
@@ -1100,7 +1103,7 @@ describe('view search', () => {
             setLocked: vi.fn(),
           }}
         >
-          <Probe source={source} nests />
+          <Probe source={source} />
         </ViewTileScopeProvider>,
       )
     })
