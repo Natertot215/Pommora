@@ -2138,6 +2138,19 @@ async function group10(cdp) {
   await search(cdp, '')
   fold(g, 'flat', 'a searching ungrouped Cards view draws no empty band-list Tab stop', flatStops.cards > 0 && flatStops.searching === 0, show(flatStops))
 
+  // F10 · a row focused under a search inside a band saved collapsed gives its list the Tab stop back once Escape ends the search and the band folds the row away.
+  const V10F = tableView(vid('g10searchfold'), 'VD Search Fold', { collapsed_groups: [IDS.alpha] })
+  await showView(cdp, V10F)
+  await search(cdp, 'Page')
+  const tableZone = `(${zoneOf(DRIFT.shell)})`
+  await cdp.evaluate(`(${liveRow('Page A')}).focus()`)
+  const foldStop = { lent: await cdp.evaluate(`${tableZone}?.tabIndex ?? null`) }
+  await pressKey(cdp, 'Escape')
+  foldStop.ended = await settles(async () => cdp.evaluate(`!document.querySelector('.detail-title-search')`), 3000)
+  foldStop.folded = await settles(async () => (await expanded(cdp, head('Set Alpha'))) === 'false' && (await cdp.evaluate(`!${tableZone}?.contains(document.activeElement)`)), 3000)
+  foldStop.stop = await cdp.evaluate(`${tableZone}?.tabIndex ?? null`)
+  fold(g, 'stop', 'a row focused under a search inside a band saved collapsed gives its list the Tab stop back once Escape ends the search and folds the row away', foldStop.lent === -1 && foldStop.ended && foldStop.folded && foldStop.stop === 0, show(foldStop))
+
   // Regression: cards and Cards band heads still name the gesture and lift by Space and by drag.
   const V10C = cardsView(vid('g10cards'), 'VD Cards Lift', { set_cards: false })
   await showView(cdp, V10C)

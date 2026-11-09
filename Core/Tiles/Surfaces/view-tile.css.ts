@@ -100,7 +100,7 @@ export const stripRow = style([
   },
 ])
 
-// The incoming view slides in from the clicked pill's side — `--slide-from` carries the signed offset, re-triggered by re-keying the wrapper on the active index.
+// The incoming view slides in from the clicked pill's side — `--slide-from` carries the signed offset, re-triggered by re-keying the wrapper on the active view.
 const viewSwitchSlide = keyframes({
   from: { transform: 'translateX(var(--slide-from, 0px))', opacity: 0.5 },
   to: { transform: 'translateX(0)', opacity: 1 },

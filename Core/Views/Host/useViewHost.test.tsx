@@ -1117,7 +1117,7 @@ describe('view search', () => {
     expect(api?.paintOrder.map((r) => r.id)).toEqual(['p1', 'p2'])
   })
 
-  it('keeps a page created under it shown, its band and name field with it, until the view changes', async () => {
+  it('keeps a page created under it shown, its band and name field with it, until the view changes, and narrows away one created with no search open', async () => {
     let land!: (done: unknown) => void
     useSession.setState({ mutate: vi.fn(() => new Promise((r) => (land = r))) as never })
     const base = setCollection()
@@ -1139,6 +1139,12 @@ describe('view search', () => {
     act(() => search('lo'))
     expect(api?.paintOrder.map((r) => r.id)).toEqual(['p3', 'pLoose'])
     await mount(shown([born], 'view_2'))
+    expect(api?.paintOrder.map((r) => r.id)).toEqual(['pLoose'])
+    act(() => search(''))
+    await act(async () => void creation.bandAdd('sA'))
+    await mount(shown([born, page('p4', 'Untitled 2', 'Col/A/Untitled 2.md')], 'view_2'))
+    await act(async () => land({ created: { path: 'Col/A/Untitled 2.md' } }))
+    act(() => search('lo'))
     expect(api?.paintOrder.map((r) => r.id)).toEqual(['pLoose'])
   })
 })

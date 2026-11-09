@@ -5,7 +5,7 @@
 #### Current Focus
 
 **Dates:** 10-31-2026
-**State:** The Trash & Archive Restructure is complete and filed under `.claude/Planning/Completed/`, and its remaining limits are I-062 through I-067. Pommora's open issues are the focus, gravest first; Sync's issues wait on its rework, which leaves I-014 the gravest.
+**State:** The Trash & Archive Restructure is complete and filed under `.claude/Planning/Completed/`, and its remaining limits are I-060 through I-065. Pommora's open issues are the focus, gravest first; Sync's issues wait on its rework, which leaves I-014 the gravest.
 
 #### CONTEXT
 

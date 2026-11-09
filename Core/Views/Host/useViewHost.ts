@@ -89,7 +89,7 @@ export function useViewHost(source: CollectionNode | SetNode) {
     () => (searching ? searchKeysOf(rows, source.path) : null),
     [rows, searching, source.path],
   )
-  // A page created from this view stays shown through the search until the view is left for another view, tab, or page.
+  // A page created while searching stays shown until the view is left for another view, tab, or page.
   const life = `${host?.tabId}:${host?.parked}:${view.id}`
   const [created, setCreated] = useState(() => ({ life, ids: new Set<string>() }))
   if (created.life !== life) setCreated({ life, ids: new Set() })
@@ -127,7 +127,7 @@ export function useViewHost(source: CollectionNode | SetNode) {
   }, [strandedId])
   const beginNaming = (id: string, flight?: Promise<unknown>): void => {
     setNaming({ id, create: flight !== undefined, landing: flight !== undefined })
-    if (flight) setCreated((c) => ({ ...c, ids: new Set(c.ids).add(id) }))
+    if (flight && searching) setCreated((c) => ({ ...c, ids: new Set(c.ids).add(id) }))
     void flight?.finally(() => setNaming((n) => (n?.id === id ? { ...n, landing: false } : n)))
   }
   const endNaming = (): void => setNaming(null)

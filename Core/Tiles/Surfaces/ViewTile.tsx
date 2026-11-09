@@ -406,7 +406,6 @@ export function ViewTile({
       <SortableZone
         items={views.map((v) => v.id)}
         axis="x"
-        disabled={locked}
         label={(id) => viewById(id)?.name ?? ''}
         onMove={reorder}
       >
@@ -421,7 +420,7 @@ export function ViewTile({
               exiting={exiting?.id === v.id}
               labeled={labeled}
               renaming={rename.editing}
-              immovable={views.length < 2}
+              immovable={locked || views.length < 2}
               label={
                 <RenamableLabel
                   {...viewNameField(v, rename, (name) => saveView(v.id, { name }))}
@@ -492,7 +491,7 @@ export function ViewTile({
         </div>
         <div className={cx(s.body, !stripOpen && s.bodyFlush, 'scroll-fade')} {...bodyHover}>
           <div
-            key={index}
+            key={view.id}
             className={s.slideWrap}
             style={{ '--slide-from': slideFrom } as React.CSSProperties}
           >

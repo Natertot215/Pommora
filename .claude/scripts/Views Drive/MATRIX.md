@@ -302,6 +302,7 @@ Before Phase 10 every immovable row already refused its lift: `lineList`'s `lock
 | a searching Cards view's Set cards name no drag gesture and lift by no Space | Cards with Set cards · search `1`, Space | none described; no lift | F10 displace |
 | a Cards view sorted by two keys names no drag gesture on its cards and lifts none by Space | Cards, two sort keys · Space | none described; no lift | F10 displace |
 | a searching ungrouped Cards view draws no empty band-list Tab stop | Cards, flat · search `Page` | no tabbable `.line-zone` without a band head | F10 flat |
+| a row focused under a search inside a band saved collapsed gives its list the Tab stop back once Escape ends the search and folds the row away | Table Set bands, Set Alpha saved collapsed · search `Page`, focus on Page A, Escape | the zone's `tabIndex` -1 while the row holds focus; the search ended, Set Alpha folded, focus out of the list; the zone's `tabIndex` 0 | F10 stop |
 | a card and a Cards band head still name the gesture and lift by Space and by drag | Cards Set bands · Space; a drag, cancelled | all described; each lifts both ways, the head's line drawn; nothing written | R P10 |
 | the Grouping pane's option rows still name the gesture and lift by Space and by drag | Group pane, grouped by VD Stage · Space; Done dragged onto Todo, cancelled | all described; each lifts, its line drawn; no `group.order` | R P10 |
 | the Grouping pane's option eye hides Done and shows it again | the same · Hide Done, Show Done | `hidden_groups` gains Done's key, then loses it | R P10 |

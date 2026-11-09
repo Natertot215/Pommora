@@ -26,6 +26,11 @@ mountEachTest((h, r) => {
 const source = { kind: 'collection', id: 'c1', title: 'Col', path: 'Col' } as CollectionNode
 
 describe('ViewTile', () => {
+  const views = [
+    { source_id: 'c1', config: { id: 'view_a', name: 'A', type: 'table' } },
+    { source_id: 'c1', config: { id: 'view_b', name: 'B', type: 'table' } },
+  ]
+
   it('a lock from another window stops an icon pick already open', async () => {
     useSession.setState({ tree: { ...makeTree(), collections: [source] } })
     ;(window as unknown as { nexus: unknown }).nexus = stubDialer({ menu: () => ok('icon') })
@@ -55,11 +60,22 @@ describe('ViewTile', () => {
     expect(written).toEqual([])
   })
 
+  it('a reorder that keeps the shown view leaves it mounted', async () => {
+    useSession.setState({ tree: { ...makeTree(), collections: [source] } })
+    const show = (order: unknown[], active: number): Promise<void> =>
+      act(async () => {
+        const entry = { id: '01J0000000000000000000000A', type: 'view', views: order, active }
+        root.render(<ViewTile entry={entry as ViewTileEntry} mutateEntry={() => {}} />)
+      })
+    const body = (): Element | null => host.querySelector('[style*="--slide-from"]')
+    await show(views, 0)
+    const shown = body()
+    expect(shown).not.toBeNull()
+    await show([views[1], views[0]], 1)
+    expect(body()).toBe(shown)
+  })
+
   describe("the dropdown's list reorders by drag", () => {
-    const views = [
-      { source_id: 'c1', config: { id: 'view_a', name: 'A', type: 'table' } },
-      { source_id: 'c1', config: { id: 'view_b', name: 'B', type: 'table' } },
-    ]
     const drag = async (locked: boolean): Promise<{ lifted: boolean; written: unknown[] }> => {
       useSession.setState({ tree: { ...makeTree(), collections: [source] } })
       const stored = {

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest'
-import { act, type ReactNode } from 'react'
+import { act, type ReactNode, useState } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import {
   type DisplaceSpec,
@@ -150,6 +150,7 @@ let commit: Mock<(id: string, slot: string) => void>
 let lineSpec: Partial<LineSpec<string, Row[]>>
 let rowOpts: Record<string, { open?: () => void; space?: () => void; immovable?: boolean }>
 let watch: number
+let inZone: ReactNode
 
 function slotAt(id: string, p: { y: number }, rows: Row[]): string | null {
   const before = rows.find((r) => r.id !== id && r.mid > p.y)?.id ?? 'end'
@@ -183,6 +184,7 @@ function Lines(): React.JSX.Element {
             <button type="button" data-inner={id} />
           </LineRow>
         ))}
+        {inZone}
         <Reader />
       </LineZone>
       {aside}
@@ -247,6 +249,7 @@ beforeEach(() => {
   lineSpec = {}
   rowOpts = {}
   lineRows = ROWS
+  inZone = null
   watch = 0
   ITEMS.D = ['d1']
   renders.clear()
@@ -1149,6 +1152,21 @@ describe('the line zone', () => {
     expect(lineHost().tabIndex).toBe(-1)
     lineRows = ['r1', 'r3']
     await act(async () => root.render(<Lines />))
+    expect(lineHost().tabIndex).toBe(0)
+  })
+
+  it('a line list whose focused row its own state removes gives its Tab stop back', async () => {
+    let leave!: () => void
+    function Own(): ReactNode {
+      const [shown, setShown] = useState(true)
+      leave = () => setShown(false)
+      return shown && <LineRow id="own" data-id="own" />
+    }
+    inZone = <Own />
+    await mount()
+    await act(async () => item('own').focus())
+    expect(lineHost().tabIndex).toBe(-1)
+    await act(async () => leave())
     expect(lineHost().tabIndex).toBe(0)
   })
 
