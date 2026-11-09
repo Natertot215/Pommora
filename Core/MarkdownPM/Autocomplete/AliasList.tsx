@@ -105,7 +105,6 @@ export function AliasList({
         return remove(row)
     }
   }
-  const still = filtered || renaming !== null || list.drafting
   return (
     <MenuScrollFrame
       maxHeight={maxHeight}
@@ -126,6 +125,7 @@ export function AliasList({
     >
       <LineZone
         {...lineList({
+          disabled: filtered || renaming !== null || list.drafting,
           commit: (alias, slot) => void host.edit({ op: 'move', alias, toIndex: slot.index }),
           line: menuDropLine,
           label: (alias) => alias,
@@ -178,13 +178,7 @@ export function AliasList({
             )
             return (
               <Reveal key={row.key} open enterOnMount={row.draft || entering(row.key)} fill>
-                {row.draft ? (
-                  item
-                ) : (
-                  <LineRow id={row.value} immovable={still}>
-                    {item}
-                  </LineRow>
-                )}
+                {row.draft ? item : <LineRow id={row.value}>{item}</LineRow>}
               </Reveal>
             )
           })}
