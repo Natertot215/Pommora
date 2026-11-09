@@ -1,37 +1,19 @@
 import { globalStyle, style } from '@vanilla-extract/css'
 import { STATE_OPACITY, vars as colorVars } from '../Theme/color.css'
 import type { IconSize } from '../Theme/theme-vars.css'
-import { duration, easing } from '../Animations/motion'
-import {
-  accessoryButton,
-  flushAffordance,
-  menuCompact,
-  ROW_RADIUS,
-  rowBox,
-  scrollFrameBody,
-} from './menu-row.css'
+import { menuCompact, ROW_RADIUS, rowBox, scrollFrameBody } from './menu-row.css'
 import { button as eyeToggleButton } from '../Elements/eye-toggle.css'
 import { menuAnchor } from './menuAnchor'
 import { stack } from '../Theme/stack'
 import { fieldRing } from '../Fields/fieldRing'
-import { revealDim } from '../Interactions/hover-reveal.css'
 import { tintAt } from '../Theme/colors'
-import { text } from '../Theme/typography.css'
 import { SIZE as LABEL } from '../Labels/label-base.css'
 const c = colorVars.color
 
-// KNOBS — the ViewFrame tunables.
+// KNOBS — the header's icon button and a drop slot's highlight.
 const SIZE = {
   iconPickerButton: 28,
   dragHighlightRadius: 6,
-}
-
-const OPTION = {
-  gapAroundLabel: 6, // "Options" → first chip (the gap ABOVE "Options" is the header's own bottom pad)
-  gapBetweenChips: 6,
-  chipPadX: 6,
-  groupGap: 12,
-  compactTitleGap: 8,
 }
 
 export const ICON = {
@@ -71,16 +53,6 @@ export const headerPhotoImg = style({
   borderRadius: '8px',
 })
 
-export const assignedFill = style({
-  flex: '1 1 0px',
-  transition: `flex-grow ${duration.base} ${easing.baseEase}`,
-})
-export const assignedFillNone = style({ flexGrow: 0 })
-
-export const allHeading = style([flushAffordance, { vars: { '--chevron-beat': duration.base } }])
-
-export const allRow = style({ color: c.label.secondary })
-
 export const hiddenRow = style({
   opacity: STATE_OPACITY.ghost,
   selectors: { '[data-drag-source] &': { opacity: 1 } },
@@ -99,22 +71,6 @@ export const frameZone = style({
 export const restHighlight = style({
   background: 'var(--drop-slot-fill)',
   borderRadius: `${SIZE.dragHighlightRadius}px`,
-})
-
-export const statusGroups = style({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: `${OPTION.groupGap}px`,
-  vars: { '--row-pad-y': '0px' },
-})
-export const statusGroup = style({ display: 'flex', flexDirection: 'column' })
-
-export const optionList = style({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: `${OPTION.gapBetweenChips}px`,
-  paddingTop: `${OPTION.gapAroundLabel}px`,
-  vars: { '--label-pad-x': `${OPTION.chipPadX}px` },
 })
 
 export const optionRow = style([
@@ -152,46 +108,3 @@ globalStyle(`${scrollFrameBody} > .line-zone, ${middleRegion} > .line-zone`, {
   paddingTop: LINE_ZONE_PAD.top,
   paddingBottom: LINE_ZONE_PAD.bottom,
 })
-
-export const optionLead = style({
-  display: 'flex',
-  alignItems: 'center',
-  gap: `${OPTION.compactTitleGap}px`,
-  minWidth: 0,
-})
-
-export const compactTitle = style([
-  text.control.standard,
-  { color: c.label.control, whiteSpace: 'nowrap' },
-])
-
-export const ghostOptionRow = style([
-  optionRow,
-  {
-    background: 'none',
-    border: 'none',
-    font: 'inherit',
-    textAlign: 'left',
-  },
-])
-
-export const ghostChip = style({
-  selectors: {
-    '&&': { background: 'transparent', vars: { '--melt-ground': 'transparent' } },
-  },
-})
-
-export const optionEditButton = style([accessoryButton, revealDim])
-
-/** A type editor's rows, 8px apart. A collapsed `Reveal` stays mounted and would hold a flex `gap`, so the margin rides on the row inside each `Reveal` and folds away with it. */
-export const configEditor = style({
-  display: 'flex',
-  flexDirection: 'column',
-  paddingTop: `${OPTION.gapAroundLabel}px`,
-})
-globalStyle(
-  `${configEditor} > * + :not([data-reveal]), ${configEditor} > * + [data-reveal] > * > *`,
-  {
-    marginTop: '8px',
-  },
-)

@@ -1,10 +1,10 @@
-import { MENU_GAP as GAP } from '../Menus/menuAnchor'
+import { MENU_GAP as GAP } from './menuAnchor'
 import { clamp } from '../Utilities/clamp'
-import { PANE_RADIUS } from './picker-base.css'
+import { PANE_RADIUS } from './menu-base.css'
 
 export const VIEWPORT_MARGIN = 8
 
-export type PickerDirection = 'down' | 'up'
+export type PaneDirection = 'down' | 'up'
 
 export type PanePos = {
   top?: number
@@ -23,16 +23,16 @@ const ANCHOR_RESERVE = 30
 
 const CORNER_CLEAR = PANE_RADIUS + 2
 
-export const roomAround = (t: TriggerBox, viewH: number): Record<PickerDirection, number> => ({
+export const roomAround = (t: TriggerBox, viewH: number): Record<PaneDirection, number> => ({
   up: t.top - GAP - VIEWPORT_MARGIN,
   down: viewH - t.bottom - GAP - VIEWPORT_MARGIN,
 })
 
 export function sideFor(
-  side: PickerDirection,
+  side: PaneDirection,
   height: number,
-  room: Record<PickerDirection, number>,
-): PickerDirection {
+  room: Record<PaneDirection, number>,
+): PaneDirection {
   const other = side === 'up' ? 'down' : 'up'
   return height > room[side] && room[other] > room[side] ? other : side
 }
@@ -50,7 +50,7 @@ export function placePane({
   t: TriggerBox
   pane: { w: number; h: number }
   view: { w: number; h: number }
-  side: PickerDirection
+  side: PaneDirection
   centered: boolean | null
   origin: 'auto' | 'right' | 'center' | 'left'
   centerX?: number

@@ -11,8 +11,8 @@ import {
   MenuTopRow,
 } from '@pommora/uix/Menus/MenuRows'
 import { pickRuns } from '@pommora/uix/Menus/pickRuns'
-import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
-import { PICKER_MAX_HEIGHT, PICKER_WIDTH } from '@pommora/uix/Pickers/picker-base.css'
+import { MenuBase } from '@pommora/uix/Menus/MenuBase'
+import { PICKER_MAX_HEIGHT, PICKER_WIDTH } from '@pommora/uix/Menus/menu-row.css'
 import { Icon } from '@pommora/uix/Symbols'
 import { useSession } from '../../Session/store'
 import { menuRows, type PresenterRow } from './menuRows'
@@ -99,7 +99,7 @@ export function MenuPresenter(): React.JSX.Element {
     else shown.settle(action)
   }
   return (
-    <PickerMenu
+    <MenuBase
       ownShield
       open={pending !== null}
       onDismiss={() => pending?.settle(null)}
@@ -117,6 +117,6 @@ export function MenuPresenter(): React.JSX.Element {
           compact={shown.compact}
         />
       )}
-    </PickerMenu>
+    </MenuBase>
   )
 }

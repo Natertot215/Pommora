@@ -1,5 +1,5 @@
 import type { RefObject } from 'react'
-import { PickerMenu } from './PickerMenu'
+import { MenuBase } from '../Menus/MenuBase'
 import { RAMP_FAMILIES, RAMP_STEPS, type CellKey, type ColorName } from '../Theme/colors'
 import { cellColor, cellRing } from '../Theme/ramp'
 import { cx } from '../Utilities/cx'
@@ -22,9 +22,9 @@ export function ColorPicker({
   greyscale?: boolean
 }): React.JSX.Element | null {
   return (
-    <PickerMenu open={open} onDismiss={onDismiss} triggerRef={triggerRef}>
+    <MenuBase open={open} onDismiss={onDismiss} triggerRef={triggerRef}>
       <ColorGrid selected={selected} onPick={onPick} greyscale={greyscale} />
-    </PickerMenu>
+    </MenuBase>
   )
 }
 

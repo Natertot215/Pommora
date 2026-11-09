@@ -4,6 +4,7 @@ import { duration, easing } from '../Animations/motion'
 import { tintAt } from '../Theme/colors'
 import { font } from '../Theme/typography.css'
 import { base } from '../Fields/fields.css'
+import { fieldRing, ROW_RING } from '../Fields/fieldRing'
 import { segment } from '../Elements/segment.css'
 
 const c = vars.color
@@ -108,6 +109,10 @@ export const pill = style({
 })
 export const pillSelected = style({
   background: `${tintAt('var(--accent)', 'primary')} !important`,
+})
+export const pillToday = style({
+  vars: { '--field-ring': 'var(--accent-stroke-hot)' },
+  boxShadow: fieldRing(ROW_RING),
 })
 /** A span's band runs edge to edge beneath its days, from each end's center, rounding where a week wraps. */
 export const band = style({

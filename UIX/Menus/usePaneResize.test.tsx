@@ -4,7 +4,7 @@ import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { firePointer, pressEscape, stubPointerCapture } from '../Utilities/pointerHarness'
 import type { Size } from '../Interactions/useResizable'
-import { PickerMenu } from './PickerMenu'
+import { MenuBase } from './MenuBase'
 import { type PaneBounds, usePaneResize } from './usePaneResize'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -40,7 +40,7 @@ function Pane({
 }): React.JSX.Element {
   const resize = usePaneResize(open, bounds, { initialSize, onSizeChange })
   return (
-    <PickerMenu
+    <MenuBase
       open={open}
       at={{ x: 100, y: 100 }}
       focus="leave"
@@ -48,7 +48,7 @@ function Pane({
       resize={resize}
     >
       <div data-body="" style={{ width: resize.size.w, maxHeight: resize.size.h }} />
-    </PickerMenu>
+    </MenuBase>
   )
 }
 

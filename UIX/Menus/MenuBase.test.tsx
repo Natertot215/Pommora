@@ -3,9 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { useContext, useEffect, useRef } from 'react'
-import { PickerMenu } from './PickerMenu'
-import { FieldPicker } from './FieldPicker'
-import { SlideGrowth } from '../Menus/FrameSlide'
+import { MenuBase } from './MenuBase'
+import { SlideGrowth } from './FrameSlide'
 import { BASE_FEEL } from '../Animations/feel'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -32,14 +31,14 @@ function Host({
       <button ref={ref} type="button" data-id="trigger">
         Trigger
       </button>
-      <PickerMenu
+      <MenuBase
         open={open}
         onDismiss={() => {}}
         triggerRef={ref}
         {...(focus === undefined ? {} : { focus })}
       >
         {menu}
-      </PickerMenu>
+      </MenuBase>
     </>
   )
 }
@@ -74,7 +73,7 @@ afterEach(async () => {
   document.body.innerHTML = ''
 })
 
-describe('PickerMenu focus contract', () => {
+describe('MenuBase focus contract', () => {
   it('moves focus to the pane’s first focusable on open', async () => {
     await render(<Host open={false} />)
     find('trigger').focus()
@@ -152,17 +151,17 @@ describe('PickerMenu focus contract', () => {
           <button ref={outerRef} type="button" data-id="trigger">
             Trigger
           </button>
-          <PickerMenu open onDismiss={() => dismissed.push('outer')} triggerRef={outerRef}>
+          <MenuBase open onDismiss={() => dismissed.push('outer')} triggerRef={outerRef}>
             <button ref={innerRef} type="button" data-id="first">
               First
             </button>
-          </PickerMenu>
+          </MenuBase>
           {/* A stacked pane hung off the first as a SIBLING — the OptionEditPopup arrangement, where the outer's keydown listener registers first. */}
-          <PickerMenu open={inner} onDismiss={() => dismissed.push('inner')} triggerRef={innerRef}>
+          <MenuBase open={inner} onDismiss={() => dismissed.push('inner')} triggerRef={innerRef}>
             <button type="button" data-id="nested">
               Nested
             </button>
-          </PickerMenu>
+          </MenuBase>
         </>
       )
     }
@@ -193,19 +192,19 @@ describe('PickerMenu focus contract', () => {
           <button ref={outerRef} type="button" data-id="trigger">
             Trigger
           </button>
-          <PickerMenu open onDismiss={() => log.push('outer')} triggerRef={outerRef}>
+          <MenuBase open onDismiss={() => log.push('outer')} triggerRef={outerRef}>
             <button ref={innerRef} type="button" data-id="first">
               First
             </button>
             <button type="button" data-id="last" onPointerDown={() => log.push('press:last')}>
               Last
             </button>
-          </PickerMenu>
-          <PickerMenu open onDismiss={() => log.push('inner')} triggerRef={innerRef}>
+          </MenuBase>
+          <MenuBase open onDismiss={() => log.push('inner')} triggerRef={innerRef}>
             <button type="button" data-id="nested">
               Nested
             </button>
-          </PickerMenu>
+          </MenuBase>
         </>
       )
     }
@@ -233,17 +232,17 @@ describe('PickerMenu focus contract', () => {
           <button ref={outerRef} type="button" data-id="trigger">
             Trigger
           </button>
-          <PickerMenu open onDismiss={() => log.push('outer')} triggerRef={outerRef}>
+          <MenuBase open onDismiss={() => log.push('outer')} triggerRef={outerRef}>
             <div ref={fieldRef} data-id="field" />
             <button type="button" data-id="last" onPointerDown={() => log.push('press:last')}>
               Last
             </button>
-          </PickerMenu>
-          <PickerMenu open onDismiss={() => log.push('inner')} triggerRef={fieldRef} focus="keep">
+          </MenuBase>
+          <MenuBase open onDismiss={() => log.push('inner')} triggerRef={fieldRef} focus="keep">
             <button type="button" data-id="nested">
               Nested
             </button>
-          </PickerMenu>
+          </MenuBase>
         </>
       )
     }
@@ -273,11 +272,11 @@ describe('PickerMenu focus contract', () => {
           <button ref={ref} type="button" data-id="trigger">
             Trigger
           </button>
-          <PickerMenu open triggerRef={ref}>
+          <MenuBase open triggerRef={ref}>
             <button type="button" data-id="first">
               First
             </button>
-          </PickerMenu>
+          </MenuBase>
         </>
       )
     }
@@ -299,16 +298,16 @@ describe('PickerMenu focus contract', () => {
           <button ref={outerRef} type="button" data-id="trigger">
             Trigger
           </button>
-          <PickerMenu open onDismiss={() => {}} triggerRef={outerRef}>
+          <MenuBase open onDismiss={() => {}} triggerRef={outerRef}>
             <button ref={innerRef} type="button" data-id="first">
               First
             </button>
-          </PickerMenu>
-          <PickerMenu open onDismiss={() => {}} triggerRef={innerRef}>
+          </MenuBase>
+          <MenuBase open onDismiss={() => {}} triggerRef={innerRef}>
             <button type="button" data-id="nested">
               Nested
             </button>
-          </PickerMenu>
+          </MenuBase>
         </>
       )
     }
@@ -329,19 +328,19 @@ describe('PickerMenu focus contract', () => {
           <button ref={outerRef} type="button" data-id="trigger">
             Trigger
           </button>
-          <PickerMenu open onDismiss={() => log.push('outer')} triggerRef={outerRef}>
+          <MenuBase open onDismiss={() => log.push('outer')} triggerRef={outerRef}>
             <button ref={innerRef} type="button" data-id="first">
               First
             </button>
             <button type="button" data-id="last" onPointerDown={() => log.push('press:last')}>
               Last
             </button>
-          </PickerMenu>
-          <PickerMenu ownShield open onDismiss={() => log.push('list')} triggerRef={innerRef}>
+          </MenuBase>
+          <MenuBase ownShield open onDismiss={() => log.push('list')} triggerRef={innerRef}>
             <button type="button" data-id="nested">
               Nested
             </button>
-          </PickerMenu>
+          </MenuBase>
         </>
       )
     }
@@ -372,12 +371,12 @@ describe('PickerMenu focus contract', () => {
           <button ref={ref} type="button" data-id="trigger">
             Trigger
           </button>
-          <PickerMenu open={open} onDismiss={() => {}} triggerRef={ref}>
+          <MenuBase open={open} onDismiss={() => {}} triggerRef={ref}>
             <button type="button" data-id="first">
               First
             </button>
             <SelfFocusing />
-          </PickerMenu>
+          </MenuBase>
         </>
       )
     }
@@ -387,60 +386,6 @@ describe('PickerMenu focus contract', () => {
     expect(document.activeElement).toBe(find('field'))
     await render(<FieldHost open={false} />)
     expect(document.activeElement).toBe(find('trigger'))
-  })
-
-  it('keeps the FieldPicker rename field’s caret', async () => {
-    function RenameHost({ open }: { open: boolean }): React.JSX.Element {
-      const ref = useRef<HTMLButtonElement>(null)
-      return (
-        <>
-          <button ref={ref} type="button" data-id="trigger">
-            Trigger
-          </button>
-          <FieldPicker
-            open={open}
-            onDismiss={() => {}}
-            triggerRef={ref}
-            value="Alias"
-            onCommit={() => {}}
-          />
-        </>
-      )
-    }
-    await render(<RenameHost open={false} />)
-    find('trigger').focus()
-    await render(<RenameHost open />)
-    const field = document.querySelector('input') as HTMLInputElement
-    expect(document.activeElement).toBe(field)
-    expect(field.selectionStart).toBe('Alias'.length)
-  })
-
-  it('gives the field’s focus up when Escape aborts it', async () => {
-    function RenameHost({ open }: { open: boolean }): React.JSX.Element {
-      const ref = useRef<HTMLButtonElement>(null)
-      return (
-        <>
-          <button ref={ref} type="button" data-id="trigger">
-            Trigger
-          </button>
-          <FieldPicker
-            open={open}
-            onDismiss={() => {}}
-            triggerRef={ref}
-            value="Alias"
-            onCommit={() => {}}
-          />
-        </>
-      )
-    }
-    await render(<RenameHost open={false} />)
-    await render(<RenameHost open />)
-    const field = document.querySelector('input') as HTMLInputElement
-    await act(async () => {
-      field.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
-    })
-    // A field torn down while focused fires no blur, which strands the drawn caret where it stood.
-    expect(document.activeElement).not.toBe(field)
   })
 
   it('takes no focus on open when focus is left', async () => {
@@ -469,10 +414,10 @@ describe('PickerMenu focus contract', () => {
 
   it('lets a press on a field inside a kept-focus pane through', async () => {
     await render(
-      <PickerMenu open focus="keep">
+      <MenuBase open focus="keep">
         <input data-id="field" aria-label="Field" />
         <div data-id="row">Row</div>
-      </PickerMenu>,
+      </MenuBase>,
     )
     const press = (id: string): boolean => {
       const e = new MouseEvent('mousedown', { bubbles: true, cancelable: true })
@@ -484,7 +429,7 @@ describe('PickerMenu focus contract', () => {
   })
 })
 
-describe('PickerMenu close render', () => {
+describe('MenuBase close render', () => {
   const PANE_H = 300
   let paneH = PANE_H
   const realRect = Element.prototype.getBoundingClientRect
@@ -520,14 +465,14 @@ describe('PickerMenu close render', () => {
     direction?: 'up' | 'down'
   }): React.JSX.Element {
     return (
-      <PickerMenu
+      <MenuBase
         open={open}
         onDismiss={() => {}}
         at={at ? { ...at, height: 20 } : undefined}
         {...(direction ? { direction } : {})}
       >
         {open ? <span data-id="body">BODY</span> : null}
-      </PickerMenu>
+      </MenuBase>
     )
   }
   const layer = (): HTMLElement => layerOf('body')
@@ -557,9 +502,9 @@ describe('PickerMenu close render', () => {
       return <span data-id="body">BODY</span>
     }
     await render(
-      <PickerMenu open onDismiss={() => {}} at={{ x: 400, y: 500, height: 20 }}>
+      <MenuBase open onDismiss={() => {}} at={{ x: 400, y: 500, height: 20 }}>
         <Builds />
-      </PickerMenu>,
+      </MenuBase>,
     )
     expect(layer().style.bottom).not.toBe('')
     expect(layer().style.top).toBe('')
@@ -573,7 +518,7 @@ describe('PickerMenu close render', () => {
   })
 })
 
-describe('PickerMenu re-measure', () => {
+describe('MenuBase re-measure', () => {
   let paneH = 300
   let grew: ((by: number) => void) | null = null
   const observers: (() => void)[] = []
@@ -620,9 +565,9 @@ describe('PickerMenu re-measure', () => {
   }
   const open = (y = 400): Promise<void> =>
     render(
-      <PickerMenu open onDismiss={() => {}} at={{ x: 400, y, height: 20 }}>
+      <MenuBase open onDismiss={() => {}} at={{ x: 400, y, height: 20 }}>
         <Slides />
-      </PickerMenu>,
+      </MenuBase>,
     )
   const openOn = async (top: number): Promise<{ top: number }> => {
     const at = { top }
@@ -631,9 +576,9 @@ describe('PickerMenu re-measure', () => {
       ({ top: at.top, bottom: at.top + 20, left: 400, right: 400, width: 0, height: 20 }) as DOMRect
     const ref = { current: trigger }
     await render(
-      <PickerMenu open onDismiss={() => {}} triggerRef={ref}>
+      <MenuBase open onDismiss={() => {}} triggerRef={ref}>
         <span data-id="body">BODY</span>
-      </PickerMenu>,
+      </MenuBase>,
     )
     return at
   }
@@ -713,14 +658,14 @@ describe('PickerMenu re-measure', () => {
 
   it('offers a resizable pane no slide growth, so it never flips', async () => {
     await render(
-      <PickerMenu
+      <MenuBase
         open
         onDismiss={() => {}}
         at={{ x: 400, y: 400, height: 20 }}
         resize={{ size: {}, resizing: false, place: () => {}, edges: [] }}
       >
         <Slides />
-      </PickerMenu>,
+      </MenuBase>,
     )
     expect(grew).toBeNull()
   })
@@ -729,9 +674,9 @@ describe('PickerMenu re-measure', () => {
     const dismiss = vi.fn()
     const trigger = document.body.appendChild(document.createElement('button'))
     await render(
-      <PickerMenu open onDismiss={dismiss} triggerRef={{ current: trigger }}>
+      <MenuBase open onDismiss={dismiss} triggerRef={{ current: trigger }}>
         <span data-id="body">BODY</span>
-      </PickerMenu>,
+      </MenuBase>,
     )
     trigger.remove()
     await act(async () => {

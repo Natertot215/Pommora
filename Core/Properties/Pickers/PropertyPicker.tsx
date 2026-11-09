@@ -13,8 +13,8 @@ import {
 import { optionLabel, type PropertyValue } from '../propertyValue'
 import { OptionDraft } from '../Schema/OptionSlot'
 import { type OptionStyleControl, useOptionEdit } from '../Schema/useOptionEdit'
-import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
-import { PICKER_MAX_HEIGHT } from '@pommora/uix/Pickers/picker-base.css'
+import { MenuBase } from '@pommora/uix/Menus/MenuBase'
+import { PICKER_MAX_HEIGHT } from '@pommora/uix/Menus/menu-row.css'
 import {
   FootingCreate,
   MenuFooting,
@@ -100,7 +100,7 @@ export function PropertyPicker({
 }): React.JSX.Element {
   const options = target?.kind === 'options'
   return (
-    <PickerMenu
+    <MenuBase
       solid
       open={target !== null}
       onDismiss={onDismiss}
@@ -109,7 +109,7 @@ export function PropertyPicker({
       centerX={options ? centerX : undefined}
     >
       {target && <ValuePane target={target} onCommit={onCommit} onClose={onDismiss} />}
-    </PickerMenu>
+    </MenuBase>
   )
 }
 

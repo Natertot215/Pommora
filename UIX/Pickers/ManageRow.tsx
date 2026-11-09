@@ -1,6 +1,6 @@
 import { type ReactNode, useRef, useState } from 'react'
 import { Button } from '../Buttons/Button'
-import { PickerMenu } from './PickerMenu'
+import { MenuBase } from '../Menus/MenuBase'
 import { Icon, type IconName } from '../Symbols'
 import { MenuRowView } from '../Menus/MenuIndex'
 import { trailingCluster, trailingFigure } from '../Menus/menu-row.css'
@@ -50,7 +50,7 @@ export function ManageRow({
                 pressed={open}
                 onClick={() => setOpen((o) => !o)}
               />
-              <PickerMenu
+              <MenuBase
                 open={open}
                 onDismiss={() => setOpen(false)}
                 triggerRef={triggerRef}
@@ -60,7 +60,7 @@ export function ManageRow({
                 contentClassName={menu ? s.bounds : s.pane}
               >
                 {children}
-              </PickerMenu>
+              </MenuBase>
             </span>
           ),
         },

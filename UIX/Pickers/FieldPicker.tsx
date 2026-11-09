@@ -1,6 +1,6 @@
 import type { ReactNode, RefObject } from 'react'
 import { EditableInput } from '../Fields/EditableInput'
-import { PickerMenu } from './PickerMenu'
+import { MenuBase } from '../Menus/MenuBase'
 import * as s from './field-picker.css'
 
 /** What the one chrome holds: the kit's input over a `value`, with its affixes, or a caller's own editor as `children`. */
@@ -33,7 +33,7 @@ export function FieldPicker({
   triggerRef: RefObject<HTMLElement | null>
 } & (Typed | Hosted)): React.JSX.Element | null {
   return (
-    <PickerMenu
+    <MenuBase
       open={open}
       onDismiss={onDismiss}
       triggerRef={triggerRef}
@@ -56,6 +56,6 @@ export function FieldPicker({
           />
         )}
       </div>
-    </PickerMenu>
+    </MenuBase>
   )
 }

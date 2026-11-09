@@ -1,12 +1,12 @@
 import { useRef, type RefObject } from 'react'
-import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
+import { MenuBase } from '@pommora/uix/Menus/MenuBase'
 import { AccessoryButton } from '@pommora/uix/Menus/MenuRows'
 import type { ConnPage } from '../../Connections/pageIndex'
 import type { EditorHost } from '../../MarkdownPM/api'
 import type { PropertyValue } from '../propertyValue'
 import { ValueEditor } from './ValueEditor'
 
-/** A Text value's pane: the value editor in a popover with a close, saving once on every way out. The editor lives in the pane's body, which `PickerMenu` mounts and unmounts around each open. */
+/** A Text value's pane: the value editor in a popover with a close, saving once on every way out. The editor lives in the pane's body, which `MenuBase` mounts and unmounts around each open. */
 export function TextPane({
   current,
   holder,
@@ -25,13 +25,13 @@ export function TextPane({
   onDismiss: () => void
 }): React.JSX.Element {
   const saveRef = useRef<() => void>(() => {})
-  // Saved on the close itself, since `PickerMenu` holds the editor through its exit presence and the unmount's save would land after the fade.
+  // Saved on the close itself, since `MenuBase` holds the editor through its exit presence and the unmount's save would land after the fade.
   const close = (): void => {
     saveRef.current()
     onDismiss()
   }
   return (
-    <PickerMenu
+    <MenuBase
       open={open}
       onDismiss={close}
       triggerRef={triggerRef}
@@ -53,6 +53,6 @@ export function TextPane({
         className="text-pane-close"
         onClick={close}
       />
-    </PickerMenu>
+    </MenuBase>
   )
 }

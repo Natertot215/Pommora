@@ -10,7 +10,8 @@ import type { PropertyDefinition, PropertyType, SelectOption } from '../properti
 import { OptionChip } from '../Cells/OptionChip'
 import { chipOf } from '../typeDisplay'
 import { ghostAnchorProps, type GhostAnchor } from '@pommora/uix/Interactions/ghostCreate'
-import * as s from '@pommora/uix/Menus/frames.css'
+import { ICON, optionRow } from '@pommora/uix/Menus/frames.css'
+import * as s from './schema.css'
 
 export function OptionSlot({
   option,
@@ -34,7 +35,7 @@ export function OptionSlot({
     <LineRow
       id={option.id}
       {...ghostAnchorProps(ghost, option.id)}
-      className={s.optionRow}
+      className={optionRow}
       data-reveal-host=""
       onContextMenu={(e) => {
         e.preventDefault()
@@ -49,7 +50,7 @@ export function OptionSlot({
         size="button-inline"
         paddingX="0"
         icon="square-pen"
-        iconSize={s.ICON.optionEdit}
+        iconSize={ICON.optionEdit}
         className={s.optionEditButton}
         data-reveal-held={editing || undefined}
         aria-label="Edit Option"

@@ -2,8 +2,8 @@ import { Fragment, useCallback, useEffect, useRef, useState } from 'react'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
 import { LINK_RESOLVE_TIMEOUT_MS } from '../../Web/titleScan'
-import { PICKER_PORTAL_ATTR, PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
-import { type PaneBounds, usePaneResize } from '@pommora/uix/Pickers/usePaneResize'
+import { PICKER_PORTAL_ATTR, MenuBase } from '@pommora/uix/Menus/MenuBase'
+import { type PaneBounds, usePaneResize } from '@pommora/uix/Menus/usePaneResize'
 import { lockLabel } from '../../Actions/toggleLabels'
 import { Icon, LockGlyph } from '@pommora/uix/Symbols'
 import { cx } from '@pommora/uix/Utilities/cx'
@@ -306,7 +306,7 @@ export function GlancePane(): React.JSX.Element {
     if (line && view) toggleFoldAt(view, view.posAtDOM(line))
   }
 
-  // Freeze the ANCHOR POINT (not the pane corner — PickerMenu re-adds gap/origin and re-derives direction) plus the live box size, then dismiss the live pane; the pin renders itself from pinnedGlances.
+  // Freeze the ANCHOR POINT (not the pane corner — MenuBase re-adds gap/origin and re-derives direction) plus the live box size, then dismiss the live pane; the pin renders itself from pinnedGlances.
   const onLock = (): void => {
     const card = cardRef.current
     if (!page || !shown || !card) return
@@ -347,7 +347,7 @@ export function GlancePane(): React.JSX.Element {
 
   return (
     <>
-      <PickerMenu
+      <MenuBase
         glass="window"
         open={shown !== null}
         triggerRef={anchorRef}
@@ -401,13 +401,13 @@ export function GlancePane(): React.JSX.Element {
           )}
           {lockBtn}
         </div>
-      </PickerMenu>
+      </MenuBase>
       {pinnedGlances
         .filter((p) => p.tabId === activeTabId)
         .map((p) => (
           <Fragment key={p.pinId}>
             <PinEscape pinId={p.pinId} active={!exiting.has(p.pinId)} beginExit={beginExit} />
-            <PickerMenu
+            <MenuBase
               glass="window"
               open={!exiting.has(p.pinId)}
               enter={false}
@@ -429,7 +429,7 @@ export function GlancePane(): React.JSX.Element {
                 {renderPageTile(p.target, glanceWarmSeam(p.target.id, p.target.path))}
                 {pinBtn(p)}
               </div>
-            </PickerMenu>
+            </MenuBase>
           </Fragment>
         ))}
     </>

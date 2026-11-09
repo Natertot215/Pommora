@@ -1,7 +1,7 @@
 import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
 import { MenuItem, MenuScrollFrame, MenuSeparator, MenuTopRow } from '@pommora/uix/Menus/MenuRows'
-import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
-import { PICKER_MAX_HEIGHT, PICKER_WIDTH } from '@pommora/uix/Pickers/picker-base.css'
+import { MenuBase } from '@pommora/uix/Menus/MenuBase'
+import { PICKER_MAX_HEIGHT, PICKER_WIDTH } from '@pommora/uix/Menus/menu-row.css'
 import { Icon } from '@pommora/uix/Symbols'
 import { contextsByIdOf } from '../../Contexts/contextIdentity'
 import { useSession } from '../../Session/store'
@@ -54,7 +54,7 @@ export function MetadataPicker({ seat }: { seat: ValueSeatApi }): React.JSX.Elem
   const listed = spaces.length + properties.length > 0
 
   return (
-    <PickerMenu solid open={adding !== null} onDismiss={seat.close} triggerRef={seat.anchor}>
+    <MenuBase solid open={adding !== null} onDismiss={seat.close} triggerRef={seat.anchor}>
       <FrameSlide
         open={target !== null}
         minWidth={PICKER_WIDTH.minWidth}
@@ -89,6 +89,6 @@ export function MetadataPicker({ seat }: { seat: ValueSeatApi }): React.JSX.Elem
           )
         }
       />
-    </PickerMenu>
+    </MenuBase>
   )
 }

@@ -7,8 +7,8 @@ import { EntityIcon } from '../../Assets/EntityIcon'
 import { type Disclosure, DisclosureRow, useDisclosureSet } from '@pommora/uix/Menus/DisclosureRow'
 import { MenuDesc, MenuScrollFrame } from '@pommora/uix/Menus/MenuRows'
 import { pickRuns } from '@pommora/uix/Menus/pickRuns'
-import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
-import { PICKER_MAX_HEIGHT, treePane } from '@pommora/uix/Pickers/picker-base.css'
+import { MenuBase } from '@pommora/uix/Menus/MenuBase'
+import { PICKER_MAX_HEIGHT } from '@pommora/uix/Menus/menu-row.css'
 import { useKeepInView, usePaneCtl } from '@pommora/uix/Interactions/paneCtl'
 import * as fp from './filter-frame.css'
 import { useMultiValue } from './useMultiValue'
@@ -176,12 +176,12 @@ export function LocationField({
         }}
         onEnter={enter}
       />
-      <PickerMenu
+      <MenuBase
         open={open && (!q || tree.nodes.length > 0)}
         onDismiss={dismiss}
         triggerRef={ref}
         origin="left"
-        contentClassName={treePane}
+        contentClassName={fp.treePane}
         focus="keep"
       >
         {open && (
@@ -194,7 +194,7 @@ export function LocationField({
             onPick={pick}
           />
         )}
-      </PickerMenu>
+      </MenuBase>
     </>
   )
 }

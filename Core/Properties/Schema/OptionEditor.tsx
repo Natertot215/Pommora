@@ -16,7 +16,8 @@ import { base } from '@pommora/uix/Fields/fields.css'
 import { text } from '@pommora/uix/Theme'
 import { OptionDraft, OptionSlot } from './OptionSlot'
 import { type OptionStyleControl, useOptionEdit } from './useOptionEdit'
-import * as s from '@pommora/uix/Menus/frames.css'
+import { ICON, optionRow } from '@pommora/uix/Menus/frames.css'
+import * as s from './schema.css'
 import { AccessoryButton, menuDropLine } from '@pommora/uix/Menus/MenuRows'
 import { heading } from '@pommora/uix/Menus/menu-row.css'
 
@@ -42,7 +43,7 @@ export function OptionEditor({
 
   const slotAt = (g: StatusGroup, index: number, anchorId: string): React.JSX.Element | null =>
     edit.draft?.groupId === g.id && edit.draft.index === index ? (
-      <div className={s.optionRow}>
+      <div className={optionRow}>
         <OptionDraft edit={edit} type={def.type} color={g.color} />
       </div>
     ) : (
@@ -86,7 +87,7 @@ export function OptionEditor({
             </RenamableLabel>
             <AccessoryButton
               icon="plus"
-              size={s.ICON.optionsAdd}
+              size={ICON.optionsAdd}
               ariaLabel={grouped ? `Add to ${g.label}` : 'Add Option'}
               create
               reveal={grouped}

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { useLineRow } from '@pommora/uix/Interactions/drag'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
 import { titleInput } from '@pommora/uix/Menus/menu-row.css'
-import { sideFor, VIEWPORT_MARGIN } from '@pommora/uix/Pickers/panePlacement'
+import { sideFor, VIEWPORT_MARGIN } from '@pommora/uix/Menus/panePlacement'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 import { text } from '@pommora/uix/Theme'
 import { cx } from '@pommora/uix/Utilities/cx'

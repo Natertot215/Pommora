@@ -45,7 +45,8 @@ import { PaneRestGroup, type PaneDrop, paneSpec } from '@pommora/uix/Menus/paneD
 import { fullOrderIndex } from '@pommora/uix/Utilities/moveItem'
 import { propertyIcon, propertyTypeIconName, propertyTypeLabel } from '../typeDisplay'
 import { cx } from '@pommora/uix/Utilities/cx'
-import * as s from '@pommora/uix/Menus/frames.css'
+import * as fr from '@pommora/uix/Menus/frames.css'
+import * as s from './schema.css'
 import { askRewrite, confirmDelete } from '../../Interface/Confirm/confirmations'
 import { EDITOR_MENU, popMenu } from '../../Actions/menuActions'
 import { propertyMenuModel } from '../../Actions/propertyMenu'
@@ -103,7 +104,7 @@ function ListGroups({
               <Reveal key={d.id} open enterOnMount={enteringAssigned(d.id)} fill>
                 <LineRow id={d.id} open={open}>
                   <MenuItem
-                    leading={<Icon name={propertyIcon(d)} size={s.ICON.doc} />}
+                    leading={<Icon name={propertyIcon(d)} size={fr.ICON.doc} />}
                     detail={propertyTypeLabel(d.type)}
                     trailing={<Icon name="chevron-right" />}
                     tabIndex={-1}
@@ -133,11 +134,11 @@ function ListGroups({
                 <LineRow id={d.id}>
                   <MenuItem
                     className={s.allRow}
-                    leading={<Icon name={propertyIcon(d)} size={s.ICON.doc} />}
+                    leading={<Icon name={propertyIcon(d)} size={fr.ICON.doc} />}
                     trailing={
                       <AccessoryButton
                         icon="plus"
-                        size={s.ICON.rowPlus}
+                        size={fr.ICON.rowPlus}
                         ariaLabel={`Assign ${d.label}`}
                         create
                         onClick={() => onAssign(d.id)}
@@ -260,7 +261,7 @@ export function PropertyFrame({
       {CREATABLE_TYPES.map((type) => (
         <MenuItem
           key={type}
-          leading={<Icon name={propertyTypeIconName(type)} size={s.ICON.doc} />}
+          leading={<Icon name={propertyTypeIconName(type)} size={fr.ICON.doc} />}
           trailing={<Icon name="chevron-right" />}
           onClick={() => void create(type)}
         >
@@ -280,7 +281,7 @@ export function PropertyFrame({
       assetRoot,
     })
     const settings = options ? (
-      <div className={cx(s.middleRegion, s.chipRegion, 'scroll-fade')}>
+      <div className={cx(fr.middleRegion, fr.chipRegion, 'scroll-fade')}>
         <OptionEditor
           def={def}
           style={{
@@ -320,7 +321,7 @@ export function PropertyFrame({
             trailing={
               <AccessoryButton
                 icon="ellipsis-vertical"
-                size={s.ICON.editorMenu}
+                size={fr.ICON.editorMenu}
                 ariaLabel="Property Menu"
                 onClick={(e) => void editorMenu(def, e.currentTarget)}
               />
@@ -328,7 +329,7 @@ export function PropertyFrame({
           />
         }
         footer={styleFooting}
-        maxHeight={s.SETTINGS_PANE_MAX_HEIGHT}
+        maxHeight={fr.SETTINGS_PANE_MAX_HEIGHT}
       >
         <InlineEditHeader
           value={def.label}
@@ -337,7 +338,7 @@ export function PropertyFrame({
           onCommit={(next) => void rename(def.id, next)}
         />
         <MenuSeparator flush />
-        <div className={s.ruleFrame}>
+        <div className={fr.ruleFrame}>
           <MenuIndex
             sections={[{ rows: formatRows(def, (change) => void setFormat(def.id, change)) }]}
           />
@@ -351,7 +352,7 @@ export function PropertyFrame({
   const list = (
     <MenuScrollFrame
       header={<MenuTopRow {...back} current="Properties" />}
-      maxHeight={s.SETTINGS_PANE_MAX_HEIGHT}
+      maxHeight={fr.SETTINGS_PANE_MAX_HEIGHT}
       footer={
         <MenuFooting
           leading={
@@ -361,7 +362,7 @@ export function PropertyFrame({
       }
     >
       <LineZone
-        className={s.frameZone}
+        className={fr.frameZone}
         {...paneSpec({
           members: schema.map((d) => d.id),
           ordersRest: true,
@@ -395,7 +396,7 @@ export function PropertyFrame({
 
   return (
     <FrameSlide
-      {...s.SETTINGS_PANE_FLOOR}
+      {...fr.SETTINGS_PANE_FLOOR}
       open={view.kind === 'type' || editing !== undefined}
       root={list}
       detail={view.kind === 'type' ? typePicker : editing && editor(editing)}

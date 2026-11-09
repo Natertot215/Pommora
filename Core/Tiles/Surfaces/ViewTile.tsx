@@ -13,14 +13,18 @@ import {
 } from '../viewTileEntry'
 import { Icon, LockGlyph } from '@pommora/uix/Symbols'
 import { cellRing, colorNameFor } from '@pommora/uix/Theme/ramp'
-import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
+import { MenuBase } from '@pommora/uix/Menus/MenuBase'
 import { FootingCreate, MenuFooting, MenuScrollFrame } from '@pommora/uix/Menus/MenuRows'
-import { titleInput as rowInput, rowDisabled, spacer } from '@pommora/uix/Menus/menu-row.css'
+import {
+  titleInput as rowInput,
+  rowDisabled,
+  spacer,
+  PICKER_MAX_HEIGHT,
+} from '@pommora/uix/Menus/menu-row.css'
 import { SortableZone, useDragItem } from '@pommora/uix/Interactions/drag'
 import { REVEAL_DWELL_MS, useHoverReveal } from '@pommora/uix/Interactions/hoverReveal'
 import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
 import { Scrollbar } from '@pommora/uix/Interactions/Scrollbar'
-import { PICKER_MAX_HEIGHT } from '@pommora/uix/Pickers/picker-base.css'
 import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
 import { useChoiceOpen, useIconChoice } from '../../Assets/IdentityChoice'
 import { entityIcon } from '../../Assets/entityIconPolicy'
@@ -508,7 +512,7 @@ export function ViewTile({
           </div>
         </div>
         <Scrollbar />
-        <PickerMenu
+        <MenuBase
           open={cfgOpen}
           onDismiss={() => setCfgOpen(false)}
           triggerRef={btnRef}
@@ -516,8 +520,8 @@ export function ViewTile({
           contentClassName={hostedGutter}
         >
           <SettingsFrame />
-        </PickerMenu>
-        <PickerMenu solid open={listOpen} onDismiss={() => setListOpen(false)} triggerRef={dropRef}>
+        </MenuBase>
+        <MenuBase solid open={listOpen} onDismiss={() => setListOpen(false)} triggerRef={dropRef}>
           <div className={s.listPane}>
             <MenuScrollFrame
               maxHeight={PICKER_MAX_HEIGHT}
@@ -536,7 +540,7 @@ export function ViewTile({
               ))}
             </MenuScrollFrame>
           </div>
-        </PickerMenu>
+        </MenuBase>
       </div>
     </ViewTileScopeProvider>
   )

@@ -71,3 +71,8 @@ export const chipRun = style({
 })
 
 export const controlFieldWide = style([cellField, { flex: '1 1 auto' }])
+
+export const treePane = style({
+  minWidth: 140, // KNOB
+  maxWidth: 260, // KNOB
+})

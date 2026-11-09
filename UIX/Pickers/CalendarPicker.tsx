@@ -8,9 +8,8 @@ import { DualSwitch } from '../Controls/DualSwitch'
 import { usePointerGesture } from '../Interactions/gesture'
 import { OverScroll } from '../Interactions/OverScroll'
 import { suppressReleaseClick } from '../Interactions/shared'
-import { PickerMenu } from './PickerMenu'
-import type { PanePoint } from './panePlacement'
-import { optionRing } from './picker-base.css'
+import { MenuBase } from '../Menus/MenuBase'
+import type { PanePoint } from '../Menus/panePlacement'
 import { MenuItem, MenuScrollFrame } from '../Menus/MenuRows'
 import { cx } from '../Utilities/cx'
 import { localDayKey, pad } from '../Utilities/pad'
@@ -251,7 +250,7 @@ export function CalendarPicker({
                 />
               )}
               <span
-                className={cx(s.pill, k === todayKey && !sel && optionRing, sel && s.pillSelected)}
+                className={cx(s.pill, k === todayKey && !sel && s.pillToday, sel && s.pillSelected)}
               />
               {d.getDate()}
             </button>
@@ -413,7 +412,7 @@ export function CalendarPicker({
           />
         </div>
       )}
-      <PickerMenu
+      <MenuBase
         ownShield
         solid
         open={menu !== null}
@@ -426,7 +425,7 @@ export function CalendarPicker({
             <div className={s.menuList}>{menu.kind === 'month' ? monthRows() : yearRows()}</div>
           )}
         </MenuScrollFrame>
-      </PickerMenu>
+      </MenuBase>
     </div>
   )
 }
@@ -532,7 +531,7 @@ function ClockField({
           </button>
         )}
       </span>
-      <PickerMenu
+      <MenuBase
         solid
         direction="up"
         open={timeMenu !== null}
@@ -547,7 +546,7 @@ function ClockField({
         <MenuScrollFrame maxHeight={DROPDOWN_MAX_HEIGHT}>
           {timeMenu && <div className={s.menuList}>{timeRows(timeMenu.part)}</div>}
         </MenuScrollFrame>
-      </PickerMenu>
+      </MenuBase>
     </div>
   )
 }

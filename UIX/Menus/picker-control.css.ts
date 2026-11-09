@@ -6,7 +6,7 @@ import { base } from '../Fields/fields.css'
 
 const c = colorVars.color
 
-/** A stable box the PickerMenu keeps measuring while the trigger inside it is replaced. */
+/** A stable box the MenuBase keeps measuring while the trigger inside it is replaced. */
 export const host = style({ display: 'inline-flex' })
 
 export const trigger = style({

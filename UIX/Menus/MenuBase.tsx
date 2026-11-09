@@ -18,17 +18,17 @@ import { keepFocus } from '../Interactions/shared'
 import { cx } from '../Utilities/cx'
 import { useLatest } from '../Utilities/stableApi'
 import { BASE_FEEL } from '../Animations/feel'
-import { SlideGrowth } from '../Menus/FrameSlide'
+import { SlideGrowth } from './FrameSlide'
 import {
   placePane,
   roomAround,
   sideFor,
   type PanePoint,
   type PanePos,
-  type PickerDirection,
+  type PaneDirection,
 } from './panePlacement'
 import type { PaneResize } from './usePaneResize'
-import * as s from './picker-base.css'
+import * as s from './menu-base.css'
 
 /** The portal layer a floating pane occupies. Containment reads against this rather than the pane's body, so the pane's own rim and resize edges are inside it. */
 export const PICKER_PORTAL_ATTR = 'data-picker-portal'
@@ -63,7 +63,7 @@ const resized = (el: HTMLElement, box: RefObject<{ w: number; h: number }>): boo
   return true
 }
 
-export function PickerMenu({
+export function MenuBase({
   children,
   open,
   onDismiss,
@@ -82,7 +82,6 @@ export function PickerMenu({
   modal = true,
   ownShield = false,
   contentClassName,
-  style,
   resize,
 }: {
   children: ReactNode
@@ -96,7 +95,7 @@ export function PickerMenu({
   enter?: boolean
   /** Fired once a close has played out and the menu has unmounted itself — the cue to remove the entry that drove `open`. */
   onExited?: () => void
-  direction?: PickerDirection
+  direction?: PaneDirection
   origin?: 'auto' | 'right' | 'center' | 'left'
   at?: PanePoint
   centerX?: number
@@ -109,7 +108,6 @@ export function PickerMenu({
   /** A dropdown list inside another pane draws its own shield, so a press beside it closes the list alone. */
   ownShield?: boolean
   contentClassName?: string
-  style?: CSSProperties
   /** A pane the user sizes from its free edges — `usePaneResize`'s, held by the host that applies the size. */
   resize?: PaneResize
 }): React.JSX.Element | null {
@@ -130,7 +128,7 @@ export function PickerMenu({
       // A pane nothing dismisses leaves with its host, as a pinned glance does with its tab, so only a dismissable one has a Bloom-out to lose.
       if (import.meta.env.DEV && liveRef.current && dismissRef.current !== undefined)
         console.error(
-          '[PickerMenu] unmounted while open/exiting — Bloom-out skipped. Mount persistently and ride `open`.',
+          '[MenuBase] unmounted while open/exiting — Bloom-out skipped. Mount persistently and ride `open`.',
         )
     },
     [],
@@ -154,7 +152,7 @@ export function PickerMenu({
     const next = snapped(raw)
     setPosState((prev) => (samePos(prev, next) ? prev : next))
   }
-  const decidedSide = useRef<PickerDirection | null>(null)
+  const decidedSide = useRef<PaneDirection | null>(null)
   const decidedCenter = useRef<boolean | null>(null)
   const decidedFor = useRef<Element | null | undefined>(null)
   if (!open && decidedSide.current !== null) {
@@ -294,7 +292,6 @@ export function PickerMenu({
       style={
         {
           ...(pos?.origin ? { '--menu-origin': pos.origin } : null),
-          ...style,
           ...(closing ? { pointerEvents: 'none' as const } : null),
         } as CSSProperties
       }

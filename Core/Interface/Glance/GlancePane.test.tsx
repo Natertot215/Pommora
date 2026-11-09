@@ -3,7 +3,7 @@ import { detail } from '../../Testing/fixtures'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
+import { MenuBase } from '@pommora/uix/Menus/MenuBase'
 import { pickerBloom } from '@pommora/uix/Animations/animations.css'
 import { MENU_GAP } from '@pommora/uix/Menus/menuAnchor'
 import { pushDismissal } from '@pommora/uix/Interactions/dismissalStack'
@@ -604,9 +604,9 @@ describe('pinned panes (Task 10)', () => {
     const ctlRoot = createRoot(ctlHost)
     act(() =>
       ctlRoot.render(
-        <PickerMenu open onDismiss={() => {}} at={{ x: 0, y: 0 }}>
+        <MenuBase open onDismiss={() => {}} at={{ x: 0, y: 0 }}>
           x
-        </PickerMenu>,
+        </MenuBase>,
       ),
     )
     act(() => ctlRoot.unmount())

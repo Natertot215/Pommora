@@ -6,7 +6,7 @@ import {
   type Size,
 } from '../Interactions/useResizable'
 import { clamp } from '../Utilities/clamp'
-import { VIEWPORT_MARGIN, type PickerDirection } from './panePlacement'
+import { VIEWPORT_MARGIN, type PaneDirection } from './panePlacement'
 
 /** An axis resizes when it has a floor; one without a default fits its content until it's first resized. */
 export interface PaneBounds {
@@ -18,14 +18,14 @@ export interface PaneBounds {
 export interface PaneResize {
   size: Partial<Size>
   resizing: boolean
-  place: (placed: { dir: PickerDirection; room: number }, pane: HTMLElement) => void
+  place: (placed: { dir: PaneDirection; room: number }, pane: HTMLElement) => void
   edges: React.JSX.Element[]
 }
 
 type Axis = keyof Size
 
 const UNPLACED = {
-  dir: 'down' as PickerDirection,
+  dir: 'down' as PaneDirection,
   room: Number.POSITIVE_INFINITY,
   inset: { w: 0, h: 0 },
 }
@@ -33,7 +33,7 @@ const UNPLACED = {
 const PULLS: Record<Axis, RegExp> = { w: /[ew]/, h: /[ns]/ }
 
 // The free edges face away from the anchor.
-const FREE_EDGES: Record<PickerDirection, readonly ResizeEdge[]> = {
+const FREE_EDGES: Record<PaneDirection, readonly ResizeEdge[]> = {
   down: ['e', 'w', 's', 'se', 'sw'],
   up: ['e', 'w', 'n', 'ne', 'nw'],
 }
@@ -48,7 +48,7 @@ function contentBox(box: HTMLElement): Size {
   }
 }
 
-/** A PickerMenu pane the user sizes from its free edges: reset to the remembered size on each open, clamped to the viewport and the room it opened into. */
+/** A MenuBase pane the user sizes from its free edges: reset to the remembered size on each open, clamped to the viewport and the room it opened into. */
 export function usePaneResize(
   open: boolean,
   bounds: PaneBounds,

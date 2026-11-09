@@ -1,6 +1,6 @@
 import type { RefObject } from 'react'
 import type { OptionAppearance, PropertyDefinition, PropertyType } from '../properties'
-import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
+import { MenuBase } from '@pommora/uix/Menus/MenuBase'
 import { ColorGrid } from '@pommora/uix/Pickers/ColorPicker'
 import { PickerControl, type PickerOption } from '@pommora/uix/Menus/PickerControl'
 import { cx } from '@pommora/uix/Utilities/cx'
@@ -46,7 +46,7 @@ export function OptionEditPopup({
   const { iconRef, iconOpen, onIconClick } = useIconChoice(option.icon, onPickIcon)
   return (
     // Focus left where it was: opening is inspection, not an edit — nothing rings or selects on open.
-    <PickerMenu open={open} onDismiss={onDismiss} triggerRef={triggerRef} focus="leave">
+    <MenuBase open={open} onDismiss={onDismiss} triggerRef={triggerRef} focus="leave">
       <div key={contentKey} className={s.root}>
         <div className={s.fieldRow}>
           <button
@@ -87,6 +87,6 @@ export function OptionEditPopup({
           />
         </div>
       </div>
-    </PickerMenu>
+    </MenuBase>
   )
 }

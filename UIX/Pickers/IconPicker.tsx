@@ -6,7 +6,7 @@ import {
   useState,
   useSyncExternalStore,
 } from 'react'
-import { PickerMenu } from './PickerMenu'
+import { MenuBase } from '../Menus/MenuBase'
 import { SearchField } from '../Fields/SearchField'
 import { fullIconSet, Icon, loadFullIconSet, subscribeFullIconSet } from '../Symbols'
 import type { IconEntry } from '../Symbols/allSymbols'
@@ -80,7 +80,7 @@ export function IconPicker({
   )
 
   return (
-    <PickerMenu
+    <MenuBase
       open={open}
       onDismiss={onDismiss}
       triggerRef={triggerRef}
@@ -133,7 +133,7 @@ export function IconPicker({
           })}
         </div>
       </div>
-    </PickerMenu>
+    </MenuBase>
   )
 }
 

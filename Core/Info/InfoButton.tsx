@@ -2,7 +2,7 @@ import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 import { Button, type ButtonType } from '@pommora/uix/Buttons/Button'
 import { coarse, useHoverReveal } from '@pommora/uix/Interactions/hoverReveal'
 import { rowAccessory } from '@pommora/uix/Menus/menu-row.css'
-import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
+import { MenuBase } from '@pommora/uix/Menus/MenuBase'
 import type { IconName } from '@pommora/uix/Symbols'
 import { MarkdownEditor } from '../MarkdownPM/MarkdownEditor'
 import { useEditorHost } from '../Pages/editorHost'
@@ -61,7 +61,7 @@ export function InfoButton({
         aria-label={`${title} - Info`}
         onClick={() => (held ? close() : setHeld(true))}
       />
-      <PickerMenu
+      <MenuBase
         open={open}
         onDismiss={close}
         triggerRef={triggerRef}
@@ -69,7 +69,7 @@ export function InfoButton({
         contentClassName="info-pane"
       >
         {children}
-      </PickerMenu>
+      </MenuBase>
     </span>
   )
 }

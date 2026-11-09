@@ -1,10 +1,10 @@
 import type { Size } from '@pommora/uix/Interactions/useResizable'
-import type { PanePoint } from '@pommora/uix/Pickers/panePlacement'
+import type { PanePoint } from '@pommora/uix/Menus/panePlacement'
 import { type ReconcileIndex, reconcileHeld, reconcileWith } from './reconcileSelection'
 import { makeTabId } from '../Navigation/tabsModel'
 import type { Slice } from './sessionState'
 
-// Placement freezes the trigger's ANCHOR POINT, not the pane corner — PickerMenu re-adds the gap/origin and re-derives direction from it on each open. Pins are explicit artifacts: never LRU-evicted, keyed by a minted pinId and tagged with their tab so multiple per tab and the same page across tabs both stand.
+// Placement freezes the trigger's ANCHOR POINT, not the pane corner — MenuBase re-adds the gap/origin and re-derives direction from it on each open. Pins are explicit artifacts: never LRU-evicted, keyed by a minted pinId and tagged with their tab so multiple per tab and the same page across tabs both stand.
 export type PinnedGlance = {
   pinId: string
   tabId: string

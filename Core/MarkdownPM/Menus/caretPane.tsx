@@ -2,9 +2,9 @@ import type { ReactNode, RefObject } from 'react'
 import { type Extension, StateEffect, StateField } from '@codemirror/state'
 import type { EditorView, KeyBinding } from '@codemirror/view'
 import { scrollContainer } from '@pommora/uix/Interactions/autoscroll'
-import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
-import type { PanePoint } from '@pommora/uix/Pickers/panePlacement'
-import type { PaneResize } from '@pommora/uix/Pickers/usePaneResize'
+import { MenuBase } from '@pommora/uix/Menus/MenuBase'
+import type { PanePoint } from '@pommora/uix/Menus/panePlacement'
+import type { PaneResize } from '@pommora/uix/Menus/usePaneResize'
 import type { PaneCtl } from '@pommora/uix/Interactions/paneCtl'
 import { cx } from '@pommora/uix/Utilities/cx'
 
@@ -71,7 +71,7 @@ export function CaretPane({
   children: ReactNode
 }): React.JSX.Element {
   return (
-    <PickerMenu
+    <MenuBase
       glass="window"
       open={open}
       at={caret.at}
@@ -82,7 +82,7 @@ export function CaretPane({
       resize={resize}
     >
       {children}
-    </PickerMenu>
+    </MenuBase>
   )
 }
 

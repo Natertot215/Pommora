@@ -23,7 +23,7 @@ import {
   MenuTopRow,
   RowRemove,
 } from '@pommora/uix/Menus/MenuRows'
-import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
+import { MenuBase } from '@pommora/uix/Menus/MenuBase'
 import { OverScroll } from '@pommora/uix/Interactions/OverScroll'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { useEntrance } from '@pommora/uix/Animations/useEntrance'
@@ -107,9 +107,9 @@ function RuleField({
         {chevron ? <Icon name="chevrons-up-down" size="control" className={fp.chevron} /> : null}
       </button>
       {'pane' in opens && (
-        <PickerMenu ownShield open={open} onDismiss={() => setOpen(false)} triggerRef={ref}>
+        <MenuBase ownShield open={open} onDismiss={() => setOpen(false)} triggerRef={ref}>
           {open ? opens.pane : null}
-        </PickerMenu>
+        </MenuBase>
       )}
     </>
   )
@@ -171,7 +171,7 @@ function ChipsField({
           </OverScroll>
         )}
       </div>
-      <PickerMenu ownShield open={open} onDismiss={() => setOpen(false)} triggerRef={ref}>
+      <MenuBase ownShield open={open} onDismiss={() => setOpen(false)} triggerRef={ref}>
         {open && (
           <PropertyOptionRows
             column={column}
@@ -180,7 +180,7 @@ function ChipsField({
             onPick={toggle}
           />
         )}
-      </PickerMenu>
+      </MenuBase>
     </>
   )
 }
