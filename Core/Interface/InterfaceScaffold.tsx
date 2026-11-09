@@ -65,3 +65,17 @@ export function InterfaceScaffold({
     </>
   )
 }
+
+export function DetailPlaceholder({
+  error,
+  children,
+}: {
+  error?: true
+  children: React.ReactNode
+}): React.JSX.Element {
+  return (
+    <div className="detail interface-inset">
+      <div className={cx('detail-placeholder', error && 'detail-error')}>{children}</div>
+    </div>
+  )
+}

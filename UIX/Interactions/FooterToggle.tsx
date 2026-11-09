@@ -5,14 +5,13 @@ import { cx } from '../Utilities/cx'
 export function FooterToggle({
   open,
   onOpenChange,
-  label,
   className,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
-  label: string
   className: string
 }): React.JSX.Element {
+  const label = open ? 'Hide Footer' : 'Show Footer'
   return (
     <button
       type="button"

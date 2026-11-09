@@ -1951,14 +1951,13 @@ const none = (reads) => reads.length > 0 && reads.every((r) => !r)
 const all = (reads) => reads.length > 0 && reads.every((r) => r)
 /** What's held: a line row's drag source or a sortable's pressed state, whether a drop line draws, and what the announcer said. */
 const HELD = `(() => ({ held: !!document.querySelector('[data-drag-source], [aria-roledescription=sortable][aria-pressed=true]'), line: [...document.querySelectorAll('.drop-line')].some((l) => l.getClientRects().length), said: ${ANNOUNCER}?.textContent ?? '' }))()`
-/** Space on a focused element: whether it lifted, cancelled by Escape when it did, the focus then let go so no list keeps it past a view change. */
+/** Space on a focused element: whether it lifted, cancelled by Escape when it did. */
 async function spaceLift(cdp, expr) {
   await hush(cdp)
   await cdp.evaluate(`(${expr}).focus()`)
   await pressKey(cdp, ' ')
   const read = await cdp.evaluate(HELD)
   if (read.held) await pressKey(cdp, 'Escape')
-  await cdp.evaluate('document.activeElement?.blur()')
   return { lifted: read.held && read.said.startsWith('Picked up'), said: read.said }
 }
 /** A press on `from` carried onto `to`'s top edge: what's held there, then Escape before the release unless `drop`. */

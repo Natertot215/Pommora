@@ -1,6 +1,5 @@
 import { useExitPresence } from '@pommora/uix/Animations/useExitPresence'
 import { WindowBase } from '@pommora/uix/Windows/WindowBase'
-import { shownLabel } from '../Actions/toggleLabels'
 import { Subfield } from '../Interface/Subfield/Subfield'
 import { shellRegion, useWindowGeometry } from '../Interface/Windows/useWindowGeometry'
 import { useFold, useSession } from '../Session/store'
@@ -40,7 +39,6 @@ function MatrixWindowBody({ closing }: { closing: boolean }): React.JSX.Element 
         bar: <Subfield page={null} count={count} selection={MATRIX_REF} />,
         open: footerOpen,
         onOpenChange: setFooterOpen,
-        label: (shown) => shownLabel(shown, 'Footer'),
       }}
     >
       <MatrixView />

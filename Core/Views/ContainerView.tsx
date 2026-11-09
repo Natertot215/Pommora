@@ -1,7 +1,8 @@
 import type { NexusTree } from '../Nexus/tree'
-import { InterfaceScaffold } from '../Interface/InterfaceScaffold'
+import { DetailPlaceholder, InterfaceScaffold } from '../Interface/InterfaceScaffold'
 import { ViewHost } from './Host/ViewHost'
-import { containerOwner, findCollection, findSet } from '../Nexus/treeIndex'
+import { containerOwner } from '../Nexus/treeIndex'
+import { findContainerById } from '../Nexus/treePatch'
 
 export function ContainerView({
   tree,
@@ -12,14 +13,12 @@ export function ContainerView({
   kind: 'collection' | 'set'
   id: string
 }): React.JSX.Element {
-  const source = kind === 'collection' ? findCollection(tree, id) : findSet(tree, id)
+  const source = tree ? findContainerById(tree, id) : null
   if (!source)
     return (
-      <div className="detail interface-inset">
-        <div className="detail-placeholder">
-          {kind === 'collection' ? 'Collection not found' : 'Set not found'}
-        </div>
-      </div>
+      <DetailPlaceholder>
+        {kind === 'collection' ? 'Collection not found' : 'Set not found'}
+      </DetailPlaceholder>
     )
   return (
     <InterfaceScaffold owner={containerOwner(source)}>

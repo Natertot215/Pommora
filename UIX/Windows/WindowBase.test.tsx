@@ -43,7 +43,6 @@ const footer = (fold: Partial<WindowFooter> = {}): WindowFooter => ({
   bar: <span />,
   open: true,
   onOpenChange: () => undefined,
-  label: () => 'Fold',
   ...fold,
 })
 

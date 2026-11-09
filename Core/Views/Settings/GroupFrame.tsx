@@ -321,7 +321,7 @@ export function GroupFrame({
             view={view}
             plan={plan}
             sub={sub}
-            persist={save}
+            save={save}
             hide={setControls}
             subHide={subDef ? bucketControls('sub', subDef.id) : undefined}
           />
@@ -336,7 +336,7 @@ function LocationHierarchy({
   view,
   plan,
   sub,
-  persist,
+  save,
   hide,
   subHide,
 }: {
@@ -344,7 +344,7 @@ function LocationHierarchy({
   view: SavedView
   plan: GroupPlan
   sub: Grouping | undefined
-  persist: ViewWriter
+  save: ViewWriter
   hide: HideControls
   subHide?: HideControls
 }): React.JSX.Element {
@@ -391,7 +391,7 @@ function LocationHierarchy({
     (dragged, prior) =>
       dropIO(
         { id: dragged.key, name: nodeLabel(model.byKey.get(dragged.key)), prior },
-        { source, view, persistView: persist },
+        { source, view, persistView: save },
       ),
   )
 

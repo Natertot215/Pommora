@@ -12,6 +12,7 @@ import { PageHeader } from './PageHeader'
 import { renameHeadingIn, useEditorHost } from './editorHost'
 import { useBodyMount } from './bodyMount'
 import { useSettledBody } from '../Interface/Subfield/subfieldPage'
+import { DetailPlaceholder } from '../Interface/InterfaceScaffold'
 import { coverOf } from './pageDetail'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 
@@ -54,20 +55,13 @@ export function PageView({
 
   const seat = useBodyMount(path, (body) => settle.push([path, body]))
 
-  if (!slot)
-    return (
-      <div className="detail interface-inset">
-        <div className="detail-placeholder">Loading page…</div>
-      </div>
-    )
+  if (!slot) return <DetailPlaceholder>Loading page…</DetailPlaceholder>
   if (slot.status === 'error')
     return (
-      <div className="detail interface-inset">
-        <div className="detail-placeholder detail-error">
-          Couldn’t open page
-          <span className="state-detail">{slot.error.message}</span>
-        </div>
-      </div>
+      <DetailPlaceholder error>
+        Couldn’t open page
+        <span className="state-detail">{slot.error.message}</span>
+      </DetailPlaceholder>
     )
   const pageDetail = slot.detail
   return (

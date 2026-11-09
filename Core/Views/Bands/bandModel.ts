@@ -63,7 +63,7 @@ interface HeadContext {
   bucket: (value: string) => Pick<BucketBand, 'label' | 'face'>
 }
 
-export function formatBucketLabel(
+function formatBucketLabel(
   key: string,
   granularity: DateGranularity,
   dateFormat: DateFormat,

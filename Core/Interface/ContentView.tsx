@@ -25,7 +25,6 @@ import { MatrixView } from '../Matrix/MatrixView'
 import { isOpenInTabs } from '../Navigation/tabsModel'
 import { Subfield } from './Subfield/Subfield'
 import { type SubfieldPage, ViewTypeItem } from './Subfield/subfieldItems'
-import { shownLabel } from '../Actions/toggleLabels'
 import { CitationsToggle } from './Subfield/CitationsToggle'
 import { publishChromePart } from './chromeParts'
 import { type ContentHost, ContentHostContext } from './contentHost'
@@ -209,12 +208,7 @@ function ContentFooter({
   useLayoutEffect(remeasure)
   return (
     <>
-      <FooterToggle
-        className="subfield-toggle"
-        open={expanded}
-        onOpenChange={onExpandedChange}
-        label={shownLabel(expanded, 'Footer')}
-      />
+      <FooterToggle className="subfield-toggle" open={expanded} onOpenChange={onExpandedChange} />
       <CitationsToggle page={page} />
       <div className="subfield-reveal reveal-bar">
         <Subfield page={page} count={count} lead={kind === 'none' ? <ViewTypeItem /> : undefined} />

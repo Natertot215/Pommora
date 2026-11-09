@@ -50,7 +50,6 @@ export interface WindowFooter {
   bar: ReactNode
   open: boolean
   onOpenChange: (open: boolean) => void
-  label: (open: boolean) => string
   lead?: ReactNode
 }
 
@@ -265,7 +264,6 @@ export function WindowBase({
             className="window-footer-toggle"
             open={footer.open}
             onOpenChange={footer.onOpenChange}
-            label={footer.label(footer.open)}
           />
           {footer.lead}
         </>

@@ -60,7 +60,7 @@ export function itemColumns(
   }
 }
 
-const shownIn = (view: SavedView): ((id: string) => boolean) => {
+export const shownIn = (view: SavedView): ((id: string) => boolean) => {
   const ordered = new Set(view.property_order)
   const hidden = new Set(view.hidden_properties)
   return (id) => ordered.has(id) && !hidden.has(id)

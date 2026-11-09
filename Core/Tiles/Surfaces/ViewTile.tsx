@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ConnPage } from '../../Connections/pageIndex'
 import type { EntryOp, EntryPatch, ViewTileEntry } from '../tiles'
-import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import { canDeleteView, type SavedView, type ViewPatch } from '../../Views/views'
 import {
   addView,
@@ -25,7 +24,7 @@ import { useChoiceOpen, useIconChoice } from '../../Assets/IdentityChoice'
 import { entityIcon } from '../../Assets/entityIconPolicy'
 import { askDeleteView } from '../../Interface/Confirm/confirmations'
 import { notifyDeleted } from '../../Interface/Notifications/notifications'
-import { findCollection, findSet } from '../../Nexus/treeIndex'
+import { findContainerById } from '../../Nexus/treePatch'
 import { viewGlyph } from '../../Views/viewIcon'
 import { ViewHost } from '../../Views/Host/ViewHost'
 import { SettingsFrame } from '../../Views/Settings/SettingsFrame'
@@ -180,10 +179,7 @@ export function ViewTile({
     prevIndexRef.current = index
   }, [index])
   const embedded = entry.views[index]
-  const source: CollectionNode | SetNode | undefined =
-    embedded && tree
-      ? (findCollection(tree, embedded.source_id) ?? findSet(tree, embedded.source_id))
-      : undefined
+  const source = embedded && tree ? findContainerById(tree, embedded.source_id) : null
   const titleIcon = useIconChoice<SVGSVGElement>(entry.display_icon ?? source?.icon, (icon) =>
     patchEntry({ display_icon: icon }),
   )

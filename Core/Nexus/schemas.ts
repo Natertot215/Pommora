@@ -10,7 +10,7 @@ export type ViewButton = (typeof VIEW_BUTTONS)[number]
 export const VIEW_STYLES = ['dropdown', 'toolbar'] as const
 export type ViewStyle = (typeof VIEW_STYLES)[number]
 
-const viewButtonField = z.enum(VIEW_BUTTONS).optional().catch(undefined)
+export const viewButtonField = z.enum(VIEW_BUTTONS).optional().catch(undefined)
 
 export const coerceViewButton = (raw: unknown): ViewButton | undefined => viewButtonField.parse(raw)
 

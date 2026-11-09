@@ -25,7 +25,7 @@ import { useContainerValues } from './useContainerValues'
 import { columnStylePatch, styleFor } from '../../Properties/columnStyles'
 import type { ViewPatch } from '../views'
 import { reassignable } from '../valueKinds'
-import { hideShown, unhide } from '../Pipeline/columns'
+import { hideShown, shownIn, unhide } from '../Pipeline/columns'
 import type { Disclosure } from '@pommora/uix/Menus/DisclosureRow'
 import { toggled } from '@pommora/uix/Utilities/checkSet'
 import type { ResolvedColumn } from '../../Properties/properties'
@@ -146,7 +146,7 @@ export function useViewHost(source: CollectionNode | SetNode) {
   const revealingRef = useRef<Set<string>>(new Set())
   const revealProperty = (id: string): void => {
     if (revealingRef.current.has(id)) return
-    if (view.property_order.includes(id) && !view.hidden_properties.includes(id)) return
+    if (shownIn(view)(id)) return
     revealingRef.current.add(id)
     void persistView(unhide(view, id)).finally(() => revealingRef.current.delete(id))
   }

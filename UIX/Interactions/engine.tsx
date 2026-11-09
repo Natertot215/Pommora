@@ -1240,9 +1240,16 @@ function LineHost({
   const [paint, setPaint] = useState<LinePaint | null>(null)
   const last = useRef<HTMLElement | null>(null)
   const viaPointer = useRef(false)
+  const lent = useRef<HTMLElement | null>(null)
   useEffect(() => api.setLine(zoneId, spec, setPaint))
   useEffect(() => api.invalidate(zoneId), [api, zoneId, ...spec.watch])
   const stop = disabled ? -1 : 0
+  // A focused row removed in a commit sends no blur, so the stop it borrowed comes back here.
+  useEffect(() => {
+    const host = lent.current
+    if (host && host.tabIndex !== stop && !host.contains(document.activeElement))
+      host.tabIndex = stop
+  })
   const rows = rowsOf(zoneId)
   const enter = (host: HTMLElement): void => {
     const held = last.current?.isConnected && host.contains(last.current) ? last.current : null
@@ -1254,6 +1261,7 @@ function LineHost({
     const host = e.currentTarget
     if (e.target !== host) {
       host.tabIndex = -1
+      lent.current = host
       if (!(e.target instanceof HTMLElement)) return
       const row = e.target.closest<HTMLElement>(rows)
       if (pointed && row && row !== e.target && !e.target.matches(EDITABLE_TARGETS)) row.focus()

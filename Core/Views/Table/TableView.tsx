@@ -106,7 +106,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     rootProps: interactions.ghostRootProps,
   }
   let renderedAnyRow = false
-  const renderRows = (g: ResolvedGroup, depth: number, visible: boolean): React.JSX.Element[] => {
+  const renderRows = (g: ResolvedGroup, depth: number, visible: boolean): React.JSX.Element => {
     const itemsVisible = visible && disclosure.isOpen(g.key)
     const itemDepth = memberDepth(g.kind, depth)
     const members: React.JSX.Element[] = [
@@ -145,9 +145,9 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
           )
         return rendered
       }),
-      ...(g.children ?? []).flatMap((child) => renderRows(child, itemDepth, itemsVisible)),
+      ...(g.children ?? []).map((child) => renderRows(child, itemDepth, itemsVisible)),
     ]
-    return [
+    return (
       <GroupBand
         key={`gb-${g.key}`}
         node={bands.byKey.get(g.key)}
@@ -155,8 +155,8 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
         indent={rowIndent(depth)}
       >
         {members}
-      </GroupBand>,
-    ]
+      </GroupBand>
+    )
   }
   return (
     <div ref={host.viewRootRef} className={cx('table table-shell', overflowing && 'overflowing')}>
@@ -194,7 +194,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
               </div>
             ))}
           </div>
-          {groups.flatMap((g) => renderRows(g, 0, true))}
+          {groups.map((g) => renderRows(g, 0, true))}
           {interactions.ghostStanding && (
             <GhostRow padLeft={memberIndent('tail', 0)} closing={false} {...ghostRowProps} />
           )}

@@ -5,7 +5,7 @@ import { type Result, fault, ok } from '../Contract/result'
 import { isKeyOf, isPlainObject } from '../Contract/validators'
 import { index, looseDecoder } from '../Files/decoders'
 import { isUlidShaped } from '../Nexus/identityMark'
-import { VIEW_BUTTONS, VIEW_STYLES } from '../Nexus/schemas'
+import { VIEW_STYLES, viewButtonField } from '../Nexus/schemas'
 import { mapViews, mintViewId } from '../Views/views'
 import { rawLayoutSchema } from './Layout/codec'
 import { type InsertTarget, NEW_TILE_H, type RowNode, type TileLeaf } from './Layout/model'
@@ -70,7 +70,7 @@ const viewEntry = z.object({
   title: boolField,
   icon: boolField,
   title_level: z.number().int().min(1).max(6).optional().catch(undefined),
-  view_button: z.enum(VIEW_BUTTONS).optional().catch(undefined),
+  view_button: viewButtonField,
   view_style: z.enum(VIEW_STYLES).optional().catch(undefined),
   view_band: boolField,
 })

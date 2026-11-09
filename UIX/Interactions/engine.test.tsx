@@ -1144,6 +1144,14 @@ describe('the line zone', () => {
     away.remove()
   })
 
+  it('a line list whose focused row unmounts gives its Tab stop back', async () => {
+    await act(async () => item('r2').focus())
+    expect(lineHost().tabIndex).toBe(-1)
+    lineRows = ['r1', 'r3']
+    await act(async () => root.render(<Lines />))
+    expect(lineHost().tabIndex).toBe(0)
+  })
+
   it("a pointer press on the host's blank space focuses no row and holds the scroll", async () => {
     const scrolled = vi.spyOn(HTMLElement.prototype, 'scrollIntoView')
     await act(async () => {

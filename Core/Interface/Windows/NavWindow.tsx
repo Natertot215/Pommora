@@ -18,7 +18,6 @@ import { useWindowTabBody } from './WindowTabBody'
 import { useWindowGeometry } from './useWindowGeometry'
 import { useWindowTabSlide } from './useWindowTabSlide'
 import { Subfield } from '../Subfield/Subfield'
-import { shownLabel } from '../../Actions/toggleLabels'
 import './nav-window.css'
 
 const RAIL = { min: 120, default: 200, max: 320 }
@@ -110,7 +109,6 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
         bar: footer ?? <Subfield page={null} count={nav.count} selection={{ kind: 'none' }} />,
         open: footerOpen,
         onOpenChange: setFooterOpen,
-        label: (shown) => shownLabel(shown, 'Footer'),
         lead: footerLead,
       }}
       className={cx('navwindow', target !== null && 'is-page-tab')}
