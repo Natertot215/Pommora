@@ -185,9 +185,7 @@ function ViewEditor({
       <InlineEditHeader
         value={view.name}
         icon={viewGlyph(view)}
-        onCommit={(name) => {
-          if (name && name !== view.name) void save({ name })
-        }}
+        onCommit={(name) => void save({ name })}
         {...iconChoice}
       />
       <MenuSeparator flush />

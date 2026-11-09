@@ -117,9 +117,8 @@ function ContainerSettings({
         {...iconChoice}
         onCommit={(next) => {
           // The header is the VIEW's identity in scope — renaming the source folder from an embed is exactly the mutation the scope exists to prevent.
-          if (scope) {
-            if (next && next !== view.name) void save({ name: next })
-          } else void submitRename(node.path, node.kind, next)
+          if (scope) void save({ name: next })
+          else void submitRename(node.path, node.kind, next)
         }}
       />
       <MenuSeparator flush />
