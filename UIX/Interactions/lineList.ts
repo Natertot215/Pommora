@@ -17,7 +17,6 @@ type LineListSpec = Omit<LineSpec<LaneSlot, LaneSnap>, 'snap' | 'resolve'> & {
   laneOf?: (dragged: string) => (id: string) => string | undefined
   across?: boolean
   boxes?: (g: Geometry) => ReadonlyMap<string, Row>
-  locked?: boolean
   accepts?: (slot: LaneSlot, id: string) => boolean
 }
 
@@ -25,13 +24,11 @@ export function lineList({
   laneOf,
   across = false,
   boxes,
-  locked = false,
   accepts,
   ...spec
 }: LineListSpec): LineSpec<LaneSlot, LaneSnap> {
   return {
     snap: (id, g) => {
-      if (locked) return null
       const own = g.rows.find((r) => r.id === id)
       if (!own) return null
       const left = own.left + DROP_LINE_INSET

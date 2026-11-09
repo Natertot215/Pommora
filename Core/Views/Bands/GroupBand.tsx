@@ -37,6 +37,7 @@ export interface BandView extends Disclosure {
   add: (key: string) => void
   open: (set: SetNode, newTab: boolean) => void
   springs: (dragged: string, node: BandNode) => boolean
+  immovable: boolean
 }
 
 export function bandSpec({
@@ -45,23 +46,17 @@ export function bandSpec({
   nests,
   routing,
   indent,
-  disabled,
 }: {
   bands: BandModel
   disclosure: Disclosure
   nests: boolean
   routing: BandRouting
   indent?: (depth: number) => CSSProperties
-  disabled?: boolean
 }): LineSpec<BandSlot, BandSnap> {
   const nodeOf = (key: string): BandNode | undefined => bands.byKey.get(key)
   return {
-    snap: (key, g) => {
-      const node = nodeOf(key)
-      return node && draggable(node)
-        ? bandSnap(g, shownHeads(bands.nodes, disclosure.isOpen), key, nests, routing.moves)
-        : null
-    },
+    snap: (key, g) =>
+      bandSnap(g, shownHeads(bands.nodes, disclosure.isOpen), key, nests, routing.moves),
     resolve: (_key, p, s) => bandSlot(s, p.y),
     commit: (_key, slot, s) => routing.drop(s.dragged, slot.drop),
     line: (slot) => ({ ...indent?.(slot.depth), top: slot.top }),
@@ -77,7 +72,6 @@ export function bandSpec({
         <BandGlyph node={node} />
       ) : null
     },
-    disabled,
     disclose: true,
     watch: [bands],
   }
@@ -155,6 +149,7 @@ function HeadedBand({
         <LineRow
           id={node.key}
           open={toggle}
+          immovable={bands.immovable || !draggable(node)}
           className={cx('group-band-head', text.body.emphasized)}
           role="treeitem"
           aria-expanded={open}

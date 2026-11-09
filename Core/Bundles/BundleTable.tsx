@@ -184,7 +184,7 @@ export function BundleRows({
   )
   const api = useStableApi({ toggle, rowClick, openMenu, focus: setFocused })
   return (
-    <LineZone {...lineList({ locked: true, commit: () => {}, label: () => '', watch: [] })}>
+    <LineZone {...lineList({ commit: () => {}, label: () => '', watch: [] })}>
       <div ref={setListEl} className="bundle-rows" style={{ height }}>
         {slots.map(({ index, start }) => {
           const { row, depth, open } = visible[index]
@@ -264,6 +264,7 @@ const BundleRowView = memo(function BundleRowView({
       id={row.bundlePath}
       open={() => api.rowClick(row, 0)}
       space={() => api.toggle(row.bundlePath)}
+      immovable
       className={cx('data-row', lead && 'row-lead')}
       data-reveal-host={revealed ? 'on' : ''}
       style={{ height: ROW_H, transform: `translateY(${start}px)` }}

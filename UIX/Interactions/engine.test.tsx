@@ -17,6 +17,7 @@ import {
 import { firePointer, pressEscape, stubPointerCapture, stubRect } from '../Utilities/pointerHarness'
 import { DEFAULT_FEEL } from '../Animations/feel'
 import { settleSlack } from '../Animations/motion'
+import { INSTRUCTIONS_ID } from './a11y'
 import { addSpring } from './dragDisclose'
 import type { Row } from './reorderModel'
 import { type CarryEntry, carries, type Family } from './shared'
@@ -144,7 +145,7 @@ const ROWS = ['r1', 'r2', 'r3']
 let lineRows = ROWS
 let commit: Mock<(id: string, slot: string) => void>
 let lineSpec: Partial<LineSpec<string, Row[]>>
-let rowOpts: Record<string, { open?: () => void; space?: () => void }>
+let rowOpts: Record<string, { open?: () => void; space?: () => void; immovable?: boolean }>
 let watch: number
 
 function slotAt(id: string, p: { y: number }, rows: Row[]): string | null {
@@ -460,6 +461,7 @@ describe('the drag engine across zones', () => {
     const handle = box.querySelector('[data-id="a"]') as HTMLElement
     expect(handle.getAttribute('tabindex')).toBe('-1')
     expect(handle.getAttribute('aria-disabled')).toBe('true')
+    expect(handle.hasAttribute('aria-describedby')).toBe(false)
     act(() => local.unmount())
     box.remove()
   })
@@ -1074,11 +1076,17 @@ describe('the line zone', () => {
     pressEscape()
   })
 
-  it('runs a row’s own Space where it can’t lift, and its opener on Enter', async () => {
+  it('a row that can’t lift names no drag gesture, and a row that can does', async () => {
+    rowOpts = { r1: { immovable: true } }
+    await mount()
+    expect(item('r1').hasAttribute('aria-describedby')).toBe(false)
+    expect(item('r2').getAttribute('aria-describedby')).toBe(INSTRUCTIONS_ID)
+  })
+
+  it('runs an immovable row’s own Space in place of a lift, and its opener on Enter', async () => {
     const open = vi.fn()
     const space = vi.fn()
-    lineSpec = { snap: () => null }
-    rowOpts = { r1: { open, space } }
+    rowOpts = { r1: { open, space, immovable: true } }
     await mount()
     await act(async () => item('r1').focus())
     await press(item('r1'), ' ')

@@ -71,6 +71,7 @@ export function hideEye(
 
 export function HideableRow({
   line,
+  immovable,
   hideKey,
   label,
   hide,
@@ -78,6 +79,7 @@ export function HideableRow({
   children,
 }: {
   line?: string
+  immovable?: boolean
   hideKey: string
   label: string
   hide: HideControls
@@ -94,7 +96,7 @@ export function HideableRow({
       </>
     ),
   }
-  return line ? <LineRow id={line} {...row} /> : <div {...row} />
+  return line ? <LineRow id={line} immovable={immovable} {...row} /> : <div {...row} />
 }
 
 type Section = { key: string; label: string | null; values: string[] }
@@ -132,7 +134,6 @@ export function OptionOrderList({
   return (
     <LineZone
       {...lineList({
-        locked: !onSave,
         commit: (v, slot) => {
           const next = moveBefore(order, (x) => x, v, slot.before)
           if (next) onSave?.(next)
@@ -153,6 +154,7 @@ export function OptionOrderList({
               <HideableRow
                 key={v}
                 line={v}
+                immovable={!onSave}
                 hideKey={v}
                 label={option.label}
                 hide={{ isHidden, onToggleHidden }}

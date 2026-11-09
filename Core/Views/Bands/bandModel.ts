@@ -187,16 +187,8 @@ export function nodeLabel(node: BandNode | undefined): string {
   }
 }
 
-export function draggable(node: BandNode): node is SetBand | BucketBand {
-  switch (node.kind) {
-    case 'set':
-      return true
-    case 'bucket':
-      return node.face.kind !== 'date'
-    case 'tail':
-      return false
-  }
-}
+export const draggable = (node: SetBand | BucketBand): boolean =>
+  node.kind === 'set' || node.face.kind !== 'date'
 
 export const memberDepth = (kind: BandNode['kind'], depth: number): number =>
   kind === 'tail' ? depth : depth + 1

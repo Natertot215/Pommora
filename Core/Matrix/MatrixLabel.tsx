@@ -52,7 +52,7 @@ export function MatrixLabel({
   const locked = useSession((st) => st.matrixConfig.display.locked)
   const [entered, setEntered] = useState<string | null>(null)
   const labelRef = useRef<HTMLDivElement>(null)
-  const row = useLineRow(id ?? '', { open: onOpen })
+  const row = useLineRow(id ?? '', { open: onOpen, immovable: true })
   const seatRow = row.ref
   const seat = useCallback(
     (el: HTMLDivElement | null) => {

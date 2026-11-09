@@ -8,7 +8,13 @@ import type { ColumnStyle } from '../../Properties/columnStyles'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import type { ResolvedGroup } from '../viewRow'
 import type { SavedView, SubGroupConfig } from '../views'
-import { groupedLine, type LineSpec, lineList, rowLine } from '@pommora/uix/Interactions/drag'
+import {
+  groupedLine,
+  type LineSpec,
+  LineZone,
+  lineList,
+  rowLine,
+} from '@pommora/uix/Interactions/drag'
 import type { Geometry, Row } from '@pommora/uix/Interactions/reorderModel'
 import { mountEachTest } from '../../Testing/viewHarness'
 import { BandGlyph, bandSpec, GroupBand } from './GroupBand'
@@ -142,6 +148,7 @@ describe('GroupBand', () => {
     add: vi.fn(),
     open: vi.fn(),
     springs: () => false,
+    immovable: false,
   }
 
   it('a tail renders its rows with no head', () => {
@@ -157,7 +164,7 @@ describe('GroupBand', () => {
     expect(host.querySelector('.group-band-head')).toBeNull()
   })
 
-  it("a Date band's head carries no drag handle", () => {
+  it("a Date band's head stays put and names no drag gesture", () => {
     const h = heads(grouping('prop_date', { date_granularity: 'month' }))
     const bands = bandModelOf([group('bucket', 'prop_date/2026-07', '2026-07')], h)
     const spec = bandSpec({
@@ -166,8 +173,18 @@ describe('GroupBand', () => {
       nests: false,
       routing: { drop: vi.fn(), moves: () => () => true },
     })
-    const geometry: Geometry = { rows: [], groups: new Map(), bottom: 0 }
-    expect(spec.snap('prop_date/2026-07', geometry)).toBeNull()
+    act(() =>
+      root.render(
+        <LineZone {...spec}>
+          <GroupBand node={bands.nodes[0]} bands={bandView}>
+            <p>rows</p>
+          </GroupBand>
+        </LineZone>,
+      ),
+    )
+    const head = host.querySelector('.group-band-head')
+    expect(head?.hasAttribute('data-line-immovable')).toBe(true)
+    expect(head?.hasAttribute('aria-describedby')).toBe(false)
   })
 })
 

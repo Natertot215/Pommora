@@ -136,7 +136,6 @@ export function useViewInteractions<Own extends StableHandlers>(
     canReassign,
     canRelocate,
     crossBand,
-    dragDisabled,
     searching,
     columns,
     sortKeys,
@@ -215,6 +214,7 @@ export function useViewInteractions<Own extends StableHandlers>(
       bands.byKey.has(dragged)
         ? springsInto(bands, dragged, node, nests)
         : rowById.has(dragged) && crossBand,
+    immovable: searching,
   }
 
   const bandZone = (indent?: (depth: number) => string) =>
@@ -224,7 +224,6 @@ export function useViewInteractions<Own extends StableHandlers>(
       nests,
       routing: bandRoutes,
       indent: indent && ((depth) => ({ left: `calc(var(--drop-line-inset) + ${indent(depth)})` })),
-      disabled: searching,
     })
 
   // ── Rows ──────────────────────────────────────────────────────────────────
@@ -400,7 +399,6 @@ export function useViewInteractions<Own extends StableHandlers>(
         laneOf: () => (id) => rowBand.get(id),
         across: crossBand,
         boxes: vacantHeads,
-        locked: dragDisabled,
         accepts: (slot, id) => folderSlot(slot.lane, slot.index, id) !== null,
         commit: (id, slot) => onDrop(id, slot.lane, slot.before),
         line: (slot, s) => {

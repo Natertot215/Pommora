@@ -305,6 +305,7 @@ const DataRow = memo(function DataRow({
     <LineRow
       id={row.id}
       open={() => api.open(row, false)}
+      immovable={dragDisabled}
       data-rid={row.id}
       data-reveal-host=""
       className={cx('data-row', selected && 'selected', lead && 'row-lead')}

@@ -10,10 +10,10 @@ export function groupedLine<I, IS, G, GS>(
   return {
     snap: (id, g) => {
       if (isItem(id)) {
-        const item = items.disabled ? null : items.snap(id, g)
+        const item = items.snap(id, g)
         return item === null ? null : { item }
       }
-      const group = groups.disabled ? null : groups.snap(id, g)
+      const group = groups.snap(id, g)
       return group === null ? null : { group }
     },
     resolve: (id, p, s) =>

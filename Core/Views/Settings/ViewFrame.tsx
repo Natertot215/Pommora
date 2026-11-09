@@ -273,7 +273,6 @@ export function ViewFrame({
       <LineZone
         className={s.frameZone}
         {...lineList({
-          locked: views.length < 2,
           commit: (id, slot) => {
             const order = moveBefore(
               views.map((v) => v.id),
@@ -297,7 +296,12 @@ export function ViewFrame({
           {rows.map((v) => {
             const renaming = renamingId === v.id
             return (
-              <LineRow key={v.id} id={v.id} open={renaming ? undefined : () => switchTo(v.id)}>
+              <LineRow
+                key={v.id}
+                id={v.id}
+                open={renaming ? undefined : () => switchTo(v.id)}
+                immovable={views.length < 2}
+              >
                 <ViewListRow
                   view={v}
                   picked={!inArchive && active.id === v.id}

@@ -173,14 +173,16 @@ type LineHandle = {
   onPointerDown: (e: ReactPointerEvent) => void
   onKeyDown: (e: ReactKeyboardEvent) => void
   tabIndex: number
-  'aria-describedby': string
+  'aria-describedby': string | undefined
   'data-line-row': string
+  'data-line-immovable': '' | undefined
 }
 type LineRowOptions = {
   spring?: (dragged: string) => void
   open?: () => void
   /** Space where the row can't lift, in place of `open`. */
   space?: () => void
+  immovable?: boolean
 }
 type DragItemOptions = { open?: () => void; tabStop?: boolean }
 type Active = { zone: string; id: string }
@@ -211,6 +213,7 @@ type Api = {
 const noop = (): void => {}
 const SOURCE = 'data-drag-source'
 const rowsOf = (zoneId: string): string => `[data-line-row="${zoneId}"]`
+const IMMOVABLE = 'data-line-immovable'
 const GLIDE = `transform ${DEFAULT_FEEL.duration}ms ${DEFAULT_FEEL.easing}`
 const translate = (x: number, y: number): string => `translate3d(${px(x)}, ${px(y)}, 0)`
 
@@ -261,7 +264,8 @@ function measureLine(entry: ZoneEntry, spec: AnyLine, id: string): LineSnap | nu
   const groups = new Map(Array.from(entry.groups, ([key, el]) => [key, local(key, el)] as const))
   const geometry: Geometry = { rows, groups, bottom: host.height / zoom }
   const origin = { x: host.left, y: host.top }
-  return { geometry, snap: spec.snap(id, geometry), origin, zoom, dirty: false }
+  const snap = entry.els.get(id)?.hasAttribute(IMMOVABLE) ? null : spec.snap(id, geometry)
+  return { geometry, snap, origin, zoom, dirty: false }
 }
 
 // ── Engine ──────────────────────────────────────────────────────────────────
@@ -1308,7 +1312,7 @@ export function useDragItem(id: string, { open, tabStop = true }: DragItemOption
       role: 'button',
       tabIndex: tabStop && (opens || !disabled) ? 0 : -1,
       'aria-roledescription': 'sortable',
-      'aria-describedby': INSTRUCTIONS_ID,
+      'aria-describedby': disabled ? undefined : INSTRUCTIONS_ID,
       'aria-pressed': isDragging || undefined,
       'aria-disabled': (disabled && !opens) || undefined,
     }),
@@ -1339,9 +1343,9 @@ export function useLineSpring(
 
 export function useLineRow(
   id: string,
-  { spring, open, space }: LineRowOptions = {},
+  { spring, open, space, immovable = false }: LineRowOptions = {},
 ): { ref: (el: HTMLElement | null) => void; handle: LineHandle } {
-  const { api, zoneId } = useZone('useLineRow')
+  const { api, zoneId, disabled } = useZone('useLineRow')
   const springRef = useLineSpring(spring)
   const run = useLatest(open)
   const runSpace = useLatest(space)
@@ -1368,10 +1372,11 @@ export function useLineRow(
         else if (!e.repeat && !api.liftKeyboard(zoneId, id)) (runSpace.current ?? run.current)?.()
       },
       tabIndex: -1,
-      'aria-describedby': INSTRUCTIONS_ID,
+      'aria-describedby': immovable || disabled ? undefined : INSTRUCTIONS_ID,
       'data-line-row': zoneId,
+      [IMMOVABLE]: immovable ? '' : undefined,
     }),
-    [api, zoneId, id, opens],
+    [api, zoneId, id, opens, immovable, disabled],
   )
   return useMemo(() => ({ ref, handle }), [ref, handle])
 }
@@ -1386,9 +1391,10 @@ export function LineRow({
   spring,
   open,
   space,
+  immovable,
   ...div
 }: { id: string } & LineRowOptions & HTMLAttributes<HTMLDivElement>): React.JSX.Element {
-  const { ref, handle } = useLineRow(id, { spring, open, space })
+  const { ref, handle } = useLineRow(id, { spring, open, space, immovable })
   return <div ref={ref} {...div} {...handle} />
 }
 

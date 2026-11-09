@@ -53,11 +53,11 @@ let toggleSpy: ReturnType<typeof vi.fn<(key: string) => void>>
 
 function Bands({
   model = BANDS,
-  disabled,
+  immovable = false,
   collapsed = new Set(),
 }: {
   model?: BandModel
-  disabled?: boolean
+  immovable?: boolean
   collapsed?: ReadonlySet<string>
 }): React.JSX.Element {
   const bands: BandView = {
@@ -66,6 +66,7 @@ function Bands({
     add: () => {},
     open: () => {},
     springs: () => true,
+    immovable,
   }
   const render = (key: string): React.JSX.Element => {
     const node = model.byKey.get(key)
@@ -84,7 +85,6 @@ function Bands({
           disclosure: bands,
           nests: true,
           routing: { drop: dropSpy, moves: () => () => true },
-          disabled,
           indent: (depth) => ({ left: `${depth * 20}px` }),
         })}
       >
@@ -262,8 +262,8 @@ describe('the band zone', () => {
     }
   })
 
-  it('a disabled host starts no drag and commits nothing', async () => {
-    await mount({ disabled: true })
+  it('bands the view holds still start no drag and commit nothing', async () => {
+    await mount({ immovable: true })
     await drag('A1', 2)
     expect(line()).toBeNull()
     expect(head('A1').hasAttribute('data-drag-source')).toBe(false)

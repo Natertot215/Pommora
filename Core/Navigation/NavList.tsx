@@ -94,16 +94,18 @@ export type NavOpen = (t: NavRef, e?: React.MouseEvent) => void
 
 function NavRow({
   it,
+  immovable,
   onSelect,
   onMenu,
 }: {
   it: ResolvedNav
+  immovable: boolean
   onSelect: NavOpen
   onMenu: (it: ResolvedNav) => void
 }): React.JSX.Element {
   const select = (e?: React.MouseEvent): void => onSelect(it.target, e)
   return (
-    <LineRow id={it.key} open={select}>
+    <LineRow id={it.key} open={select} immovable={immovable}>
       <MenuItem
         tabIndex={-1}
         leading={<EntityIcon item={it} size="headline" />}
@@ -158,7 +160,6 @@ export function NavList({
           const pinned = new Set(pins.map((p) => p.key))
           return (k) => (pinned.has(k) ? 'pins' : 'recents')
         },
-        locked: !onReorderRecent,
         commit: (key, slot) =>
           slot.lane === 'pins' ? reorderPin(key, slot.before) : onReorderRecent?.(key, slot.before),
         line: menuDropLine,
@@ -173,7 +174,13 @@ export function NavList({
     >
       <div className="nav-list">
         {rows.map((it) => (
-          <NavRow key={it.key} it={it} onSelect={onSelect} onMenu={openMenu} />
+          <NavRow
+            key={it.key}
+            it={it}
+            immovable={!onReorderRecent}
+            onSelect={onSelect}
+            onMenu={openMenu}
+          />
         ))}
       </div>
     </LineZone>

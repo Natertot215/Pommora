@@ -57,18 +57,12 @@ describe('groupedLine', () => {
     expect(spec.step?.('group-slot', { group: 'group-snap' })).toBe(into)
   })
 
-  it('an item whose spec is locked resolves null while its carry still yields the item', () => {
+  it('an item whose spec snaps nothing resolves null while its carry still yields the item', () => {
     const family = { id: 'tabs', to: () => true } as unknown as Family<string>
     const carry = [carries(family, vi.fn())]
     const spec = groupedLine(isItem, itemsSpec({ snap: () => null, carry }), groupsSpec())
     expect(spec.snap('r1', geometry)).toBeNull()
     expect(spec.carry).toBe(carry)
-  })
-
-  it('a disabled spec snaps nothing for its own kind', () => {
-    const spec = groupedLine(isItem, itemsSpec(), groupsSpec({ disabled: true }))
-    expect(spec.snap('sA', geometry)).toBeNull()
-    expect(spec.snap('r1', geometry)).toEqual({ item: 'item-snap' })
   })
 
   it('disclose answers per dragged kind', () => {
