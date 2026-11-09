@@ -1116,6 +1116,31 @@ describe('view search', () => {
     await act(async () => {})
     expect(api?.paintOrder.map((r) => r.id)).toEqual(['p1', 'p2'])
   })
+
+  it('keeps a page created under it shown, its band and name field with it, until the view changes', async () => {
+    let land!: (done: unknown) => void
+    useSession.setState({ mutate: vi.fn(() => new Promise((r) => (land = r))) as never })
+    const base = setCollection()
+    const shown = (pages: unknown[], activeView?: string): CollectionNode =>
+      ({
+        ...base,
+        activeView,
+        views: [...(base.views ?? []), { ...base.views?.[0], id: 'view_2', name: 'Other' }],
+        sets: [{ ...base.sets?.[0], pages: [...(base.sets?.[0].pages ?? []), ...pages] }],
+      }) as unknown as CollectionNode
+    const born = page('p3', 'Untitled', 'Col/A/Untitled.md')
+    search('loose')
+    await mount(shown([]))
+    await act(async () => void creation.bandAdd('sA'))
+    await mount(shown([born]))
+    await act(async () => land({ created: { path: 'Col/A/Untitled.md' } }))
+    expect(api?.rowBand.get('p3')).toBe('sA')
+    expect(api?.naming).toMatchObject({ id: 'p3', landing: false })
+    act(() => search('lo'))
+    expect(api?.paintOrder.map((r) => r.id)).toEqual(['p3', 'pLoose'])
+    await mount(shown([born], 'view_2'))
+    expect(api?.paintOrder.map((r) => r.id)).toEqual(['pLoose'])
+  })
 })
 
 describe('the value writer', () => {

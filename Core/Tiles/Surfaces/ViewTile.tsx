@@ -28,7 +28,7 @@ import { findContainerById } from '../../Nexus/treePatch'
 import { viewGlyph } from '../../Views/viewIcon'
 import { ViewHost } from '../../Views/Host/ViewHost'
 import { SettingsFrame } from '../../Views/Settings/SettingsFrame'
-import { ViewListRow, viewNameField } from '../../Views/Settings/ViewFrame'
+import { ViewList, viewNameField } from '../../Views/Settings/ViewFrame'
 import type { NameRename } from '../../Interface/RenamableTitle'
 import { hostedGutter } from '@pommora/uix/Menus/menu-surface.css'
 import { ViewTileScopeProvider } from '../../Views/ViewTileScope'
@@ -244,6 +244,8 @@ export function ViewTile({
   const editViews = (op: EntryOp): void =>
     mutateEntry(entry.id, (raw) => (raw.locked === true ? null : op(raw)))
   const saveView = (id: string, patch: ViewPatch): void => editViews(writeView(entry.id, id, patch))
+  const reorder = (id: string, beforeId: string | null): void =>
+    editViews(moveView(entry.id, id, beforeId))
   const removeView = (v: SavedView): void => {
     let undo: EntryOp | undefined
     editViews(
@@ -406,7 +408,7 @@ export function ViewTile({
         axis="x"
         disabled={locked}
         label={(id) => viewById(id)?.name ?? ''}
-        onMove={(id, beforeId) => editViews(moveView(entry.id, id, beforeId))}
+        onMove={reorder}
       >
         {views.map((v, i) => {
           const rename = renameOf(v)
@@ -513,17 +515,18 @@ export function ViewTile({
               maxHeight={PANE_MAX_HEIGHT}
               footer={<MenuFooting leading={newViewButton} />}
             >
-              {views.map((v, i) => (
-                <ViewListRow
-                  key={v.id}
-                  view={v}
-                  picked={i === index}
-                  rename={renameOf(v)}
-                  onCommit={(name) => saveView(v.id, { name })}
-                  onSwitch={() => patchEntry({ active: i })}
-                  onMenu={(e) => rowMenu(v, e, false)}
-                />
-              ))}
+              <ViewList
+                views={views}
+                locked={locked}
+                onMove={reorder}
+                row={(v, i) => ({
+                  picked: i === index,
+                  rename: renameOf(v),
+                  onCommit: (name) => saveView(v.id, { name }),
+                  onSwitch: () => patchEntry({ active: i }),
+                  onMenu: (e) => rowMenu(v, e, false),
+                })}
+              />
             </MenuScrollFrame>
           </div>
         </MenuBase>

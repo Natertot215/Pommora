@@ -63,36 +63,65 @@ async function deleteViewWithUndo(
   return true
 }
 
-export function ViewListRow({
-  view,
-  picked,
-  rename,
-  onCommit,
-  onSwitch,
-  onMenu,
-  trailing,
-  tabIndex,
-}: {
-  view: SavedView
+interface ViewListRow {
   picked: boolean
   rename: Omit<NameRename, 'path'>
   onCommit: NameCommit
   onSwitch: () => void
   onMenu: (e: React.MouseEvent<HTMLElement>) => void
   trailing?: React.ReactNode
-  tabIndex?: number
+}
+
+export function ViewList({
+  views,
+  locked = false,
+  onMove,
+  row,
+  children,
+}: {
+  views: SavedView[]
+  locked?: boolean
+  onMove: (id: string, beforeId: string | null) => void
+  row: (view: SavedView, i: number) => ViewListRow
+  children?: React.ReactNode
 }): React.JSX.Element {
+  const viewOf = (id: string): SavedView | undefined => views.find((v) => v.id === id)
   return (
-    <MenuItem
-      picked={picked ? 'solo' : undefined}
-      leading={<Icon name={viewGlyph(view)} size="headline" />}
-      trailing={trailing}
-      tabIndex={tabIndex}
-      onClick={rename.editing ? undefined : onSwitch}
-      onContextMenu={onMenu}
+    <LineZone
+      className={s.frameZone}
+      {...lineList({
+        commit: (id, slot) => onMove(id, slot.before),
+        line: menuDropLine,
+        label: (id) => viewOf(id)?.name ?? '',
+        glyph: (id) => {
+          const v = viewOf(id)
+          return v && <Icon name={viewGlyph(v)} />
+        },
+        watch: [views],
+      })}
     >
-      <RenamableLabel {...viewNameField(view, rename, onCommit)} />
-    </MenuItem>
+      <Menu>
+        {views.map((v, i) => {
+          const { picked, rename, onCommit, onSwitch, onMenu, trailing } = row(v, i)
+          const open = rename.editing ? undefined : onSwitch
+          return (
+            <LineRow key={v.id} id={v.id} open={open} immovable={locked || views.length < 2}>
+              <MenuItem
+                picked={picked ? 'solo' : undefined}
+                leading={<Icon name={viewGlyph(v)} size="headline" />}
+                trailing={trailing}
+                tabIndex={-1}
+                onClick={open}
+                onContextMenu={onMenu}
+              >
+                <RenamableLabel {...viewNameField(v, rename, onCommit)} />
+              </MenuItem>
+            </LineRow>
+          )
+        })}
+        {children}
+      </Menu>
+    </LineZone>
   )
 }
 
@@ -233,8 +262,6 @@ export function ViewFrame({
     )
   }
 
-  const viewOf = (id: string): SavedView | undefined => rows.find((v) => v.id === id)
-
   const itemContext = { deletable: canDeleteView(views.length), duplicable: views.length > 0 }
   const duplicate = (v: SavedView): void =>
     void dialer().ask('views:duplicate', node.path, node.kind, v.id).then(reportRefusal)
@@ -270,79 +297,54 @@ export function ViewFrame({
         />
       }
     >
-      <LineZone
-        className={s.frameZone}
-        {...lineList({
-          commit: (id, slot) => {
-            const order = moveBefore(
-              views.map((v) => v.id),
-              (v) => v,
-              id,
-              slot.before,
-            )
-            if (order)
-              void dialer().ask('views:reorder', node.path, node.kind, order).then(reportRefusal)
+      <ViewList
+        views={rows}
+        onMove={(id, beforeId) => {
+          const order = moveBefore(
+            views.map((v) => v.id),
+            (v) => v,
+            id,
+            beforeId,
+          )
+          if (order)
+            void dialer().ask('views:reorder', node.path, node.kind, order).then(reportRefusal)
+        }}
+        row={(v) => ({
+          picked: !inArchive && active.id === v.id,
+          rename: {
+            editing: renamingId === v.id,
+            onBegin: () => setRenamingId(v.id),
+            onEnd: () => setRenamingId(null),
           },
-          line: menuDropLine,
-          label: (id) => viewOf(id)?.name ?? '',
-          glyph: (id) => {
-            const v = viewOf(id)
-            return v && <Icon name={viewGlyph(v)} />
-          },
-          watch: [views],
+          onCommit: (name) => saveView(v, { name }),
+          onSwitch: () => switchTo(v.id),
+          onMenu: (e) => rowMenu(v, e),
+          trailing: (
+            <Button
+              paddingX="0"
+              icon="chevron-right"
+              iconSize="headline"
+              className={vd.chevronButton}
+              aria-label={`Edit ${v.name}`}
+              onClick={(e) => {
+                e.stopPropagation()
+                setEditingId(v.id)
+              }}
+            />
+          ),
         })}
       >
-        <Menu>
-          {rows.map((v) => {
-            const renaming = renamingId === v.id
-            return (
-              <LineRow
-                key={v.id}
-                id={v.id}
-                open={renaming ? undefined : () => switchTo(v.id)}
-                immovable={views.length < 2}
-              >
-                <ViewListRow
-                  view={v}
-                  picked={!inArchive && active.id === v.id}
-                  rename={{
-                    editing: renaming,
-                    onBegin: () => setRenamingId(v.id),
-                    onEnd: () => setRenamingId(null),
-                  }}
-                  onCommit={(name) => saveView(v, { name })}
-                  onSwitch={() => switchTo(v.id)}
-                  onMenu={(e) => rowMenu(v, e)}
-                  trailing={
-                    <Button
-                      paddingX="0"
-                      icon="chevron-right"
-                      iconSize="headline"
-                      className={vd.chevronButton}
-                      aria-label={`Edit ${v.name}`}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setEditingId(v.id)
-                      }}
-                    />
-                  }
-                  tabIndex={-1}
-                />
-              </LineRow>
-            )
-          })}
-          <MenuSeparator className={vd.archiveDivider} />
-          <MenuItem
-            className={vd.archiveRow}
-            picked={inArchive ? 'solo' : undefined}
-            leading={<Icon name={ARCHIVE_ICON} size="headline" className={vd.archiveGlyph} />}
-            trailing={<Icon name="locked" size="headline" className={vd.archiveGlyph} />}
-            onClick={() => showArchive(true)}
-          >
-            {ARCHIVE_TITLE}
-          </MenuItem>
-        </Menu>
-      </LineZone>
+        <MenuSeparator className={vd.archiveDivider} />
+        <MenuItem
+          className={vd.archiveRow}
+          picked={inArchive ? 'solo' : undefined}
+          leading={<Icon name={ARCHIVE_ICON} size="headline" className={vd.archiveGlyph} />}
+          trailing={<Icon name="locked" size="headline" className={vd.archiveGlyph} />}
+          onClick={() => showArchive(true)}
+        >
+          {ARCHIVE_TITLE}
+        </MenuItem>
+      </ViewList>
     </MenuScrollFrame>
   )
 

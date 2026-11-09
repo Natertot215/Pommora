@@ -23,6 +23,7 @@ export interface SettingsPane<Id extends string = ViewPaneId> {
   icon: IconName
 }
 
+// The singular here is intentional.
 export const VIEW_PANES: SettingsPane[] = [
   { id: 'visibility', label: 'Visibility', icon: 'eye' },
   { id: 'layout', label: 'Layout', icon: 'layout-dashboard' },
