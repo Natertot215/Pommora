@@ -1,7 +1,7 @@
 ## Views Cleanup — Implementation Plan
 
 **DATE:** 11-08-2026
-**STATUS:** Ratified 11-08-2026 — Executing
+**STATUS:** Ratified 11-08-2026 — Complete 11-09-2026
 **SOURCE:** *Views Cleanup — Decisions & Intention* (ratified 11-07-2026, Decisions A-1 to G-4 with its *§Constraints* and *§Rejections*), *Views Cleanup — Investigation* (whose numbered findings, such as 1.1 or 5.2, the tasks cite in parentheses), *Views Cleanup — Fresh-Eyes Read*, and the phase patches and reports in `Scouts/Planning/`, all in `.claude/Planning/Views Cleanup/`.
 
 **PLAN REVIEWS:** three waves, folded (*Views Cleanup — Plan Reviews*): Wave One outward, 21 findings; Wave Two inward, 23; Wave Three both ways, 8; then a closing proof that replayed all 27 patches onto a clean `cae07c129` to the chain's exact tree; at the morning review two rulings (the Location tree keeps its chevrons; the Cards leaf stays its switches) folded into Tasks 7-4 and 3-1 and the proof re-ran (*Plan Reviews · §Ratification Folds*).
@@ -10,7 +10,7 @@
 
 | Head | Tests | Start | End |
 |------|-------|-------|-----|
-| `cae07c129` | 9,269 passed, 2 skipped (550 files); comments 3,517 | 11-08-2026 11:26 AM; typecheck and lint clean; 9,269 passed, 2 skipped (550 files); comments 3,517; ~/Test e5a32a5d30d6a11310cd559ee2b1b84b261c3265 | |
+| `cae07c129` | 9,269 passed, 2 skipped (550 files); comments 3,517 | 11-08-2026 11:26 AM; typecheck and lint clean; 9,269 passed, 2 skipped (550 files); comments 3,517; ~/Test e5a32a5d30d6a11310cd559ee2b1b84b261c3265 | 11-09-2026 3:43 AM at `fb13015e3`; typecheck and lint clean; 9,269 passed, 2 skipped (546 files); `✓ built in`; comments 3,492; Actionable -501 (+3725 / -4226); ~/Test e5a32a5d30d6a11310cd559ee2b1b84b261c3265 |
 
 **Run Start:** comments 3,517; `~/Test` hash `e5a32a5d30d6a11310cd559ee2b1b84b261c3265`.
 
@@ -29,6 +29,7 @@
 | 9 · MenuBase | -355, ±0 its own | 9,259 | -511 (+3415 / -3926); 9,263; comments 3,488; after the checkpoint's fold -513 (+3435 / -3948); 9,263; comments 3,488 |
 | 10 · One Lock per Row | -352, +3 its own | 9,259 | -510 (+3479 / -3989); 9,263; comments 3,488; after the checkpoint's fold -492 (+3611 / -4103); 9,262; comments 3,489 |
 | 11 · Docs and Issues | -352 (+3409 / -3761), ±0 its own | 9,259 | -492 (+3611 / -4103); 9,262; comments 3,489 |
+| Final Verification | — | — | -501 (+3725 / -4226); 9,269; comments 3,492 |
 
 **Comment Ledger** (the Constraints' command; a phase's row is its head's count, and a phase over its row corrects before it closes):
 
@@ -45,6 +46,7 @@
 | 9 | 3,492 | 0 | `frames.css.ts`'s header and `menu-base.css.ts`'s back-bar comment rewritten in place; `frames.css.ts`'s "A type editor's rows" doc moves to `schema.css.ts` with its rows |
 | 10 | 3,492 | 0 | No comment line changes |
 | 11 | 3,492 | 0 | `viewHarness.tsx:1` rewritten in place |
+| Final | 3,492 | +3 | Arrives: the engine's Tab-stop restore reason, the search exemption's reason in `useViewHost.ts`, and the note above `VIEW_PANES` |
 
 ### Context
 
@@ -326,58 +328,58 @@ The order lets each signature land once. The kind record goes first because the 
 #### Process Overview
 
 - [x] `[Stop: ratified; placements approved; no code changes before this]`
-- [ ] **Phase 1** — The Kind Record
+- [x] **Phase 1** — The Kind Record
   - [x] Task 1-1 · One record per built kind
   - [x] Task 1-2 · The host reads the active view once
   - [x] Review Checkpoint
-- [ ] **Phase 2** — The Views Root and the Live View
+- [x] **Phase 2** — The Views Root and the Live View
   - [x] Task 2-1 · The root's dissolutions
   - [x] Task 2-2 · The page record's home
   - [x] Task 2-3 · The live view
   - [x] Review Checkpoint
-- [ ] **Phase 3** — One Pane Route
+- [x] **Phase 3** — One Pane Route
   - [x] Task 3-1 · One pane route
   - [x] Task 3-2 · The Settings root and the toolbar's view button
   - [x] Task 3-3 · The rows and their words
   - [x] Task 3-4 · The Filter's lists go through the menu door
   - [x] Review Checkpoint
   - [x] Compaction Checkpoint
-- [ ] **Phase 4** — The Table and the Second Table
+- [x] **Phase 4** — The Table and the Second Table
   - [x] Task 4-1 · The Bundle table draws its heading
   - [x] Task 4-2 · One column gesture
   - [x] Task 4-3 · One shell class and one home per style
   - [x] Review Checkpoint
-- [ ] **Phase 5** — The Host and Its Renderers
+- [x] **Phase 5** — The Host and Its Renderers
   - [x] Task 5-1 · One rename shape and the view's naming state
   - [x] Task 5-2 · The seat and the ghost inside the interactions
   - [x] Task 5-3 · One item API and the host's return
   - [x] Review Checkpoint
   - [x] Compaction Checkpoint
-- [ ] **Phase 6** — The Pipeline and the Bands
+- [x] **Phase 6** — The Pipeline and the Bands
   - [x] Task 6-1 · One prune, one bucket builder, one ordered Set tree
   - [x] Task 6-2 · The band layer owns its model
   - [x] Review Checkpoint
-- [ ] **Phase 7** — Disclosure and Rows
+- [x] **Phase 7** — Disclosure and Rows
   - [x] Task 7-1 · One disclosure shape
   - [x] Task 7-2 · The band head's one Tab stop
   - [x] Task 7-3 · One indent step and one lead cell
   - [x] Task 7-4 · The Navigation Trees
   - [x] Review Checkpoint
-- [ ] **Phase 8** — View Tiles
+- [x] **Phase 8** — View Tiles
   - [x] Task 8-1 · One view list row and menu
   - [x] Task 8-2 · The tile's own pieces
   - [x] Task 8-3 · Renderers declare, the tile reads
   - [x] Review Checkpoint
-- [ ] **Phase 9** — MenuBase
+- [x] **Phase 9** — MenuBase
   - [x] Task 9-1 · The shell named and filed as a shell
   - [x] Review Checkpoint
-- [ ] **Phase 10** — One Lock per Row
+- [x] **Phase 10** — One Lock per Row
   - [x] Task 10-1 · One lock per row
   - [x] Review Checkpoint
-- [ ] **Phase 11** — Docs and Issues
+- [x] **Phase 11** — Docs and Issues
   - [x] Task 11-1 · Docs and issues
   - [x] Compaction Checkpoint
-- [ ] *§Final Verification* over `<BASELINE>..HEAD`
+- [x] *§Final Verification* over `<BASELINE>..HEAD`
 - [ ] `[Stop: the final report, per §Final Verification]`
 
 ---
@@ -406,8 +408,8 @@ export const presentedKind = (type: ViewType): ViewKindRecord => BUILT_KINDS[typ
 
 **VERIFY**
 
-- [ ] `git grep -n -E "VIEW_RENDERERS|LAYOUT_OPTIONS|TABLE_LAYOUT|cardRows|\?\? TableView" -- Core ':!*.test.*'` prints nothing, and `git grep -n "nests" -- Core/Views/views.ts` prints nothing.
-- [ ] Run the gates.
+- [x] `git grep -n -E "VIEW_RENDERERS|LAYOUT_OPTIONS|TABLE_LAYOUT|cardRows|\?\? TableView" -- Core ':!*.test.*'` prints nothing, and `git grep -n "nests" -- Core/Views/views.ts` prints nothing.
+- [x] Run the gates.
 
 #### Task 1-2
 
@@ -419,8 +421,8 @@ export const presentedKind = (type: ViewType): ViewKindRecord => BUILT_KINDS[typ
 
 **VERIFY**
 
-- [ ] `git grep -n "useViewHost(" -- Core ':!*.test.*'` shows one argument at every call.
-- [ ] Run the gates; the ledger checks read their rows.
+- [x] `git grep -n "useViewHost(" -- Core ':!*.test.*'` shows one argument at every call.
+- [x] Run the gates; the ledger checks read their rows.
 
 #### Review Checkpoint
 
@@ -442,9 +444,9 @@ The root's misfiled and duplicated files should dissolve to their owners: `conta
 
 **VERIFY**
 
-- [ ] `ls Core/Views/containerConfig.ts Core/Views/filterModel.ts Core/Views/reassign.ts Core/Views/visibilityModel.ts Core/Views/creationOrder.ts Core/Views/Pipeline/pickView.ts` prints only "No such file".
-- [ ] `git grep -n "container:configure" -- Core Desktop` prints nothing.
-- [ ] Run the gates; `Core/Contract/engineGraph.test.ts` and `Desktop/hostGraph.test.ts` pass.
+- [x] `ls Core/Views/containerConfig.ts Core/Views/filterModel.ts Core/Views/reassign.ts Core/Views/visibilityModel.ts Core/Views/creationOrder.ts Core/Views/Pipeline/pickView.ts` prints only "No such file".
+- [x] `git grep -n "container:configure" -- Core Desktop` prints nothing.
+- [x] Run the gates; `Core/Contract/engineGraph.test.ts` and `Desktop/hostGraph.test.ts` pass.
 
 #### Task 2-2
 
@@ -456,9 +458,9 @@ The page record should stop straddling the halves (G-3, *Investigation · §Appr
 
 **VERIFY**
 
-- [ ] `npx vitest run Core/Contract/engineGraph.test.ts Desktop/hostGraph.test.ts` passes, and `git grep -n "from '../Views/viewRow'\|from './viewRow'" -- Core/Contract Core/Nexus Desktop` prints nothing.
-- [ ] `ls Core/Views/pageRow.ts Core/Views/Host/useColumnStyles.ts` prints only "No such file".
-- [ ] Run the gates.
+- [x] `npx vitest run Core/Contract/engineGraph.test.ts Desktop/hostGraph.test.ts` passes, and `git grep -n "from '../Views/viewRow'\|from './viewRow'" -- Core/Contract Core/Nexus Desktop` prints nothing.
+- [x] `ls Core/Views/pageRow.ts Core/Views/Host/useColumnStyles.ts` prints only "No such file".
+- [x] Run the gates.
 
 #### Task 2-3
 
@@ -470,9 +472,9 @@ The view write should be one act in `Host/liveView.ts`: the pending record, `use
 
 **VERIFY**
 
-- [ ] `ls Core/Views/viewWrite.ts Core/Views/Host/useActiveView.ts Core/Views/Host/pendingView.ts Core/Views/deleteViewWithUndo.ts` prints only "No such file".
-- [ ] The I-070 pin in `Host/liveView.test.tsx` reads red without the refusal arm's re-placement.
-- [ ] Run the gates; the ledger checks read their rows.
+- [x] `ls Core/Views/viewWrite.ts Core/Views/Host/useActiveView.ts Core/Views/Host/pendingView.ts Core/Views/deleteViewWithUndo.ts` prints only "No such file".
+- [x] The I-070 pin in `Host/liveView.test.tsx` reads red without the refusal arm's re-placement.
+- [x] Run the gates; the ledger checks read their rows.
 
 #### Review Checkpoint
 
@@ -494,8 +496,8 @@ The view write should be one act in `Host/liveView.ts`: the pending record, `use
 
 **VERIFY**
 
-- [ ] `git grep -n -E "door:|door=|ViewLeaf|VIEW_ROWS|leafFor" -- Core ':!*.test.*'` prints nothing, and `git grep -n -P "interface ViewRow\b|ViewRow<" -- Core/Views/Settings` prints nothing, the descriptor reading `SettingsPane`.
-- [ ] Run the gates.
+- [x] `git grep -n -E "door:|door=|ViewLeaf|VIEW_ROWS|leafFor" -- Core ':!*.test.*'` prints nothing, and `git grep -n -P "interface ViewRow\b|ViewRow<" -- Core/Views/Settings` prints nothing, the descriptor reading `SettingsPane`.
+- [x] Run the gates.
 
 #### Task 3-2
 
@@ -507,8 +509,8 @@ The view write should be one act in `Host/liveView.ts`: the pending record, `use
 
 **VERIFY**
 
-- [ ] `git grep -n -E "plainRoot|scopedRoot|selectionNode" -- Core/Views` prints nothing, and `ls Core/Actions/viewRowMenu.ts Core/Views/Settings/ViewMenu.tsx` prints only "No such file".
-- [ ] Run the gates.
+- [x] `git grep -n -E "plainRoot|scopedRoot|selectionNode" -- Core/Views` prints nothing, and `ls Core/Actions/viewRowMenu.ts Core/Views/Settings/ViewMenu.tsx` prints only "No such file".
+- [x] Run the gates.
 
 #### Task 3-3
 
@@ -520,9 +522,9 @@ The panes' rows should be the kit's: `switchRow(icon, label, checked, onToggle)`
 
 **VERIFY**
 
-- [ ] `git grep -n -E "'_none'|Page Icons|Hide Icons|solid: true" -- Core/Views` prints nothing, and `ls Core/Views/Settings/switchRows.tsx Core/Views/Settings/paneRows.tsx Core/Views/Settings/group-frame.css.ts` prints only "No such file".
-- [ ] `git grep -n "Title Icons" -- Core/Views` prints the two kind records.
-- [ ] Run the gates.
+- [x] `git grep -n -E "'_none'|Page Icons|Hide Icons|solid: true" -- Core/Views` prints nothing, and `ls Core/Views/Settings/switchRows.tsx Core/Views/Settings/paneRows.tsx Core/Views/Settings/group-frame.css.ts` prints only "No such file".
+- [x] `git grep -n "Title Icons" -- Core/Views` prints the two kind records.
+- [x] Run the gates.
 
 #### Task 3-4
 
@@ -534,8 +536,8 @@ The Filter pane's property and operator lists should pop through the kit's menu 
 
 **VERIFY**
 
-- [ ] `git grep -n -E "Is Checked|Isn't Checked|CheckboxGlyph" -- Core/Views` prints nothing.
-- [ ] Run the gates; the ledger checks read their rows.
+- [x] `git grep -n -E "Is Checked|Isn't Checked|CheckboxGlyph" -- Core/Views` prints nothing.
+- [x] Run the gates; the ledger checks read their rows.
 
 #### Review Checkpoint
 
@@ -558,8 +560,8 @@ The Filter pane's property and operator lists should pop through the kit's menu 
 
 **VERIFY**
 
-- [ ] `git grep -n "DateHeading" -- Core` prints nothing, and `git grep -n -E "text-align: ?center" -- Core/Bundles/bundle-table.css Core/Archive/archive-view.css Core/Trash/trash-frame.css` prints nothing.
-- [ ] Run the gates.
+- [x] `git grep -n "DateHeading" -- Core` prints nothing, and `git grep -n -E "text-align: ?center" -- Core/Bundles/bundle-table.css Core/Archive/archive-view.css Core/Trash/trash-frame.css` prints nothing.
+- [x] Run the gates.
 
 #### Task 4-2
 
@@ -571,8 +573,8 @@ The resize gesture should join the drag gesture: `startResize(e, id)` beside `st
 
 **VERIFY**
 
-- [ ] `ls Core/Views/Table/ColumnHeader.tsx Core/Views/Table/cellSweep.ts` prints only "No such file", and `git grep -n -E "reorderColumns|onResizeStart|DragShift" -- Core` prints nothing.
-- [ ] Run the gates.
+- [x] `ls Core/Views/Table/ColumnHeader.tsx Core/Views/Table/cellSweep.ts` prints only "No such file", and `git grep -n -E "reorderColumns|onResizeStart|DragShift" -- Core` prints nothing.
+- [x] Run the gates.
 
 #### Task 4-3
 
@@ -584,8 +586,8 @@ The shell layer the Table and Archive wear should be `.table-shell`, renamed tog
 
 **VERIFY**
 
-- [ ] `git grep -n "table-view" -- Core UIX .claude/scripts ':!*.test.*'` prints only the stylesheet's own file name, and `git grep -n "value-seat\|cell-text" -- UIX/Table/table.css` prints nothing.
-- [ ] Run the gates; the ledger checks read their rows.
+- [x] `git grep -n "table-view" -- Core UIX .claude/scripts ':!*.test.*'` prints only the stylesheet's own file name, and `git grep -n "value-seat\|cell-text" -- UIX/Table/table.css` prints nothing.
+- [x] Run the gates; the ledger checks read their rows.
 
 #### Review Checkpoint
 
@@ -610,9 +612,9 @@ Inside a view the host owns the state (D-2, I-040): `naming: { id: string; creat
 
 **VERIFY**
 
-- [ ] `git grep -n -E "RenamablePageName|PageNameRename|strandedEditId" -- Core ':!*.test.*'` prints nothing; `git grep -n "'detail'" -- Core/Session/editSlice.ts Core/Interface/RenamableTitle.tsx Core/Views Core/Interface/Menus/entityMenuActions.ts` prints nothing (the `chrome: 'detail'` and `connectionMenuActions.ts`'s `open: 'detail'` unions elsewhere are other words); and `git grep -n "rename:" -- Core/Views/Host/useViewCreation.ts` prints nothing, `useViewInteractions.tsx`'s one hit being `showPageMenu`'s host key.
-- [ ] The create-to-rename pin reads red with `beginNaming` moved back after the reply.
-- [ ] Run the gates.
+- [x] `git grep -n -E "RenamablePageName|PageNameRename|strandedEditId" -- Core ':!*.test.*'` prints nothing; `git grep -n "'detail'" -- Core/Session/editSlice.ts Core/Interface/RenamableTitle.tsx Core/Views Core/Interface/Menus/entityMenuActions.ts` prints nothing (the `chrome: 'detail'` and `connectionMenuActions.ts`'s `open: 'detail'` unions elsewhere are other words); and `git grep -n "rename:" -- Core/Views/Host/useViewCreation.ts` prints nothing, `useViewInteractions.tsx`'s one hit being `showPageMenu`'s host key.
+- [x] The create-to-rename pin reads red with `beginNaming` moved back after the reply.
+- [x] Run the gates.
 
 #### Task 5-2
 
@@ -624,8 +626,8 @@ Inside a view the host owns the state (D-2, I-040): `naming: { id: string; creat
 
 **VERIFY**
 
-- [ ] `git grep -n "data-ghost-root" -- Core UIX ':!*.test.*' ':!*.css'` prints `ghostCreate.ts` alone (its helper and its own capture-phase check), and `git grep -n -E "seatHost|pendingSeat" -- Core/Views ':!*.test.*'` prints nothing.
-- [ ] Run the gates.
+- [x] `git grep -n "data-ghost-root" -- Core UIX ':!*.test.*' ':!*.css'` prints `ghostCreate.ts` alone (its helper and its own capture-phase check), and `git grep -n -E "seatHost|pendingSeat" -- Core/Views ':!*.test.*'` prints nothing.
+- [x] Run the gates.
 
 #### Task 5-3
 
@@ -637,8 +639,8 @@ The host's return should carry what renderers read (B-2, 2.6): `tree`, `mutate`,
 
 **VERIFY**
 
-- [ ] `git grep -n -E "RowCellApi|CardApi|defaultIcons|entityIcon" -- Core/Views/Table Core/Views/Cards ':!*.test.*'` prints nothing, and the host's return holds no `tree`, `mutate`, `openTarget`, `schema`, `effectiveValues`, `seatHost`, or `commitGroupValue` key (the last read only by the interactions, so it lives there): 37 fields at this task's head, from 42, and 36 once Task 7-1 folds `collapsed` and `toggleCollapse` into `disclosure`.
-- [ ] Run the gates; the ledger checks read their rows.
+- [x] `git grep -n -E "RowCellApi|CardApi|defaultIcons|entityIcon" -- Core/Views/Table Core/Views/Cards ':!*.test.*'` prints nothing, and the host's return holds no `tree`, `mutate`, `openTarget`, `schema`, `effectiveValues`, `seatHost`, or `commitGroupValue` key (the last read only by the interactions, so it lives there): 37 fields at this task's head, from 42, and 36 once Task 7-1 folds `collapsed` and `toggleCollapse` into `disclosure`.
+- [x] Run the gates; the ledger checks read their rows.
 
 #### Review Checkpoint
 
@@ -660,9 +662,9 @@ The host's return should carry what renderers read (B-2, 2.6): `tree`, `mutate`,
 
 **VERIFY**
 
-- [ ] `ls Core/Views/Pipeline/bandOrder.ts` prints "No such file", and `git grep -n -E "pruneEmptyBuckets|pruneEmptyGroups|dropHiddenGroups|orderGroups" -- Core` prints nothing.
-- [ ] The E-2 and E-3 pins in `group.test.ts` read red without their change.
-- [ ] Run the gates.
+- [x] `ls Core/Views/Pipeline/bandOrder.ts` prints "No such file", and `git grep -n -E "pruneEmptyBuckets|pruneEmptyGroups|dropHiddenGroups|orderGroups" -- Core` prints nothing.
+- [x] The E-2 and E-3 pins in `group.test.ts` read red without their change.
+- [x] Run the gates.
 
 #### Task 6-2
 
@@ -674,12 +676,12 @@ The host's return should carry what renderers read (B-2, 2.6): `tree`, `mutate`,
 
 **VERIFY**
 
-- [ ] `git grep -n -E "useBandHeads|opensTop|BandItem|BandList" -- Core` prints nothing, and `ls Core/Views/Pipeline/setIndex.ts` prints "No such file".
-- [ ] Run the gates; the ledger checks read their rows.
+- [x] `git grep -n -E "useBandHeads|opensTop|BandItem|BandList" -- Core` prints nothing, and `ls Core/Views/Pipeline/setIndex.ts` prints "No such file".
+- [x] Run the gates; the ledger checks read their rows.
 
 #### Review Checkpoint
 
-- [ ] One walk per job in the pipeline and one model under the bands; both reviewers' findings folded or recorded.
+- [x] One walk per job in the pipeline and one model under the bands; both reviewers' findings folded or recorded.
 
 ---
 
@@ -697,8 +699,8 @@ Disclosure state should be one `{ isOpen, toggle }` shape over each surface's ow
 
 **VERIFY**
 
-- [ ] `git grep -n -E "DropOutline|openHeadingRows|listed-outline|data-drop-outline|--drop-outline" -- Core UIX .claude/scripts ':!*.test.*'` prints nothing; the band's `group-band-drop-outline` button is Task 7-2's.
-- [ ] Run the gates.
+- [x] `git grep -n -E "DropOutline|openHeadingRows|listed-outline|data-drop-outline|--drop-outline" -- Core UIX .claude/scripts ':!*.test.*'` prints nothing; the band's `group-band-drop-outline` button is Task 7-2's.
+- [x] Run the gates.
 
 #### Task 7-2
 
@@ -710,8 +712,8 @@ A band's head should take no Tab stop (7.3, C-3): the chevron toggles through `D
 
 **VERIFY**
 
-- [ ] `git grep -n "group-band-drop-outline" -- Core UIX .claude/scripts` prints nothing.
-- [ ] Run the gates.
+- [x] `git grep -n "group-band-drop-outline" -- Core UIX .claude/scripts` prints nothing.
+- [x] Run the gates.
 
 #### Task 7-3
 
@@ -723,8 +725,8 @@ Rows should indent through one step (7.4, C-2): `--row-indent` goes, `rowIndent`
 
 **VERIFY**
 
-- [ ] `git grep -n -E "RowRail|--row-indent|--disclosure-rail-x" -- Core UIX ':!*.test.*'` prints nothing.
-- [ ] Run the gates.
+- [x] `git grep -n -E "RowRail|--row-indent|--disclosure-rail-x" -- Core UIX ':!*.test.*'` prints nothing.
+- [x] Run the gates.
 
 #### Task 7-4
 
@@ -736,12 +738,12 @@ Hide Disclosure Chevrons should reach the sidebar and the Grouping pane's folder
 
 **VERIFY**
 
-- [ ] `git grep -n "useSetting('hideChevrons')" -- Core` prints nothing, and `git grep -n "sidebar's chevron gutter" -- Core` prints nothing.
-- [ ] Run the gates; the ledger checks read their rows.
+- [x] `git grep -n "useSetting('hideChevrons')" -- Core` prints nothing, and `git grep -n "sidebar's chevron gutter" -- Core` prints nothing.
+- [x] Run the gates; the ledger checks read their rows.
 
 #### Review Checkpoint
 
-- [ ] One chevron, one fold, one indent step, one chevron rule; both reviewers' findings folded or recorded.
+- [x] One chevron, one fold, one indent step, one chevron rule; both reviewers' findings folded or recorded.
 
 ---
 
@@ -759,8 +761,8 @@ Hide Disclosure Chevrons should reach the sidebar and the Grouping pane's folder
 
 **VERIFY**
 
-- [ ] `git grep -n "viewRowMenuItems" -- Core ':!*.test.*'` prints `viewMenus.ts` alone, since `runViewRowAction` pops the menu there for both surfaces.
-- [ ] Run the gates.
+- [x] `git grep -n "viewRowMenuItems" -- Core ':!*.test.*'` prints `viewMenus.ts` alone, since `runViewRowAction` pops the menu there for both surfaces.
+- [x] Run the gates.
 
 #### Task 8-2
 
@@ -772,8 +774,8 @@ Hide Disclosure Chevrons should reach the sidebar and the Grouping pane's folder
 
 **VERIFY**
 
-- [ ] `git grep -n -E "usePillPresence|persistConfig" -- Core` prints nothing.
-- [ ] Run the gates.
+- [x] `git grep -n -E "usePillPresence|persistConfig" -- Core` prints nothing.
+- [x] Run the gates.
 
 #### Task 8-3
 
@@ -785,12 +787,12 @@ Renderers should declare and the tile should read (8.4): each marks its lead wit
 
 **VERIFY**
 
-- [ ] `git grep -n -E "table-shell|cards-view" -- Core/Tiles` prints nothing.
-- [ ] Run the gates; the ledger checks read their rows.
+- [x] `git grep -n -E "table-shell|cards-view" -- Core/Tiles` prints nothing.
+- [x] Run the gates; the ledger checks read their rows.
 
 #### Review Checkpoint
 
-- [ ] A tile knows no renderer by name; both reviewers' findings folded or recorded.
+- [x] A tile knows no renderer by name; both reviewers' findings folded or recorded.
 
 ---
 
@@ -808,12 +810,12 @@ Renderers should declare and the tile should read (8.4): each marks its lead wit
 
 **VERIFY**
 
-- [ ] `git grep -n "PickerMenu\|picker-base" -- Core UIX Desktop .claude/scripts` prints nothing, and `git grep -n "from '../Pickers\|from '@pommora/uix/Pickers" -- UIX/Menus` prints nothing.
-- [ ] Run the gates; the ledger checks read their rows.
+- [x] `git grep -n "PickerMenu\|picker-base" -- Core UIX Desktop .claude/scripts` prints nothing, and `git grep -n "from '../Pickers\|from '@pommora/uix/Pickers" -- UIX/Menus` prints nothing.
+- [x] Run the gates; the ledger checks read their rows.
 
 #### Review Checkpoint
 
-- [ ] Every importer reads the new name and folder, nothing spells the old, and no stylesheet lost a same-specificity tie; both reviewers' findings folded or recorded.
+- [x] Every importer reads the new name and folder, nothing spells the old, and no stylesheet lost a same-specificity tie; both reviewers' findings folded or recorded.
 
 ---
 
@@ -831,13 +833,13 @@ Renderers should declare and the tile should read (8.4): each marks its lead wit
 
 **VERIFY**
 
-- [ ] `git grep -n -E "locked\?: boolean|items\.disabled|groups\.disabled" -- UIX/Interactions` prints nothing.
-- [ ] The three pins *Pins* names for this task read red without their change.
-- [ ] Run the gates; the ledger checks read their rows.
+- [x] `git grep -n -E "locked\?: boolean|items\.disabled|groups\.disabled" -- UIX/Interactions` prints nothing.
+- [x] The three pins *Pins* names for this task read red without their change.
+- [x] Run the gates; the ledger checks read their rows.
 
 #### Review Checkpoint
 
-- [ ] One lock, read once; both reviewers' findings folded or recorded.
+- [x] One lock, read once; both reviewers' findings folded or recorded.
 
 ---
 
@@ -853,8 +855,8 @@ Renderers should declare and the tile should read (8.4): each marks its lead wit
 
 **VERIFY**
 
-- [ ] Run the gates; `node .claude/scripts/check-atlas.mjs` exits 0.
-- [ ] `git grep -n -E "VIEW_RENDERERS|LAYOUT_OPTIONS|pendingView|filterModel|visibilityModel|creationOrder|ColumnHeader|PickerMenu|useBandHeads|RowRail|its own grouping surface" -- .claude/Features .claude/Guidelines .claude/Resources .claude/CLAUDE.md .claude/FrameworkPM.md .claude/IssuesPM.md` prints nothing.
+- [x] Run the gates; `node .claude/scripts/check-atlas.mjs` exits 0.
+- [x] `git grep -n -E "VIEW_RENDERERS|LAYOUT_OPTIONS|pendingView|filterModel|visibilityModel|creationOrder|ColumnHeader|PickerMenu|useBandHeads|RowRail|its own grouping surface" -- .claude/Features .claude/Guidelines .claude/Resources .claude/CLAUDE.md .claude/FrameworkPM.md .claude/IssuesPM.md` prints nothing.
 
 ---
 
@@ -874,13 +876,13 @@ Renderers should declare and the tile should read (8.4): each marks its lead wit
 The reviews run over `<BASELINE>..HEAD`, each wave closed before the next opens, every agent here but the neutral gate at `opus-xhigh`.
 
 - [x] **Wave One:** two read-only reviewers briefed with `code-simplification`, one reading inward at the diff and one reading outward against the rest of Core, Desktop, and UIX; one fix agent folds what holds as numbered fixes beside a Not Taken list with reasons; the fold commits, and every drive *§Constraints · Live Drives* names runs from a worktree of that head.
-- [ ] **Wave Two:** two fresh reviewers briefed with `adversarial-review`, one inward and one outward, over the folded range and given the Not Taken list, so a fold left out returns only on new evidence; folded, committed, and driven the same way.
-- [ ] **Wave Three, Only If It Helps:** run it where Wave Two's folds were structural, as a final look rather than churn for its own sake. The orchestrator states why it ran or didn't.
-- [ ] **The Neutral Gate:** one `fable-high` agent briefed as *§Constraints · Neutral Gate* says, re-run after a fold.
-- [ ] **The Own Pass:** the gates from a clean state and `npm run build`; the diff read once; `git diff --stat <BASELINE>..HEAD -- Core/Sync Sync` prints nothing; the comment count sits at or under 3,517; *§Completion Criteria* ticked.
-- [ ] **The Teardown:** every worktree the run cut removed with `git worktree remove --force` and `git worktree prune`; every scratch Nexus, userData, and script the run made removed.
-- [ ] **The Cold-Machine Check:** each of these prints nothing, or only what it names: `git worktree list` (the main checkout alone); `find "$TMPDIR" -maxdepth 1 -name 'pommora-drive-*'`; `ps -o pid,command -A | grep -E "electron|vitest|vite-node|node .*live-drive" | grep -v grep` (only Nathan's own instance); `git status --short` (nothing the run made); and the `~/Test` hash matching Run Start's.
-- [ ] **Reconciliation:** *§Reconciliation* walked; *§Deviations* ruled on; STATUS and BASELINE's End filled, and the plan commits with `--only`.
+- [x] **Wave Two:** two fresh reviewers briefed with `adversarial-review`, one inward and one outward, over the folded range and given the Not Taken list, so a fold left out returns only on new evidence; folded, committed, and driven the same way.
+- [x] **Wave Three, Only If It Helps:** run it where Wave Two's folds were structural, as a final look rather than churn for its own sake. The orchestrator states why it ran or didn't.
+- [x] **The Neutral Gate:** one `fable-high` agent briefed as *§Constraints · Neutral Gate* says, re-run after a fold.
+- [x] **The Own Pass:** the gates from a clean state and `npm run build`; the diff read once; `git diff --stat <BASELINE>..HEAD -- Core/Sync Sync` prints nothing; the comment count sits at or under 3,517; *§Completion Criteria* ticked.
+- [x] **The Teardown:** every worktree the run cut removed with `git worktree remove --force` and `git worktree prune`; every scratch Nexus, userData, and script the run made removed.
+- [x] **The Cold-Machine Check:** each of these prints nothing, or only what it names: `git worktree list` (the main checkout alone); `find "$TMPDIR" -maxdepth 1 -name 'pommora-drive-*'`; `ps -o pid,command -A | grep -E "electron|vitest|vite-node|node .*live-drive" | grep -v grep` (only Nathan's own instance); `git status --short` (nothing the run made); and the `~/Test` hash matching Run Start's.
+- [x] **Reconciliation:** *§Reconciliation* walked; *§Deviations* ruled on; STATUS and BASELINE's End filled, and the plan commits with `--only`.
 - [ ] **The Report:** in `closeout-review`'s closeout format, with the range presented through `view-delta`, `<net> (+<added> / -<removed>)` per phase and in total, every deviation, the Cold-Machine Check's result, and the neutral gate's answer verbatim. PushNotification tells Nathan it's ready.
 
 #### Reconciliation
@@ -910,7 +912,7 @@ The reviews run over `<BASELINE>..HEAD`, each wave closed before the next opens,
 
 #### Open Items
 
-- **E-2's Location-sorted clause:** a custom Set order reaching the pages of a Location-sorted flat list needs `setOrderOf` to answer the custom order under Sort By Location, and `setOrderOf` also feeds `routeSet` and `pageOrderOf`, so the change reaches drop routing. Not built; Nathan rules whether it's a follow-up.
+- **E-2's Location-sorted clause:** a custom Set order reaching the pages of a Location-sorted flat list needs `setOrderOf` to answer the custom order under Sort By Location, and `setOrderOf` also feeds `routeSet` and `pageOrderOf`, so the change reaches drop routing. Nathan ruled on 11-09-2026 that it stays as built: Sort By Location reads the folders' own order.
 
 Nothing else survives ratification once the placements are approved. *Morning Report* lists the calls taken for Nathan's eye.
 
@@ -930,3 +932,6 @@ Planning's own folds, and where each landed, sit in *Scouts/Planning/Phases/Wave
 - **Phase 10 checkpoint (11-08-2026), folds `4c64c7883` and `e59b0d616`, +18 Actionable; the Measured total now reads 140 below the Estimate (added +202, removed -342), tests three above, comments three below with one arrival the Comment Ledger's row didn't name:** Phase 10 made a line row's lock one per-row `immovable`, but displace zones still locked through `DisplaceSpec.fixed`, so a card in a multi-sorted Cards view, the Set cards under a search, and the nav gallery's frozen search results still told a screen reader to press Space and lifted on it into a session that couldn't move, I-059's defect in the other zone kind. Drag items take the same `immovable`, written as `data-line-immovable`; `lift` refuses an immovable element for a keyboard lift or a pointer lift with nothing to carry, whatever the zone kind; the session carries the flag, `fixed` left `DisplaceSpec`, and the three sites set it per item, so both zone kinds answer one lock (+15, the threading through three components the reason it isn't 0). A pin in `engine.test.tsx` holds it, in place of the fixed-zone test whose subject went. A tile's lone view pill takes the flag, as the dropdown's lone row does; a searching, ungrouped Cards view's band zone renders only around bands that aren't tails, so Tab no longer parks on an empty wrapper, `cards-view.css` keeping the gap after the Set cards that the wrapper gave. `HideableRow`'s lock was dead, since every caller passes `onSave`, which is now required, and its unreachable test left. The scheduled folds landed: the hide controls travel whole as `hide?: HideControls` with both fields required, `LocationHierarchy` and `DateBucketList` taking theirs required; one `isSelected(kind, id)` selector in `navigationSlice.ts` serves both renderers and the sidebar's two rows; `listZone()` reads `rowIndent` itself; one comment restores the grid cell's keyboard reason; `activeCell` derives the editor and popover targets from one pane target; `RowApi` is `RowItem` beside `CardItem`. The alias list's zone-wide freeze took the per-row flag, then went back (`e59b0d616`): the whole list stops at once while filtered, renaming, or drafting, which is what a zone's `disabled` says, as the Matrix's locked layout uses it, and the Tab stop it gives up is never reached then. Not taken: inlining `draggable`'s one call, since its name carries the rule. For the owner: `data-line-immovable` now marks displace items too, so its `line-` prefix is the one name left behind. From a worktree of `e59b0d616`, the Views Drive held 214 of 214 with group 10 built, its Behavior Change 24 cases reading AWAIT at Phase 9's head, `~/Test` restored. Its runs raised two questions left for the final waves to settle: a list whose focused row unmounts, as on a view switch, may keep its zone at `tabIndex -1`, since `LineHost` sees no blur, and so lose its Tab stop; and a view row's selected look draws only on a parked tab's inert copy, which would leave the selection read with no visible use.
 - **Phase 11 (11-08-2026), `93effe06d`:** the patch landed with `viewHarness.tsx` through `--3way` as every replay predicted, and the atlas check reads all 17 tables true for the first time since Phase 4. Beyond the patch, the checkpoint folds had left three sentences false, `MarkdownPM.md:242`'s ceiling, `PommoraUIX.md:161`'s indent row, and `PommoraDND.md:60`'s fixed zone, each rewritten or removed; eleven footnotes re-cited against the landed lines where the Notes foresaw one, I-037's stale since the baseline; `InteractionPM.md:46` keeps "a picker pane's free edges", which the patch had dropped against *§Reconciliation*. For the owner: the Group, Sort, and Filter rows open panes headed Grouping, Sorting, and Filtering, so the app names each pane two ways; the Hide Disclosure Chevrons caption in `Core/Settings/frames.ts` and `ConfigurationPM.md` follow the header, and the rewritten documents follow the row.
 - **Final Verification, Wave One (11-08-2026), fold `c4926c648` and the Studio repo's `3d6c42c`, -20 Actionable; the total reads -512 (+3647 / -4159), tests 9,263, comments 3,490:** a line list whose focused row unmounted kept its zone at `tabIndex -1`, since a row removed in a commit sends no blur React delivers, and Behavior Change 18 had taken the band head's in-zone stops, so a grouped list went unreachable by Tab after a view switch, filter, search, or regroup; `LineHost` restores its stop after a commit once focus has left it, a pin in `engine.test.tsx` holds it, and the Views Drive's blur before a view switch, written around the defect, left. From the reviews: `revealProperty` reads `columns.ts`'s `shownIn`; one `DetailPlaceholder` in `InterfaceScaffold.tsx` serves `ContainerView`, `SpaceView`, and `PageView`'s two, a copy Task 8-2 wrote, which the Phase 8 entry's reason missed (+1, Biome's signature form); `findCollection` and `findSet` left for `findContainerById` (-13); the footer toggle owns its label, four windows' label lines leaving (-11); `LocationHierarchy`'s writer reads `save`; `tiles.ts` reads `schemas.ts`'s `viewButtonField`; `renderRows` returns one band; `formatBucketLabel` is private, its cases read through `dateLabeller`; `PommoraDND.md:38`'s optimistic-sidebar clause, false before this work, left. The view-delta kit had built from a stale bundle since Task 9-1 and its next rebuild would have failed; it imports `MenuBase` and the moved rows. A view row's selected look draws live in a floating Space window's view tiles, so the selection read stays and the Phase 10 entry's question closes. Not taken: `RenamableLabel` taking the edit's end (three of nine callers end differently); `reassignTarget`'s test-only export (its cases would drive a full drop); the shell's picker-named portal attribute and bloom (about 30 tests and 11 drives select the attribute, and *§Reconciliation* keeps `pickerBloom`); `TabItem`'s and `PageWindow`'s three repeated props (a wrapper returns the layer Task 5-1 removed); `editorMenu`'s two dispatch arms; `BundleTable`'s and `MatrixView`'s no-op line stubs (an engine branch for two all-immovable zones). For the owner: a tile's view dropdown can't reorder views while the toolbar's can, as at the baseline; a lone row in list zones beyond the view lists still offers a keyboard lift with nowhere to go. From a worktree of `c4926c648`, the Views Drive held 214 of 214, the Archive Drive 159 of 159, and the Properties Drive's groups 18 and 19 67 of 67, `~/Test` restored after each.
+- **Nathan's rulings (11-09-2026), fold `1d3b1f7fa`, +12 Actionable:** at the owner items' review, Nathan ruled that a page created from a view during its search stays shown until the view is left, so its name field opens and it can be worked on (`useViewHost.ts`'s `created` set, keyed on the tab, its parking, and the view, and `searchGroups`' exemption; filters keep their creation seeds); that a tile's view dropdown reorders by drag as the toolbar's does, through one `ViewList` both share, locked per row on a locked tile; that the rows' Group, Sort, and Filter beside their panes' Grouping, Sorting, and Filtering headers is intentional, which a comment above `VIEW_PANES` says; that a Location-sorted flat list keeps the folders' own order (*§Open Items*); that the toolbar's view button keeps defaulting to its icon and a tile's to labeled; and that the sidebar's 16px first nesting step stays. The tile's dropdown now draws as the toolbar's does, inside `Menu`, 12px taller from its padding, and one Tab stop rather than one per row. Pins in `useViewHost.test.tsx` and `ViewTile.test.tsx` hold the first two.
+- **Final Verification, Waves Two and Three (11-09-2026), folds `67e3ac80b` and `303cf00b2`, +2 Actionable; the total reads -498 (+3726 / -4224), tests 9,269, comments 3,492:** Wave Two's outward reviewer found the work holding outward but for two stale citations; its inward reviewer found three defects. Wave One's Tab-stop restore ran only when `LineHost` rendered, so a band that folded its focused row away on its own, as when Escape ends a search over a band saved collapsed, still stranded the list's stop; the restore moved to an item's detach in the engine's registry, a microtask that hands every line list around a focused item its stop back once focus has left it, and `LineHost`'s effect left. The search exemption took every create, so a page made with no search open showed in a later unrelated search; it takes only creates made while searching. A tile's body was keyed by the active view's position, so a reorder that kept the shown view remounted it and replayed the switch slide; it's keyed by the view's id, and the pill strip locks per pill as the dropdown does. `HandoffPM.md:8`'s Trash limits read I-060 through I-065 after Phase 11's renumbering, `InterfacePM.md:89`'s Glance Pane sentence lost four slips, and `[^14]` and `[^58]` re-cited. Wave Three ran because Wave Two moved a mechanism into the engine: the restore's first shape covered only a line list's own rows, so a grouped Cards view lost its band list's stop when a focused card was deleted, a case Wave One's effect had caught; it now covers any registered item, and `stopOf` states the host's stop once. Pins in `engine.test.tsx` hold the three ways a focused item leaves. The Views Drive's group 10 gained a search-end case, whose first run read a parked tab's inert search field as still open, and which reads the live header since `9d654fe78`. Not taken: `FooterToggle`'s copy staying in UIX, out of `shownLabel`'s reach (Wave One's call); `scope.persist` reading the stored lock, a one-frame cross-window race identical to the baseline. From a worktree of `67e3ac80b`, the Archive Drive held 159 of 159 and the Properties Drive 67 of 67.
+- **Final Verification, the Neutral Gate and the Final Head (11-09-2026), fold `6eb700dd0`, -3 Actionable; the total reads -501 (+3725 / -4226):** the gate preferred the after at `9d654fe78` and again at `6eb700dd0`, both answers verbatim in the report. One correction held: the view header's two renames guarded against an empty or unchanged name, which `InlineEditHeader`'s field already refuses (`required`, and an unchanged commit reads as a cancel), so both guards left. Not taken from its two runs: the editor's Layout leaf composed apart from `LayoutFrame` (the morning's ruling, with the Phase 3 checkpoint keeping editor-only props off the shared pane table); a shared column-head piece (the three heading cells share only the icon span, and it would return the file Task 4-2 deleted); `orderSetTree` beside `viewSetOrder` at four callers (each orders a different tree through the one rule); `DateForms` moving to personalization (`columnStyles` defines and reads it); the host's return carrying three keys only the interaction hooks read (the renderers hand the host to those hooks); `ROOT_ROW_LOOK` without `solid` (Behavior Change 5 took that background away). For the owner, beside the queued items: `ViewList` and `viewNameField` living in `ViewFrame.tsx` while a tile imports them, and `paneTargets.ts` at the Views root, both placements; and the pane comment's wording, which three reviewers and both gate runs stumbled on. The Views Drive's search-end case read `.detail-title-search` as the open search, but a view's header keeps its search field mounted and only hides it, so the case reads the header's `is-searching` mark since `fb13015e3`. From a worktree of `fb13015e3`, the Views Drive held 215 of 215, the Archive Drive 159 of 159, and the Properties Drive's groups 18 and 19 67 of 67, `~/Test` restored after each. The test suites leave their temp roots in the system temp directory on every run (`tiles-`, `bundle-handlers-`, `tile-handlers-`, `pom-echo-`, `pom-x-`, `pommora-store-`, `pommora-sync-`); the teardown removed the 4,140 this run made, and the leak itself, partly in `Sync/`'s tests, sits outside this plan.
