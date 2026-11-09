@@ -2146,7 +2146,7 @@ async function group10(cdp) {
   await cdp.evaluate(`(${liveRow('Page A')}).focus()`)
   const foldStop = { lent: await cdp.evaluate(`${tableZone}?.tabIndex ?? null`) }
   await pressKey(cdp, 'Escape')
-  foldStop.ended = await settles(async () => cdp.evaluate(`![...document.querySelectorAll('.detail-title-search')].some((f) => !f.closest('[inert]'))`), 3000)
+  foldStop.ended = await settles(async () => cdp.evaluate(`![...document.querySelectorAll('.detail-title-lead.is-searching')].some((l) => !l.closest('[inert]'))`), 3000)
   foldStop.folded = await settles(async () => (await expanded(cdp, head('Set Alpha'))) === 'false' && (await cdp.evaluate(`!${tableZone}?.contains(document.activeElement)`)), 3000)
   foldStop.stop = await cdp.evaluate(`${tableZone}?.tabIndex ?? null`)
   fold(g, 'stop', 'a row focused under a search inside a band saved collapsed gives its list the Tab stop back once Escape ends the search and folds the row away', foldStop.lent === -1 && foldStop.ended && foldStop.folded && foldStop.stop === 0, show(foldStop))
