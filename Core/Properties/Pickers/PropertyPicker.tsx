@@ -14,7 +14,7 @@ import { optionLabel, type PropertyValue } from '../propertyValue'
 import { OptionDraft } from '../Schema/OptionSlot'
 import { type OptionStyleControl, useOptionEdit } from '../Schema/useOptionEdit'
 import { MenuBase } from '@pommora/uix/Menus/MenuBase'
-import { PICKER_MAX_HEIGHT } from '@pommora/uix/Menus/menu-row.css'
+import { PANE_MAX_HEIGHT } from '@pommora/uix/Menus/menu-row.css'
 import {
   FootingCreate,
   MenuFooting,
@@ -145,7 +145,7 @@ export function PropertyOptionRows({
     )
   const look = style?.current.look
   return (
-    <MenuScrollFrame maxHeight={PICKER_MAX_HEIGHT} header={header}>
+    <MenuScrollFrame maxHeight={PANE_MAX_HEIGHT} header={header}>
       <OptionGroups
         groups={groups}
         selected={selected}
@@ -207,7 +207,7 @@ function EditableOptionRows({
   return (
     <>
       <MenuScrollFrame
-        maxHeight={PICKER_MAX_HEIGHT}
+        maxHeight={PANE_MAX_HEIGHT}
         header={header}
         footer={
           creates && (

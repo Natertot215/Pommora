@@ -525,8 +525,7 @@ describe('the heading slide’s top row marks how it arrived', () => {
           onPick={() => {}}
           behind={slid ? [] : null}
           headingRows={rows}
-          collapsed={new Set()}
-          onToggleHeading={() => {}}
+          disclosure={{ isOpen: () => true, toggle: () => {} }}
           onAside={() => {}}
           onBack={() => {}}
           aliasHost={null}

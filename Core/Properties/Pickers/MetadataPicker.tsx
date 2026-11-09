@@ -1,7 +1,7 @@
 import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
 import { MenuItem, MenuScrollFrame, MenuSeparator, MenuTopRow } from '@pommora/uix/Menus/MenuRows'
 import { MenuBase } from '@pommora/uix/Menus/MenuBase'
-import { PICKER_MAX_HEIGHT, PICKER_WIDTH } from '@pommora/uix/Menus/menu-row.css'
+import { PANE_MAX_HEIGHT, PANE_WIDTH } from '@pommora/uix/Menus/menu-row.css'
 import { Icon } from '@pommora/uix/Symbols'
 import { contextsByIdOf } from '../../Contexts/contextIdentity'
 import { useSession } from '../../Session/store'
@@ -57,10 +57,10 @@ export function MetadataPicker({ seat }: { seat: ValueSeatApi }): React.JSX.Elem
     <MenuBase solid open={adding !== null} onDismiss={seat.close} triggerRef={seat.anchor}>
       <FrameSlide
         open={target !== null}
-        minWidth={PICKER_WIDTH.minWidth}
+        minWidth={PANE_WIDTH.minWidth}
         root={
           row && listed ? (
-            <MenuScrollFrame maxHeight={PICKER_MAX_HEIGHT}>
+            <MenuScrollFrame maxHeight={PANE_MAX_HEIGHT}>
               {spaces.map((c) => entryRow(row, c))}
               {spaces.length > 0 && properties.length > 0 && <MenuSeparator />}
               {properties.map((c) => entryRow(row, c))}

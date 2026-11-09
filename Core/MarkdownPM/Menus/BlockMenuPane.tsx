@@ -1,7 +1,7 @@
 import { Fragment } from 'react'
 import { Icon } from '@pommora/uix/Symbols'
 import type { RememberedSize } from '@pommora/uix/Interactions/useResizable'
-import { PICKER_MAX_HEIGHT } from '@pommora/uix/Menus/menu-row.css'
+import { PANE_MAX_HEIGHT } from '@pommora/uix/Menus/menu-row.css'
 import { type PaneBounds, usePaneResize } from '@pommora/uix/Menus/usePaneResize'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
 import { MenuRowView } from '@pommora/uix/Menus/MenuIndex'
@@ -21,7 +21,7 @@ interface Props {
 const CLOSED: BlockMenuState = { query: '', from: 0, to: 0, matches: [], ...CLOSED_GEOMETRY }
 
 // KNOB — a fixed width, resized in height alone: the floor, and the whole list as its ceiling.
-const BLOCK_BOUNDS: PaneBounds = { min: { h: 180 }, default: { h: PICKER_MAX_HEIGHT } }
+const BLOCK_BOUNDS: PaneBounds = { min: { h: 180 }, default: { h: PANE_MAX_HEIGHT } }
 
 export function BlockMenuPane({ state, selected, onPick, geometry }: Props): React.JSX.Element {
   const open = state !== null

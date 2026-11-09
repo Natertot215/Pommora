@@ -22,9 +22,9 @@ export function ManageRow({
   info?: ReactNode
   icon?: IconName
   count?: number
-  /** Stacked over another glass surface, as a picker opened from a menu is. */
+  /** Stacked over another glass surface, as a pane opened from a menu is. */
   solid?: boolean
-  /** A pane of menu rows on the picker's own surface, taking no focus on open, rather than an inset one. */
+  /** A pane of menu rows on the pane's own surface, taking no focus on open, rather than an inset one. */
   menu?: boolean
   children: ReactNode
 }): React.JSX.Element {

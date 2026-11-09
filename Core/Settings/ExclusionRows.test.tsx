@@ -3,7 +3,6 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { ExcludedDirectoriesRow } from './ExcludedDirectoriesRow'
-import { shield } from '@pommora/uix/Menus/menu-base.css'
 import { useSession } from '../Session/store'
 import { stubDialer } from '../vitest.setup'
 import { FRAMES } from './frames'
@@ -66,7 +65,7 @@ describe('ExcludedDirectoriesRow', () => {
   it('dismisses on an outside press against the shield', async () => {
     await render(['Archive'])
     await act(async () => manageButton().click())
-    const back = document.querySelector<HTMLElement>(`.${shield}`)
+    const back = document.querySelector<HTMLElement>('[data-dismissal-shield]')
     expect(back).not.toBeNull()
     await act(async () =>
       back?.dispatchEvent(new PointerEvent('pointerdown', { button: 0, bubbles: true })),

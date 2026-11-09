@@ -11,7 +11,7 @@ import {
   type AutocompleteQuery,
 } from './autocomplete'
 import { toggled } from '@pommora/uix/Utilities/checkSet'
-import { unfolded } from '@pommora/uix/Menus/DisclosureRow'
+import { type Disclosure, unfolded } from '@pommora/uix/Menus/DisclosureRow'
 import { docOutline } from '../docCache'
 import { normalizeTitle } from '../../Paths/caseFold'
 import { restedOnLink } from '../Links/linkReveal'
@@ -69,6 +69,10 @@ export function useConnectionAutocomplete(
   ])
   const [behind, setBehind] = useState<AcRow[] | null>(null)
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set())
+  const disclosure: Disclosure = {
+    isOpen: (value) => !collapsed.has(value),
+    toggle: (value) => setCollapsed((prev) => toggled(prev, value)),
+  }
   // The title the heading list slid back to: an exact title closes the page list, but Back must land on it open.
   const [backedTo, setBackedTo] = useState<string | null>(null)
   const query = ac?.query ?? null
@@ -123,7 +127,7 @@ export function useConnectionAutocomplete(
         ? unfolded(
             allHeadingRows,
             (r) => r.level,
-            (r) => !collapsed.has(r.value),
+            (r) => disclosure.isOpen(r.value),
           )
         : allHeadingRows
       : lookup(query)
@@ -246,8 +250,7 @@ export function useConnectionAutocomplete(
       onPick: commit,
       behind,
       headingRows: allHeadingRows,
-      collapsed,
-      onToggleHeading: (value) => setCollapsed((prev) => toggled(prev, value)),
+      disclosure,
       onAside: (row) => commit(row, { openHeading: true }),
       onBack: () => ctl.current.aside?.(-1),
       geometry: host.paneGeometry('autocomplete'),

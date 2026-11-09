@@ -3,14 +3,14 @@ import { EntityIcon } from '../../Assets/EntityIcon'
 import { Icon } from '@pommora/uix/Symbols'
 import type { RememberedSize } from '@pommora/uix/Interactions/useResizable'
 import { type PaneBounds, usePaneResize } from '@pommora/uix/Menus/usePaneResize'
-import { DisclosureRow } from '@pommora/uix/Menus/DisclosureRow'
+import { type Disclosure, DisclosureRow } from '@pommora/uix/Menus/DisclosureRow'
 import { MenuItem, MenuScrollFrame, MenuTopRow } from '@pommora/uix/Menus/MenuRows'
 import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
 import { overScrollHost } from '@pommora/uix/Interactions/OverScroll'
 import { removeButton } from '@pommora/uix/Interactions/hover-remove.css'
 import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
-import { side, itemEmphasized, PICKER_MAX_HEIGHT } from '@pommora/uix/Menus/menu-row.css'
+import { side, itemEmphasized, PANE_MAX_HEIGHT } from '@pommora/uix/Menus/menu-row.css'
 import { useKeepInView } from '@pommora/uix/Interactions/paneCtl'
 import { CaretPane, CLOSED_GEOMETRY } from '../Menus/caretPane'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
@@ -28,8 +28,7 @@ export interface AutocompletePaneProps {
   onPick: (row: AcRow) => void
   behind: AcRow[] | null
   headingRows: HeadingRow[]
-  collapsed: ReadonlySet<string>
-  onToggleHeading: (value: string) => void
+  disclosure: Disclosure
   onAside: (row: AcRow) => void
   onBack: () => void
   geometry?: RememberedSize
@@ -40,7 +39,7 @@ export interface AutocompletePaneProps {
 const AC_BOUNDS: PaneBounds = {
   min: { w: 180, h: 120 },
   max: { w: 480 },
-  default: { h: PICKER_MAX_HEIGHT },
+  default: { h: PANE_MAX_HEIGHT },
 }
 const AC_FIT_MAX = 320
 
@@ -65,8 +64,7 @@ export function AutocompletePane({
   onPick,
   behind,
   headingRows,
-  collapsed,
-  onToggleHeading,
+  disclosure,
   onAside,
   onBack,
   geometry,
@@ -75,7 +73,7 @@ export function AutocompletePane({
   const resize = usePaneResize(open, AC_BOUNDS, geometry)
   const { w, h } = resize.size
   const v = useHeld(
-    { ac: ac ?? CLOSED, candidates, index, behind, headingRows, collapsed, aliasHost },
+    { ac: ac ?? CLOSED, candidates, index, behind, headingRows, disclosure, aliasHost },
     open,
   )
   const keepInView = useKeepInView(v.index)
@@ -129,8 +127,8 @@ export function AutocompletePane({
       icon={null}
       className={itemEmphasized}
       chevron={children ? 'chevron' : 'spacer'}
-      open={!v.collapsed.has(row.value)}
-      onToggle={() => onToggleHeading(row.value)}
+      open={v.disclosure.isOpen(row.value)}
+      onToggle={() => v.disclosure.toggle(row.value)}
       active={i === v.index}
       wrap={(node) => (
         // biome-ignore lint/a11y/noStaticElementInteractions: commits on mousedown as a page row does

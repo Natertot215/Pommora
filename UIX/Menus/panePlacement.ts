@@ -5,6 +5,7 @@ import { PANE_RADIUS } from './menu-base.css'
 export const VIEWPORT_MARGIN = 8
 
 export type PaneDirection = 'down' | 'up'
+export type PaneOrigin = 'auto' | 'right' | 'center' | 'left'
 
 export type PanePos = {
   top?: number
@@ -52,7 +53,7 @@ export function placePane({
   view: { w: number; h: number }
   side: PaneDirection
   centered: boolean | null
-  origin: 'auto' | 'right' | 'center' | 'left'
+  origin: PaneOrigin
   centerX?: number
   bounds?: { left: number; right: number }
 }): { pos: PanePos; centered: boolean } {

@@ -26,6 +26,7 @@ import {
   type PanePoint,
   type PanePos,
   type PaneDirection,
+  type PaneOrigin,
 } from './panePlacement'
 import type { PaneResize } from './usePaneResize'
 import * as s from './menu-base.css'
@@ -88,7 +89,7 @@ export function MenuBase({
   open: boolean
   onDismiss?: () => void
   triggerRef?: RefObject<Element | null>
-  /** The Solid variation is a deliberate stacked-picker opt-in style; it's explicitly not part of the nearly identical GlassWindow. */
+  /** The Solid variation is a pane stacked over another glass surface; it's explicitly not part of the nearly identical GlassWindow. */
   solid?: boolean
   glass?: 'surface' | 'window'
   /** A frozen replica (a pinned glance) passes false so it appears in place rather than blooming in over the pane it replaced; it still blooms out on close. */
@@ -96,7 +97,7 @@ export function MenuBase({
   /** Fired once a close has played out and the menu has unmounted itself — the cue to remove the entry that drove `open`. */
   onExited?: () => void
   direction?: PaneDirection
-  origin?: 'auto' | 'right' | 'center' | 'left'
+  origin?: PaneOrigin
   at?: PanePoint
   centerX?: number
   bounds?: { left: number; right: number }

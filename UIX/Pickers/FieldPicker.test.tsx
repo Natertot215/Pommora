@@ -27,25 +27,26 @@ afterEach(async () => {
   document.body.innerHTML = ''
 })
 
+function RenameHost({ open }: { open: boolean }): React.JSX.Element {
+  const ref = useRef<HTMLButtonElement>(null)
+  return (
+    <>
+      <button ref={ref} type="button" data-id="trigger">
+        Trigger
+      </button>
+      <FieldPicker
+        open={open}
+        onDismiss={() => {}}
+        triggerRef={ref}
+        value="Alias"
+        onCommit={() => {}}
+      />
+    </>
+  )
+}
+
 describe('FieldPicker focus', () => {
   it('keeps the FieldPicker rename field’s caret', async () => {
-    function RenameHost({ open }: { open: boolean }): React.JSX.Element {
-      const ref = useRef<HTMLButtonElement>(null)
-      return (
-        <>
-          <button ref={ref} type="button" data-id="trigger">
-            Trigger
-          </button>
-          <FieldPicker
-            open={open}
-            onDismiss={() => {}}
-            triggerRef={ref}
-            value="Alias"
-            onCommit={() => {}}
-          />
-        </>
-      )
-    }
     await render(<RenameHost open={false} />)
     find('trigger').focus()
     await render(<RenameHost open />)
@@ -55,23 +56,6 @@ describe('FieldPicker focus', () => {
   })
 
   it('gives the field’s focus up when Escape aborts it', async () => {
-    function RenameHost({ open }: { open: boolean }): React.JSX.Element {
-      const ref = useRef<HTMLButtonElement>(null)
-      return (
-        <>
-          <button ref={ref} type="button" data-id="trigger">
-            Trigger
-          </button>
-          <FieldPicker
-            open={open}
-            onDismiss={() => {}}
-            triggerRef={ref}
-            value="Alias"
-            onCommit={() => {}}
-          />
-        </>
-      )
-    }
     await render(<RenameHost open={false} />)
     await render(<RenameHost open />)
     const field = document.querySelector('input') as HTMLInputElement

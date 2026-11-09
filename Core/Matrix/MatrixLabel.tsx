@@ -93,7 +93,7 @@ export function MatrixLabel({
       const r = n.radius * zoom
       a.style.transform = `translate(${sx - r}px, ${sy - r}px)`
       a.style.width = a.style.height = `${r * 2}px`
-      // The pickers' rule, held to the stage's free box: below the node unless above has more of the room it lacks, and centred until an edge stops it.
+      // The panes' rule, held to the stage's free box: below the node unless above has more of the room it lacks, and centred until an edge stops it.
       const st = matrixRuntime.stageOf(surface)
       const below = st.y + st.height - VIEWPORT_MARGIN - (sy + r)
       const above = sy - r - st.y - VIEWPORT_MARGIN

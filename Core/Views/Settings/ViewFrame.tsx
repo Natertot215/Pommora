@@ -76,7 +76,7 @@ export function ViewListRow({
   view: SavedView
   picked: boolean
   rename: Omit<NameRename, 'path'>
-  onCommit: React.ComponentProps<typeof RenamableLabel>['onCommit']
+  onCommit: NameCommit
   onSwitch: () => void
   onMenu: (e: React.MouseEvent<HTMLElement>) => void
   trailing?: React.ReactNode
@@ -91,21 +91,29 @@ export function ViewListRow({
       onClick={rename.editing ? undefined : onSwitch}
       onContextMenu={onMenu}
     >
-      <RenamableLabel
-        renames="title"
-        editing={rename.editing}
-        value={view.name}
-        className={titleInput}
-        onBegin={rename.onBegin}
-        onCommit={(next, how) => {
-          rename.onEnd()
-          return onCommit(next, how)
-        }}
-        onCancel={rename.onEnd}
-      />
+      <RenamableLabel {...viewNameField(view, rename, onCommit)} />
     </MenuItem>
   )
 }
+
+type NameCommit = React.ComponentProps<typeof RenamableLabel>['onCommit']
+
+export const viewNameField = (
+  view: SavedView,
+  rename: Omit<NameRename, 'path'>,
+  onCommit: NameCommit,
+) => ({
+  renames: 'title' as const,
+  editing: rename.editing,
+  value: view.name,
+  className: titleInput,
+  onBegin: rename.onBegin,
+  onCommit: ((next, how) => {
+    rename.onEnd()
+    return onCommit(next, how)
+  }) satisfies NameCommit,
+  onCancel: rename.onEnd,
+})
 
 const EDITOR_PANES = VIEW_PANES.filter((p) => p.id !== 'visibility')
 

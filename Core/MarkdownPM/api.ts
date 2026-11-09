@@ -210,7 +210,7 @@ export interface EditorHost {
     load(): Promise<EditorPrefs | null>
     save(...write: EditorPrefWrite): void
   }
-  /** A picker pane's remembered size, machine-local. */
+  /** A pane's remembered size, machine-local. */
   paneGeometry: (id: 'autocomplete' | 'block-menu') => RememberedSize
 }
 

@@ -8,7 +8,7 @@ import { type Disclosure, DisclosureRow, useDisclosureSet } from '@pommora/uix/M
 import { MenuDesc, MenuScrollFrame } from '@pommora/uix/Menus/MenuRows'
 import { pickRuns } from '@pommora/uix/Menus/pickRuns'
 import { MenuBase } from '@pommora/uix/Menus/MenuBase'
-import { PICKER_MAX_HEIGHT } from '@pommora/uix/Menus/menu-row.css'
+import { PANE_MAX_HEIGHT } from '@pommora/uix/Menus/menu-row.css'
 import { useKeepInView, usePaneCtl } from '@pommora/uix/Interactions/paneCtl'
 import * as fp from './filter-frame.css'
 import { useMultiValue } from './useMultiValue'
@@ -77,7 +77,7 @@ function LocationTree({
     })
   }
   return (
-    <MenuScrollFrame maxHeight={PICKER_MAX_HEIGHT}>
+    <MenuScrollFrame maxHeight={PANE_MAX_HEIGHT}>
       {nodes.length ? renderLevel(nodes) : <MenuDesc>No Sets in this collection.</MenuDesc>}
     </MenuScrollFrame>
   )

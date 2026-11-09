@@ -15,12 +15,7 @@ import { Icon, LockGlyph } from '@pommora/uix/Symbols'
 import { cellRing, colorNameFor } from '@pommora/uix/Theme/ramp'
 import { MenuBase } from '@pommora/uix/Menus/MenuBase'
 import { FootingCreate, MenuFooting, MenuScrollFrame } from '@pommora/uix/Menus/MenuRows'
-import {
-  titleInput as rowInput,
-  rowDisabled,
-  spacer,
-  PICKER_MAX_HEIGHT,
-} from '@pommora/uix/Menus/menu-row.css'
+import { rowDisabled, spacer, PANE_MAX_HEIGHT } from '@pommora/uix/Menus/menu-row.css'
 import { SortableZone, useDragItem } from '@pommora/uix/Interactions/drag'
 import { REVEAL_DWELL_MS, useHoverReveal } from '@pommora/uix/Interactions/hoverReveal'
 import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
@@ -34,7 +29,7 @@ import { findCollection, findSet } from '../../Nexus/treeIndex'
 import { viewGlyph } from '../../Views/viewIcon'
 import { ViewHost } from '../../Views/Host/ViewHost'
 import { SettingsFrame } from '../../Views/Settings/SettingsFrame'
-import { ViewListRow } from '../../Views/Settings/ViewFrame'
+import { ViewListRow, viewNameField } from '../../Views/Settings/ViewFrame'
 import type { NameRename } from '../../Interface/RenamableTitle'
 import { hostedGutter } from '@pommora/uix/Menus/menu-surface.css'
 import { ViewTileScopeProvider } from '../../Views/ViewTileScope'
@@ -416,7 +411,7 @@ export function ViewTile({
         onMove={(id, beforeId) => editViews(moveView(entry.id, id, beforeId))}
       >
         {views.map((v, i) => {
-          const { onEnd, ...rename } = renameOf(v)
+          const rename = renameOf(v)
           return (
             <ViewPill
               key={v.id}
@@ -428,16 +423,8 @@ export function ViewTile({
               renaming={rename.editing}
               label={
                 <RenamableLabel
-                  renames="title"
-                  {...rename}
-                  value={v.name}
-                  className={rowInput}
+                  {...viewNameField(v, rename, (name) => saveView(v.id, { name }))}
                   autoSize
-                  onCommit={(next) => {
-                    onEnd()
-                    saveView(v.id, { name: next })
-                  }}
-                  onCancel={onEnd}
                 />
               }
               onSwitch={() => patchEntry({ active: i })}
@@ -524,7 +511,7 @@ export function ViewTile({
         <MenuBase solid open={listOpen} onDismiss={() => setListOpen(false)} triggerRef={dropRef}>
           <div className={s.listPane}>
             <MenuScrollFrame
-              maxHeight={PICKER_MAX_HEIGHT}
+              maxHeight={PANE_MAX_HEIGHT}
               footer={<MenuFooting leading={newViewButton} />}
             >
               {views.map((v, i) => (
