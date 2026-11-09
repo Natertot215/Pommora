@@ -29,7 +29,7 @@ function VisibilityGroups({
 }: {
   shownIds: string[]
   hiddenIds: string[]
-  hide: Required<HideControls>
+  hide: HideControls
   nameFor: (id: string) => string
   iconFor: (id: string) => string
 }): React.JSX.Element {

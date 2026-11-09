@@ -92,7 +92,6 @@ type ZoneShared = {
 export type DisplaceSpec<T = unknown> = ZoneShared & {
   items: string[]
   axis?: Axis
-  fixed?: boolean
   family?: Family<T>
   accepts?(item: T): boolean
   opens?: boolean
@@ -156,6 +155,7 @@ type Session = {
   index: number
   offset: Point
   carried: ReadonlyMap<Family<unknown>, unknown>
+  immovable: boolean
   chain: Element[]
   home: Rect | null
   pen: Rect | null
@@ -180,11 +180,11 @@ type LineHandle = {
 type LineRowOptions = {
   spring?: (dragged: string) => void
   open?: () => void
-  /** Space where the row can't lift, in place of `open`. */
+  /** Space on an immovable row, in place of `open`. */
   space?: () => void
   immovable?: boolean
 }
-type DragItemOptions = { open?: () => void; tabStop?: boolean }
+type DragItemOptions = { open?: () => void; tabStop?: boolean; immovable?: boolean }
 type Active = { zone: string; id: string }
 type SlotBox = { zone: string; own: boolean; box: Box; clip: Rect | null }
 
@@ -243,7 +243,7 @@ function sameLanding(a: Landing | null, b: Landing | null): boolean {
   return b.kind === 'line' && a.snap === b.snap && Object.is(a.key, b.key)
 }
 
-function measureLine(entry: ZoneEntry, spec: AnyLine, id: string): LineSnap | null {
+function measureLine(entry: ZoneEntry, spec: AnyLine, s: Session): LineSnap | null {
   if (!entry.box) return null
   const host = entry.box.getBoundingClientRect()
   const zoom = currentZoom(entry.box)
@@ -264,7 +264,7 @@ function measureLine(entry: ZoneEntry, spec: AnyLine, id: string): LineSnap | nu
   const groups = new Map(Array.from(entry.groups, ([key, el]) => [key, local(key, el)] as const))
   const geometry: Geometry = { rows, groups, bottom: host.height / zoom }
   const origin = { x: host.left, y: host.top }
-  const snap = entry.els.get(id)?.hasAttribute(IMMOVABLE) ? null : spec.snap(id, geometry)
+  const snap = s.immovable ? null : spec.snap(s.id, geometry)
   return { geometry, snap, origin, zoom, dirty: false }
 }
 
@@ -408,7 +408,7 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
   const lineOf = (s: Session, spec: AnyLine): LineSnap | null => {
     if (!s.line || s.line.dirty) {
       const entry = zones.get(s.zone)
-      s.line = entry ? measureLine(entry, spec, s.id) : null
+      s.line = entry ? measureLine(entry, spec, s) : null
     }
     return s.line
   }
@@ -553,7 +553,7 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
     if (s.pick.zone === zoneId && kept) return
     s.pick = { zone: zoneId, at: near.at }
     const index =
-      own && spec.fixed ? s.index : spec.resolveIndex ? spec.resolveIndex(near.at, s.id) : near.at
+      own && s.immovable ? s.index : spec.resolveIndex ? spec.resolveIndex(near.at, s.id) : near.at
     setLanding(
       s,
       index === null || (own && index === s.index)
@@ -656,6 +656,10 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
     const def = entry?.def
     const el = entry?.els.get(id)
     if (!entry || !def || !el || def.spec.disabled) return null
+    const carried = carriedOf(def.spec.carry, id)
+    const pinned = via === 'keyboard' || carried.size === 0
+    const immovable = el.hasAttribute(IMMOVABLE)
+    if (immovable && pinned) return null
     const rect = toBox(el)
     const start = at ?? { x: rect.cx, y: rect.cy }
     const s: Session = {
@@ -676,7 +680,8 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
       zoom: currentZoom(el),
       index: -1,
       offset: { x: 0, y: 0 },
-      carried: carriedOf(def.spec.carry, id),
+      carried,
+      immovable,
       chain: clipChain(entry.box ?? el),
       home: null,
       pen: null,
@@ -689,9 +694,8 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
       release: noop,
     }
     if (def.kind === 'line') {
-      s.line = measureLine(entry, def.spec, id)
-      if (!s.line || (s.line.snap === null && (via === 'keyboard' || s.carried.size === 0)))
-        return null
+      s.line = measureLine(entry, def.spec, s)
+      if (!s.line || (s.line.snap === null && pinned)) return null
       const own = s.line.geometry.rows.find((row) => row.id === id)
       if (own) s.cursor = { x: (own.left + own.right) / 2, y: own.mid }
       el.setAttribute(SOURCE, '')
@@ -942,7 +946,7 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
 
   const stepDisplace = (s: Session, spec: DisplaceSpec, dir: Dir): void => {
     const layout = frozen.get(s.zone)
-    if (!layout || spec.fixed) return
+    if (!layout) return
     const next = keyboardNext(layout.rects, s.pick.at, dir)
     if (next === s.pick.at) return
     s.pick = { zone: s.zone, at: next }
@@ -1291,7 +1295,10 @@ function LineHost({
   )
 }
 
-export function useDragItem(id: string, { open, tabStop = true }: DragItemOptions = {}): DragItem {
+export function useDragItem(
+  id: string,
+  { open, tabStop = true, immovable = false }: DragItemOptions = {},
+): DragItem {
   const { api, zoneId, disabled } = useZone('useDragItem')
   const isDragging = useDragging(api, zoneId, id)
   const run = useLatest(open)
@@ -1312,11 +1319,12 @@ export function useDragItem(id: string, { open, tabStop = true }: DragItemOption
       role: 'button',
       tabIndex: tabStop && (opens || !disabled) ? 0 : -1,
       'aria-roledescription': 'sortable',
-      'aria-describedby': disabled ? undefined : INSTRUCTIONS_ID,
+      'aria-describedby': immovable || disabled ? undefined : INSTRUCTIONS_ID,
       'aria-pressed': isDragging || undefined,
       'aria-disabled': (disabled && !opens) || undefined,
+      [IMMOVABLE]: immovable ? '' : undefined,
     }),
-    [api, zoneId, id, disabled, opens, tabStop, isDragging],
+    [api, zoneId, id, disabled, opens, tabStop, isDragging, immovable],
   )
   return useMemo(
     () => ({ setNodeRef, style: ITEM_STYLE, handle, isDragging }),

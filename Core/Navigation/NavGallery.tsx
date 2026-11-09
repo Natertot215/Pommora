@@ -69,28 +69,31 @@ export function NavGallery({
     e.stopPropagation()
     void showNavRowMenu(it, onOpenNewTab)
   }
-  const card = (it: ResolvedNav): React.JSX.Element => (
-    <DraggableCard key={it.key} it={it} nexusId={nexusId} onSelect={onSelect} onMenu={openMenu} />
-  )
+  const card =
+    (immovable: boolean) =>
+    (it: ResolvedNav): React.JSX.Element => (
+      <DraggableCard
+        key={it.key}
+        it={it}
+        nexusId={nexusId}
+        onSelect={onSelect}
+        onMenu={openMenu}
+        immovable={immovable}
+      />
+    )
   return (
     <div className="nav-gallery nav-gallery-list">
       <div className={cx('card-grid', frozen && 'is-fill')}>
         {pins.length > 0 && (
           <SortableZone items={pins.map((p) => p.key)} onMove={reorderPin} {...zone}>
             <DropSlot />
-            {pins.map(card)}
+            {pins.map(card(false))}
           </SortableZone>
         )}
-        {frozen ? (
-          <SortableZone items={items.map((r) => r.key)} fixed {...zone}>
-            {items.map(card)}
-          </SortableZone>
-        ) : (
-          <SortableZone items={items.map((r) => r.key)} onMove={onReorderRecent} {...zone}>
-            <DropSlot />
-            {items.map(card)}
-          </SortableZone>
-        )}
+        <SortableZone items={items.map((r) => r.key)} onMove={onReorderRecent} {...zone}>
+          <DropSlot />
+          {items.map(card(frozen))}
+        </SortableZone>
       </div>
     </div>
   )
@@ -101,9 +104,11 @@ function DraggableCard(props: {
   nexusId: string
   onSelect: NavOpen
   onMenu: (it: ResolvedNav, e: React.MouseEvent) => void
+  immovable: boolean
 }): React.JSX.Element {
-  const drag = useDragItem(props.it.key, { open: () => props.onSelect(props.it.target) })
-  return <GalleryCard {...props} drag={drag} />
+  const { immovable, ...card } = props
+  const drag = useDragItem(props.it.key, { open: () => props.onSelect(props.it.target), immovable })
+  return <GalleryCard {...card} drag={drag} />
 }
 
 function GalleryCard({

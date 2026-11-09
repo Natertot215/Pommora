@@ -39,7 +39,7 @@ import { SidebarDnd } from './sidebarDnd'
 import { buildIndex } from './sidebarDndModel'
 import { AgendaMode } from './AgendaMode'
 import { sidebarModeOf } from '../../Settings/experimental'
-import { pageMetaOf, useSession, useSetting } from '../../Session/store'
+import { isSelected, pageMetaOf, useSession, useSetting } from '../../Session/store'
 import { personalizationOf } from '../../Session/configSlice'
 import { pickOpen } from '../../Session/chromeSlice'
 import { glanceShown, hoverGlance, leaveGlance } from '../Glance/glanceAction'
@@ -102,7 +102,7 @@ const LeafRow = memo(function LeafRow({
   depth: number
   ghostLabel: string
 }): React.JSX.Element {
-  const selected = useSession((s) => s.selection.kind === node.kind && s.selection.id === node.id)
+  const selected = useSession(isSelected(node.kind, node.id))
   const defaultIcons = useSession((s) => personalizationOf(s).defaultIcons)
   const pageIcon = useSession(pageMetaOf(node.kind === 'page' ? node.id : undefined))?.icon
   const ghost = useContext(SidebarGhost)
@@ -198,9 +198,7 @@ const ContainerRow = memo(
     const defaultIcons = useSession((s) => personalizationOf(s).defaultIcons)
     const mutate = useSession((s) => s.mutate)
     const placement = useSession((s) => placementOf(personalizationOf(s), node.kind))
-    const selected = useSession(
-      (s) => selectable && s.selection.kind === node.kind && s.selection.id === node.id,
-    )
+    const selected = useSession(isSelected(node.kind, node.id)) && selectable
     const sets = node.sets ?? []
     const icon = entityIcon(node.kind, node.icon, defaultIcons)
     const openIcon: IconName | undefined = icon === 'folder-closed' ? 'folder-open' : undefined

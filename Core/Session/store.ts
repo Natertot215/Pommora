@@ -19,6 +19,7 @@ import type { DateForms } from '../Properties/columnStyles'
 export type { PageSlot } from './navigationSlice'
 export {
   frozenOf,
+  isSelected,
   pageBody,
   readyPageIds,
   shownDetail,

@@ -305,14 +305,14 @@ export function GroupFrame({
               view={view}
               group={plan.group.config}
               column={plan.group.column}
-              {...bucketControls('group', plan.group.config.property_id)}
+              hide={bucketControls('group', plan.group.config.property_id)}
             />
           ) : (
             <OptionOrderList
               group={plan.group.config}
               def={activeDef}
               onSave={(order) => saveGroup({ ...plan.group.config, order_mode: 'manual', order })}
-              {...bucketControls('group', plan.group.config.property_id)}
+              hide={bucketControls('group', plan.group.config.property_id)}
             />
           )
         ) : (
@@ -322,8 +322,8 @@ export function GroupFrame({
             plan={plan}
             sub={sub}
             persist={save}
-            {...setControls}
-            subControls={subDef ? bucketControls('sub', subDef.id) : {}}
+            hide={setControls}
+            subHide={subDef ? bucketControls('sub', subDef.id) : undefined}
           />
         )}
       </div>
@@ -337,17 +337,17 @@ function LocationHierarchy({
   plan,
   sub,
   persist,
-  isHidden,
-  onToggleHidden,
-  subControls,
+  hide,
+  subHide,
 }: {
   source: CollectionNode | SetNode
   view: SavedView
   plan: GroupPlan
   sub: Grouping | undefined
   persist: ViewWriter
-  subControls: HideControls
-} & HideControls): React.JSX.Element {
+  hide: HideControls
+  subHide?: HideControls
+}): React.JSX.Element {
   const expanded = useDisclosureSet()
   const { painted, sets, heads } = useBandSource(source, sub, view)
   const subDef = sub?.column.def
@@ -405,7 +405,7 @@ function LocationHierarchy({
       line={bandKey(def.id, o.id, setId)}
       hideKey={o.id}
       label={o.label}
-      hide={subControls}
+      hide={subHide}
       className={oo.subChip}
     >
       <OptionChip type={def.type} option={o} />
@@ -417,7 +417,7 @@ function LocationHierarchy({
       ? subChips.map((o) => subChipRow(s.id, o, subDef))
       : (s.sets ?? []).map(renderSet)
     const disclosable = body.length > 0
-    const setHidden = isHidden?.(s.id) ?? false
+    const setHidden = hide.isHidden(s.id)
     const node = model.byKey.get(s.id)
     const toggle = (): void => expanded.toggle(s.id)
     return (
@@ -432,7 +432,7 @@ function LocationHierarchy({
         className={cx(setHidden && hiddenRow)}
         tabIndex={-1}
         // Many folders can show at once, and a full-strength eye on each would crowd the list.
-        trailing={hideEye(s.title, s.id, { isHidden, onToggleHidden }, true)}
+        trailing={hideEye(s.title, s.id, hide, true)}
         wrap={(row) => (
           <LineRow
             id={s.id}
@@ -476,14 +476,14 @@ function DateBucketList({
   view,
   group,
   column,
-  isHidden,
-  onToggleHidden,
+  hide,
 }: {
   source: CollectionNode | SetNode
   view: SavedView
   group: PropertyGroup
   column: ResolvedColumn
-} & HideControls): React.JSX.Element | null {
+  hide: HideControls
+}): React.JSX.Element | null {
   // The Settings frame mounts from the toolbar and beside a tile's view host, never under one, so the list reads the container's values itself.
   const { values } = useContainerValues(source.path)
   const forms = useDateForms()
@@ -506,7 +506,7 @@ function DateBucketList({
       {bucketOrder(group, column.def, present).map((key) => {
         const label = labelOf(key)
         return (
-          <HideableRow key={key} hideKey={key} label={label} hide={{ isHidden, onToggleHidden }}>
+          <HideableRow key={key} hideKey={key} label={label} hide={hide}>
             <span className={oo.orderLabel}>{label}</span>
           </HideableRow>
         )

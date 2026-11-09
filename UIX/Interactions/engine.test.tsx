@@ -86,7 +86,10 @@ function specOf(zid: string): DisplaceSpec<unknown> {
 
 function Item({ id, onOpen }: { id: string; onOpen?: () => void }): React.JSX.Element {
   renders.set(id, (renders.get(id) ?? 0) + 1)
-  const { setNodeRef, style, handle } = useDragItem(id, { open: onOpen })
+  const { setNodeRef, style, handle } = useDragItem(id, {
+    open: onOpen,
+    immovable: rowOpts[id]?.immovable,
+  })
   return (
     <div ref={setNodeRef} data-id={id} style={style} {...handle}>
       <button type="button" data-inner={id} />
@@ -626,9 +629,12 @@ describe('the drag handle keyboard', () => {
     done()
   })
 
-  it('keeps a lifted item home in a fixed zone', async () => {
-    const { handle, done } = await renderZone(undefined, { fixed: true, onMove })
+  it('an immovable item names no drag gesture, and Space doesn’t lift it', async () => {
+    rowOpts = { k: { immovable: true } }
+    const { handle, done } = await renderZone(undefined, { onMove })
+    expect(handle.hasAttribute('aria-describedby')).toBe(false)
     await press(handle, ' ')
+    expect(lifted(handle)).toBe(false)
     await press(document, 'ArrowDown')
     await press(document, ' ')
     await settle()
@@ -943,8 +949,8 @@ describe('the drag engine across a family', () => {
     expect(receives.T).toHaveBeenCalledExactlyOnceWith(tabOf('a1'), null)
   })
 
-  it('a fixed zone lifts and carries and never previews its own order', async () => {
-    extra = { A: { fixed: true } }
+  it('an immovable item lifts and carries and never previews its own order', async () => {
+    rowOpts = { a1: { immovable: true } }
     await mount()
     await dragHold('a1', 100, 150)
     expect(item('a2').style.transform).toBe('')

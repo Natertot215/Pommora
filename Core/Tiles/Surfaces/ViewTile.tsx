@@ -106,6 +106,7 @@ function ViewPill({
   exiting,
   labeled,
   renaming,
+  immovable,
   label,
   onSwitch,
   onMenu,
@@ -117,13 +118,14 @@ function ViewPill({
   exiting: boolean
   labeled: boolean
   renaming: boolean
+  immovable: boolean
   label: React.ReactNode
   onSwitch: () => void
   onMenu: (e: React.MouseEvent<HTMLElement>) => void
   onAnimEnd?: () => void
 }): React.JSX.Element {
   const open = renaming ? undefined : onSwitch
-  const { setNodeRef, style, handle } = useDragItem(view.id, { open })
+  const { setNodeRef, style, handle } = useDragItem(view.id, { open, immovable })
   return (
     <button
       ref={setNodeRef}
@@ -421,6 +423,7 @@ export function ViewTile({
               exiting={exiting?.id === v.id}
               labeled={labeled}
               renaming={rename.editing}
+              immovable={views.length < 2}
               label={
                 <RenamableLabel
                   {...viewNameField(v, rename, (name) => saveView(v.id, { name }))}

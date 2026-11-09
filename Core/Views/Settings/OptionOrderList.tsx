@@ -47,31 +47,30 @@ export function orderOptions<V extends string>(
 }
 
 export interface HideControls {
-  isHidden?: (key: string) => boolean
-  onToggleHidden?: (key: string) => void
+  isHidden: (key: string) => boolean
+  onToggleHidden: (key: string) => void
 }
 
 export function hideEye(
   label: string,
   key: string,
-  { isHidden, onToggleHidden }: HideControls,
+  hide?: HideControls,
   dim = false,
 ): React.JSX.Element | null {
-  if (!onToggleHidden) return null
-  const hidden = isHidden?.(key) ?? false
+  if (!hide) return null
+  const hidden = hide.isHidden(key)
   return (
     <EyeToggle
       hidden={hidden}
       name={label}
       className={dim && !hidden ? revealDim : undefined}
-      onToggle={() => onToggleHidden(key)}
+      onToggle={() => hide.onToggleHidden(key)}
     />
   )
 }
 
 export function HideableRow({
   line,
-  immovable,
   hideKey,
   label,
   hide,
@@ -79,16 +78,15 @@ export function HideableRow({
   children,
 }: {
   line?: string
-  immovable?: boolean
   hideKey: string
   label: string
-  hide: HideControls
+  hide?: HideControls
   className?: string
   children: ReactNode
 }): React.JSX.Element {
   const eye = hideEye(label, hideKey, hide)
   const row = {
-    className: cx(optionRow, className, hide.isHidden?.(hideKey) && hiddenRow),
+    className: cx(optionRow, className, hide?.isHidden(hideKey) && hiddenRow),
     children: (
       <>
         {children}
@@ -96,7 +94,7 @@ export function HideableRow({
       </>
     ),
   }
-  return line ? <LineRow id={line} immovable={immovable} {...row} /> : <div {...row} />
+  return line ? <LineRow id={line} {...row} /> : <div {...row} />
 }
 
 type Section = { key: string; label: string | null; values: string[] }
@@ -122,13 +120,13 @@ export function OptionOrderList({
   group,
   def,
   onSave,
-  isHidden,
-  onToggleHidden,
+  hide,
 }: {
   group: Pick<PropertyGroup, 'order_mode' | 'order'>
   def: PropertyDefinition | undefined
-  onSave?: (order: string[]) => void
-} & HideControls): React.JSX.Element | null {
+  onSave: (order: string[]) => void
+  hide?: HideControls
+}): React.JSX.Element | null {
   if (!def) return null
   const order = liveBucketOrder(group, def, [])
   return (
@@ -136,7 +134,7 @@ export function OptionOrderList({
       {...lineList({
         commit: (v, slot) => {
           const next = moveBefore(order, (x) => x, v, slot.before)
-          if (next) onSave?.(next)
+          if (next) onSave(next)
         },
         line: menuDropLine,
         label: (v) => optionLabel(def, v),
@@ -151,14 +149,7 @@ export function OptionOrderList({
             const option = findOption(def, v)
             if (!option) return []
             return [
-              <HideableRow
-                key={v}
-                line={v}
-                immovable={!onSave}
-                hideKey={v}
-                label={option.label}
-                hide={{ isHidden, onToggleHidden }}
-              >
+              <HideableRow key={v} line={v} hideKey={v} label={option.label} hide={hide}>
                 <OptionChip type={def.type} option={option} />
               </HideableRow>,
             ]

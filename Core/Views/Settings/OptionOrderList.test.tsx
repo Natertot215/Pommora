@@ -4,7 +4,7 @@ import { act } from 'react'
 import type { Root } from 'react-dom/client'
 import type { PropertyDefinition } from '../../Properties/properties'
 import { DragGroup } from '@pommora/uix/Interactions/drag'
-import { firePointer, pressEscape, stubRect } from '@pommora/uix/Utilities/pointerHarness'
+import { firePointer, stubRect } from '@pommora/uix/Utilities/pointerHarness'
 import { mountEachTest } from '../../Testing/viewHarness'
 import { OptionOrderList } from './OptionOrderList'
 
@@ -59,7 +59,7 @@ const rows = (): HTMLElement[] => [...host.querySelectorAll<HTMLElement>('[data-
 const mount = async (
   group: { order_mode: 'configured' | 'manual' | 'reversed'; order?: string[] },
   def: PropertyDefinition,
-  onSave?: (order: string[]) => void,
+  onSave: (order: string[]) => void = () => {},
 ): Promise<void> => {
   await act(async () => {
     root.render(
@@ -125,13 +125,5 @@ describe('OptionOrderList', () => {
       'opt_complete',
       'opt_not_started',
     ])
-  })
-
-  it('without onSave, a press never lifts', async () => {
-    await mount({ order_mode: 'configured' }, selectDef)
-    await drag(2, 5)
-    expect(host.querySelector('.drop-line')).toBeNull()
-    expect(rows()[2].hasAttribute('data-drag-source')).toBe(false)
-    pressEscape()
   })
 })

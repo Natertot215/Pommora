@@ -30,7 +30,7 @@ import { useElementZoom } from '@pommora/uix/Utilities/zoom'
 import { EmptyValue } from '@pommora/uix/Elements/EmptyValue'
 import { useThumb } from '../../Assets/useThumb'
 import { coverOf } from '../../Pages/pageDetail'
-import { useSession } from '../../Session/store'
+import { isSelected, useSession } from '../../Session/store'
 import { AssetImage } from '../../Assets/AssetImage'
 import { useBannerMenu } from '../../Interface/Header/useBannerMenu'
 import { navKey, selectTargetOf } from '../../Navigation/navRef'
@@ -293,6 +293,62 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     )
   }
 
+  const bandList = groups.map((g) => (
+    <GroupBand key={g.key} node={bands.byKey.get(g.key)} bands={interactions.bandView} fill>
+      <SortableZone
+        items={g.items.map((r) => r.id)}
+        label={(id) => rowById.get(id)?.title ?? ''}
+        family={crossBand ? scope : undefined}
+        disclose={crossBand}
+        carry={cardCarry}
+        resolveIndex={(index, id) => interactions.folderSlot(g.key, index, id)}
+        onMove={(id, beforeId) => interactions.onDrop(id, g.key, beforeId)}
+        receive={(item, beforeId) => interactions.onDrop(item, g.key, beforeId)}
+        renderOverlay={cardOverlay}
+        className="cards-grid card-grid is-fill"
+      >
+        <DropSlot />
+        {g.items.flatMap((row) => {
+          const card = (
+            <PageCard
+              key={row.id}
+              row={row}
+              view={view}
+              banner={banner}
+              nexusId={nexusId}
+              columns={columns}
+              ctx={ctx}
+              loc={trailBySet[row.parentSetId ?? '']}
+              styleById={styleById}
+              api={item}
+              immovable={host.dragDisabled}
+              allowInlineRemove={effectiveZoom >= 0.8}
+              naming={host.naming?.id === row.id ? host.naming : null}
+              editing={
+                seat.open?.mode === 'editor' && seat.open.rowId === row.id
+                  ? seat.open.columnId
+                  : null
+              }
+            />
+          )
+          if (ghostShown !== row.id) return [card]
+          return [
+            card,
+            // FLIP seats the ghost among its neighbors on the way in; Reveal collapses it on the way out, so an aborted ghost animates away like the sidebar and table ones instead of vanishing.
+            <Reveal
+              key={`ghost-${row.id}`}
+              open={!interactions.ghostClosing}
+              fill
+              onCollapsed={interactions.onGhostClosed}
+            >
+              {ghostCard}
+            </Reveal>,
+          ]
+        })}
+      </SortableZone>
+    </GroupBand>
+  ))
+
   return (
     <div
       ref={host.viewRootRef}
@@ -304,7 +360,6 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
         <div className="set-cards-row">
           <SortableZone
             items={sets.map((s) => s.id)}
-            fixed={searching}
             label={(id) => host.sets.node.get(id)?.title ?? ''}
             carry={[
               carries(TAB_FAMILY, (id) => {
@@ -317,68 +372,16 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
           >
             <DropSlot />
             {sets.map((s) => (
-              <SetCard key={s.id} set={s} api={item} />
+              <SetCard key={s.id} set={s} api={item} immovable={searching} />
             ))}
           </SortableZone>
         </div>
       )}
-      <LineZone {...interactions.bandZone()}>
-        {groups.map((g) => (
-          <GroupBand key={g.key} node={bands.byKey.get(g.key)} bands={interactions.bandView} fill>
-            <SortableZone
-              items={g.items.map((r) => r.id)}
-              label={(id) => rowById.get(id)?.title ?? ''}
-              fixed={host.dragDisabled}
-              family={crossBand ? scope : undefined}
-              disclose={crossBand}
-              carry={cardCarry}
-              resolveIndex={(index, id) => interactions.folderSlot(g.key, index, id)}
-              onMove={(id, beforeId) => interactions.onDrop(id, g.key, beforeId)}
-              receive={(item, beforeId) => interactions.onDrop(item, g.key, beforeId)}
-              renderOverlay={cardOverlay}
-              className="cards-grid card-grid is-fill"
-            >
-              <DropSlot />
-              {g.items.flatMap((row) => {
-                const card = (
-                  <PageCard
-                    key={row.id}
-                    row={row}
-                    view={view}
-                    banner={banner}
-                    nexusId={nexusId}
-                    columns={columns}
-                    ctx={ctx}
-                    loc={trailBySet[row.parentSetId ?? '']}
-                    styleById={styleById}
-                    api={item}
-                    allowInlineRemove={effectiveZoom >= 0.8}
-                    naming={host.naming?.id === row.id ? host.naming : null}
-                    editing={
-                      seat.open?.mode === 'editor' && seat.open.rowId === row.id
-                        ? seat.open.columnId
-                        : null
-                    }
-                  />
-                )
-                if (ghostShown !== row.id) return [card]
-                return [
-                  card,
-                  // FLIP seats the ghost among its neighbors on the way in; Reveal collapses it on the way out, so an aborted ghost animates away like the sidebar and table ones instead of vanishing.
-                  <Reveal
-                    key={`ghost-${row.id}`}
-                    open={!interactions.ghostClosing}
-                    fill
-                    onCollapsed={interactions.onGhostClosed}
-                  >
-                    {ghostCard}
-                  </Reveal>,
-                ]
-              })}
-            </SortableZone>
-          </GroupBand>
-        ))}
-      </LineZone>
+      {groups.some((g) => g.kind !== 'tail') ? (
+        <LineZone {...interactions.bandZone()}>{bandList}</LineZone>
+      ) : (
+        bandList
+      )}
       {interactions.ghostStanding && (
         <div className="cards-grid card-grid is-fill">{ghostCard}</div>
       )}
@@ -443,10 +446,11 @@ function GhostCard({
 interface SetCardProps {
   set: SetNode
   api: Pick<CardItem, 'openSet' | 'banner'>
+  immovable: boolean
 }
 
-function SetCard({ set, api }: SetCardProps): React.JSX.Element {
-  const drag = useDragItem(set.id, { open: () => api.openSet(set, false) })
+function SetCard({ set, api, immovable }: SetCardProps): React.JSX.Element {
+  const drag = useDragItem(set.id, { open: () => api.openSet(set, false), immovable })
   return (
     <CardRoot drag={drag} locked data-view-lead="row" onClick={(e) => api.openSet(set, isCmd(e))}>
       <SetFace
@@ -502,6 +506,7 @@ interface PageCardProps {
   loc?: TrailSegment[]
   styleById: Map<string, ColumnStyle>
   api: CardItem
+  immovable: boolean
   allowInlineRemove: boolean
   naming: ViewHostApi['naming']
   editing: string | null
@@ -752,12 +757,13 @@ const PageCard = memo(function PageCard({
   loc,
   styleById,
   api,
+  immovable,
   allowInlineRemove,
   naming,
   editing,
 }: PageCardProps): React.JSX.Element {
-  const drag = useDragItem(row.id, { open: () => api.open(row, false) })
-  const active = useSession((s) => s.selection.kind === 'page' && s.selection.id === row.id)
+  const drag = useDragItem(row.id, { open: () => api.open(row, false), immovable })
+  const active = useSession(isSelected('page', row.id))
   const { src, onError } = useThumb(nexusId, previewKeyOf(row, banner))
 
   const textRef = useRef<HTMLDivElement>(null)

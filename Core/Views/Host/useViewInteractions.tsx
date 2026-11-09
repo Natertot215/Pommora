@@ -16,6 +16,7 @@ import {
 import { REVEAL_DWELL_MS } from '@pommora/uix/Interactions/hoverReveal'
 import { announceDrag } from '@pommora/uix/Interactions/a11y'
 import { carries, groupedLine, lineList, rowLine, rowStep } from '@pommora/uix/Interactions/drag'
+import { rowIndent } from '@pommora/uix/Table/rowIndent'
 import type { Geometry, Row } from '@pommora/uix/Interactions/reorderModel'
 import { TAB_FAMILY } from '../../Navigation/tabRows'
 import { EntityIcon } from '../../Assets/EntityIcon'
@@ -392,7 +393,7 @@ export function useViewInteractions<Own extends StableHandlers>(
     }
     return heads
   }
-  const listZone = (indent: (depth: number) => string) =>
+  const listZone = () =>
     groupedLine(
       (id) => rowById.has(id),
       lineList({
@@ -412,7 +413,7 @@ export function useViewInteractions<Own extends StableHandlers>(
         disclose: crossBand,
         watch: [rowBand],
       }),
-      bandZone(indent),
+      bandZone(rowIndent),
     )
 
   // ── Carry ─────────────────────────────────────────────────────────────────

@@ -13,6 +13,7 @@ import {
   type Tab,
   toNavRef,
 } from '../Navigation/navRef'
+import type { NodeKind } from '../Nexus/entities'
 import type { PageDetail } from '../Pages/pageDetail'
 import { settingOf } from '../Settings/personalization'
 import { opensInPreview } from '../Navigation/previewRules'
@@ -159,6 +160,11 @@ const readySlot = (target: PageTarget, detail: PageDetail): ReadySlot => ({
 
 export const shownPage = (s: SessionState): PageSlot | undefined =>
   s.selection.kind === 'page' ? s.pages[s.selection.id] : undefined
+
+export const isSelected =
+  (kind: NodeKind, id: string) =>
+  (s: SessionState): boolean =>
+    s.selection.kind === kind && s.selection.id === id
 
 export const shownDetail = (s: SessionState): PageDetail | null => {
   const slot = shownPage(s)

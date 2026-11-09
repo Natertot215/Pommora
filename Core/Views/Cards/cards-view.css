@@ -42,6 +42,7 @@
 }
 
 .cards-view .group-band + .group-band,
+.cards-view .set-cards-row + .group-band,
 .cards-view .set-cards-row + .line-zone > .group-band:first-child {
   margin-top: var(--band-gap);
 }

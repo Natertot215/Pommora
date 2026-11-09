@@ -12,7 +12,7 @@ import {
   useViewInteractions,
   type ViewInteractions,
 } from '../Host/useViewInteractions'
-import { useSession } from '../../Session/store'
+import { isSelected, useSession } from '../../Session/store'
 import { RenamableName } from '../../Interface/RenamableTitle'
 import type { ValueContext } from '../../Properties/valueContext'
 import { isCmd, isSecondaryClick } from '@pommora/uix/Interactions/chords'
@@ -89,14 +89,12 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const { seat } = interactions
 
   const open = seat.open
-  const editorTarget = open?.mode === 'editor' ? { rowId: open.rowId, colId: open.columnId } : null
-  const popoverTarget =
-    open?.mode === 'popover' ? { rowId: open.rowId, colId: open.columnId } : null
+  const paneTarget =
+    open && open.mode !== 'add' ? { rowId: open.rowId, colId: open.columnId } : null
+  const editorTarget = open?.mode === 'editor' ? paneTarget : null
+  const popoverTarget = open?.mode === 'popover' ? paneTarget : null
   const activeCell =
-    host.naming && titleColId
-      ? { rowId: host.naming.id, colId: titleColId }
-      : (editorTarget ??
-        (open?.mode === 'picker' ? { rowId: open.rowId, colId: open.columnId } : popoverTarget))
+    host.naming && titleColId ? { rowId: host.naming.id, colId: titleColId } : paneTarget
 
   // ── The render ────────────────────────────────────────────────────────────
 
@@ -162,7 +160,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   }
   return (
     <div ref={host.viewRootRef} className={cx('table table-shell', overflowing && 'overflowing')}>
-      <LineZone {...interactions.listZone(rowIndent)}>
+      <LineZone {...interactions.listZone()}>
         <div
           className={cx(
             'table-grid',
@@ -207,7 +205,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   )
 }
 
-type RowApi = ItemApi & {
+type RowItem = ItemApi & {
   sweep: (row: ViewRow, col: ResolvedColumn, e: React.PointerEvent) => boolean
 }
 
@@ -288,7 +286,7 @@ const DataRow = memo(function DataRow({
   dragShift: ColumnDrag | null
   alignByCol: ColumnAlign[]
   styleByCol: ColumnStyle[]
-  api: RowApi
+  api: RowItem
   naming: ViewHostApi['naming']
   editingCol: string | null
   popoverCol: string | null
@@ -298,7 +296,7 @@ const DataRow = memo(function DataRow({
   sweepCol: string | null
   lead: boolean
 }): React.JSX.Element {
-  const selected = useSession((s) => s.selection.kind === 'page' && s.selection.id === row.id)
+  const selected = useSession(isSelected('page', row.id))
   const pageMenu = (e: React.MouseEvent): void =>
     void api.pageMenu(row, e, titleGlyph(e.currentTarget as HTMLElement))
   return (
@@ -344,6 +342,7 @@ const DataRow = memo(function DataRow({
               />
             ))
           )
+        // A cell takes no tab stop: per-cell stops are wrong and roving tabindex is a feature, so the row has the keys.
         const cell = {
           className: cx(
             dragShift?.from === i && 'col-dragging',
