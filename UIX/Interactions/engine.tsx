@@ -213,6 +213,7 @@ type Api = {
 const noop = (): void => {}
 const SOURCE = 'data-drag-source'
 const rowsOf = (zoneId: string): string => `[data-line-row="${zoneId}"]`
+const stopOf = (spec: ZoneShared): number => (spec.disabled ? -1 : 0)
 const IMMOVABLE = 'data-line-immovable'
 const GLIDE = `transform ${DEFAULT_FEEL.duration}ms ${DEFAULT_FEEL.easing}`
 const translate = (x: number, y: number): string => `translate3d(${px(x)}, ${px(y)}, 0)`
@@ -1090,13 +1091,16 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
       if (el) entry.els.set(id, el)
       else entry.els.delete(id)
       if (el && refocus?.zone === zoneId && refocus.id === id) focusBack(el, null)
-      // A focused row removed in a commit sends no blur, so its list takes back the stop the row borrowed once the removal lands.
-      if (!el && entry.def?.kind === 'line' && was?.contains(document.activeElement))
+      // A focused item removed in a commit sends no blur, so every line list around it takes back the stop the item borrowed once the removal lands.
+      if (!el && was?.contains(document.activeElement)) {
+        const lists = [...zones.values()].filter(
+          (z) => z.def?.kind === 'line' && z.box?.contains(was),
+        )
         queueMicrotask(() => {
-          const { box, def } = entry
-          if (box && def && !box.contains(document.activeElement))
-            box.tabIndex = def.spec.disabled ? -1 : 0
+          for (const { box, def } of lists)
+            if (box && def && !box.contains(document.activeElement)) box.tabIndex = stopOf(def.spec)
         })
+      }
       if (session?.zone === zoneId && session.line) session.line.dirty = true
     },
     group: (zoneId, key, el) => {
@@ -1243,14 +1247,13 @@ function LineHost({
   children,
   ...spec
 }: LineZoneProps<unknown, unknown> & { api: Api }): React.JSX.Element {
-  const disabled = spec.disabled ?? false
-  const { zoneId, box, zone } = useZoneSeat(api, disabled)
+  const { zoneId, box, zone } = useZoneSeat(api, spec.disabled ?? false)
   const [paint, setPaint] = useState<LinePaint | null>(null)
   const last = useRef<HTMLElement | null>(null)
   const viaPointer = useRef(false)
   useEffect(() => api.setLine(zoneId, spec, setPaint))
   useEffect(() => api.invalidate(zoneId), [api, zoneId, ...spec.watch])
-  const stop = disabled ? -1 : 0
+  const stop = stopOf(spec)
   const rows = rowsOf(zoneId)
   const enter = (host: HTMLElement): void => {
     const held = last.current?.isConnected && host.contains(last.current) ? last.current : null

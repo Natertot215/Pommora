@@ -1170,6 +1170,25 @@ describe('the line zone', () => {
     expect(lineHost().tabIndex).toBe(0)
   })
 
+  it('a line list whose focused displace item unmounts gives its Tab stop back', async () => {
+    let leave!: () => void
+    function Band(): ReactNode {
+      const [shown, setShown] = useState(true)
+      leave = () => setShown(false)
+      return (
+        <SortableZone items={shown ? ['s1'] : []} label={label} onMove={onMove}>
+          {shown && <Item id="s1" />}
+        </SortableZone>
+      )
+    }
+    inZone = <Band />
+    await mount()
+    await act(async () => item('s1').focus())
+    expect(lineHost().tabIndex).toBe(-1)
+    await act(async () => leave())
+    expect(lineHost().tabIndex).toBe(0)
+  })
+
   it("a pointer press on the host's blank space focuses no row and holds the scroll", async () => {
     const scrolled = vi.spyOn(HTMLElement.prototype, 'scrollIntoView')
     await act(async () => {
