@@ -380,7 +380,7 @@ The order lets each signature land once. The kind record goes first because the 
   - [x] Task 11-1 · Docs and issues
   - [x] Compaction Checkpoint
 - [x] *§Final Verification* over `<BASELINE>..HEAD`
-- [ ] `[Stop: the final report, per §Final Verification]`
+- [x] `[Stop: the final report, per §Final Verification]`
 
 ---
 
@@ -883,7 +883,7 @@ The reviews run over `<BASELINE>..HEAD`, each wave closed before the next opens,
 - [x] **The Teardown:** every worktree the run cut removed with `git worktree remove --force` and `git worktree prune`; every scratch Nexus, userData, and script the run made removed.
 - [x] **The Cold-Machine Check:** each of these prints nothing, or only what it names: `git worktree list` (the main checkout alone); `find "$TMPDIR" -maxdepth 1 -name 'pommora-drive-*'`; `ps -o pid,command -A | grep -E "electron|vitest|vite-node|node .*live-drive" | grep -v grep` (only Nathan's own instance); `git status --short` (nothing the run made); and the `~/Test` hash matching Run Start's.
 - [x] **Reconciliation:** *§Reconciliation* walked; *§Deviations* ruled on; STATUS and BASELINE's End filled, and the plan commits with `--only`.
-- [ ] **The Report:** in `closeout-review`'s closeout format, with the range presented through `view-delta`, `<net> (+<added> / -<removed>)` per phase and in total, every deviation, the Cold-Machine Check's result, and the neutral gate's answer verbatim. PushNotification tells Nathan it's ready.
+- [x] **The Report:** in `closeout-review`'s closeout format, with the range presented through `view-delta`, `<net> (+<added> / -<removed>)` per phase and in total, every deviation, the Cold-Machine Check's result, and the neutral gate's answer verbatim. PushNotification tells Nathan it's ready.
 
 #### Reconciliation
 
