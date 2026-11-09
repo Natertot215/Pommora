@@ -1,5 +1,5 @@
 import { type ActionItem, joinGroups } from './menuModel'
-import type { ViewButton, ViewStyle } from '../Nexus/schemas'
+import type { ViewStyle } from '../Nexus/schemas'
 import { shownLabel } from './toggleLabels'
 import { popMenu } from './menuActions'
 import type { SavedView, ViewPatch } from '../Views/views'
@@ -78,10 +78,8 @@ export function embedAreaMenuItems(current: {
   ]
 }
 
-export function viewButtonMenuItems(current: {
-  viewButton: ViewButton
-}): ActionItem<ViewButtonMenuAction>[] {
-  return [{ label: shownLabel(current.viewButton === 'labeled', 'Title'), action: 'toggle-title' }]
+export function viewButtonMenuItems(labeled: boolean): ActionItem<ViewButtonMenuAction>[] {
+  return [{ label: shownLabel(labeled, 'Title'), action: 'toggle-title' }]
 }
 
 const itemRows = (ctx: ViewRowMenuContext, glyphs = false): ActionItem<ViewRowAction>[] => [

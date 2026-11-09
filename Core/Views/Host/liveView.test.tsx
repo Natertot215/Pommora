@@ -5,13 +5,12 @@ import type { Root } from 'react-dom/client'
 import type { CollectionNode } from '../../Nexus/tree'
 import type { PropertyDefinition } from '../../Properties/properties'
 import { DEFAULT_VIEW_ID, type SavedView, foldView, slotsOf, type ViewPatch } from '../views'
-import { mountEachTest } from '../../Testing/viewHarness'
+import { mountEachTest, SavingViewPane } from '../../Testing/viewHarness'
 import { dropIO, useActiveView, useLiveView, useSaveView, type ViewWriteOpts } from './liveView'
 import { fault, ok } from '../../Contract/result'
 import { useSession } from '../../Session/store'
 import { stubDialer } from '../../vitest.setup'
 import { ViewTileScopeProvider } from '../ViewTileScope'
-import { ViewPane } from '../Settings/ViewPane'
 import { SettingsFrame } from '../Settings/SettingsFrame'
 
 const base = (over: Partial<SavedView> = {}): SavedView =>
@@ -512,22 +511,15 @@ describe('useSaveView', () => {
   })
 
   it('a locked tile drops nothing to the source container either', async () => {
-    function Pane(): React.JSX.Element {
-      save = useSaveView(source)
-      return (
-        <ViewPane
+    await render(
+      <ViewTileScopeProvider value={scope(true)}>
+        <SavingViewPane
           id="group"
           source={source}
           view={view}
           schema={[statusDef]}
           back={{ label: 'Settings', onBack: () => {} }}
-          save={(patch) => save(view, patch)}
         />
-      )
-    }
-    await render(
-      <ViewTileScopeProvider value={scope(true)}>
-        <Pane />
       </ViewTileScopeProvider>,
     )
     await clickRow('Group By')

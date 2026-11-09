@@ -11,7 +11,6 @@ import * as group from '../Pipeline/group'
 import { stubDialer } from '../../vitest.setup'
 import { MenuDoorHost } from '../../Testing/MenuDoorHost'
 import { mountEachTest, SavingViewPane } from '../../Testing/viewHarness'
-import { useLiveView } from '../Host/liveView'
 import { makeTree } from '../../Testing/testTree'
 
 const statusDef: PropertyDefinition = {
@@ -500,21 +499,16 @@ describe('GroupFrame lists — dragging in the pane', () => {
       mutate: vi.fn(() => new Promise((resolve) => (refuse = resolve))) as never,
     })
     const stored = view({ group_order: ['sA', 'sA1', 'sB', 'sC'] })
-    function LivePane(): React.JSX.Element {
-      return (
-        <SavingViewPane
-          id="group"
-          source={sets}
-          view={useLiveView(sets.id, stored)}
-          schema={schema}
-          back={{ label: 'Settings', onBack: () => {} }}
-        />
-      )
-    }
     await act(async () => {
       root.render(
         <MenuDoorHost>
-          <LivePane />
+          <SavingViewPane
+            id="group"
+            source={sets}
+            view={stored}
+            schema={schema}
+            back={{ label: 'Settings', onBack: () => {} }}
+          />
         </MenuDoorHost>,
       )
     })

@@ -218,7 +218,7 @@ export function ViewTile({
   }
   const peekHover = viewsShown ? undefined : hoverProps
 
-  // The anchor resolves once per entry into the body, and again only when its first card moves, so crossing cards reads no layout.
+  // The anchor resolves once per entry into the body, and again only when its lead moves, so crossing cards reads no layout.
   const bodyHover = viewsShown
     ? undefined
     : {
@@ -239,14 +239,13 @@ export function ViewTile({
       }
 
   const locked = entry.locked ?? false
-  const patchEntry = (patch: EntryPatch): void => {
-    if (locked && !('locked' in patch) && !('active' in patch)) return
-    mutateEntry(entry.id, () => patch)
-  }
+  const patchEntry = (patch: EntryPatch): void =>
+    mutateEntry(entry.id, (raw) =>
+      raw.locked === true && !('locked' in patch) && !('active' in patch) ? null : patch,
+    )
   const setLocked = (v: boolean): void => patchEntry({ locked: v ? true : null })
-  const editViews = (op: EntryOp): void => {
-    if (!locked) mutateEntry(entry.id, op)
-  }
+  const editViews = (op: EntryOp): void =>
+    mutateEntry(entry.id, (raw) => (raw.locked === true ? null : op(raw)))
   const saveView = (id: string, patch: ViewPatch): void => editViews(writeView(entry.id, id, patch))
   const removeView = (v: SavedView): void => {
     let undo: EntryOp | undefined

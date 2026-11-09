@@ -149,12 +149,13 @@ const VIEW_CONFIG_LOCKED = 'The view configuration is locked on this embed.'
 export function useSaveView(
   source: CollectionNode | SetNode,
 ): (view: SavedView, patch: ViewPatch, opts?: ViewWriteOpts) => Promise<Result<{ id: string }>> {
-  const scope = useViewTileScope()
+  const latest = useLatest(useViewTileScope())
   const write = async (
     view: SavedView,
     patch: ViewPatch,
     opts?: ViewWriteOpts,
   ): Promise<Result<{ id: string }>> => {
+    const scope = latest.current
     if (!scope) {
       const base = stageView(source.id, view, patch)
       const r = await dialer().ask('views:save', source.path, source.kind, base, patch)

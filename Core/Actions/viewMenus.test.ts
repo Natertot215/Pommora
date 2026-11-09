@@ -76,8 +76,8 @@ describe('the view embed’s area menu', () => {
 
 describe('the view button’s menu', () => {
   it('names the title toggle after what pressing it does', () => {
-    expect(labels(viewButtonMenuItems({ viewButton: 'labeled' }))).toContain('Hide Title')
-    expect(labels(viewButtonMenuItems({ viewButton: 'icon' }))).toContain('Show Title')
+    expect(labels(viewButtonMenuItems(true))).toContain('Hide Title')
+    expect(labels(viewButtonMenuItems(false))).toContain('Show Title')
   })
 })
 

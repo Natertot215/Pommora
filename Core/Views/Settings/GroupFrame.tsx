@@ -41,7 +41,9 @@ import {
   type Grouping,
   groupPlan,
   liveBucketOrder,
+  orderSetTree,
   type PropertyGroup,
+  viewSetOrder,
 } from '../Pipeline/group'
 import { NUMERIC_FORMATS } from '../../Properties/formatValue'
 import { bandModelOf, dateLabeller, nodeLabel, springsInto } from '../Bands/bandModel'
@@ -49,7 +51,6 @@ import { bandRouting } from '../Bands/bandRouter'
 import { bandSpec } from '../Bands/GroupBand'
 import { dropIO } from '../Host/liveView'
 import { useBandSource } from '../Bands/useBandSource'
-import { orderedChildren } from '../Bands/setIndex'
 import { EntityIcon } from '../../Assets/EntityIcon'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { useDateForms } from '../../Session/store'
@@ -359,27 +360,31 @@ function LocationHierarchy({
     })
   }, [sub, subDef])
 
+  const ordered = useMemo(
+    () => orderSetTree(painted.sets ?? [], viewSetOrder(plan, view)),
+    [painted.sets, plan, view],
+  )
   const model = useMemo(() => {
-    const walk = (parentKey: string | null): ResolvedGroup[] =>
-      orderedChildren(sets, parentKey, plan, view).map(
-        (id): ResolvedGroup => ({
-          key: id,
+    const walk = (nodes: SetNode[]): ResolvedGroup[] =>
+      nodes.map(
+        (s): ResolvedGroup => ({
+          key: s.id,
           kind: 'set',
           items: [],
           children: subDef
             ? subChips.map(
                 (o): ResolvedGroup => ({
-                  key: bandKey(subDef.id, o.id, id),
+                  key: bandKey(subDef.id, o.id, s.id),
                   kind: 'bucket',
                   value: o.id,
                   items: [],
                 }),
               )
-            : walk(id),
+            : walk(s.sets ?? []),
         }),
       )
-    return bandModelOf(walk(null), heads)
-  }, [heads, sets, plan, subDef, subChips, view])
+    return bandModelOf(walk(ordered), heads)
+  }, [heads, ordered, subDef, subChips])
 
   const routing = bandRouting(
     { view, plan, sets, sourcePath: painted.path, bands: model },
@@ -407,12 +412,10 @@ function LocationHierarchy({
     </HideableRow>
   )
 
-  const setsIn = (parentKey: string | null): SetNode[] =>
-    orderedChildren(sets, parentKey, plan, view).map((id) => sets.node.get(id)!)
   const renderSet = (s: SetNode): React.JSX.Element => {
     const body = subDef
       ? subChips.map((o) => subChipRow(s.id, o, subDef))
-      : setsIn(s.id).map(renderSet)
+      : (s.sets ?? []).map(renderSet)
     const disclosable = body.length > 0
     const setHidden = isHidden?.(s.id) ?? false
     const node = model.byKey.get(s.id)
@@ -463,7 +466,7 @@ function LocationHierarchy({
         indent: (depth) => menuDropLine({ edge: 0, depth }),
       })}
     >
-      {setsIn(null).map(renderSet)}
+      {ordered.map(renderSet)}
     </LineZone>
   )
 }

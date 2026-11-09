@@ -29,7 +29,7 @@ function ViewMenuInner({ node }: { node: CollectionNode | SetNode }): React.JSX.
 
   const onContextMenu = async (e: React.MouseEvent): Promise<void> => {
     e.preventDefault()
-    const action = await popMenu(viewButtonMenuItems({ viewButton: node.viewButton ?? 'icon' }))
+    const action = await popMenu(viewButtonMenuItems(labeled))
     if (action !== 'toggle-title') return
     void mutate({
       op: 'setViewButton',

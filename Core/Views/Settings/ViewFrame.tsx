@@ -76,7 +76,7 @@ export function ViewListRow({
   view: SavedView
   picked: boolean
   rename: Omit<NameRename, 'path'>
-  onCommit: (name: string) => void
+  onCommit: React.ComponentProps<typeof RenamableLabel>['onCommit']
   onSwitch: () => void
   onMenu: (e: React.MouseEvent<HTMLElement>) => void
   trailing?: React.ReactNode
@@ -97,9 +97,9 @@ export function ViewListRow({
         value={view.name}
         className={titleInput}
         onBegin={rename.onBegin}
-        onCommit={(next) => {
+        onCommit={(next, how) => {
           rename.onEnd()
-          onCommit(next)
+          return onCommit(next, how)
         }}
         onCancel={rename.onEnd}
       />
@@ -298,7 +298,7 @@ export function ViewFrame({
                     onBegin: () => setRenamingId(v.id),
                     onEnd: () => setRenamingId(null),
                   }}
-                  onCommit={(name) => void saveView(v, { name })}
+                  onCommit={(name) => saveView(v, { name })}
                   onSwitch={() => switchTo(v.id)}
                   onMenu={(e) => rowMenu(v, e)}
                   trailing={

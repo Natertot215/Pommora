@@ -8,7 +8,7 @@ import { DragGroup } from '@pommora/uix/Interactions/drag'
 import { stubPointerCapture } from '@pommora/uix/Utilities/pointerHarness'
 import { ViewHost } from '../Views/Host/ViewHost'
 import { useSession } from '../Session/store'
-import { useSaveView } from '../Views/Host/liveView'
+import { useLiveView, useSaveView } from '../Views/Host/liveView'
 import { ViewPane } from '../Views/Settings/ViewPane'
 
 /** Once per suite, at module scope: the jsdom seat, then a fresh host and root before every test, unmounted and removed after it. jsdom ships no `CSS.escape`, which the ghost's id-scoped queries call. */
@@ -31,9 +31,12 @@ export function mountEachTest(onMount: (host: HTMLDivElement, root: Root) => voi
   })
 }
 
-export function SavingViewPane(props: Omit<ComponentProps<typeof ViewPane>, 'save'>) {
+export function SavingViewPane(
+  props: Omit<ComponentProps<typeof ViewPane>, 'save'>,
+): React.JSX.Element {
+  const view = useLiveView(props.source.id, props.view)
   const saveView = useSaveView(props.source)
-  return <ViewPane {...props} save={(patch) => saveView(props.view, patch)} />
+  return <ViewPane {...props} view={view} save={(patch) => saveView(view, patch)} />
 }
 
 export async function renderView(

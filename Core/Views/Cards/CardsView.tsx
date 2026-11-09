@@ -40,7 +40,7 @@ import { GHOST_TRAVEL_HOLD_MS } from '@pommora/uix/Interactions/ghostCreate'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { columnLabel } from '../../Properties/columnDisplay'
 import { GroupBand } from '../Bands/GroupBand'
-import { orderedChildren } from '../Bands/setIndex'
+import { orderSetTree, viewSetOrder } from '../Pipeline/group'
 import {
   type ItemApi,
   rowHover,
@@ -122,11 +122,10 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
   // ── Set cards ─────────────────────────────────────────────────────────────
 
   const sets = useMemo(
-    () => orderedChildren(host.sets, null, host.plan, view).map((id) => host.sets.node.get(id)!),
-    [host.sets, host.plan, view],
+    () => orderSetTree(host.source.sets ?? [], viewSetOrder(host.plan, view)),
+    [host.source.sets, host.plan, view],
   )
   const showSetCards = viewOption(view, 'set_cards') && sets.length > 0
-  const leadId = showSetCards ? sets[0].id : groups.find((g) => g.items.length > 0)?.items[0].id
 
   // ── Interactions ──────────────────────────────────────────────────────────
 
@@ -318,7 +317,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
           >
             <DropSlot />
             {sets.map((s) => (
-              <SetCard key={s.id} set={s} api={item} lead={s.id === leadId} />
+              <SetCard key={s.id} set={s} api={item} />
             ))}
           </SortableZone>
         </div>
@@ -345,7 +344,6 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
                   <PageCard
                     key={row.id}
                     row={row}
-                    lead={row.id === leadId}
                     view={view}
                     banner={banner}
                     nexusId={nexusId}
@@ -444,19 +442,13 @@ function GhostCard({
 
 interface SetCardProps {
   set: SetNode
-  lead: boolean
   api: Pick<CardItem, 'openSet' | 'banner'>
 }
 
-function SetCard({ set, lead, api }: SetCardProps): React.JSX.Element {
+function SetCard({ set, api }: SetCardProps): React.JSX.Element {
   const drag = useDragItem(set.id, { open: () => api.openSet(set, false) })
   return (
-    <CardRoot
-      drag={drag}
-      locked
-      data-view-lead={lead ? 'row' : undefined}
-      onClick={(e) => api.openSet(set, isCmd(e))}
-    >
+    <CardRoot drag={drag} locked data-view-lead="row" onClick={(e) => api.openSet(set, isCmd(e))}>
       <SetFace
         set={set}
         onThumbMenu={(e) => {
@@ -502,7 +494,6 @@ function SetFace({
 
 interface PageCardProps {
   row: ViewRow
-  lead: boolean
   view: SavedView
   banner: CardBanner
   nexusId: string
@@ -753,7 +744,6 @@ function OverlayFace({
 
 const PageCard = memo(function PageCard({
   row,
-  lead,
   view,
   banner,
   nexusId,
@@ -809,7 +799,7 @@ const PageCard = memo(function PageCard({
       drag={drag}
       active={active}
       data-rid={row.id}
-      data-view-lead={lead ? 'row' : undefined}
+      data-view-lead="row"
       {...rowHover(row, api.hover)}
       onClick={(e) => {
         if (naming) return

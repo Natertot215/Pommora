@@ -1,6 +1,7 @@
 // A view tile's embedded views, read and edited over the entry as stored: the tile's counterpart to viewsFile.ts.
 
 import { isPlainObject } from '../Contract/validators'
+import { index } from '../Files/decoders'
 import { moveBefore } from '@pommora/uix/Utilities/moveItem'
 import {
   applyViewPatch,
@@ -26,7 +27,7 @@ function coerceEmbeddedView(raw: unknown, id: string): SavedView {
   return { ...(r.success ? r.data : mintDefaultView()), id }
 }
 
-export const embedViewIds = (els: readonly unknown[], entryId: string): string[] =>
+const embedViewIds = (els: readonly unknown[], entryId: string): string[] =>
   viewIdsOf(els.map(configIdOf), (n) => `embed:${entryId}:${n}`)
 
 export function embeddedViews(els: readonly unknown[], entryId: string): SavedView[] {
@@ -37,12 +38,8 @@ export function embeddedViews(els: readonly unknown[], entryId: string): SavedVi
 const rawViews = (raw: Record<string, unknown>): unknown[] =>
   Array.isArray(raw.views) ? [...(raw.views as unknown[])] : []
 
-// Read as the entry's parse reads it: a non-negative integer, else the first view, clamped to the views held.
 const rawActive = (raw: Record<string, unknown>, count: number): number =>
-  Math.min(
-    Number.isInteger(raw.active) && (raw.active as number) >= 0 ? (raw.active as number) : 0,
-    count - 1,
-  )
+  Math.min(index.safeParse(raw.active).data ?? 0, count - 1)
 
 export const writeView =
   (entryId: string, id: string, patch: ViewPatch): EntryOp =>
