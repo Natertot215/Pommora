@@ -1,6 +1,6 @@
 ## Views Drive — Matrix
 
-The drive's cases, derived from the *Views Cleanup — Implementation Plan*'s *§Behavior Changes* and written against each phase's AFTER, its patch in `Planning/Views Cleanup/Scouts/Planning/Phases/`. Groups 2 to 10 follow the plan phase of their number. A group holds every behavior change its phase lands, crossed with each surface, input, and setting that reaches it, beside the interactions its refactor rewired on those surfaces, so a regression shows. Each case names its decision: `BC<n> <id>` is the numbered behavior change and its decision, owned by the group's phase, so it reads `AWAIT` at a head before that phase and must hold from it on; `R P<n>` is a regression crossing of phase `n`'s rewiring, owned by phase 0, so it holds at every head, the baseline included. `F<n> <tag>` is a behavior phase `n`'s checkpoint fold lands, owned by phase `n` like a behavior change. `T<task> <tag>` is a visible change a task lands that *§Behavior Changes* doesn't number, recorded under the plan's *§Deviations* and owned by the task's phase. Every case prints as `g<group> [P<owner> <decision>] <name>`, so a run reads against the tables below line for line. Groups 2 to 8 are built; groups 9 and 10 are built at their own checkpoints from the rows below.
+The drive's cases, derived from the *Views Cleanup — Implementation Plan*'s *§Behavior Changes* and written against each phase's AFTER, its patch in `Planning/Views Cleanup/Scouts/Planning/Phases/`. Groups 2 to 10 follow the plan phase of their number. A group holds every behavior change its phase lands, crossed with each surface, input, and setting that reaches it, beside the interactions its refactor rewired on those surfaces, so a regression shows. Each case names its decision: `BC<n> <id>` is the numbered behavior change and its decision, owned by the group's phase, so it reads `AWAIT` at a head before that phase and must hold from it on; `R P<n>` is a regression crossing of phase `n`'s rewiring, owned by phase 0, so it holds at every head, the baseline included. `F<n> <tag>` is a behavior phase `n`'s checkpoint fold lands, owned by phase `n` like a behavior change. `T<task> <tag>` is a visible change a task lands that *§Behavior Changes* doesn't number, recorded under the plan's *§Deviations* and owned by the task's phase. Every case prints as `g<group> [P<owner> <decision>] <name>`, so a run reads against the tables below line for line. Groups 2 to 9 are built; group 10 is built at its own checkpoint from the rows below.
 
 #### Dimensions
 
@@ -8,12 +8,12 @@ The drive's cases, derived from the *Views Cleanup — Implementation Plan*'s *�
 | --- | --- | --- |
 | **Surfaces** | The Table; Cards; Set bands; property bands; sub-grouped bands; the Trash and Archive table; the sidebar; View Tiles; the toolbar's view button and the views dropdown; the settings panes through both doors (the toolbar's Settings and the dropdown's per-view editor) | Each behavior change on every surface that draws it; each regression on the surfaces its phase rewired |
 | **Inputs** | Mouse press; double-click; keyboard (Tab, Enter, Escape, the context-menu key); pointer drag; right-click popping a native menu | A gesture the phase rewired, by every input that reaches it; the context-menu key as a `contextmenu` event raised with no press, which is what the key delivers |
-| **Settings** | Native Menus; Hide Disclosure Chevrons; Hide Empty Groups | Native Menus on and off for every list the menu door pops (groups 3 and 9); Hide Disclosure Chevrons in group 7; Hide Empty Groups in group 6 |
+| **Settings** | Native Menus; Hide Disclosure Chevrons; Hide Empty Groups | Native Menus on and off for every list the menu door pops (group 3); Hide Disclosure Chevrons in group 7; Hide Empty Groups in group 6 |
 | **States** | A locked row or tile; an active search; a custom Set order; a manual page order present or absent; a write held in flight | A locked tile in groups 8 and 10; a search in groups 7 and 10; the custom Set order in groups 6 and 7; the manual order in groups 2, 4, and 6; a held write in groups 2, 3, 5, and 6 |
 
 **A held write:** the drive wraps the host's `mutate`, `views:save`, and `tiles:save` handlers in the main process, so a case can hold one call's reply or refuse it, and restores them at the end. It widens a round trip of a few milliseconds to seconds, which is what BC1, BC2, BC12, BC13, and F6 nest read inside.
 
-**Drift:** selectors that changed between closed phases sit in one table, `DRIFT`, keyed by `--landed`: `.table-view` reads `.table-shell` from Phase 4 (Task 4-3); the Trash's `.trash-head-name` and `.trash-head-date` read `.col-header` cells from Phase 4 (Task 4-1); the dropdown's placeholder is found by `More` before Phase 3 and `More actions` from it (Task 3-3); the page-icon switch is found by `Page Icons` (Table) or `Hide Icons` (Cards) before Phase 3 and `Title Icons` from it; the disclosure chevron's `[data-drop-outline]` reads `[data-chevron]` from Phase 7 (Task 7-1); the bundle table's `.bundle-date` reads its row's last `.data-cell` from Phase 7 (its checkpoint fold). A selector difference is drift; a behavior difference is the case itself, so BC3 and BC6 assert the new label while their regression crossings find the control by the drifted one.
+**Drift:** selectors that changed between closed phases sit in one table, `DRIFT`, keyed by `--landed`: `.table-view` reads `.table-shell` from Phase 4 (Task 4-3); the Trash's `.trash-head-name` and `.trash-head-date` read `.col-header` cells from Phase 4 (Task 4-1); the dropdown's placeholder is found by `More` before Phase 3 and `More actions` from it (Task 3-3); the page-icon switch is found by `Page Icons` (Table) or `Hide Icons` (Cards) before Phase 3 and `Title Icons` from it; the disclosure chevron's `[data-drop-outline]` reads `[data-chevron]` from Phase 7 (Task 7-1); the bundle table's `.bundle-date` reads its row's last `.data-cell` from Phase 7 (its checkpoint fold). A selector difference is drift; a behavior difference is the case itself, so BC3 and BC6 assert the new label while their regression crossings find the control by the drifted one. Phase 9 adds no row: it renamed classes only through vanilla-extract's hashes, and group 9 reads every pane by `data-picker-portal`, role, label, inline style, and computed value.
 
 #### Pruned
 
@@ -35,6 +35,14 @@ The drive's cases, derived from the *Views Cleanup — Implementation Plan*'s *�
 - **A tile naming a missing Set (R P8):** the tile draws `inertTile()` for a source the tree no longer holds, a path Phase 8 left alone; `ContainerView`'s "Set not found" is the main pane's, and the drive found no gesture that leaves a tab on a missing Set.
 - **The toolbar dropdown's Delete and its Undo (R P8):** group 2's case deletes a view from that dropdown and restores it.
 - **Undo of a column drag and resize:** neither was undoable before or after; no decision names it.
+- **The toolbar's Settings pane and views dropdown as MenuBase hosts (R P9):** both mount `MenuDropdown` over `MenuSurface`, which Phase 9 left alone; what Phase 9 rewired behind those doors is the panes they open, which group 9 crosses through both doors, and group 3 holds the doors' own slides.
+- **Native Menus on for the lists (R P9):** with the setting on, `popMenu` asks the host for a system menu and nothing mounts MenuBase; group 3 holds that route.
+- **A value picker's flip at the window's edge (R P9):** this drive holds no window-height control, and the Properties Drive's group 18 (MP-E-1) flips the tile's settings pane, a 40-option list, the calendar, and TextPane against a short window, all through MenuBase's one placement; group 9 reads the flip through the link autocomplete at the editor's foot.
+- **The glance and the block menu's resize (R P9):** both size through the same `usePaneResize` the link autocomplete does, and the block menu through the same `CaretPane`; TextPane doesn't resize.
+- **A Select cell's pick (R P9):** group 5's value-seat case picks through it.
+- **The Color picker and the calendar's nested menus (R P9):** the Color picker mounts the shell with its defaults, which group 8's Edit Color picks cross; the Properties Drive's group 18 opens the Month, Year, Hour, and Minute menus nested over the calendar.
+- **The ghost New Option chip (R P9):** its anchor waits for a second pointer move and a dwell, and the drive didn't raise it reliably; `ghostOptionRow` composes `optionRow` as it did, and `ghostChip`'s `&&` selector outranks any single-class tie a moved stylesheet could flip.
+- **The All Properties list's rows and heading, and the assigned list's fill (R P9):** `~/Test` assigns every registry property to Collection A, so the list holds no row, and `assignedFill` is a flex grow with no drawn edge to read.
 
 #### Group 2 — The Views Root and the Live View
 
@@ -230,19 +238,40 @@ The tile sits on the homepage's board, written whole to `.nexus/interface/homepa
 
 #### Group 9 — MenuBase
 
-Phase 9 lands no numbered behavior change; it re-files the shell every menu pane mounts in, so its cases are regression crossings of every pane through every door, each opened, placed inside the window, dismissed, and, where it resizes, resized.
+Phase 9 lands no numbered behavior change; it re-files the shell every pane mounts in, so its cases are regression crossings of the panes MenuBase hosts on the views' surfaces, each opened and placed inside the window, dismissed by Escape, an outside press, and choosing, and, where it resizes, resized, beside the computed look of each style that moved files. A pane hangs `MENU_GAP`'s 6px off its trigger, keeps `VIEWPORT_MARGIN`'s 8px from the window, and caps its list at `PANE_MAX_HEIGHT`'s 240px, read as `MenuScrollFrame`'s inline ceiling.
 
 | Case | Surface · Input | Expected | Decision |
 | --- | --- | --- | --- |
-| the toolbar's Settings pane and the views dropdown open, slide between panes, and close on Escape | both doors | each opens in place, its back bar slides, Escape closes | R P9 |
-| a Select cell's value picker opens under its cell, picks, and dismisses on an outside press | Table cell | placed below the cell inside the window | R P9 |
-| the Group By, Sort By, and Filter lists open as in-app panes with Native Menus off and as system menus with it on | Group, Sort, Filter | in-app pane, then native rows | R P9 |
-| the Filter's Location tree pane opens with its tree | Filter · Location value | the tree pane draws | R P9 |
-| the calendar picker rings today | a Date cell | today's pill wears the today ring | R P9 |
-| the icon picker opens, searches, and picks | editor · Edit Icon | the icon lands | R P9 |
-| the Properties editor's option list draws and edits | Settings · Properties | rows, edit buttons, and the ghost option chip draw | R P9 |
-| a resizable pane resizes by its edge | a TextPane or glance pane | its height follows the drag | R P9 |
-| a tile's settings pane sits as the toolbar's does | View Tile · View settings | its gutter equals the toolbar pane's | R P9 |
+| a Select cell's picker hangs below its cell inside the window, its list capped at the pane ceiling | Table VD Stage cell · press | below, 6px off, inside; `240px` | R P9 |
+| Escape and an outside press each close a Select cell's picker, writing nothing | the same · Escape; a press on the view's foot | the pane leaves; Page B's stage unchanged | R P9 |
+| a Date cell's calendar hangs below its cell inside the window and closes on Escape, writing nothing | Table VD Due cell · press, Escape | below, inside; no VD Due written | R P9 |
+| the calendar rings today alone, in the accent stroke | the same | one day pill draws a shadow, today's, its `--field-ring` the root's `--accent-stroke-hot` (`pillToday`) | R P9 |
+| with Native Menus off, the Sort By list hangs below its field inside the window through the Settings door, capped at the pane ceiling | Settings door · Sort By | below, 6px off, inside; `240px` | R P9 |
+| with Native Menus off, the Sort By list hangs below its field inside the window through the editor door, capped at the pane ceiling | editor door · Sort By | the same | R P9 |
+| with Native Menus off, the Group By and Filter property lists hang below their fields inside the window | Settings door · Group By, Filter property | the same | R P9 |
+| Escape and a press beside the Sort By list each close it alone, the Sort pane staying, and choosing VD Stage closes it and saves the sort | Sort By · Escape; a press in the Settings pane's gutter; VD Stage | the list leaves and the back bar stays; `sort` names VD Stage | R P9 |
+| choosing VD Stage from the Group By list closes it and saves the grouping | Group By · VD Stage | the list leaves; `group` names VD Stage | R P9 |
+| the Location tree hangs below its field inside the window, between its 140px floor and 260px ceiling, capped at the pane ceiling | Filter · Location value | below, inside; the shell's `min-width` 140px, `max-width` 260px (`treePane`); `240px` | R P9 |
+| choosing Set Alpha in the Location tree saves the rule and keeps the tree open; Escape and an outside press each close it, the Filter pane staying | the same · Set Alpha; Escape; a press in the gutter | `values` holds Set Alpha, the tree stays; it leaves and the back bar stays | R P9 |
+| the Properties pane's VD Stage options sit 6px apart under a 6px lead in a 12px-gapped group list, each chip's lead 8px, and Edit Option dims until its row is hovered | Settings door · Properties, VD Stage | the option list's `row-gap` and `padding-top` 6px and its rows 6px apart (`optionList`), the group list's gap 12px (`statusGroups`), the lead's gap 8px (`optionLead`), Edit Option's opacity rising on hover (`optionEditButton`) | R P9 |
+| an option's editor pane hangs below its Edit Option inside the window; Escape and an outside press each close it, the Properties pane staying | the same · Edit Option; Escape; a press in the gutter | below, 6px off, inside; it leaves and the option rows stay | R P9 |
+| VD Due's type editor sets its format rows 8px apart | Properties · VD Due | the Date, Day, and Time Format rows 8px apart (`configEditor`) | R P9 |
+| the editor's icon picker hangs below its button inside the window, closes on Escape writing nothing, and narrows to activity under a search | editor door · Edit Icon, Escape, then typed | below, inside; the view's icon unchanged; every cell names `activ` | R P9 |
+| a card's VD Stage value opens its picker below it inside the window, and choosing Done writes it and closes the picker | Cards value seat · press, Done | below, 6px off, inside; Page B reads Done; the pane leaves | R P9 |
+| the link autocomplete hangs below its caret inside the window, its free edges below | a page's editor · `[[#` on its first line | below the caret, 6px off; edges `e`, `w`, `s`, `se`, `sw` | R P9 |
+| the autocomplete's south edge shortens it and its east edge widens it, its top holding | the same · `resize-edge-s` 30px up, `resize-edge-e` 60px right | 30px shorter, 60px wider, the same top | R P9 |
+| the autocomplete's heading list folds a heading's children by its chevron and unfolds them again | the same · Two's chevron, twice | Two A leaves, then returns | R P9 |
+| folding a heading in the autocomplete returns its highlight to the first row | the same · ArrowDown twice, then Two's chevron | the highlight leaves One, then rests on One | R P9 |
+| Escape closes the autocomplete, reopening it lists every heading unfolded, and choosing One A writes its link and closes it | the same · One folded, Escape, `[[#` again, One A pressed | every heading listed; the line reads `[[#One A]]` | R P9 |
+| at the window's foot the autocomplete opens above its caret inside the window, its free edges above | the same · `[[#` past sixty blank lines | above, 6px off, inside; edges `e`, `w`, `n`, `ne`, `nw` | R P9 |
+| a tile's settings pane hangs below its button inside the window, its gutter the toolbar Settings pane's | View Tile · View settings | below, inside; its padding the toolbar pane's, less the toolbar's notch (`bareSurface`, `hostedGutter`) | R P9 |
+| a tile's settings pane slides to Filter and back inside the window, and Escape and an outside press each close it | the same · Filter, Back; Escape; a press on the board | inside on each slide; it leaves | R P9 |
+| a tile's view list hangs below its switcher inside the window, capped at the pane ceiling; Escape and an outside press each close it, and choosing VD Tile B switches the tile, the list staying open | dropdown-style tile · switcher | below, inside, `240px`; it leaves; `active` is 1 and the switcher reads VD Tile B | R P9 |
+| a tile pill's rename cancels on Escape and commits on Enter | tile pill · double-click, typed, Escape; again, Enter | the entry keeps, then takes, the name | R P9 |
+| a tile pill's rename field auto-sizes to its text | the same · `VD`, then a longer name | the field widens with its text | R P9 |
+| a tile pill's rename shows its new name through its held save | the same · Enter with `tiles:save` held 2.5 s | every frame draws the new name alone | R P9 |
+
+**The fold's rows:** Phase 9's checkpoint fold moved the link autocomplete's folding onto the `Disclosure` shape and gave the pill and the dropdown row one `viewNameField`, the pill returning its save to the field as the dropdown row has since Phase 8. Each preserves behavior, so their four autocomplete rows and three pill rows hold at `3f4734b35` and are regressions. The held save included: the tile paints its write ahead, so the pill's name held through it before the fold as well. The pill's lock half is BC23's case.
 
 #### Group 10 — One Lock per Row
 

@@ -1,20 +1,20 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
-  ask, boxOf, click, clicks, holds, hover, closeSettings, escapeAll, FM, inMain, labels, launch, menuByEvent, mintPageId, mouseClick, must, NEXUS,
-  openSettings, phasedItem, ribbon, pickNative, popNative, pressKey, press, restore, settles, SETTINGS_BUTTON, shot, sleep, SWITCH, tally,
+  ask, boxOf, click, clicks, holds, hover, closeSettings, escapeAll, FM, inMain, labels, launch, menuByEvent, mintPageId, mouseAt, mouseClick, must, NEXUS,
+  openSettings, PANE_LAYER, phasedItem, ribbon, pickNative, popNative, pressKey, press, resizeBy, restore, settles, SETTINGS_BUTTON, shot, sleep, SWITCH, tally,
   typeText, until,
 } from '../drive-harness.mjs'
 import { parse } from 'yaml'
 
 const PORT = 9423
-const BUILT = ['2', '3', '4', '5', '6', '7', '8']
+const BUILT = ['2', '3', '4', '5', '6', '7', '8', '9']
 const argv = process.argv.slice(2)
 const at = argv.indexOf('--landed')
 const LANDED = at >= 0 ? Number(argv[at + 1]) : NaN
 const GROUPS = new Set(argv.filter((a, i) => i !== at && i !== at + 1))
 if (!Number.isInteger(LANDED) || GROUPS.size === 0 || [...GROUPS].some((g) => !BUILT.includes(g))) {
-  console.error(`usage: node live-drive.mjs <group…> --landed <phase>   (groups ${BUILT.join(', ')}; 9 and 10 land at their checkpoints; --landed 0 is the baseline)`)
+  console.error(`usage: node live-drive.mjs <group…> --landed <phase>   (groups ${BUILT.join(', ')}; 10 lands at its checkpoint; --landed 0 is the baseline)`)
   process.exit(2)
 }
 
@@ -152,9 +152,11 @@ const BACK_BAR = visible(`[...document.querySelectorAll('[role=button]')].filter
 const glyphOf = (expr) => `[...((${expr})?.querySelector('svg')?.classList ?? [])].find((c) => c.startsWith('lucide-')) ?? null`
 /** The glyph leading the row a control sits in: the first glyph of the nearest ancestor holding one outside the control. */
 const rowGlyph = (expr) => `(() => { const c = (${expr}); let el = c?.parentElement; while (el) { const g = [...el.querySelectorAll('svg')].find((s) => !c.contains(s)); if (g) return [...g.classList].find((x) => x.startsWith('lucide-')) ?? null; el = el.parentElement } return null })()`
-const PORTAL_ROWS = `[...document.querySelectorAll('[data-picker-portal]:not([data-dismissal-shield]) [role=button]')]`
+const PORTAL_ROWS = `[...document.querySelectorAll('${PANE_LAYER} [role=button]')]`
 const portalRow = (text) => `${PORTAL_ROWS}.find((e) => e.textContent.trim() === ${JSON.stringify(text)})`
-const PORTAL_PANE = `[...document.querySelectorAll('[data-picker-portal]:not([data-dismissal-shield])')].at(-1)?.firstElementChild`
+/** The last pane `MenuBase` portaled, and its shell. */
+const TOP_LAYER = `[...document.querySelectorAll('${PANE_LAYER}')].at(-1)`
+const PORTAL_PANE = `(${TOP_LAYER})?.firstElementChild`
 
 /** A press on an element scrolled into its list's view first, since a press lands where the element is drawn. */
 async function pressIn(cdp, expr) {
@@ -1119,10 +1121,9 @@ const sideRow = (title) => `[...document.querySelectorAll('nav .row')].find((r) 
 const PANE_ZONE = `[...document.querySelectorAll('.line-zone')].find((z) => z.getClientRects().length && !z.closest('nav, .sidebar, ${DRIFT.shell}, .cards-view'))`
 const paneRow = (title) => `[...(${PANE_ZONE})?.querySelectorAll('[data-line-row]') ?? []].find((r) => r.getClientRects().length && r.firstElementChild?.textContent === ${JSON.stringify(title)})`
 const paneTitles = (cdp) => cdp.evaluate(`[...(${PANE_ZONE})?.querySelectorAll('[data-line-row]') ?? []].filter((r) => r.getClientRects().length).map((r) => r.firstElementChild.textContent)`)
-/** The Filter's Location tree: the last pane drawn, once the rule's values field opens it. */
-const LOCATION_PANE = `[...document.querySelectorAll('[data-picker-portal]:not([data-dismissal-shield])')].at(-1)`
-const locationRow = (title) => `[...(${LOCATION_PANE}).querySelectorAll('[role=button][data-reveal-host]')].find((r) => r.getClientRects().length && r.textContent === ${JSON.stringify(title)})`
-const locationTitles = (cdp) => cdp.evaluate(`[...(${LOCATION_PANE}).querySelectorAll('[role=button][data-reveal-host]')].filter((r) => r.getClientRects().length).map((r) => r.textContent)`)
+/** The Filter's Location tree is the last pane drawn once the rule's values field opens it. */
+const locationRow = (title) => `[...(${TOP_LAYER}).querySelectorAll('[role=button][data-reveal-host]')].find((r) => r.getClientRects().length && r.textContent === ${JSON.stringify(title)})`
+const locationTitles = (cdp) => cdp.evaluate(`[...(${TOP_LAYER}).querySelectorAll('[role=button][data-reveal-host]')].filter((r) => r.getClientRects().length).map((r) => r.textContent)`)
 /** Where a tree row's folder glyph sits against the row's content edge: flush reads 0. */
 const leafLead = (rowExpr) => `(() => { const r = (${rowExpr}); if (!r) return null; const glyph = [...r.querySelectorAll('svg')].find((s) => !s.matches('${DRIFT.chevron}')); return glyph.getBoundingClientRect().left - r.getBoundingClientRect().left - parseFloat(getComputedStyle(r).paddingLeft) })()`
 /** The Location rule's tree, opened through the Settings door; `pick` adds the rule first. */
@@ -1615,6 +1616,330 @@ async function group8(cdp) {
   await shot(cdp, 'g8-end')
 }
 
+// ── Group 9 — MenuBase ──────────────────────────────────────────────────────
+
+/** `MenuBase`'s gap off the trigger a pane hangs from (`MENU_GAP`), the margin it keeps inside the window (`VIEWPORT_MARGIN`), and a pane's scroll ceiling (`PANE_MAX_HEIGHT`). */
+const PANE = { gap: 6, margin: 8, cap: '240px' }
+const layers = (cdp) => cdp.evaluate(`document.querySelectorAll('${PANE_LAYER}').length`)
+/** Where the top pane sits against `trigger`, an element or a rect: the side it opened on, its gap off the trigger, and whether it keeps the window's margin. */
+const placement = (cdp, trigger) => cdp.evaluate(`(() => {
+  const l = ${TOP_LAYER}; const t = (${trigger}); if (!l || !t) return null
+  const p = l.getBoundingClientRect(); const r = t.getBoundingClientRect ? t.getBoundingClientRect() : t
+  const side = p.top >= r.bottom - 1 ? 'down' : p.bottom <= r.top + 1 ? 'up' : 'over'
+  const m = ${PANE.margin} - 0.5
+  return { side, gap: Math.round((side === 'up' ? r.top - p.bottom : p.top - r.bottom) * 10) / 10, inside: p.left >= m && p.top >= m && innerWidth - p.right >= m && innerHeight - p.bottom >= m }
+})()`)
+const hangs = (p, side = 'down') => p?.side === side && near(p.gap, PANE.gap) && p.inside
+/** Runs `act`, which opens a pane, and reads where it hangs off `trigger` once its bloom has played. */
+async function opens(cdp, act, trigger) {
+  const before = await layers(cdp)
+  await act()
+  await until('the pane', async () => (await layers(cdp)) > before, 4000).catch(() => {})
+  await sleep(600)
+  return placement(cdp, trigger)
+}
+/** Whether `act` closes the top pane. */
+async function leaves(cdp, act) {
+  const before = await layers(cdp)
+  await act()
+  return settles(async () => (await layers(cdp)) < before, 3000)
+}
+const escape = (cdp) => () => pressKey(cdp, 'Escape')
+const pressAt = (cdp, point) => () => mouseAt(cdp, point)
+/** The scroll ceiling the top pane's list holds, written inline by `MenuScrollFrame`. */
+const capOf = (cdp) => cdp.evaluate(`[...(${TOP_LAYER})?.querySelectorAll('*') ?? []].find((e) => e.style.maxHeight)?.style.maxHeight ?? null`)
+/** The toolbar's open pane: its positioned surface around the rows. */
+const TOOLBAR_SURFACE = `(() => { let e = ${BACK_BAR} ?? ${btn('Visibility')}; while (e && getComputedStyle(e).position !== 'absolute') e = e.parentElement; return e })()`
+/** A point inside the toolbar's pane, in its gutter, which no list over it covers. */
+const inGutter = async (cdp) => { const s = await boxOf(cdp, TOOLBAR_SURFACE); return { x: s.left + 4, y: s.bottom - 4 } }
+/** A point of the window under no pane and no control: the foot of the view. */
+const blank = async (cdp) => cdp.evaluate(`({ x: Math.round(innerWidth * 0.6), y: innerHeight - 30 })`)
+/** A pane's gutter: the padding of the nearest box around `rowExpr` that pads its sides, its top less the toolbar's notch, which a pane under no notch lacks. */
+const gutter = (rowExpr) => `(() => { let e = (${rowExpr}).parentElement; while (e && !parseFloat(getComputedStyle(e).paddingLeft)) e = e.parentElement; const s = getComputedStyle(e); const notch = parseFloat(s.getPropertyValue('--notch-h')) || 0; return [parseFloat(s.paddingTop) - notch, ...[s.paddingRight, s.paddingBottom, s.paddingLeft].map(parseFloat)] })()`
+/** The rows of the link autocomplete, each with whether it carries the highlight, which draws as a background image. */
+const AC_ROWS = `[...document.querySelectorAll('.mdpm-ac [data-reveal-host]')].filter((r) => r.getBoundingClientRect().height > 0)`
+const acRows = (cdp) => cdp.evaluate(`${AC_ROWS}.map((r) => r.textContent.trim())`)
+const acLit = (cdp) => cdp.evaluate(`${AC_ROWS}.filter((r) => getComputedStyle(r).backgroundImage !== 'none').map((r) => r.textContent.trim())`)
+const acRow = (title) => `${AC_ROWS}.find((r) => r.textContent.trim() === ${JSON.stringify(title)})`
+const acEdges = (cdp) => cdp.evaluate(`[...document.querySelectorAll('.mdpm-ac .resize-edge')].map((e) => [...e.classList].find((c) => /^resize-edge-/.test(c)).slice(12)).sort()`)
+/** A page's outline: two headings holding sub-headings, then enough more that the list outgrows the pane ceiling, so a resize shows. */
+const HEADINGS = ['One', 'One A', 'One B', 'Two', 'Two A', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten']
+const outlineShut = (...shut) => HEADINGS.filter((h) => !shut.some((s) => h.startsWith(`${s} `)))
+
+async function group9(cdp) {
+  const g = '9'
+  await mouseClick(cdp, `[...document.querySelectorAll('.row span')].findLast((e) => e.textContent.trim() === 'Collection A')`)
+  const V9 = tableView(vid('g9table'), 'VD Panes')
+  await showView(cdp, V9)
+  await closeAll(cdp)
+
+  // Value pickers: a Select cell's, then a Date cell's calendar with its today ring.
+  const stageCell = `(${dataRow('Page B')}).querySelectorAll('.data-cell')[1]`
+  const stageBefore = frontOf(PAGES['Page B'].path)[STAGE.key]
+  const cellPlaced = await opens(cdp, () => mouseClick(cdp, stageCell), stageCell)
+  const cellCap = await capOf(cdp)
+  const cellDismiss = { escape: await leaves(cdp, escape(cdp)) }
+  await opens(cdp, () => mouseClick(cdp, stageCell), stageCell)
+  cellDismiss.outside = await leaves(cdp, pressAt(cdp, await blank(cdp)))
+  reg(g, 'a Select cell\'s picker hangs below its cell inside the window, its list capped at the pane ceiling', hangs(cellPlaced) && cellCap === PANE.cap, show({ cellPlaced, cellCap }))
+  reg(g, 'Escape and an outside press each close a Select cell\'s picker, writing nothing', cellDismiss.escape && cellDismiss.outside && same(frontOf(PAGES['Page B'].path)[STAGE.key], stageBefore), show({ cellDismiss, value: frontOf(PAGES['Page B'].path)[STAGE.key] }))
+
+  const dueCell = `(${dataRow('Page B')}).querySelectorAll('.data-cell')[3]`
+  const calPlaced = await opens(cdp, () => mouseClick(cdp, dueCell), dueCell)
+  // The today ring is the one day pill drawing a shadow, its ring the accent stroke.
+  const ring = await cdp.evaluate(`(() => {
+    const days = [...(${TOP_LAYER}).querySelectorAll('button')].filter((b) => /^\\d+$/.test(b.textContent.trim()) && b.querySelector('span'))
+    const ringed = days.filter((b) => getComputedStyle(b.querySelector('span')).boxShadow !== 'none')
+    const pill = ringed[0]?.querySelector('span')
+    return { days: days.length, ringed: ringed.map((b) => b.textContent.trim()), ring: pill && getComputedStyle(pill).getPropertyValue('--field-ring').trim(), accent: getComputedStyle(document.documentElement).getPropertyValue('--accent-stroke-hot').trim(), shadow: pill && getComputedStyle(pill).boxShadow }
+  })()`)
+  const calLeft = await leaves(cdp, escape(cdp))
+  reg(g, 'a Date cell\'s calendar hangs below its cell inside the window and closes on Escape, writing nothing', hangs(calPlaced) && calLeft && frontOf(PAGES['Page B'].path)[DUE.key] === undefined, show({ calPlaced, calLeft }))
+  reg(g, 'the calendar rings today alone, in the accent stroke', ring.days >= 28 && same(ring.ringed, [String(new Date().getDate())]) && !!ring.accent && ring.ring === ring.accent && /inset/.test(ring.shadow ?? ''), show(ring))
+  await shot(cdp, 'g9-pickers')
+
+  // The kit's menu door with Native Menus off: Sort By through both doors, Group By, and the Filter's property list.
+  const listPlaced = {}
+  for (const [which, pane, field] of [['settings', 'Sort', 'Sort By'], ['editor', 'Sort', 'Sort By'], ['settings', 'Group', 'Group By'], ['settings', 'Filter', 'Filter property']]) {
+    await door(cdp, which, pane)
+    listPlaced[`${which} ${field}`] = { ...(await opens(cdp, () => mouseClick(cdp, ctl(field)), ctl(field))), cap: await capOf(cdp) }
+  }
+  const listHangs = (p) => hangs(p) && p.cap === PANE.cap
+  reg(g, 'with Native Menus off, the Sort By list hangs below its field inside the window through the Settings door, capped at the pane ceiling', listHangs(listPlaced['settings Sort By']), show(listPlaced['settings Sort By']))
+  reg(g, 'with Native Menus off, the Sort By list hangs below its field inside the window through the editor door, capped at the pane ceiling', listHangs(listPlaced['editor Sort By']), show(listPlaced['editor Sort By']))
+  reg(g, 'with Native Menus off, the Group By and Filter property lists hang below their fields inside the window', listHangs(listPlaced['settings Group By']) && listPlaced['settings Filter property']?.side === 'down' && hangs(listPlaced['settings Filter property']), show(listPlaced))
+  // Each dismissal closes the list alone, the Sort pane under it staying; choosing saves.
+  const sortDismiss = {}
+  await door(cdp, 'settings', 'Sort')
+  await opens(cdp, () => mouseClick(cdp, ctl('Sort By')), ctl('Sort By'))
+  sortDismiss.escape = (await leaves(cdp, escape(cdp))) && (await cdp.evaluate(`!!${BACK_BAR}`))
+  await opens(cdp, () => mouseClick(cdp, ctl('Sort By')), ctl('Sort By'))
+  sortDismiss.outside = (await leaves(cdp, pressAt(cdp, await inGutter(cdp)))) && (await cdp.evaluate(`!!${BACK_BAR}`))
+  await opens(cdp, () => mouseClick(cdp, ctl('Sort By')), ctl('Sort By'))
+  sortDismiss.choose = (await leaves(cdp, () => click(cdp, portalRow(STAGE.label)))) && (await settles(async () => viewOnDisk(V9.id)?.sort?.[0]?.property_id === STAGE.id))
+  reg(g, 'Escape and a press beside the Sort By list each close it alone, the Sort pane staying, and choosing VD Stage closes it and saves the sort', sortDismiss.escape && sortDismiss.outside && sortDismiss.choose, show({ sortDismiss, sort: viewOnDisk(V9.id)?.sort }))
+  await door(cdp, 'settings', 'Group')
+  await opens(cdp, () => mouseClick(cdp, ctl('Group By')), ctl('Group By'))
+  const grouped = (await leaves(cdp, () => click(cdp, portalRow(STAGE.label)))) && (await settles(async () => viewOnDisk(V9.id)?.group?.property_id === STAGE.id))
+  reg(g, 'choosing VD Stage from the Group By list closes it and saves the grouping', grouped, show(viewOnDisk(V9.id)?.group))
+  await closeAll(cdp)
+  await showView(cdp, V9)
+
+  // The Location tree: its own width bounds, a pick that keeps it open, and each dismissal leaving the Filter pane.
+  await locationTree(cdp, true)
+  const LOCATION_FIELD = `(${ctl('Filter values')}).parentElement`
+  const tree = { ...(await placement(cdp, LOCATION_FIELD)), cap: await capOf(cdp), width: await cdp.evaluate(`(() => { const s = getComputedStyle(${PORTAL_PANE}); return [s.minWidth, s.maxWidth] })()`) }
+  reg(g, 'the Location tree hangs below its field inside the window, between its 140px floor and 260px ceiling, capped at the pane ceiling', hangs(tree) && same(tree.width, ['140px', '260px']) && tree.cap === PANE.cap, show(tree))
+  await click(cdp, locationRow('Set Alpha'))
+  const picked = await settles(async () => same(viewOnDisk(V9.id)?.filter?.rules?.[0]?.values, [IDS.alpha]))
+  const kept = await cdp.evaluate(`!!${locationRow('Set Beta')}`)
+  const treeDismiss = { escape: (await leaves(cdp, escape(cdp))) && (await cdp.evaluate(`!!${BACK_BAR}`)) }
+  await opens(cdp, () => mouseClick(cdp, ctl('Filter values')), LOCATION_FIELD)
+  treeDismiss.outside = (await leaves(cdp, pressAt(cdp, await inGutter(cdp)))) && (await cdp.evaluate(`!!${BACK_BAR}`))
+  reg(g, 'choosing Set Alpha in the Location tree saves the rule and keeps the tree open; Escape and an outside press each close it, the Filter pane staying', picked && kept && treeDismiss.escape && treeDismiss.outside, show({ picked, kept, treeDismiss, filter: viewOnDisk(V9.id)?.filter }))
+  await shot(cdp, 'g9-location')
+  await closeAll(cdp)
+
+  // The Properties pane's option list, its type editor's rows, and an option's editor pane.
+  await door(cdp, 'settings', 'Properties')
+  const propertyRow = (label) => `[...document.querySelectorAll('[data-line-row] span')].find((e) => e.textContent.trim() === ${JSON.stringify(label)})?.closest('[role=button]')`
+  await click(cdp, propertyRow(STAGE.label))
+  await until('the option rows', async () => cdp.evaluate(`!!document.querySelector('[aria-label="Edit Option"]')`))
+  await sleep(600)
+  const EDIT_OPTION = `[...document.querySelectorAll('[aria-label="Edit Option"]')].find((e) => e.getClientRects().length)`
+  const optionLook = async () => cdp.evaluate(`(() => {
+    const rows = [...document.querySelectorAll('[aria-label="Edit Option"]')].map((b) => b.closest('[data-line-row]'))
+    let list = rows[0]; while (list && rows.some((r) => !list.contains(r))) list = list.parentElement
+    let groups = list.parentElement; while (groups && getComputedStyle(groups).rowGap === 'normal') groups = groups.parentElement
+    const lead = rows[0].firstElementChild
+    const gaps = rows.slice(1).map((r, i) => Math.round(r.getBoundingClientRect().top - rows[i].getBoundingClientRect().bottom))
+    return { rows: rows.length, gap: getComputedStyle(list).rowGap, lead: getComputedStyle(list).paddingTop, gaps, groups: getComputedStyle(groups).rowGap, chip: getComputedStyle(lead).columnGap, edit: Number(getComputedStyle(${EDIT_OPTION}).opacity) }
+  })()`)
+  const options = await optionLook()
+  await hover(cdp, `(${EDIT_OPTION}).closest('[data-line-row]')`, 900)
+  options.hovered = Number(await cdp.evaluate(`getComputedStyle(${EDIT_OPTION}).opacity`))
+  reg(g, 'the Properties pane\'s VD Stage options sit 6px apart under a 6px lead in a 12px-gapped group list, each chip\'s lead 8px, and Edit Option dims until its row is hovered', options.rows === 3 && options.gap === '6px' && options.lead === '6px' && options.gaps.every((d) => d === 6) && options.groups === '12px' && options.chip === '8px' && options.edit < options.hovered && options.hovered > 0, show(options))
+  const optionTrigger = EDIT_OPTION
+  const popup = await opens(cdp, () => mouseClick(cdp, EDIT_OPTION), optionTrigger)
+  const popupDismiss = { escape: (await leaves(cdp, escape(cdp))) && (await cdp.evaluate(`!!${EDIT_OPTION}`)) }
+  await opens(cdp, () => mouseClick(cdp, EDIT_OPTION), optionTrigger)
+  popupDismiss.outside = (await leaves(cdp, pressAt(cdp, await inGutter(cdp)))) && (await cdp.evaluate(`!!${EDIT_OPTION}`))
+  reg(g, 'an option\'s editor pane hangs below its Edit Option inside the window; Escape and an outside press each close it, the Properties pane staying', hangs(popup) && popupDismiss.escape && popupDismiss.outside, show({ popup, popupDismiss }))
+  await click(cdp, propertyRow(DUE.label))
+  await until('the Date format rows', async () => cdp.evaluate(`!!${ctl('Date Format')}`))
+  await sleep(600)
+  // The type editor's rows: each row holding a format control, read as the gap between their boxes.
+  const formats = await cdp.evaluate(`(() => {
+    const ctls = ['Date Format', 'Day Format', 'Time Format'].map((l) => [...document.querySelectorAll('[aria-label="' + l + '"]')].find((e) => e.getClientRects().length)).filter(Boolean)
+    let box = ctls[0]; while (box && ctls.some((c) => !box.contains(c))) box = box.parentElement
+    const rowOf = (c) => { let r = c; while (r.parentElement !== box) r = r.parentElement; return r.hasAttribute('data-reveal') ? r.firstElementChild.firstElementChild : r }
+    const rows = [...new Set(ctls.map(rowOf))].map((r) => r.getBoundingClientRect())
+    return { found: ctls.length, rows: rows.length, gaps: rows.slice(1).map((r, i) => Math.round(r.top - rows[i].bottom)), kids: [...box.children].map((c) => [c.hasAttribute('data-reveal'), getComputedStyle(c).marginTop, c.innerText.slice(0, 24)]), pad: getComputedStyle(box).paddingTop }
+  })()`)
+  reg(g, 'VD Due\'s type editor sets its format rows 8px apart', formats.rows >= 3 && formats.gaps.every((d) => d === 8), show(formats))
+  await shot(cdp, 'g9-schema')
+  await closeAll(cdp)
+
+  // The editor door's icon picker.
+  await door(cdp, 'editor')
+  const ICON_BUTTON = ctl('Edit Icon')
+  const iconBefore = viewOnDisk(V9.id)?.icon ?? null
+  const iconPlaced = await opens(cdp, () => mouseClick(cdp, ICON_BUTTON), ICON_BUTTON)
+  const iconEscape = await leaves(cdp, escape(cdp))
+  await opens(cdp, () => mouseClick(cdp, ICON_BUTTON), ICON_BUTTON)
+  await cdp.evaluate(`(${TOP_LAYER}).querySelector('input').focus()`)
+  await typeText(cdp, 'activi')
+  await sleep(700)
+  const found = await cdp.evaluate(`[...(${TOP_LAYER}).querySelectorAll('button[title]')].map((b) => b.title)`)
+  reg(g, 'the editor\'s icon picker hangs below its button inside the window, closes on Escape writing nothing, and narrows to activity under a search', hangs(iconPlaced) && iconEscape && (viewOnDisk(V9.id)?.icon ?? null) === iconBefore && found.includes('activity') && found.every((t) => t.includes('activ')), show({ iconPlaced, iconEscape, found }))
+  await closeAll(cdp)
+
+  // A card's value picker.
+  const V9C = cardsView(vid('g9cards'), 'VD Panes Cards', { set_cards: false })
+  await showView(cdp, V9C)
+  const seat = `(${card('Page B')}).querySelector('.card-value')`
+  await hover(cdp, seat, 400)
+  const seatBox = await boxOf(cdp, seat)
+  const cardPlaced = await opens(cdp, () => mouseAt(cdp, { x: seatBox.right - 4, y: seatBox.y }), seat)
+  const cardChose = await leaves(cdp, () => click(cdp, portalRow('Done')))
+  const cardWrote = await settles(async () => same(frontOf(PAGES['Page B'].path)[STAGE.key], ['Done']))
+  reg(g, 'a card\'s VD Stage value opens its picker below it inside the window, and choosing Done writes it and closes the picker', hangs(cardPlaced) && cardChose && cardWrote, show({ cardPlaced, cardChose, value: frontOf(PAGES['Page B'].path)[STAGE.key] }))
+  await mutate(cdp, { op: 'setProperty', path: PAGES['Page B'].path, propertyId: STAGE.id, value: { kind: 'select', value: STAGES['Page B'] } })
+  await shot(cdp, 'g9-card')
+
+  // The link autocomplete: the caret pane, its resize, its flip at the window's foot, and its heading list's folding.
+  const links = mintPageId()
+  await mutate(cdp, { op: 'createPage', id: links, parentPath: 'Collection A/Set Alpha', name: 'VD Links', seeds: {} })
+  const LINKS = 'Collection A/Set Alpha/VD Links.md'
+  await until('VD Links', async () => { try { return !!readRel(LINKS) } catch { return false } })
+  writeFileSync(abs(LINKS), `${readRel(LINKS)}${HEADINGS.map((h) => `${h.includes(' ') ? '##' : '#'} ${h}\n\n`).join('')}`)
+  await until('VD Links\' card', async () => cdp.evaluate(`!!${card(links)}`))
+  await sleep(800)
+  await mouseClick(cdp, `(${card(links)}).querySelector('.card-title')`)
+  await until('VD Links\' editor', async () => (await cdp.evaluate(`document.querySelector('[role=tab][aria-selected=true]')?.title`)) === 'VD Links')
+  await sleep(1000)
+  const EDITOR = `[...document.querySelectorAll('.cm-content')].find((c) => !c.closest('[inert]') && c.getClientRects().length).cmTile.root.view`
+  const CARET = `${EDITOR}.coordsAtPos(${EDITOR}.state.selection.main.head)`
+  /** `[[#` typed a key at a time, as a hand pairs it, on a line of its own at the document's head, or at its foot past `lead`. */
+  const typeLink = async (foot, lead = '') => {
+    await cdp.evaluate(`(() => { const v = ${EDITOR}; v.focus(); const end = v.state.doc.length; v.dispatch(${foot} ? { changes: { from: end, insert: ${JSON.stringify(lead)} }, selection: { anchor: end + ${lead.length} } } : { changes: { from: 0, insert: '\\n' }, selection: { anchor: 0 } }) })()`)
+    await sleep(300)
+    return opens(cdp, async () => { for (const ch of ['[', '[', '#']) await typeText(cdp, ch) }, CARET)
+  }
+  const acPlaced = { ...(await typeLink(false)), edges: await acEdges(cdp) }
+  reg(g, 'the link autocomplete hangs below its caret inside the window, its free edges below', hangs(acPlaced) && same(acPlaced.edges, ['e', 's', 'se', 'sw', 'w']), show(acPlaced))
+  const acBox = () => cdp.evaluate(`(() => { const r = (${TOP_LAYER}).getBoundingClientRect(); return { w: Math.round(r.width), h: Math.round(r.height), top: Math.round(r.top) } })()`)
+  const sized = { from: await acBox() }
+  await resizeBy(cdp, `document.querySelector('.mdpm-ac .resize-edge-s')`, { dy: -30 })
+  sized.shorter = await acBox()
+  await resizeBy(cdp, `document.querySelector('.mdpm-ac .resize-edge-e')`, { dx: 60 })
+  sized.wider = await acBox()
+  reg(g, 'the autocomplete\'s south edge shortens it and its east edge widens it, its top holding', near(sized.shorter.h, sized.from.h - 30, 2) && near(sized.wider.w, sized.from.w + 60, 2) && sized.wider.h === sized.shorter.h && sized.wider.top === sized.from.top, show(sized))
+
+  // The heading list folds by its chevrons, a fold returning the highlight to the first row.
+  const listed = { rows: await acRows(cdp), lit: await acLit(cdp) }
+  await pressKey(cdp, 'ArrowDown')
+  await pressKey(cdp, 'ArrowDown')
+  const moved = await acLit(cdp)
+  await mouseClick(cdp, `(${acRow('Two')}).querySelector('${DRIFT.chevron}')`)
+  await sleep(600)
+  const folded = { rows: await acRows(cdp), lit: await acLit(cdp) }
+  await mouseClick(cdp, `(${acRow('Two')}).querySelector('${DRIFT.chevron}')`)
+  await sleep(600)
+  const opened = await acRows(cdp)
+  reg(g, 'the autocomplete\'s heading list folds a heading\'s children by its chevron and unfolds them again', same(listed.rows, HEADINGS) && same(folded.rows, outlineShut('Two')) && same(opened, HEADINGS), show({ listed, folded, opened }))
+  reg(g, 'folding a heading in the autocomplete returns its highlight to the first row', same(listed.lit, ['One']) && moved.length === 1 && moved[0] !== 'One' && same(folded.lit, ['One']), show({ listed: listed.lit, moved, folded: folded.lit }))
+  await mouseClick(cdp, `(${acRow('One')}).querySelector('${DRIFT.chevron}')`)
+  await sleep(500)
+  const shut = await acRows(cdp)
+  const acEscape = await leaves(cdp, escape(cdp))
+  await cdp.evaluate(`(() => { const v = ${EDITOR}; const d = v.state.doc.toString(); v.dispatch({ changes: { from: 0, to: d.indexOf(']]') + 3, insert: '' } }) })()`)
+  const reopened = { ...(await typeLink(false)), rows: await acRows(cdp) }
+  const chose = await leaves(cdp, () => mouseClick(cdp, acRow('One A')))
+  const doc = await cdp.evaluate(`${EDITOR}.state.doc.toString()`)
+  reg(g, 'Escape closes the autocomplete, reopening it lists every heading unfolded, and choosing One A writes its link and closes it', same(shut, outlineShut('One')) && acEscape && same(reopened.rows, HEADINGS) && chose && doc.startsWith('[[#One A]]'), show({ shut, acEscape, reopened: reopened.rows, chose, head: doc.slice(0, 24) }))
+  await shot(cdp, 'g9-autocomplete')
+  // At the window's foot the caret pane opens above, its free edges above.
+  const foot = { ...(await typeLink(true, '\n'.repeat(60))), edges: await acEdges(cdp) }
+  reg(g, 'at the window\'s foot the autocomplete opens above its caret inside the window, its free edges above', hangs(foot, 'up') && same(foot.edges, ['e', 'n', 'ne', 'nw', 'w']), show(foot))
+  await pressKey(cdp, 'Escape')
+  await shot(cdp, 'g9-autocomplete-foot')
+
+  // The tile's panes: its settings pane, its dropdown list, and its pill's rename.
+  const toolbarGutter = await (async () => {
+    await mouseClick(cdp, `[...document.querySelectorAll('.row span')].findLast((e) => e.textContent.trim() === 'Collection A')`)
+    await until('the view', async () => cdp.evaluate(`!!${VIEWS_BUTTON}`))
+    await door(cdp, 'settings')
+    const read = await cdp.evaluate(gutter(btn('Visibility')))
+    await closeAll(cdp)
+    return read
+  })()
+  await showTile(cdp, [TA, TB])
+  const VIEW_SETTINGS = `[...document.querySelectorAll('[aria-label="View settings"]')].find((e) => e.getClientRects().length)`
+  const tilePane = await opens(cdp, () => mouseClick(cdp, VIEW_SETTINGS), VIEW_SETTINGS)
+  const tileGutter = await cdp.evaluate(gutter(`[...(${TOP_LAYER}).querySelectorAll('[role=button]')].find((e) => e.textContent.trim() === 'Visibility')`))
+  reg(g, 'a tile\'s settings pane hangs below its button inside the window, its gutter the toolbar Settings pane\'s', hangs(tilePane) && same(tileGutter, toolbarGutter), show({ tilePane, tileGutter, toolbarGutter }))
+  await click(cdp, `[...(${TOP_LAYER}).querySelectorAll('[role=button]')].find((e) => e.textContent.trim() === 'Filter')`)
+  await until('the tile\'s Filter pane', async () => cdp.evaluate(`!!${BACK_BAR}`))
+  await sleep(700)
+  const slid = await placement(cdp, VIEW_SETTINGS)
+  await click(cdp, BACK_BAR)
+  await sleep(700)
+  const back = await placement(cdp, VIEW_SETTINGS)
+  const tileDismiss = { escape: await leaves(cdp, escape(cdp)) }
+  await opens(cdp, () => mouseClick(cdp, VIEW_SETTINGS), VIEW_SETTINGS)
+  tileDismiss.outside = await leaves(cdp, pressAt(cdp, await blank(cdp)))
+  reg(g, 'a tile\'s settings pane slides to Filter and back inside the window, and Escape and an outside press each close it', slid?.inside && back?.inside && tileDismiss.escape && tileDismiss.outside, show({ slid, back, tileDismiss }))
+
+  await showTile(cdp, [TA, TB], { view_style: 'dropdown' })
+  const listOpen = () => opens(cdp, () => mouseClick(cdp, DROP_SWITCH), DROP_SWITCH)
+  const tileList = { ...(await listOpen()), cap: await capOf(cdp) }
+  const tileListDismiss = { escape: await leaves(cdp, escape(cdp)) }
+  await listOpen()
+  tileListDismiss.outside = await leaves(cdp, pressAt(cdp, await blank(cdp)))
+  await listOpen()
+  await click(cdp, tileRow(TB.name))
+  tileListDismiss.choose = (await settles(async () => tileOnDisk().active === 1 && (await cdp.evaluate(`(${DROP_SWITCH}).textContent.trim() === ${JSON.stringify(TB.name)}`)))) && (await holds(async () => (await layers(cdp)) > 0, 1000))
+  reg(g, 'a tile\'s view list hangs below its switcher inside the window, capped at the pane ceiling; Escape and an outside press each close it, and choosing VD Tile B switches the tile, the list staying open', listHangs(tileList) && tileListDismiss.escape && tileListDismiss.outside && tileListDismiss.choose, show({ tileList, tileListDismiss, active: tileOnDisk().active }))
+  await shot(cdp, 'g9-tile')
+
+  // A pill's rename: Escape cancels, Enter commits, and the field auto-sizes to its text. The lock half is BC23's case.
+  await showTile(cdp, [TA, TB])
+  const beginRename = async (name) => {
+    await clicks(cdp, await boxOf(cdp, `(${pill(name)}).querySelector('span')`), 2)
+    return settles(async () => cdp.evaluate(`!!${FIELD}`), 3000)
+  }
+  const widthOf = () => cdp.evaluate(`Math.round(${FIELD}.getBoundingClientRect().width)`)
+  const pillRename = { opened: await beginRename(TB.name) }
+  await cdp.evaluate(`${FIELD}.select()`)
+  await typeText(cdp, 'VD Never')
+  await pressKey(cdp, 'Escape')
+  pillRename.cancelled = await holds(async () => tileNames()[1] === TB.name, 1200)
+  pillRename.reopened = await beginRename(TB.name)
+  await cdp.evaluate(`${FIELD}.select()`)
+  await typeText(cdp, 'VD')
+  await sleep(200)
+  const short = await widthOf()
+  await typeText(cdp, ' Pill Renamed Long')
+  await sleep(200)
+  const long = await widthOf()
+  await pressKey(cdp, 'Enter')
+  pillRename.committed = await settles(async () => tileNames()[1] === 'VD Pill Renamed Long')
+  reg(g, 'a tile pill\'s rename cancels on Escape and commits on Enter', pillRename.opened && pillRename.cancelled && pillRename.reopened && pillRename.committed, show({ pillRename, names: tileNames() }))
+  reg(g, 'a tile pill\'s rename field auto-sizes to its text', long - short >= 60, show({ short, long }))
+  // The pill holds its new name through a held save: the tile paints its write ahead, so this held before the fold returned the save to the field.
+  await beginRename('VD Pill Renamed Long')
+  await cdp.evaluate(`${FIELD}.select()`)
+  await typeText(cdp, 'VD Pill Held')
+  await hold('tiles:save', '() => true', 2500)
+  await cdp.evaluate(ARM_FRAMES(`${PILLS}.map((b) => b.textContent.trim()).filter((t) => t === 'VD Pill Renamed Long' || t === 'VD Pill Held')`))
+  await pressKey(cdp, 'Enter')
+  await sleep(3500)
+  const pillHeld = (await frames(cdp)).filter((names) => names.length)
+  reg(g, 'a tile pill\'s rename shows its new name through its held save', pillHeld.length > 0 && pillHeld.every((names) => same(names, ['VD Pill Held'])) && tileNames()[1] === 'VD Pill Held', show({ pillHeld, names: tileNames() }))
+  await shot(cdp, 'g9-end')
+}
+
 // ── The run ─────────────────────────────────────────────────────────────────
 
 let cdp
@@ -1623,7 +1948,7 @@ try {
   await seed(cdp)
   await mouseClick(cdp, `[...document.querySelectorAll('.row span')].findLast((e) => e.textContent.trim() === 'Collection A')`)
   await sleep(1200)
-  for (const g of BUILT) if (GROUPS.has(g)) await { 2: group2, 3: group3, 4: group4, 5: group5, 6: group6, 7: group7, 8: group8 }[g](cdp)
+  for (const g of BUILT) if (GROUPS.has(g)) await { 2: group2, 3: group3, 4: group4, 5: group5, 6: group6, 7: group7, 8: group8, 9: group9 }[g](cdp)
   cdp.close()
 } catch (e) {
   item(0, 0, '—', 'the run reached its end', false, String(e?.stack ?? e))
