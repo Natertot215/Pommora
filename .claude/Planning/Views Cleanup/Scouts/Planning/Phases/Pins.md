@@ -21,3 +21,4 @@ Every test the planning build added or rewrote as a pin, by task, with the code 
 | 10-1 | `UIX/Interactions/engine.test.tsx` · "a row that can't lift names no drag gesture, and a row that can does" | `useLineRow`'s description reverts to `INSTRUCTIONS_ID` on every row |
 | 10-1 | `UIX/Interactions/engine.test.tsx` · "runs an immovable row's own Space in place of a lift, and its opener on Enter" | `measureLine`'s immovable check is reverted |
 | 10-1 | `UIX/Interactions/engine.test.tsx` · "marks a disabled zone on its items from the first render" (the description assertion) | `useDragItem`'s description reverts |
+| 10-1 (Phase 10 checkpoint) | `UIX/Interactions/engine.test.tsx` · "an immovable item names no drag gesture, and Space doesn’t lift it" | `lift`'s immovable refusal and `useDragItem`'s description revert, leaving a displace item described and lifting |
