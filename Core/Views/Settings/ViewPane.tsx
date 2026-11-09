@@ -23,7 +23,7 @@ export interface SettingsPane<Id extends string = ViewPaneId> {
   icon: IconName
 }
 
-// The singular here is intentional.
+// Rows read Group, Sort, and Filter; their panes head Grouping, Sorting, and Filtering, intentionally.
 export const VIEW_PANES: SettingsPane[] = [
   { id: 'visibility', label: 'Visibility', icon: 'eye' },
   { id: 'layout', label: 'Layout', icon: 'layout-dashboard' },
