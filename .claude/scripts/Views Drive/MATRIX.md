@@ -1,6 +1,6 @@
 ## Views Drive — Matrix
 
-The drive's cases, derived from the *Views Cleanup — Implementation Plan*'s *§Behavior Changes* and written against each phase's AFTER, its patch in `Planning/Views Cleanup/Scouts/Planning/Phases/`. Groups 2 to 10 follow the plan phase of their number. A group holds every behavior change its phase lands, crossed with each surface, input, and setting that reaches it, beside the interactions its refactor rewired on those surfaces, so a regression shows. Each case names its decision: `BC<n> <id>` is the numbered behavior change and its decision, owned by the group's phase, so it reads `AWAIT` at a head before that phase and must hold from it on; `R P<n>` is a regression crossing of phase `n`'s rewiring, owned by phase 0, so it holds at every head, the baseline included. `F<n> <tag>` is a behavior phase `n`'s checkpoint fold lands, owned by phase `n` like a behavior change. Every case prints as `g<group> [P<owner> <decision>] <name>`, so a run reads against the tables below line for line. Groups 2 to 7 are built; groups 8 to 10 are built at their own checkpoints from the rows below.
+The drive's cases, derived from the *Views Cleanup — Implementation Plan*'s *§Behavior Changes* and written against each phase's AFTER, its patch in `Planning/Views Cleanup/Scouts/Planning/Phases/`. Groups 2 to 10 follow the plan phase of their number. A group holds every behavior change its phase lands, crossed with each surface, input, and setting that reaches it, beside the interactions its refactor rewired on those surfaces, so a regression shows. Each case names its decision: `BC<n> <id>` is the numbered behavior change and its decision, owned by the group's phase, so it reads `AWAIT` at a head before that phase and must hold from it on; `R P<n>` is a regression crossing of phase `n`'s rewiring, owned by phase 0, so it holds at every head, the baseline included. `F<n> <tag>` is a behavior phase `n`'s checkpoint fold lands, owned by phase `n` like a behavior change. `T<task> <tag>` is a visible change a task lands that *§Behavior Changes* doesn't number, recorded under the plan's *§Deviations* and owned by the task's phase. Every case prints as `g<group> [P<owner> <decision>] <name>`, so a run reads against the tables below line for line. Groups 2 to 8 are built; groups 9 and 10 are built at their own checkpoints from the rows below.
 
 #### Dimensions
 
@@ -11,7 +11,7 @@ The drive's cases, derived from the *Views Cleanup — Implementation Plan*'s *�
 | **Settings** | Native Menus; Hide Disclosure Chevrons; Hide Empty Groups | Native Menus on and off for every list the menu door pops (groups 3 and 9); Hide Disclosure Chevrons in group 7; Hide Empty Groups in group 6 |
 | **States** | A locked row or tile; an active search; a custom Set order; a manual page order present or absent; a write held in flight | A locked tile in groups 8 and 10; a search in groups 7 and 10; the custom Set order in groups 6 and 7; the manual order in groups 2, 4, and 6; a held write in groups 2, 3, 5, and 6 |
 
-**A held write:** the drive wraps the host's `mutate` and `views:save` handlers in the main process, so a case can hold one call's reply or refuse it, and restores them at the end. It widens a round trip of a few milliseconds to seconds, which is what BC1, BC2, BC12, BC13, and F6 nest read inside.
+**A held write:** the drive wraps the host's `mutate`, `views:save`, and `tiles:save` handlers in the main process, so a case can hold one call's reply or refuse it, and restores them at the end. It widens a round trip of a few milliseconds to seconds, which is what BC1, BC2, BC12, BC13, and F6 nest read inside.
 
 **Drift:** selectors that changed between closed phases sit in one table, `DRIFT`, keyed by `--landed`: `.table-view` reads `.table-shell` from Phase 4 (Task 4-3); the Trash's `.trash-head-name` and `.trash-head-date` read `.col-header` cells from Phase 4 (Task 4-1); the dropdown's placeholder is found by `More` before Phase 3 and `More actions` from it (Task 3-3); the page-icon switch is found by `Page Icons` (Table) or `Hide Icons` (Cards) before Phase 3 and `Title Icons` from it; the disclosure chevron's `[data-drop-outline]` reads `[data-chevron]` from Phase 7 (Task 7-1); the bundle table's `.bundle-date` reads its row's last `.data-cell` from Phase 7 (its checkpoint fold). A selector difference is drift; a behavior difference is the case itself, so BC3 and BC6 assert the new label while their regression crossings find the control by the drifted one.
 
@@ -32,6 +32,8 @@ The drive's cases, derived from the *Views Cleanup — Implementation Plan*'s *�
 - **The search's keys (R P2):** `Pipeline/search.test.ts` pins `searchKeysOf`; the host's memo is unchanged.
 - **The autocomplete's heading list (R P7):** `UIX/Menus/DisclosureRow.test.ts` pins `unfolded`, which `openHeadingRows`' cases followed into.
 - **A band's chevron press (R P7):** group 6's three chevron cases fold and unfold a Table Set band and fold a Cards Set band through the drifted chevron.
+- **A tile naming a missing Set (R P8):** the tile draws `inertTile()` for a source the tree no longer holds, a path Phase 8 left alone; `ContainerView`'s "Set not found" is the main pane's, and the drive found no gesture that leaves a tab on a missing Set.
+- **The toolbar dropdown's Delete and its Undo (R P8):** group 2's case deletes a view from that dropdown and restores it.
 - **Undo of a column drag and resize:** neither was undoable before or after; no decision names it.
 
 #### Group 2 — The Views Root and the Live View
@@ -195,19 +197,36 @@ The drive's cases, derived from the *Views Cleanup — Implementation Plan*'s *�
 
 #### Group 8 — View Tiles
 
+The tile sits on the homepage's board, written whole to `.nexus/interface/homepage/_tiles.json` as another window's write, which the open board reloads.
+
 | Case | Surface · Input | Expected | Decision |
 | --- | --- | --- | --- |
-| a tile dropdown row's rename field doesn't auto-size, matching the toolbar dropdown's | tile dropdown row · Rename | the field's width equals the toolbar row field's rule | BC22 8.1 |
-| a new pill's entering class stays until the tile's list next changes | tile pills · New View | the class holds across a remount until the next list change | BC22 8.2 |
-| a locked tile's view pill opens no rename on double-click | locked tile · pill double-click | no field opens | BC23 3.2 |
-| a tile's duplicate names its copy from the stored entry's names | tile dropdown row · Duplicate, a stored name the strip doesn't draw | the copy's name skips the stored sibling's | BC23 3.2 |
-| a tile's pills switch its view | tile pill · press | the tile draws that view | R P8 |
-| the tile's and the toolbar's row menus offer the same rows and run Rename, Icon, Color, Duplicate, and Delete | both dropdowns · right-click | identical native rows; each runs on its own store | R P8 |
-| duplicating in a tile switches to the copy; in the toolbar dropdown it doesn't | both · Duplicate | F-4 as before | R P8 |
-| the last view can't be deleted from either list | both · Delete with one view | Delete disabled | R P8 |
-| a tile's reveal anchors to the Table's heading and to Cards' first row | Table and Cards tiles · hover | the strip reveals over the declared lead | R P8 |
-| a tile's view draws at its embed zoom and padding | Table and Cards tiles | the zoom and side padding match the tile's | R P8 |
-| a tile naming a missing Set draws Set not found | tile on a removed Set | the placeholder | R P8 |
+| a tile's pill switches its view | tile pills · press | the entry's `active` is the pill's, and the tile draws its Cards | R P8 |
+| a new pill's entering class stays after its entrance plays, until the tile's list next changes | tile strip · New View, then New View again | the newborn's own class holds 1.5 s on, so a remount or reorder replays it, and leaves at the next new view | BC22 8.2 |
+| a locked tile's view pill opens no rename on a double-click | locked tile · pill double-click | no field opens | BC23 3.2 |
+| a tile's duplicate names its copy from the stored entry, a sibling another window named meanwhile included | tile pill · `contextmenu`, the entry's second view renamed `VD Tile A (2)` on disk while the menu is up, then Duplicate | the copy reads `VD Tile A (3)` after its source | BC23 3.2 |
+| duplicating in a tile switches the tile to the copy | the same | `active` is the copy's | R P8 |
+| a view deleted from a tile leaves the entry and its notice's Undo restores it in place | tile pill · right-click Delete, confirmed, then Undo | the view leaves and returns at its index | R P8 |
+| a lock another window writes while a tile pill's Edit Color, Edit Icon, or delete confirm is open stops its pick | tile pill · right-click Edit Color, Edit Icon, or Delete, the entry written `locked: true` on disk while the picker or confirm is up, then the pick | the entry keeps no color, its `view-cards` icon, and both views | F8 lock |
+| a pill dragged before its sibling reorders the tile's views | tile pills · drag | the entry's views reorder | R P8 |
+| a tile dropdown row's rename field doesn't auto-size, matching the toolbar dropdown's | tile dropdown row and toolbar dropdown row · right-click Rename | the two fields' classes and `size` match | BC22 8.1 |
+| the tile's and the toolbar's row menus offer the same rows, the tile adding its Titles row | both dropdowns · right-click | Rename, Edit Icon, Edit Color, Duplicate, Delete in both, and the tile's Hide Titles | R P8 |
+| a rename through the shared row commits, cancels, and stands refused in the tile's dropdown | tile dropdown row · Rename typed and Escape, typed and Enter, typed and Enter with `tiles:save` refused | the entry keeps, takes, then keeps the name, and the row draws what the entry holds | R P8 |
+| a rename through the shared row commits, cancels, and stands refused in the toolbar's dropdown | toolbar dropdown row · the same with `views:save` refused | the sidecar keeps, takes, then keeps the name, and the row draws what it holds | R P8 |
+| the shared row's Edit Icon and Edit Color save in the tile and the toolbar alike | both dropdowns · Edit Color `red-3`, Edit Icon `activity` | each store holds both | R P8 |
+| duplicating in the toolbar dropdown leaves the shown view | toolbar dropdown row · Duplicate | a copy in the sidecar; the button keeps the shown view | R P8 |
+| a toolbar dropdown row dragged above its sibling reorders the views | toolbar dropdown · row drag | the sidecar's views reorder | R P8 |
+| a toolbar dropdown row's rename shows the new name through its held save, on the shown view's row and another's, and a refused one returns to the old | toolbar dropdown row · Rename with `views:save` held 2.5 s, then held and refused | every frame from the commit draws the new name alone; the refused rename draws the new name, then the old | F8 rename |
+| the last view can't be deleted from either list | a one-view tile's pill and Collection B's dropdown row · right-click | Delete disabled in both | R P8 |
+| a tile's reveal anchors to the Table's heading, not its rows | Table tile, views hidden · hover | the heading reveals the strip; a row doesn't | R P8 |
+| a tile's reveal anchors to Cards' first row of cards | flat Cards tile, Set cards off · hover | the first card reveals the strip | R P8 |
+| a grouped Cards tile's reveal anchors to its first band as a zone, its cards outside it | grouped Cards tile, Set cards off · hover | the band row reveals the strip; a card doesn't | R P8 |
+| a Cards tile whose bands show with no card drawn anchors its reveal to its first band | Cards tile grouped by VD Stage, Set cards off, a filter emptying every band, Hide Empty Groups off · hover | the first band row reveals the strip | T8-3 peek |
+| a tile's Table draws at the embed zoom with no heading fill, and its Cards at the embed zoom inside the tile's inset | Table and Cards tiles | the shell's `--zoom` is the tile's `--view-embed-zoom` with `--heading-fill: none`; Cards' `--zoom` is `--embed-zoom`, its grid's padding the tile's `--tile-inset-l` once zoomed | R P8 |
+
+**The fold's rows:** the lock is written to the board's file, the path another window's write takes; its delete arm already held at both heads, since the confirm's exit reads the lock from the render after it, so the color and icon arms are what discriminate. The empty-band peek already holds at `4a77ab628`, where Task 8-3's band lead draws it, and reads AWAIT at Phase 7's head, where the reveal anchored only on a card.
+
+**The reveal and the embed:** Task 8-3 moved what the tile reads from the renderers' classes to their `data-view-lead` and `[data-view-embed]` declarations, so its four cases hover and measure the drawn elements by the classes every head carries; they're regressions, holding where the declarations didn't exist yet.
 
 #### Group 9 — MenuBase
 

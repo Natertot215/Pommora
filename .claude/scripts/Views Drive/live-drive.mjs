@@ -1,20 +1,20 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
-  ask, boxOf, click, hover, closeSettings, escapeAll, FM, inMain, labels, launch, menuByEvent, mintPageId, mouseClick, must, NEXUS,
-  openSettings, phasedItem, pickNative, popNative, pressKey, press, restore, settles, SETTINGS_BUTTON, shot, sleep, SWITCH, tally,
+  ask, boxOf, click, clicks, holds, hover, closeSettings, escapeAll, FM, inMain, labels, launch, menuByEvent, mintPageId, mouseClick, must, NEXUS,
+  openSettings, phasedItem, ribbon, pickNative, popNative, pressKey, press, restore, settles, SETTINGS_BUTTON, shot, sleep, SWITCH, tally,
   typeText, until,
 } from '../drive-harness.mjs'
 import { parse } from 'yaml'
 
 const PORT = 9423
-const BUILT = ['2', '3', '4', '5', '6', '7']
+const BUILT = ['2', '3', '4', '5', '6', '7', '8']
 const argv = process.argv.slice(2)
 const at = argv.indexOf('--landed')
 const LANDED = at >= 0 ? Number(argv[at + 1]) : NaN
 const GROUPS = new Set(argv.filter((a, i) => i !== at && i !== at + 1))
 if (!Number.isInteger(LANDED) || GROUPS.size === 0 || [...GROUPS].some((g) => !BUILT.includes(g))) {
-  console.error(`usage: node live-drive.mjs <group…> --landed <phase>   (groups ${BUILT.join(', ')}; 8 to 10 land at their checkpoints; --landed 0 is the baseline)`)
+  console.error(`usage: node live-drive.mjs <group…> --landed <phase>   (groups ${BUILT.join(', ')}; 9 and 10 land at their checkpoints; --landed 0 is the baseline)`)
   process.exit(2)
 }
 
@@ -115,11 +115,11 @@ async function seed(cdp) {
 
 // ── The host's round trip, widened ─────────────────────────────────────────
 
-/** Wraps `mutate` and `views:save` in the main process once, so a drive rule can hold a reply or refuse it; a rule matches one call and is spent. */
+/** Wraps `mutate`, `views:save`, and `tiles:save` in the main process once, so a drive rule can hold a reply or refuse it; a rule matches one call and is spent. */
 const GATE = `(() => {
   const { ipcMain } = process.mainModule.require('electron')
   const g = (globalThis.__vdGate ??= { orig: new Map(), rules: [] })
-  for (const ch of ['mutate', 'views:save']) {
+  for (const ch of ['mutate', 'views:save', 'tiles:save']) {
     if (g.orig.has(ch)) continue
     const f = ipcMain._invokeHandlers.get(ch)
     g.orig.set(ch, f)
@@ -1316,6 +1316,305 @@ async function group7(cdp) {
   await shot(cdp, 'g7-end')
 }
 
+// ── Group 8 — View Tiles ────────────────────────────────────────────────────
+
+/** The homepage's tile board, written whole on disk, so the open board reloads it as another window's write. */
+const TILES = '.nexus/interface/homepage/_tiles.json'
+const tileOnDisk = () => JSON.parse(readRel(TILES)).tiles[0]
+const tileNames = () => tileOnDisk().views.map((v) => v.config.name)
+const PILLS = `[...document.querySelectorAll('button[aria-roledescription="sortable"]')].filter((b) => b.getClientRects().length && b.querySelector('svg'))`
+const pill = (name) => `${PILLS}.find((b) => b.textContent.trim() === ${JSON.stringify(name)})`
+const pillNames = (cdp) => cdp.evaluate(`${PILLS}.map((b) => b.textContent.trim())`)
+const TILE_BODY = `(${PILLS}[0] ?? document.querySelector('button .lucide-chevrons-up-down')?.closest('button'))?.closest('[data-reveal-host]').parentElement.parentElement.nextElementSibling`
+/** Whether the tile's strip is drawn: its row's space takes height. */
+const STRIP_OPEN = `(${PILLS}[0]?.closest('[data-reveal-host]').parentElement.getBoundingClientRect().height ?? 0) > 0`
+const DROP_SWITCH = `document.querySelector('button .lucide-chevrons-up-down')?.closest('button')`
+const tileRow = (name) => `[...document.querySelectorAll('[data-picker-portal] [role=button]')].find((e) => e.getClientRects().length && e.textContent.trim() === ${JSON.stringify(name)})`
+const FIELD = `(document.activeElement?.tagName === 'INPUT' ? document.activeElement : null)`
+const fieldLook = `(() => { const f = ${FIELD}; return f && { cls: f.className, size: f.getAttribute('size') } })()`
+let tileSource
+let boards = 0
+/** The board holding one view tile over Collection A, its views `views` and its own keys `extra`, drawn once its title reads this write's own. */
+async function showTile(cdp, views, extra = {}) {
+  tileSource ??= (await ask(cdp, 'nexus:state')).value.tree.collections.find((c) => c.path === COLLECTION).id
+  const id = `01KZVD${'8'.padStart(20, '0')}`
+  const title = `VD Board ${++boards}`
+  const entry = { id, type: 'view', active: 0, display_title: title, views: views.map((config) => ({ source_id: tileSource, config: { icon: `view-${config.type}`, group: { kind: 'structural' }, property_order: ['_title'], hidden_properties: [], ...config } })), ...extra }
+  writeFileSync(abs(TILES), JSON.stringify({ layout: { bands: [{ node: { kind: 'tile', id, h: 260 } }] }, locked: false, tiles: [entry] }, null, 2))
+  if (!(await cdp.evaluate(`!!document.querySelector('.banner-title, .detail-title')?.textContent.includes('Test')`))) await mouseClick(cdp, ribbon('Homepage'))
+  await until(`the tile's ${title}`, async () => cdp.evaluate(`[...document.querySelectorAll('span')].some((e) => !e.children.length && e.textContent === ${JSON.stringify(title)})`))
+  await sleep(600)
+}
+const TA = { id: vid('g8tilea'), name: 'VD Tile A', type: 'table' }
+const TB = { id: vid('g8tileb'), name: 'VD Tile B', type: 'cards' }
+/** The toolbar dropdown open over Collection A's views. */
+async function openDropdown(cdp, name) {
+  await closeAll(cdp)
+  await mouseClick(cdp, VIEWS_BUTTON)
+  await until('the views dropdown', async () => cdp.evaluate(`!!${btn(name)}`))
+}
+/** A row's native menu popped and `path` chosen, answering its rows with their enabled state. */
+async function rowMenu(cdp, expr, path) {
+  await cdp.evaluate(`(${expr}).scrollIntoView({ block: 'center' })`)
+  await sleep(300)
+  const rows = await popNative(cdp, await boxOf(cdp, expr))
+  await pickNative(path)
+  await sleep(600)
+  return (rows ?? []).filter((r) => !r.separator).map((r) => (r.enabled ? r.label : `(${r.label})`))
+}
+/** A rename begun from a row's menu: typed and committed, cancelled by Escape, or committed while `refuse` refuses the write. */
+async function renameRow(cdp, expr, name, { cancel = false, refuse } = {}) {
+  await rowMenu(cdp, expr, ['Rename'])
+  const opened = await settles(async () => cdp.evaluate(`!!${FIELD}`), 3000)
+  if (!opened) return false
+  await cdp.evaluate(`${FIELD}.select()`)
+  await typeText(cdp, name)
+  if (refuse) await hold(refuse, '() => true', 1500, true)
+  await pressKey(cdp, cancel ? 'Escape' : 'Enter')
+  return true
+}
+
+/** A toolbar dropdown row renamed with its `views:save` reply held 2.5 s, refused when `refuse`: every frame's drawn row names, `from` or `to`, from the commit until the reply has landed. */
+async function heldRename(cdp, from, to, refuse = false) {
+  await openDropdown(cdp, from)
+  await rowMenu(cdp, btn(from), ['Rename'])
+  if (!(await settles(async () => cdp.evaluate(`!!${FIELD}`), 3000))) return { seen: [] }
+  await cdp.evaluate(`${FIELD}.select()`)
+  await typeText(cdp, to)
+  await hold('views:save', '() => true', 2500, refuse)
+  await cdp.evaluate(ARM_FRAMES(`[...document.querySelectorAll('[role=button]')].filter((e) => e.getClientRects().length).map((e) => e.textContent.trim()).filter((t) => t === ${JSON.stringify(from)} || t === ${JSON.stringify(to)})`))
+  await pressKey(cdp, 'Enter')
+  await sleep(3500)
+  return { seen: (await frames(cdp)).filter((names) => names.length) }
+}
+/** A pick a tile pill's menu opened, the tile locked on disk by another window while it's up: whether the pick was still there to make, and the entry after. */
+async function lockedPick(cdp, open, pick) {
+  await showTile(cdp, [TA, TB])
+  await open()
+  const board = JSON.parse(readRel(TILES))
+  board.tiles[0].locked = true
+  writeFileSync(abs(TILES), JSON.stringify(board, null, 2))
+  await sleep(2000)
+  const picked = await pick()
+  await sleep(1200)
+  return { picked, entry: tileOnDisk() }
+}
+
+async function group8(cdp) {
+  const g = '8'
+  await showTile(cdp, [TA, TB])
+
+  // Regression: a pill switches the tile's view.
+  await mouseClick(cdp, pill(TB.name))
+  const switched = await settles(async () => tileOnDisk().active === 1 && (await cdp.evaluate(`!!(${TILE_BODY})?.querySelector('.cards-view')`)))
+  reg(g, 'a tile\'s pill switches its view', switched, show(tileOnDisk().active))
+  await mouseClick(cdp, pill(TA.name))
+  await settles(async () => tileOnDisk().active === 0)
+
+  // BC22 · a new pill's entering class holds until the list next changes.
+  const classesOf = (expr) => cdp.evaluate(`[...((${expr})?.classList ?? [])]`)
+  const shared = new Set([...(await classesOf(pill(TA.name))), ...(await classesOf(pill(TB.name)))])
+  const NEW = `[...document.querySelectorAll('[aria-label="New View"]')].find((e) => e.getClientRects().length)`
+  await mouseClick(cdp, NEW, { settle: 150 })
+  const newborn = `${PILLS}[2]`
+  const born = (await classesOf(newborn)).filter((c) => !shared.has(c))
+  await sleep(1500)
+  const played = await classesOf(newborn)
+  await mouseClick(cdp, NEW, { settle: 400 })
+  const next = await classesOf(newborn)
+  bc(g, 22, '8.2', 'a new pill\'s entering class stays after its entrance plays, until the tile\'s list next changes', born.length > 0 && born.some((c) => played.includes(c) && !next.includes(c)), show({ born, played, next }))
+  await showTile(cdp, [TA, TB])
+
+  // BC23 · a locked tile's pill opens no rename.
+  await showTile(cdp, [TA, TB], { locked: true })
+  await clicks(cdp, await boxOf(cdp, `(${pill(TB.name)}).querySelector('span')`), 2)
+  const lockedField = await cdp.evaluate(`!!${FIELD}`)
+  await pressKey(cdp, 'Escape')
+  bc(g, 23, '3.2', 'a locked tile\'s view pill opens no rename on a double-click', !lockedField, show(lockedField))
+  await showTile(cdp, [TA, TB])
+
+  // BC23 · a tile's duplicate names its copy from the stored entry, a name another window wrote while its menu was up included.
+  const seq = await inMain('__drive.seq')
+  await cdp.evaluate(`(${pill(TA.name)}).dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }))`)
+  await until('the pill\'s menu', async () => inMain(`__drive.seq > ${seq}`), 3000)
+  const board = JSON.parse(readRel(TILES))
+  board.tiles[0].views[1].config.name = 'VD Tile A (2)'
+  writeFileSync(abs(TILES), JSON.stringify(board, null, 2))
+  await until('the stored rename drawn', async () => cdp.evaluate(`!!${pill('VD Tile A (2)')}`))
+  await pickNative(['Duplicate'])
+  await settles(async () => tileNames().length === 3)
+  const copied = tileNames()
+  bc(g, 23, '3.2', 'a tile\'s duplicate names its copy from the stored entry, a sibling another window named meanwhile included', same(copied, ['VD Tile A', 'VD Tile A (3)', 'VD Tile A (2)']), show(copied))
+  reg(g, 'duplicating in a tile switches the tile to the copy', tileOnDisk().active === 1, show(tileOnDisk().active))
+
+  // Regression: a tile's delete, its Undo, and the last view kept.
+  await showTile(cdp, [TA, TB])
+  await rowMenu(cdp, pill(TB.name), ['Delete'])
+  if (await settles(async () => cdp.evaluate(`!!document.querySelector('[role="alertdialog"]')`), 2000))
+    await click(cdp, `[...document.querySelector('[role="alertdialog"]').querySelectorAll('button')].find((b) => b.textContent.trim() === 'Delete')`)
+  const gone = await settles(async () => same(tileNames(), [TA.name]))
+  const undo = `[...document.querySelectorAll('[role=status] button, [role=alert] button')].find((b) => b.textContent.trim() === 'Undo')`
+  const offered = await settles(async () => cdp.evaluate(`!!(${undo})`), 3000)
+  if (offered) await click(cdp, undo)
+  const restored = await settles(async () => same(tileNames(), [TA.name, TB.name]))
+  reg(g, 'a view deleted from a tile leaves the entry and its notice\'s Undo restores it in place', gone && offered && restored, show({ gone, offered, names: tileNames() }))
+  await showTile(cdp, [TA])
+  const tileLast = await rowMenu(cdp, pill(TA.name), [])
+
+  // F8 · a lock another window writes stops a pick the tile's menu already opened.
+  const picker = (label) => `[...document.querySelectorAll('[data-picker-portal] [aria-label="${label}"]')].at(-1)`
+  const color = await lockedPick(cdp, async () => {
+    await rowMenu(cdp, pill(TB.name), ['Edit Color'])
+    await until('the color picker', async () => cdp.evaluate(`!!${picker('red-3')}`))
+  }, async () => (await cdp.evaluate(`!!${picker('red-3')}`)) && (await click(cdp, picker('red-3')), true))
+  const ICON = `document.querySelector('[data-picker-portal] .lucide-activity')?.closest('button')`
+  const icon = await lockedPick(cdp, async () => {
+    await rowMenu(cdp, pill(TB.name), ['Edit Icon'])
+    await until('the icon picker', async () => cdp.evaluate(`!!${ICON}`))
+  }, async () => (await cdp.evaluate(`!!${ICON}`)) && (await mouseClick(cdp, ICON), true))
+  const CONFIRM = `[...(document.querySelector('[role="alertdialog"]')?.querySelectorAll('button') ?? [])].find((b) => b.textContent.trim() === 'Delete')`
+  const removal = await lockedPick(cdp, async () => {
+    await rowMenu(cdp, pill(TB.name), ['Delete'])
+    await until('the delete confirm', async () => cdp.evaluate(`!!(${CONFIRM})`))
+  }, async () => (await cdp.evaluate(`!!(${CONFIRM})`)) && (await click(cdp, CONFIRM), true))
+  await escapeAll(cdp)
+  const kept = { color: color.entry.views[1].config.color ?? null, icon: icon.entry.views[1].config.icon, views: removal.entry.views.length, picked: [color.picked, icon.picked, removal.picked] }
+  fold(g, 'lock', 'a lock another window writes while a tile pill\'s Edit Color, Edit Icon, or delete confirm is open stops its pick', kept.color === null && kept.icon === 'view-cards' && kept.views === 2, show(kept))
+
+  // Regression: a pill dragged before its sibling reorders the tile's views.
+  await showTile(cdp, [TA, TB])
+  const a = await boxOf(cdp, pill(TA.name))
+  const b = await boxOf(cdp, pill(TB.name))
+  await dragPoints(cdp, { x: b.x, y: b.y }, { x: a.left + 3, y: a.y })
+  reg(g, 'a pill dragged before its sibling reorders the tile\'s views', await settles(async () => same(tileNames(), [TB.name, TA.name])), show(tileNames()))
+
+  // The shared row, through the tile's dropdown.
+  await showTile(cdp, [TA, TB], { view_style: 'dropdown' })
+  const openTileList = async () => {
+    await escapeAll(cdp)
+    await sleep(500)
+    await mouseClick(cdp, DROP_SWITCH)
+    await until('the tile\'s list', async () => cdp.evaluate(`!!${tileRow(TA.name)}`))
+  }
+  await openTileList()
+  const tileRows = await rowMenu(cdp, tileRow(TB.name), ['Rename'])
+  await settles(async () => cdp.evaluate(`!!${FIELD}`), 3000)
+  const tileField = await cdp.evaluate(fieldLook)
+  await pressKey(cdp, 'Escape')
+  const tileRename = {}
+  await openTileList()
+  tileRename.cancelled = (await renameRow(cdp, tileRow(TB.name), 'VD Tile Never', { cancel: true })) && (await holds(async () => tileNames()[1] === TB.name, 1200))
+  await openTileList()
+  tileRename.committed = (await renameRow(cdp, tileRow(TB.name), 'VD Tile Renamed')) && (await settles(async () => tileNames()[1] === 'VD Tile Renamed'))
+  await openTileList()
+  await renameRow(cdp, tileRow('VD Tile Renamed'), 'VD Tile Refused', { refuse: 'tiles:save' })
+  await sleep(2500)
+  await escapeAll(cdp)
+  await mouseClick(cdp, DROP_SWITCH)
+  tileRename.refused = { disk: tileNames()[1], drawn: await settles(async () => cdp.evaluate(`!!${tileRow('VD Tile Renamed')} && !${tileRow('VD Tile Refused')}`), 3000) }
+  await openTileList()
+  await rowMenu(cdp, tileRow(TA.name), ['Edit Color'])
+  await until('the color picker', async () => cdp.evaluate(`!!document.querySelector('[data-picker-portal] [aria-label="red-3"]')`))
+  await click(cdp, `[...document.querySelectorAll('[data-picker-portal] [aria-label="red-3"]')].at(-1)`)
+  const tileColor = await settles(async () => tileOnDisk().views[0].config.color === 'red-3')
+  await escapeAll(cdp)
+  await openTileList()
+  await rowMenu(cdp, tileRow(TA.name), ['Edit Icon'])
+  await until('the icon picker', async () => cdp.evaluate(`!!document.querySelector('[data-picker-portal] .lucide-activity')`))
+  await mouseClick(cdp, `document.querySelector('[data-picker-portal] .lucide-activity').closest('button')`)
+  const tileIcon = await settles(async () => tileOnDisk().views[0].config.icon === 'activity')
+  await escapeAll(cdp)
+
+  // The shared row, through the toolbar's dropdown over the same row and menu.
+  const V8 = tableView(vid('g8toolbar'), 'VD Bar A')
+  const V8B = tableView(vid('g8toolbarb'), 'VD Bar B')
+  await must('save', ask(cdp, 'views:save', COLLECTION, 'collection', V8B, {}))
+  await mouseClick(cdp, `[...document.querySelectorAll('.row span')].findLast((e) => e.textContent.trim() === 'Collection A')`)
+  await showView(cdp, V8)
+  await openDropdown(cdp, V8B.name)
+  const barRows = await rowMenu(cdp, btn(V8B.name), ['Rename'])
+  await settles(async () => cdp.evaluate(`!!${FIELD}`), 3000)
+  const barField = await cdp.evaluate(fieldLook)
+  await pressKey(cdp, 'Escape')
+  bc(g, 22, '8.1', 'a tile dropdown row\'s rename field doesn\'t auto-size, matching the toolbar dropdown\'s', !!tileField && same(tileField, barField), show({ tileField, barField }))
+  reg(g, 'the tile\'s and the toolbar\'s row menus offer the same rows, the tile adding its Titles row', same(tileRows.filter((r) => !/Titles$/.test(r)), barRows) && tileRows.length === barRows.length + 1, show({ tileRows, barRows }))
+  const barRename = {}
+  await openDropdown(cdp, V8B.name)
+  barRename.cancelled = (await renameRow(cdp, btn(V8B.name), 'VD Bar Never', { cancel: true })) && (await holds(async () => viewOnDisk(V8B.id)?.name === V8B.name, 1200))
+  await openDropdown(cdp, V8B.name)
+  barRename.committed = (await renameRow(cdp, btn(V8B.name), 'VD Bar Renamed')) && (await settles(async () => viewOnDisk(V8B.id)?.name === 'VD Bar Renamed'))
+  await openDropdown(cdp, 'VD Bar Renamed')
+  await renameRow(cdp, btn('VD Bar Renamed'), 'VD Bar Refused', { refuse: 'views:save' })
+  await sleep(2500)
+  await closeAll(cdp)
+  await mouseClick(cdp, VIEWS_BUTTON)
+  barRename.refused = { disk: viewOnDisk(V8B.id)?.name, drawn: await settles(async () => cdp.evaluate(`!!${btn('VD Bar Renamed')} && !${btn('VD Bar Refused')}`), 3000) }
+  reg(g, 'a rename through the shared row commits, cancels, and stands refused in the tile\'s dropdown', tileRename.cancelled && tileRename.committed && tileRename.refused.disk === 'VD Tile Renamed' && tileRename.refused.drawn, show(tileRename))
+  reg(g, 'a rename through the shared row commits, cancels, and stands refused in the toolbar\'s dropdown', barRename.cancelled && barRename.committed && barRename.refused.disk === 'VD Bar Renamed' && barRename.refused.drawn, show(barRename))
+  await openDropdown(cdp, V8.name)
+  await rowMenu(cdp, btn(V8.name), ['Edit Color'])
+  await until('the color picker', async () => cdp.evaluate(`!!document.querySelector('[data-picker-portal] [aria-label="red-3"]')`))
+  await click(cdp, `[...document.querySelectorAll('[data-picker-portal] [aria-label="red-3"]')].at(-1)`)
+  const barColor = await settles(async () => viewOnDisk(V8.id)?.color === 'red-3')
+  await openDropdown(cdp, V8.name)
+  await rowMenu(cdp, btn(V8.name), ['Edit Icon'])
+  await until('the icon picker', async () => cdp.evaluate(`!!document.querySelector('[data-picker-portal] .lucide-activity')`))
+  await mouseClick(cdp, `document.querySelector('[data-picker-portal] .lucide-activity').closest('button')`)
+  const barIcon = await settles(async () => viewOnDisk(V8.id)?.icon === 'activity')
+  reg(g, 'the shared row\'s Edit Icon and Edit Color save in the tile and the toolbar alike', tileColor && tileIcon && barColor && barIcon, show({ tileColor, tileIcon, barColor, barIcon }))
+  await openDropdown(cdp, V8.name)
+  const count = (sidecarOnDisk().views ?? []).length
+  await rowMenu(cdp, btn(V8.name), ['Duplicate'])
+  const copiedBar = await settles(async () => (sidecarOnDisk().views ?? []).length === count + 1)
+  await sleep(500)
+  reg(g, 'duplicating in the toolbar dropdown leaves the shown view', copiedBar && (await cdp.evaluate(`${VIEWS_BUTTON}.textContent.trim()`)) === V8.name, show({ copiedBar, shown: await cdp.evaluate(`${VIEWS_BUTTON}.textContent.trim()`) }))
+  await openDropdown(cdp, V8.name)
+  await cdp.evaluate(`(${btn(V8.name)}).scrollIntoView({ block: 'center' })`)
+  await sleep(300)
+  const order = () => (sidecarOnDisk().views ?? []).map((v) => v.id)
+  const from = await boxOf(cdp, btn(V8.name))
+  const to = await boxOf(cdp, btn('VD Bar Renamed'))
+  await dragPoints(cdp, { x: from.x, y: from.y }, { x: to.x, y: to.top + 3 })
+  reg(g, 'a toolbar dropdown row dragged above its sibling reorders the views', await settles(async () => order().indexOf(V8.id) >= 0 && order().indexOf(V8.id) < order().indexOf(V8B.id)), show(order().map((id) => id.slice(-8))))
+  // F8 · a dropdown row's rename shows its new name through the held save, and a refusal takes it back.
+  const shown = await heldRename(cdp, V8.name, 'VD Bar Held')
+  const other = await heldRename(cdp, 'VD Bar Renamed', 'VD Bar Held B')
+  const refused = await heldRename(cdp, 'VD Bar Held B', 'VD Bar Unsaved', true)
+  const through = (r, to) => r.seen.length > 0 && r.seen.every((names) => same(names, [to]))
+  fold(g, 'rename', 'a toolbar dropdown row\'s rename shows the new name through its held save, on the shown view\'s row and another\'s, and a refused one returns to the old', through(shown, 'VD Bar Held') && through(other, 'VD Bar Held B') && same(refused.seen[0], ['VD Bar Unsaved']) && same(refused.seen.at(-1), ['VD Bar Held B']) && viewOnDisk(V8B.id)?.name === 'VD Bar Held B', show({ shown, other, refused }))
+  await closeAll(cdp)
+  await mouseClick(cdp, `[...document.querySelectorAll('.row span')].findLast((e) => e.textContent.trim() === 'Collection B')`)
+  await until('Collection B', async () => cdp.evaluate(`${VIEWS_BUTTON}?.textContent.trim().length > 0 && document.querySelector('.detail-title-text')?.textContent === 'Collection B'`))
+  const only = await cdp.evaluate(`${VIEWS_BUTTON}.textContent.trim()`)
+  await openDropdown(cdp, only)
+  const barLast = await rowMenu(cdp, btn(only), [])
+  await closeAll(cdp)
+  reg(g, 'the last view can\'t be deleted from either list', tileLast.includes('(Delete)') && barLast.includes('(Delete)'), show({ tileLast, barLast }))
+
+  // Regression: the tile's reveal anchors where each renderer leads, and its view draws at the tile's zoom and padding.
+  const peek = async (expr) => {
+    await hover(cdp, expr, 1500)
+    return cdp.evaluate(STRIP_OPEN)
+  }
+  await showTile(cdp, [TA, TB], { view_band: false })
+  const table = { head: await peek(`(${TILE_BODY}).querySelector('.table-head')`), row: await peek(`(${TILE_BODY}).querySelector('.data-row[data-rid]')`) }
+  const tableLook = await cdp.evaluate(`(() => { const body = ${TILE_BODY}; const shell = body.querySelector('.table-shell'); return { fill: getComputedStyle(body.querySelector('.table-head')).getPropertyValue('--heading-fill').trim(), zoom: getComputedStyle(shell).getPropertyValue('--zoom').trim(), embed: getComputedStyle(body).getPropertyValue('--view-embed-zoom').trim() } })()`)
+  await showTile(cdp, [TA, { ...TB, set_cards: false, group: { kind: 'flat' } }], { view_band: false, active: 1 })
+  const cards = { card: await peek(`(${TILE_BODY}).querySelector('.cards-view .card')`) }
+  const cardsLook = await cdp.evaluate(`(() => { const body = ${TILE_BODY}; const view = body.querySelector('.cards-view'); const grid = view.querySelector('.cards-grid'); const z = parseFloat(getComputedStyle(view).zoom) * (parseFloat(getComputedStyle(body).getPropertyValue('--tile-zoom')) || 1); return { zoom: getComputedStyle(view).getPropertyValue('--zoom').trim(), embed: getComputedStyle(body).getPropertyValue('--embed-zoom').trim(), pad: parseFloat(getComputedStyle(grid).paddingLeft) * z, inset: parseFloat(getComputedStyle(body).getPropertyValue('--tile-inset-l')) || 14 } })()`)
+  await showTile(cdp, [TA, { ...TB, set_cards: false }], { view_band: false, active: 1 })
+  const band = { band: await peek(`(${TILE_BODY}).querySelector('.group-band-row')`), card: await peek(`(${TILE_BODY}).querySelector('.cards-view .card')`) }
+  await showTile(cdp, [TA, { ...TB, set_cards: false, ...byStage, filter: { match: 'all', rules: [{ property_id: '_title', op: 'contains', value: 'VD Nothing Matches' }] } }], { view_band: false, active: 1 })
+  const empty = { bands: await cdp.evaluate(`(${TILE_BODY}).querySelectorAll('.group-band-row').length`), cards: await cdp.evaluate(`(${TILE_BODY}).querySelectorAll('.card').length`) }
+  empty.band = empty.bands > 0 && (await peek(`(${TILE_BODY}).querySelector('.group-band-row')`))
+  reg(g, 'a tile\'s reveal anchors to the Table\'s heading, not its rows', table.head && !table.row, show(table))
+  reg(g, 'a tile\'s reveal anchors to Cards\' first row of cards', cards.card, show(cards))
+  reg(g, 'a grouped Cards tile\'s reveal anchors to its first band as a zone, its cards outside it', band.band && !band.card, show(band))
+  item(g, 8, 'T8-3 peek', 'a Cards tile whose bands show with no card drawn anchors its reveal to its first band', empty.cards === 0 && empty.band, show(empty))
+  reg(g, 'a tile\'s Table draws at the embed zoom with no heading fill, and its Cards at the embed zoom inside the tile\'s inset', tableLook.fill === 'none' && tableLook.zoom === tableLook.embed && cardsLook.zoom === cardsLook.embed && near(cardsLook.pad, cardsLook.inset), show({ tableLook, cardsLook }))
+  await shot(cdp, 'g8-end')
+}
+
 // ── The run ─────────────────────────────────────────────────────────────────
 
 let cdp
@@ -1324,7 +1623,7 @@ try {
   await seed(cdp)
   await mouseClick(cdp, `[...document.querySelectorAll('.row span')].findLast((e) => e.textContent.trim() === 'Collection A')`)
   await sleep(1200)
-  for (const g of BUILT) if (GROUPS.has(g)) await { 2: group2, 3: group3, 4: group4, 5: group5, 6: group6, 7: group7 }[g](cdp)
+  for (const g of BUILT) if (GROUPS.has(g)) await { 2: group2, 3: group3, 4: group4, 5: group5, 6: group6, 7: group7, 8: group8 }[g](cdp)
   cdp.close()
 } catch (e) {
   item(0, 0, '—', 'the run reached its end', false, String(e?.stack ?? e))
