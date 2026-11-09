@@ -65,7 +65,7 @@ Every typed value is written by `Core/Properties/setProperty.ts` `setPropertyOp`
 | Reorder top-level Collections    | `Core/Nexus/reorder.ts` `setCollectionOrder`                                                          | `.nexus/state.json`, `order.collections`                                                               | The sidebar order matches                                  | 2762 ms      |
 | Lock a container's disclosure    | `Core/Nexus/mutate.ts` `setDisclosureLock` → `Core/Files/sidecar.ts` `patchSidecar`                   | The sidecar's `disclosure_locked`                                                                      | The container reads locked                                 | 2749 ms      |
 | Set a container's icon or banner | `Core/Pages/setIcon.ts` `setIconOp`, `Core/Pages/setBanner.ts` `setBannerOp`                          | The sidecar's `icon`, `banner`                                                                         | Both render                                                | not measured |
-| Set the view button              | `Core/Views/handlers.ts` `container:configure` → `Core/Views/containerConfig.ts` `setContainerConfig` | The sidecar's `view_button`                                                                            | The view button reads the same                             | not measured |
+| Set the view button              | `Core/Nexus/mutate.ts` `setViewButton` → `Core/Files/sidecar.ts` `patchSidecar`                       | The sidecar's `view_button`                                                                            | The view button reads the same                             | not measured |
 
 #### Schema
 

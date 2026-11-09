@@ -105,8 +105,8 @@ Everything about Pommora’s design — what it builds and how it’s built — 
 ├── // Glass         | • GlassControl • GlassPane • GlassSurface • GlassWindow
 ├── // Interactions  | • Drag, drop, reorder, keyboard, focus, scroll, and hover primitives
 ├── // Labels        | • Label & Chips
-├── // Menus         | • Menu surfaces, rows, anchors, and frame slides
-├── // Pickers       | • Shared Picker Primitives: Color • Calendar • Icon • Text
+├── // Menus         | • The menu base, surfaces, rows, anchors, and frame slides
+├── // Pickers       | • Shared Picker Primitives: Color • Calendar • Icon • Field
 ├── // Symbols       | • The icon roster, custom glyphs, file-type icons, and the mark
 ├── // Table         | • The shared table tokens and grid
 ├── // Theme         | • Colors, fills, ramps, fades, variables, typography, layers, and the caret

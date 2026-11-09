@@ -1,4 +1,4 @@
-// The jsdom seat every view suite mounts through: the act environment, pointer capture, and one render-and-flush of the real ViewHost.
+// The jsdom seat the view suites mount through: the act environment, pointer capture, and one render-and-flush of the real ViewHost.
 
 import { act, type ComponentProps, type ReactNode } from 'react'
 import { createRoot, type Root } from 'react-dom/client'

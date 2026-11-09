@@ -17,7 +17,7 @@ The operational layer for running, driving, and committing to the app; the Featu
 ### Driving Over CDP
 
 - **Live Edits Write to Disk:** The dev app opens the real Nexus, and any injected editor change autosaves to the page's `.md`. Drive a new throwaway page; screenshots are always safe. `window.nexus.*` is frozen and can't be stubbed.
-- **Clicks and Drags:** Synthetic clicks work on tabs, rows, and buttons; `PickerMenu` items need `el.click()` inside `Runtime.evaluate`. A drag passes `buttons: 1` on every move event.
+- **Clicks and Drags:** Synthetic clicks work on tabs, rows, and buttons; `MenuBase` items need `el.click()` inside `Runtime.evaluate`. A drag passes `buttons: 1` on every move event.
 - **Occluded Windows Stall:** A window behind another reports `hidden`, and rAF, `ResizeObserver`, transitions, and scroll timelines pause. Bring it forward (`osascript -e 'tell application "System Events" to set frontmost of (first process whose unix id is <pid>) to true'`, then `Page.bringToFront`) before measuring layout.
 
 ### Second Instances & Sync

@@ -239,7 +239,7 @@ The tile ring and grip, and the autocomplete pane's own width bounds.
 | --- | --- | --- |
 | Editing / Resizing Tile Ring | `--tile-border-color` | → accent-stroke / accent-stroke-hot · `.mdpm-embed-tile` states |
 | Embed Grip Top | `--grip-top` | `28px` · `.mdpm-embed-line` |
-| Autocomplete | `AC_BOUNDS` | fits its titles `180px`–`320px` wide until its width is resized, then `180px`–`480px`; the height ceiling opens at UIX's `PICKER_MAX_HEIGHT` (`240px`) and resizes from `120px` — the pane is a PickerMenu, which owns its radius |
+| Autocomplete | `AC_BOUNDS` | fits its titles `180px`–`320px` wide until its width is resized, then `180px`–`480px`; the height ceiling opens at UIX's `PANE_MAX_HEIGHT` (`240px`) and resizes from `120px` — the pane is a MenuBase, which owns its radius |
 
 ---
 
