@@ -1,20 +1,20 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
-  ask, boxOf, click, clicks, holds, hover, closeSettings, escapeAll, FM, inMain, labels, launch, menuByEvent, mintPageId, mouseAt, mouseClick, must, NEXUS,
-  openSettings, PANE_LAYER, phasedItem, ribbon, pickNative, popNative, pressKey, press, resizeBy, restore, settles, SETTINGS_BUTTON, shot, sleep, SWITCH, tally,
-  typeText, until,
+  activeTab, ask, boxOf, click, clicks, closePanel, holds, hover, closeSettings, escapeAll, FM, inMain, labels, launch, manageButton, manageRow, menuByEvent, mintPageId,
+  mouseAt, mouseClick, must, NEXUS, openPanel, openSettings, PANE_LAYER, phasedItem, ribbon, pickNative, popNative, pressKey, press, resizeBy, restore, settles,
+  SETTINGS_BUTTON, shot, sleep, SWITCH, tally, typeText, until,
 } from '../drive-harness.mjs'
 import { parse } from 'yaml'
 
 const PORT = 9423
-const BUILT = ['2', '3', '4', '5', '6', '7', '8', '9']
+const BUILT = ['2', '3', '4', '5', '6', '7', '8', '9', '10']
 const argv = process.argv.slice(2)
 const at = argv.indexOf('--landed')
 const LANDED = at >= 0 ? Number(argv[at + 1]) : NaN
 const GROUPS = new Set(argv.filter((a, i) => i !== at && i !== at + 1))
 if (!Number.isInteger(LANDED) || GROUPS.size === 0 || [...GROUPS].some((g) => !BUILT.includes(g))) {
-  console.error(`usage: node live-drive.mjs <group…> --landed <phase>   (groups ${BUILT.join(', ')}; 10 lands at its checkpoint; --landed 0 is the baseline)`)
+  console.error(`usage: node live-drive.mjs <group…> --landed <phase>   (groups ${BUILT.join(', ')}; --landed 0 is the baseline)`)
   process.exit(2)
 }
 
@@ -1940,6 +1940,401 @@ async function group9(cdp) {
   await shot(cdp, 'g9-end')
 }
 
+// ── Group 10 — One Lock per Row ─────────────────────────────────────────────
+
+/** The drag announcer `a11y.ts` mounts, emptied before a gesture so what it says next is that gesture's. */
+const ANNOUNCER = `[...document.querySelectorAll('[role=status][aria-live=assertive]')].at(-1)`
+const hush = (cdp) => cdp.evaluate(`(() => { const r = ${ANNOUNCER}; if (r) r.textContent = '' })()`)
+/** Whether each drawn element of a list names the drag gesture, a parked tab's inert copy left out: described by an element whose text says to press Space. */
+const describes = (cdp, list) => cdp.evaluate(`${list}.filter((e) => e.getClientRects().length && !e.closest('[inert]')).map((e) => { const by = e.getAttribute('aria-describedby'); return !!by && /press space/i.test(document.getElementById(by)?.textContent ?? '') })`)
+const none = (reads) => reads.length > 0 && reads.every((r) => !r)
+const all = (reads) => reads.length > 0 && reads.every((r) => r)
+/** What's held: a line row's drag source or a sortable's pressed state, whether a drop line draws, and what the announcer said. */
+const HELD = `(() => ({ held: !!document.querySelector('[data-drag-source], [aria-roledescription=sortable][aria-pressed=true]'), line: [...document.querySelectorAll('.drop-line')].some((l) => l.getClientRects().length), said: ${ANNOUNCER}?.textContent ?? '' }))()`
+/** Space on a focused element: whether it lifted, cancelled by Escape when it did, the focus then let go so no list keeps it past a view change. */
+async function spaceLift(cdp, expr) {
+  await hush(cdp)
+  await cdp.evaluate(`(${expr}).focus()`)
+  await pressKey(cdp, ' ')
+  const read = await cdp.evaluate(HELD)
+  if (read.held) await pressKey(cdp, 'Escape')
+  await cdp.evaluate('document.activeElement?.blur()')
+  return { lifted: read.held && read.said.startsWith('Picked up'), said: read.said }
+}
+/** A press on `from` carried onto `to`'s top edge: what's held there, then Escape before the release unless `drop`. */
+async function pointerLift(cdp, from, to, { drop = false } = {}) {
+  await hush(cdp)
+  const a = await boxOf(cdp, from)
+  const b = await boxOf(cdp, to)
+  let read
+  await dragPoints(cdp, a, { x: b.x, y: b.top + 3 }, {
+    held: async () => {
+      await sleep(300)
+      read = await cdp.evaluate(HELD)
+      if (!drop) await pressKey(cdp, 'Escape')
+    },
+    settle: 600,
+  })
+  return { ...read, lifted: read.held && read.said.startsWith('Picked up') }
+}
+const ROWS = `[...document.querySelectorAll('.data-row[data-rid]')]`
+/** The tile's view pills, the ribbon's sortable buttons left out. */
+const TILE_PILLS = `${PILLS}.filter((b) => !b.closest('.sidebar-ribbon'))`
+const tableHeads = `[...document.querySelectorAll('${DRIFT.shell} .group-band-head')]`
+const cardsHeads = `[...document.querySelectorAll('.cards-view .group-band-head')]`
+const CARDS = `[...document.querySelectorAll('.cards-view [data-rid]')]`
+const zoneOf = (scope) => `[...document.querySelectorAll('${scope} .line-zone')].find((z) => z.getClientRects().length && !z.closest('[inert]'))`
+/** A page's Table row or card in the shown view, never a parked tab's or a tile's copy of it. */
+const liveRow = (title) => visible(`[...document.querySelectorAll('.data-row[data-rid="${PAGES[title].id}"]')]`)
+const liveCard = (title) => visible(`[...document.querySelectorAll('.cards-view [data-rid="${PAGES[title].id}"]')]`)
+/** The views dropdown's rows, drawn while it's open. */
+const DROPDOWN_ROWS = `[...document.querySelectorAll('[data-line-row]')].filter((r) => !r.closest('nav, ${DRIFT.shell}, .cards-view, .nav-view'))`
+const dropdownRow = (name) => `${DROPDOWN_ROWS}.find((r) => r.getClientRects().length && !r.closest('[inert]') && r.textContent.trim() === ${JSON.stringify(name)})`
+const paneLine = (label) => `[...(${PANE_ZONE})?.querySelectorAll('[data-line-row]') ?? []].find((r) => r.getClientRects().length && !r.closest('[inert]') && r.textContent.trim() === ${JSON.stringify(label)})`
+const sideLine = (title) => `(${sideRow(title)})?.closest('[data-line-row]')`
+const NAV_ROWS = `[...document.querySelectorAll('.nav-view [data-line-row]')]`
+const navRow = (title) => `${NAV_ROWS}.find((r) => r.getClientRects().length && !r.closest('[inert]') && r.textContent.startsWith(${JSON.stringify(title)}))`
+const tabTitles = (cdp) => cdp.evaluate(`[...document.querySelectorAll('[role=tab]')].map((t) => t.getAttribute('title')).filter(Boolean)`)
+const tabEl = (title) => `[...document.querySelectorAll('[role=tab]')].find((t) => t.getAttribute('title') === ${JSON.stringify(title)})`
+const shownCanvas = `[...document.querySelectorAll('canvas')].find((e) => e.getClientRects().length > 0 && e.getBoundingClientRect().left >= 0)`
+/** A Matrix node's anchor, drawn once the pointer rests on the node: the label's title span leads back to it. */
+const matrixAnchor = (title) => `[...(${shownCanvas})?.parentElement.querySelectorAll('span') ?? []].find((t) => t.textContent === ${JSON.stringify(title)})?.parentElement.parentElement.previousElementSibling`
+/** A key pressed on a focused element. */
+async function focusThen(cdp, expr, key) {
+  await cdp.evaluate(`(${expr}).focus()`)
+  await pressKey(cdp, key)
+}
+async function toCollection(cdp, name) {
+  await closeAll(cdp)
+  await mouseClick(cdp, `[...document.querySelectorAll('.row span')].findLast((e) => e.textContent.trim() === ${JSON.stringify(name)})`)
+  await until(`${name}'s view`, async () => cdp.evaluate(`!!${VIEWS_BUTTON}`))
+  await sleep(800)
+}
+/** Where the drop line stands against the lead it's drawn over, held over `to` while `from` is dragged, cancelled before the release. */
+async function lineAgainst(cdp, from, to, lead) {
+  let read
+  const a = await boxOf(cdp, from)
+  const b = await boxOf(cdp, to)
+  await dragPoints(cdp, a, { x: b.x, y: b.top + 3 }, {
+    held: async () => {
+      await sleep(300)
+      read = await cdp.evaluate(`(() => { const l = [...document.querySelectorAll('.drop-line')].find((e) => e.getClientRects().length && !e.closest('[inert]')); const c = (${lead}); if (!l || !c) return null; return { line: l.getBoundingClientRect().left, lead: c.getBoundingClientRect().left + parseFloat(getComputedStyle(c).paddingLeft) } })()`)
+      await pressKey(cdp, 'Escape')
+    },
+    settle: 600,
+  })
+  return read
+}
+
+async function group10(cdp) {
+  const g = '10'
+  await toCollection(cdp, COLLECTION)
+
+  // Regression: a movable Table row and band head still name the gesture and lift by Space; a row moves by keyboard and opens on Enter.
+  const V10 = tableView(vid('g10table'), 'VD Movable')
+  await showView(cdp, V10)
+  const movable = { rows: await describes(cdp, ROWS), heads: await describes(cdp, tableHeads), row: await spaceLift(cdp, liveRow('Page B')), head: await spaceLift(cdp, head('Set Beta')) }
+  reg(g, 'a movable Table row and Set band head still name the gesture and lift by Space', all(movable.rows) && all(movable.heads) && movable.row.lifted && movable.head.lifted, show(movable))
+  await cdp.evaluate(`(${liveRow('Page C')}).focus()`)
+  await pressKey(cdp, ' ')
+  await pressKey(cdp, 'ArrowUp')
+  await pressKey(cdp, 'Enter')
+  const moved = await settles(async () => { const o = (viewOnDisk(V10.id)?.manual_order ?? []).map(titleOf); return o.indexOf('Page C') >= 0 && o.indexOf('Page C') < o.indexOf('Page B') })
+  const movedDrawn = only(await shownTitles(cdp), ['Page A', 'Page B', 'Page C'])
+  reg(g, 'a movable row still lifts by Space, moves by ArrowUp, and drops by Enter, saving manual_order', moved && same(movedDrawn, ['Page A', 'Page C', 'Page B']), show({ disk: (viewOnDisk(V10.id)?.manual_order ?? []).map(titleOf), movedDrawn }))
+
+  // R P10 · the fold's one indent source: a band's drop line and a row's at the same depth stand at one inset past their lead.
+  const bandLine = await lineAgainst(cdp, head('Sub-Set B'), head('Sub-Set A'), head('Sub-Set A'))
+  await hover(cdp, liveRow('Page B'), 300)
+  const grip = `(${liveRow('Page B')}).querySelector('.row-grip')`
+  const rowLine = await lineAgainst(cdp, grip, liveRow('Page A'), `(${liveRow('Page A')}).querySelector('.cell-lead')`)
+  await hover(cdp, liveRow('Page B'), 300)
+  const deepLine = await lineAgainst(cdp, grip, liveRow('Alpha 1'), `(${liveRow('Alpha 1')}).querySelector('.cell-lead')`)
+  const lines = { bandLine, rowLine, deepLine }
+  reg(g, 'a band\'s drop line and a row\'s at the same depth stand at one indent, one inset past each lead, and a row a level deeper draws its line one step right', !!bandLine && !!rowLine && !!deepLine && near(bandLine.line, rowLine.line) && near(bandLine.line - bandLine.lead, rowLine.line - rowLine.lead) && near(deepLine.line - rowLine.line, STEP), show(lines))
+  await focusThen(cdp, liveRow('Page A'), 'Enter')
+  const entered = await settles(async () => (await activeTab(cdp)) === 'Page A', 3000)
+  reg(g, 'Enter on a movable Table row still opens its page', entered, show(await activeTab(cdp)))
+  await toCollection(cdp, COLLECTION)
+
+  // BC24 · a Table sorted by two keys draws immovable rows beside movable band heads.
+  await mutate(cdp, { op: 'setProperty', path: PAGES['Page A'].path, propertyId: DUE.id, value: { kind: 'dateTime', value: '2026-10-22' } })
+  await mutate(cdp, { op: 'setProperty', path: PAGES['Page B'].path, propertyId: DUE.id, value: { kind: 'dateTime', value: '2026-11-03' } })
+  const V10S = tableView(vid('g10sorted'), 'VD Two Sorts', { sort: [{ property_id: STAGE.id, direction: 'ascending' }, { property_id: DUE.id, direction: 'ascending' }] })
+  await showView(cdp, V10S)
+  const sorted = { rows: await describes(cdp, ROWS), heads: await describes(cdp, tableHeads) }
+  bc(g, 24, 'I-059', 'a Table sorted by two keys names no drag gesture on its rows while its band heads still do', none(sorted.rows) && all(sorted.heads), show(sorted))
+  await hover(cdp, liveRow('Page C'), 300)
+  const sortedDrag = await pointerLift(cdp, `(${liveRow('Page C')}).querySelector('.row-grip')`, liveRow('Page A'), { drop: true })
+  const sortedKept = (await holds(async () => viewOnDisk(V10S.id)?.manual_order === undefined, 1200)) && same(frontOf(PAGES['Page C'].path)[STAGE.key], ['Todo'])
+  const sortedSpace = await spaceLift(cdp, liveRow('Page B'))
+  const sortedOpened = await settles(async () => (await activeTab(cdp)) === 'Page B', 3000)
+  reg(g, 'a two-key sorted Table\'s row draws no drop line under a drag and writes nothing, and Space opens its page rather than lifting it', !sortedDrag.line && sortedKept && !sortedSpace.lifted && sortedOpened, show({ sortedDrag, sortedKept, sortedSpace, tab: await activeTab(cdp) }))
+  await toCollection(cdp, COLLECTION)
+
+  // BC24 · a Date band head can't be dragged, so it names no gesture; Space folds it as it did.
+  const V10D = tableView(vid('g10dates'), 'VD Dates', { group: { kind: 'property', property_id: DUE.id } })
+  await showView(cdp, V10D)
+  const dateHeads = await describes(cdp, tableHeads)
+  bc(g, 24, 'I-059', 'a Date band head names no drag gesture', none(dateHeads), show({ dateHeads, labels: await headLabels(cdp) }))
+  const dateHead = `${tableHeads}.filter((h) => h.getClientRects().length)[0]`
+  const dateLabel = await cdp.evaluate(`(${dateHead}).getAttribute('aria-label')`)
+  const dated = head(dateLabel)
+  const dateSpace = { before: await expanded(cdp, dated), lift: await spaceLift(cdp, dated) }
+  dateSpace.folded = await expanded(cdp, dated)
+  await spaceLift(cdp, dated)
+  dateSpace.unfolded = await expanded(cdp, dated)
+  reg(g, 'Space on a Date band head folds it and Space again unfolds it, lifting nothing', dateSpace.before === 'true' && !dateSpace.lift.lifted && dateSpace.folded === 'false' && dateSpace.unfolded === 'true', show(dateSpace))
+
+  // BC24 · a searching Table's rows and heads stay put; its band list keeps the Tab stop it always had.
+  const V10Q = tableView(vid('g10search'), 'VD Search Rows')
+  await showView(cdp, V10Q)
+  await search(cdp, '1')
+  const searching = { rows: await describes(cdp, ROWS), heads: await describes(cdp, tableHeads) }
+  bc(g, 24, 'I-059', 'a searching Table\'s rows and band heads name no drag gesture', none(searching.rows) && none(searching.heads), show(searching))
+  const tableStop = await cdp.evaluate(`(${zoneOf(DRIFT.shell)})?.tabIndex ?? null`)
+  const searchHead = { space: await spaceLift(cdp, head('Sub-Set B')), drag: await pointerLift(cdp, head('Sub-Set B'), head('Sub-Set A'), { drop: true }) }
+  await hover(cdp, liveRow('Beta 1'), 300)
+  const searchRow = await pointerLift(cdp, `(${liveRow('Beta 1')}).querySelector('.row-grip')`, liveRow('Alpha 1'), { drop: true })
+  const searchKept = (await holds(async () => viewOnDisk(V10Q.id)?.group_order === undefined && frontOf(PAGES['Beta 1'].path)[STAGE.key] !== undefined, 1200)) && readRel(PAGES['Beta 1'].path).length > 0
+  reg(g, 'a searching Table\'s band list keeps its Tab stop, its band head lifts by neither Space nor drag, and a row dragged onto another band draws no line and moves nothing', tableStop === 0 && !searchHead.space.lifted && !searchHead.drag.held && !searchRow.line && searchKept, show({ tableStop, searchHead, searchRow, searchKept }))
+  await search(cdp, '')
+
+  // BC24 · a searching Cards view's band list keeps its Tab stop and its heads name no gesture.
+  const V10QC = cardsView(vid('g10searchcards'), 'VD Search Cards', { set_cards: false })
+  await showView(cdp, V10QC)
+  await search(cdp, 'a')
+  const cardsStop = await cdp.evaluate(`(${zoneOf('.cards-view')})?.tabIndex ?? null`)
+  bc(g, 24, 'I-059', 'a searching Cards view\'s band list keeps its Tab stop', cardsStop === 0, show(cardsStop))
+  const cardsSearchHeads = await describes(cdp, cardsHeads)
+  bc(g, 24, 'I-059', 'a searching Cards view\'s band heads name no drag gesture', none(cardsSearchHeads), show(cardsSearchHeads))
+  const cardsSearch = { space: await spaceLift(cdp, head('Set Beta')), drag: await pointerLift(cdp, head('Set Beta'), head('Set Alpha'), { drop: true }) }
+  reg(g, 'a searching Cards band head lifts by neither Space nor drag', !cardsSearch.space.lifted && !cardsSearch.drag.held && (await holds(async () => viewOnDisk(V10QC.id)?.group_order === undefined, 1000)), show(cardsSearch))
+  await search(cdp, '')
+
+  // F10 · displace items take the per-item lock: Set cards under a search and cards under two sorts name no gesture and lift by no Space.
+  const V10QS = cardsView(vid('g10searchsets'), 'VD Search Set Cards', { set_cards: true })
+  await showView(cdp, V10QS)
+  await search(cdp, '1')
+  const SET_CARDS = `[...document.querySelectorAll('.cards-view .set-cards-row [aria-roledescription=sortable]')].filter((e) => !e.closest('[inert]'))`
+  const setCards = { rows: await describes(cdp, SET_CARDS), space: await spaceLift(cdp, `${SET_CARDS}.find((e) => e.getClientRects().length && !e.closest('[inert]'))`) }
+  fold(g, 'displace', 'a searching Cards view\'s Set cards name no drag gesture and lift by no Space', none(setCards.rows) && !setCards.space.lifted, show(setCards))
+  // A Set card that doesn't lift opens its Set on Space, as a press does; one that lifts leaves the search standing.
+  if (await cdp.evaluate(`!!document.querySelector('.detail-title-search')`)) await search(cdp, '')
+  await toCollection(cdp, COLLECTION)
+  const V10SC = cardsView(vid('g10sortedcards'), 'VD Two Sorts Cards', { set_cards: false, sort: [{ property_id: STAGE.id, direction: 'ascending' }, { property_id: DUE.id, direction: 'ascending' }] })
+  await showView(cdp, V10SC)
+  const sortedCards = { rows: await describes(cdp, CARDS), space: await spaceLift(cdp, liveCard('Page B')) }
+  fold(g, 'displace', 'a Cards view sorted by two keys names no drag gesture on its cards and lifts none by Space', none(sortedCards.rows) && !sortedCards.space.lifted, show(sortedCards))
+  await toCollection(cdp, COLLECTION)
+
+  // F10 · a searching ungrouped Cards view draws its band list only around bands, so no empty Tab stop.
+  const V10QF = cardsView(vid('g10searchflat'), 'VD Search Flat', { set_cards: false, group: { kind: 'flat' } })
+  await showView(cdp, V10QF)
+  const EMPTY_STOPS = `[...document.querySelectorAll('.cards-view .line-zone')].filter((z) => z.getClientRects().length && !z.closest('[inert]') && z.tabIndex === 0 && !z.querySelector('.group-band-head')).length`
+  const flatStops = { unsearched: await cdp.evaluate(EMPTY_STOPS) }
+  await search(cdp, 'Page')
+  flatStops.searching = await cdp.evaluate(EMPTY_STOPS)
+  flatStops.cards = (await cardTitles(cdp)).length
+  await search(cdp, '')
+  fold(g, 'flat', 'a searching ungrouped Cards view draws no empty band-list Tab stop', flatStops.cards > 0 && flatStops.searching === 0, show(flatStops))
+
+  // Regression: cards and Cards band heads still name the gesture and lift by Space and by drag.
+  const V10C = cardsView(vid('g10cards'), 'VD Cards Lift', { set_cards: false })
+  await showView(cdp, V10C)
+  const cardsMovable = { cards: await describes(cdp, CARDS), heads: await describes(cdp, cardsHeads), cardSpace: await spaceLift(cdp, liveCard('Page B')), headSpace: await spaceLift(cdp, head('Set Beta')), cardDrag: await pointerLift(cdp, liveCard('Page C'), liveCard('Page A')), headDrag: await pointerLift(cdp, head('Set Beta'), head('Set Alpha')) }
+  const cardsUntouched = await holds(async () => viewOnDisk(V10C.id)?.manual_order === undefined && viewOnDisk(V10C.id)?.group_order === undefined, 1000)
+  reg(g, 'a card and a Cards band head still name the gesture and lift by Space and by drag', all(cardsMovable.cards) && all(cardsMovable.heads) && cardsMovable.cardSpace.lifted && cardsMovable.headSpace.lifted && cardsMovable.cardDrag.lifted && cardsMovable.headDrag.lifted && cardsMovable.headDrag.line && cardsUntouched, show(cardsMovable))
+
+  // Regression: the Grouping pane's option and Set lists still lift; the fold's hide controls still hide.
+  const V10G = tableView(vid('g10options'), 'VD Option Lists', byStage)
+  await showView(cdp, V10G)
+  await door(cdp, 'settings', 'Group')
+  await until('the option list', async () => cdp.evaluate(`!!${paneLine('Done')}`))
+  const options = { rows: await describes(cdp, `[...(${PANE_ZONE}).querySelectorAll('[data-line-row]')]`), space: await spaceLift(cdp, paneLine('Doing')), drag: await pointerLift(cdp, paneLine('Done'), paneLine('Todo')) }
+  reg(g, 'the Grouping pane\'s option rows still name the gesture and lift by Space and by drag', all(options.rows) && options.space.lifted && options.drag.lifted && options.drag.line && (await holds(async () => viewOnDisk(V10G.id)?.group?.order === undefined, 800)), show(options))
+  const hidden = (id, part) => (viewOnDisk(id)?.hidden_groups ?? []).some((k) => k.includes(part))
+  await mouseClick(cdp, ctl('Hide Done'))
+  const optionHid = await settles(async () => hidden(V10G.id, 'opt_vd_done'))
+  await mouseClick(cdp, ctl('Show Done'))
+  const optionShown = await settles(async () => !hidden(V10G.id, 'opt_vd_done'))
+  reg(g, 'the Grouping pane\'s option eye hides Done and shows it again', optionHid && optionShown, show(viewOnDisk(V10G.id)?.hidden_groups))
+  const V10L = tableView(vid('g10setlist'), 'VD Set List')
+  await showView(cdp, V10L)
+  await door(cdp, 'settings', 'Group')
+  await until('the Set list', async () => cdp.evaluate(`!!${paneRow('Set Beta')}`))
+  const setList = { rows: await describes(cdp, `[...(${PANE_ZONE}).querySelectorAll('[data-line-row]')]`), space: await spaceLift(cdp, paneRow('Set Beta')) }
+  reg(g, 'the Grouping pane\'s Set rows still name the gesture and lift by Space', all(setList.rows) && setList.space.lifted, show(setList))
+  await mouseClick(cdp, ctl('Hide Set Beta'))
+  const setHid = await settles(async () => hidden(V10L.id, IDS.beta))
+  await mouseClick(cdp, ctl('Show Set Beta'))
+  const setShown = await settles(async () => !hidden(V10L.id, IDS.beta))
+  reg(g, 'the Grouping pane\'s Set eye hides Set Beta and shows it again', setHid && setShown, show(viewOnDisk(V10L.id)?.hidden_groups))
+  await closeAll(cdp)
+
+  // The views dropdown: two views or more lift and switch; one view stays put.
+  await openDropdown(cdp, V10.name)
+  const listed = { rows: await describes(cdp, DROPDOWN_ROWS), space: await spaceLift(cdp, dropdownRow(V10.name)) }
+  await focusThen(cdp, dropdownRow(V10.name), 'Enter')
+  listed.switched = await settles(async () => (await cdp.evaluate(`${VIEWS_BUTTON}.textContent.trim()`)) === V10.name, 3000)
+  reg(g, 'with two views or more, every dropdown row names the gesture, lifts by Space, and switches the view on Enter', all(listed.rows) && listed.space.lifted && listed.switched, show(listed))
+  await toCollection(cdp, 'Collection B')
+  await mouseClick(cdp, VIEWS_BUTTON)
+  await until('Collection B\'s dropdown', async () => cdp.evaluate(`${DROPDOWN_ROWS}.some((r) => r.getClientRects().length && !r.closest('[inert]'))`))
+  const lone = await describes(cdp, DROPDOWN_ROWS)
+  bc(g, 24, 'I-059', 'the views list\'s one row names no drag gesture', lone.length === 1 && none(lone), show(lone))
+  const loneRow = `${DROPDOWN_ROWS}.find((r) => r.getClientRects().length)`
+  const loneLift = { space: await spaceLift(cdp, loneRow) }
+  reg(g, 'the views list\'s one row lifts by neither Space nor drag', !loneLift.space.lifted && (await cdp.evaluate(`!(${loneRow}).hasAttribute('data-drag-source')`)), show(loneLift))
+  await closeAll(cdp)
+
+  // BC24 · the Trash's and Archive's rows can't be dragged and name no gesture; a row's Space toggles its check.
+  await mutate(cdp, { op: 'createPage', id: mintPageId(), parentPath: `${COLLECTION}/Set Alpha`, name: 'VD Binned', seeds: {} })
+  await mutate(cdp, { op: 'delete', path: `${COLLECTION}/Set Alpha/VD Binned.md`, kind: 'page' })
+  await mutate(cdp, { op: 'createContainer', id: containerId(), parentPath: COLLECTION, kind: 'set', name: 'VD Bin Folder' })
+  await mutate(cdp, { op: 'createPage', id: mintPageId(), parentPath: `${COLLECTION}/VD Bin Folder`, name: 'VD Bin Inside', seeds: {} })
+  await mutate(cdp, { op: 'delete', path: `${COLLECTION}/VD Bin Folder`, kind: 'set' })
+  await mutate(cdp, { op: 'createPage', id: mintPageId(), parentPath: `${COLLECTION}/Set Alpha`, name: 'VD Shelved', seeds: {} })
+  await mutate(cdp, { op: 'archive', path: `${COLLECTION}/Set Alpha/VD Shelved.md`, kind: 'page' })
+  await openSettings(cdp, 'Trash')
+  await until('the trashed folder', async () => cdp.evaluate(`!!${bundleRow('.trash-frame', 'VD Bin Folder')}`))
+  await sleep(500)
+  const bundles = { trash: await describes(cdp, `[...document.querySelectorAll('.trash-frame .data-row')]`) }
+  const binFolder = bundleRow('.trash-frame', 'VD Bin Folder')
+  const checked = () => cdp.evaluate(`(${binFolder}).querySelector('[role=checkbox]').getAttribute('aria-checked')`)
+  const binSpace = { before: await checked(), lift: await spaceLift(cdp, binFolder) }
+  binSpace.after = await checked()
+  await spaceLift(cdp, binFolder)
+  binSpace.drag = await pointerLift(cdp, binFolder, bundleRow('.trash-frame', 'VD Binned'), { drop: true })
+  await closeSettings(cdp)
+  await toCollection(cdp, COLLECTION)
+  await openDropdown(cdp, V10.name)
+  await pressIn(cdp, btn('Archive'))
+  await until('the archived page', async () => cdp.evaluate(`!!${bundleRow('.bundle-rows', 'VD Shelved')}`))
+  await closeAll(cdp)
+  bundles.archive = await describes(cdp, `[...document.querySelectorAll('.bundle-rows .data-row')]`)
+  bc(g, 24, 'I-059', 'the Trash\'s and Archive\'s rows name no drag gesture', none(bundles.trash) && none(bundles.archive), show(bundles))
+  reg(g, 'Space on a Trash row toggles its check, and the row lifts by neither Space nor drag', binSpace.before !== null && binSpace.after !== binSpace.before && !binSpace.lift.lifted && !binSpace.drag.held, show(binSpace))
+
+  // Regression: the sidebar's reorderable rows still name the gesture and lift by Space and by drag.
+  const collection = sideRow(COLLECTION)
+  if (!(await cdp.evaluate(`!!${sideRow('Set Alpha')}`))) await mouseClick(cdp, chevronOf(collection))
+  await until('the sidebar\'s Sets', async () => cdp.evaluate(`!!${sideRow('Set Beta')}`), 3000)
+  const sidebar = { rows: await describes(cdp, `[...document.querySelectorAll('nav [data-line-row]')]`), space: await spaceLift(cdp, sideLine('Set Beta')), drag: await pointerLift(cdp, sideLine('Set Beta'), sideLine('Set Alpha')) }
+  await mouseClick(cdp, chevronOf(collection))
+  reg(g, 'the sidebar\'s reorderable rows still name the gesture and lift by Space and by drag', all(sidebar.rows) && sidebar.space.lifted && sidebar.drag.lifted && sidebar.drag.line, show(sidebar))
+
+  // The nav view: Recents reorder and name the gesture; a search's results stay put, name none, and still carry onto the tab bar.
+  await mouseClick(cdp, `[...document.querySelectorAll('[aria-label="New Tab"]')].find((e) => e.getClientRects().length && !e.closest('[inert]'))`)
+  await until('the nav view', async () => cdp.evaluate(`${NAV_ROWS}.some((r) => r.getClientRects().length && !r.closest('[inert]'))`))
+  await sleep(500)
+  const recents = { rows: await describes(cdp, NAV_ROWS), space: await spaceLift(cdp, `${NAV_ROWS}.find((r) => r.getClientRects().length)`) }
+  reg(g, 'the nav view\'s Recents rows, which reorder, still name the gesture and lift by Space', all(recents.rows) && recents.space.lifted, show(recents))
+  await cdp.evaluate(`[...document.querySelectorAll('input.nav-view-search')].find((e) => e.getClientRects().length && !e.closest('[inert]')).focus()`)
+  await typeText(cdp, 'Page')
+  await until('the search\'s results', async () => cdp.evaluate(`!!${navRow('Page A')}`))
+  await sleep(400)
+  const results = await describes(cdp, NAV_ROWS)
+  bc(g, 24, 'I-059', 'a nav search\'s result rows name no drag gesture', none(results), show(results))
+  const before = await tabTitles(cdp)
+  const firstTab = await boxOf(cdp, `[...document.querySelectorAll('[role=tab]')].find((t) => t.getAttribute('title'))`)
+  await hush(cdp)
+  const from = await boxOf(cdp, navRow('Page A'))
+  let carried
+  await dragPoints(cdp, from, { x: firstTab.right + 20, y: firstTab.y }, { steps: 14, held: async () => { await sleep(300); carried = await cdp.evaluate(HELD) } })
+  const opened = await settles(async () => (await tabTitles(cdp)).filter((t) => t === 'Page A').length > before.filter((t) => t === 'Page A').length, 3000)
+  reg(g, 'a nav search result still carries onto the tab bar by pointer, opening its tab', carried?.held && !carried.line && opened, show({ carried, before, after: await tabTitles(cdp) }))
+  const GALLERY = `[...document.querySelectorAll('.nav-view [aria-roledescription=sortable]')]`
+  await mouseClick(cdp, `[...document.querySelectorAll('button[title="Switch to Gallery"]')].find((e) => e.getClientRects().length && !e.closest('[inert]'))`)
+  await until('the gallery\'s results', async () => cdp.evaluate(`${GALLERY}.some((e) => e.getClientRects().length && !e.closest('[inert]'))`), 3000).catch(() => {})
+  const galleryTab = await activeTab(cdp)
+  const gallery = { rows: await describes(cdp, GALLERY), space: await spaceLift(cdp, `${GALLERY}.find((e) => e.getClientRects().length && !e.closest('[inert]'))`) }
+  fold(g, 'displace', 'a nav search\'s gallery results name no drag gesture and lift by no Space', none(gallery.rows) && !gallery.space.lifted, show(gallery))
+  if ((await activeTab(cdp)) !== galleryTab || !(await cdp.evaluate(`!!document.querySelector('button[title="Switch to List"]')`))) {
+    await mouseClick(cdp, `[...document.querySelectorAll('[aria-label="New Tab"]')].find((e) => e.getClientRects().length && !e.closest('[inert]'))`)
+    await sleep(600)
+  }
+  await mouseClick(cdp, `[...document.querySelectorAll('button[title="Switch to List"]')].find((e) => e.getClientRects().length && !e.closest('[inert]'))`)
+  await until('the list\'s results', async () => cdp.evaluate(`!!${navRow('Page B')}`), 3000).catch(async () => {
+    await cdp.evaluate(`[...document.querySelectorAll('input.nav-view-search')].find((e) => e.getClientRects().length && !e.closest('[inert]')).focus()`)
+    await typeText(cdp, 'Page')
+    await until('the list\'s results again', async () => cdp.evaluate(`!!${navRow('Page B')}`))
+  })
+  const resultSpace = await spaceLift(cdp, navRow('Page B'))
+  const resultOpened = await settles(async () => (await activeTab(cdp)) === 'Page B', 3000)
+  reg(g, 'Space on a nav search result opens it rather than lifting it', !resultSpace.lifted && resultOpened, show({ resultSpace, tab: await activeTab(cdp) }))
+
+  // BC24 · the alias list freezes whole while drafting or renaming: a row in a disabled zone names no gesture and lifts by no drag.
+  for (const alias of ['vd-one', 'vd-two']) await mutate(cdp, { op: 'editAliases', path: PAGES['Page B'].path, edit: { op: 'add', alias } })
+  await openPanel(cdp)
+  await until('the Aliases row', async () => cdp.evaluate(`!!${manageRow('Aliases')}`))
+  await mouseClick(cdp, manageButton('Aliases'))
+  const MANAGE = `document.querySelector('[data-picker-portal] [aria-label="Add alias"]')?.closest('[data-picker-portal]')`
+  const ALIASES = `[...((${MANAGE})?.querySelectorAll('[data-line-row]') ?? [])]`
+  const ALIAS_FIELD = `(${MANAGE})?.querySelector('input[aria-label="Alias"]')`
+  await until('the alias list', async () => cdp.evaluate(`${ALIASES}.length === 2`))
+  const aliasRow = (name) => `${ALIASES}.find((r) => r.textContent.trim() === ${JSON.stringify(name)})`
+  const aliases = { rows: await describes(cdp, ALIASES), space: await spaceLift(cdp, aliasRow('vd-two')) }
+  reg(g, 'the alias list\'s rows still name the gesture and lift by Space', all(aliases.rows) && aliases.space.lifted, show(aliases))
+  const frozen = async () => {
+    const open = await cdp.evaluate(`!!${ALIAS_FIELD}`)
+    const rows = await describes(cdp, ALIASES)
+    const drag = await pointerLift(cdp, `${ALIASES}[1]`, `${ALIASES}[0]`)
+    return { open, rows, drag }
+  }
+  await mouseClick(cdp, `(${MANAGE}).querySelector('[aria-label="Add alias"]')`)
+  await until('the alias draft', async () => cdp.evaluate(`!!${ALIAS_FIELD}`), 3000).catch(() => {})
+  const drafting = await frozen()
+  await escapeAll(cdp)
+  if (!(await cdp.evaluate(`!!${MANAGE}`))) await mouseClick(cdp, manageButton('Aliases'))
+  await until('the alias list again', async () => cdp.evaluate(`${ALIASES}.length === 2 && !${ALIAS_FIELD}`), 3000).catch(() => {})
+  await popNative(cdp, await boxOf(cdp, aliasRow('vd-one')))
+  await pickNative(['Rename'])
+  await until('the alias rename', async () => cdp.evaluate(`!!${ALIAS_FIELD}`), 3000).catch(() => {})
+  const renaming = await frozen()
+  const still = (r) => r.open && none(r.rows) && !r.drag.held
+  bc(g, 24, 'I-059', 'the alias list freezes while drafting and renaming, its rows naming no drag gesture and lifting by no drag', still(drafting) && still(renaming), show({ drafting, renaming }))
+  await closeAll(cdp)
+  await closePanel(cdp)
+
+  // A tile's pills: unlocked they lift; locked, a displace item in a disabled zone names no gesture and Space switches the view.
+  await showTile(cdp, [TA, TB])
+  const pills = { rows: await describes(cdp, TILE_PILLS), space: await spaceLift(cdp, pill(TB.name)) }
+  reg(g, 'an unlocked tile\'s pills still name the gesture and lift by Space', all(pills.rows) && pills.space.lifted, show(pills))
+  await showTile(cdp, [TA, TB], { locked: true })
+  const lockedPills = await describes(cdp, TILE_PILLS)
+  bc(g, 24, 'I-059', 'a locked tile\'s pills name no drag gesture', none(lockedPills), show(lockedPills))
+  const lockedSpace = await spaceLift(cdp, pill(TB.name))
+  reg(g, 'Space on a locked tile\'s pill switches the tile\'s view rather than lifting it', !lockedSpace.lifted && (await settles(async () => tileOnDisk().active === 1, 3000)), show({ lockedSpace, active: tileOnDisk().active }))
+
+  // F10 · a tile's lone view pill stays put: no gesture named and no lift, the tile still drawing its view.
+  await showTile(cdp, [TA])
+  const lonePill = { rows: await describes(cdp, TILE_PILLS), space: await spaceLift(cdp, pill(TA.name)) }
+  const loneAt = await boxOf(cdp, pill(TA.name))
+  await hush(cdp)
+  await dragPoints(cdp, loneAt, { x: loneAt.x + 60, y: loneAt.y }, { held: async () => { await sleep(300); lonePill.drag = await cdp.evaluate(HELD); await pressKey(cdp, 'Escape') }, settle: 600 })
+  lonePill.drawn = await cdp.evaluate(`!!(${TILE_BODY})?.querySelector('${DRIFT.shell}')`)
+  fold(g, 'pill', 'a tile\'s lone view pill names no drag gesture and lifts by neither Space nor drag', lonePill.rows.length === 1 && none(lonePill.rows) && !lonePill.space.lifted && !lonePill.drag?.held && lonePill.drawn, show(lonePill))
+
+  // BC24 · a locked Matrix lends its node's label a row handle that carries out but never reorders, so it names no gesture.
+  await must('the Matrix locked', ask(cdp, 'matrix:write', { display: { locked: true } }))
+  await mouseClick(cdp, ribbon('Matrix'))
+  await until('the Matrix', async () => cdp.evaluate(`!!${shownCanvas}`))
+  await sleep(2500)
+  const stage = await boxOf(cdp, shownCanvas)
+  let found = false
+  for (let y = stage.top + 12; y < stage.bottom && !found; y += 24)
+    for (let x = stage.left + 12; x < stage.right && !found; x += 24) {
+      await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y, button: 'none' })
+      found = await cdp.evaluate(`!!${matrixAnchor('Page A')}`)
+    }
+  const label = found && { handle: await cdp.evaluate(`(${matrixAnchor('Page A')}).hasAttribute('data-line-row')`), describes: (await describes(cdp, `[${matrixAnchor('Page A')}]`))[0] ?? null }
+  bc(g, 24, 'I-059', 'a locked Matrix\'s node label names no drag gesture', !!label && label.handle && label.describes === false, show({ found, label }))
+  await must('the Matrix unlocked', ask(cdp, 'matrix:write', { display: { locked: false } }))
+  await toCollection(cdp, COLLECTION)
+  await shot(cdp, 'g10-end')
+}
+
 // ── The run ─────────────────────────────────────────────────────────────────
 
 let cdp
@@ -1948,7 +2343,7 @@ try {
   await seed(cdp)
   await mouseClick(cdp, `[...document.querySelectorAll('.row span')].findLast((e) => e.textContent.trim() === 'Collection A')`)
   await sleep(1200)
-  for (const g of BUILT) if (GROUPS.has(g)) await { 2: group2, 3: group3, 4: group4, 5: group5, 6: group6, 7: group7, 8: group8, 9: group9 }[g](cdp)
+  for (const g of BUILT) if (GROUPS.has(g)) await { 2: group2, 3: group3, 4: group4, 5: group5, 6: group6, 7: group7, 8: group8, 9: group9, 10: group10 }[g](cdp)
   cdp.close()
 } catch (e) {
   item(0, 0, '—', 'the run reached its end', false, String(e?.stack ?? e))

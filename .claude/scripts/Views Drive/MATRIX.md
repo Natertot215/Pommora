@@ -1,6 +1,6 @@
 ## Views Drive — Matrix
 
-The drive's cases, derived from the *Views Cleanup — Implementation Plan*'s *§Behavior Changes* and written against each phase's AFTER, its patch in `Planning/Views Cleanup/Scouts/Planning/Phases/`. Groups 2 to 10 follow the plan phase of their number. A group holds every behavior change its phase lands, crossed with each surface, input, and setting that reaches it, beside the interactions its refactor rewired on those surfaces, so a regression shows. Each case names its decision: `BC<n> <id>` is the numbered behavior change and its decision, owned by the group's phase, so it reads `AWAIT` at a head before that phase and must hold from it on; `R P<n>` is a regression crossing of phase `n`'s rewiring, owned by phase 0, so it holds at every head, the baseline included. `F<n> <tag>` is a behavior phase `n`'s checkpoint fold lands, owned by phase `n` like a behavior change. `T<task> <tag>` is a visible change a task lands that *§Behavior Changes* doesn't number, recorded under the plan's *§Deviations* and owned by the task's phase. Every case prints as `g<group> [P<owner> <decision>] <name>`, so a run reads against the tables below line for line. Groups 2 to 9 are built; group 10 is built at its own checkpoint from the rows below.
+The drive's cases, derived from the *Views Cleanup — Implementation Plan*'s *§Behavior Changes* and written against each phase's AFTER, its patch in `Planning/Views Cleanup/Scouts/Planning/Phases/`. Groups 2 to 10 follow the plan phase of their number. A group holds every behavior change its phase lands, crossed with each surface, input, and setting that reaches it, beside the interactions its refactor rewired on those surfaces, so a regression shows. Each case names its decision: `BC<n> <id>` is the numbered behavior change and its decision, owned by the group's phase, so it reads `AWAIT` at a head before that phase and must hold from it on; `R P<n>` is a regression crossing of phase `n`'s rewiring, owned by phase 0, so it holds at every head, the baseline included. `F<n> <tag>` is a behavior phase `n`'s checkpoint fold lands, owned by phase `n` like a behavior change. `T<task> <tag>` is a visible change a task lands that *§Behavior Changes* doesn't number, recorded under the plan's *§Deviations* and owned by the task's phase. Every case prints as `g<group> [P<owner> <decision>] <name>`, so a run reads against the tables below line for line. Groups 2 to 10 are built.
 
 #### Dimensions
 
@@ -13,7 +13,7 @@ The drive's cases, derived from the *Views Cleanup — Implementation Plan*'s *�
 
 **A held write:** the drive wraps the host's `mutate`, `views:save`, and `tiles:save` handlers in the main process, so a case can hold one call's reply or refuse it, and restores them at the end. It widens a round trip of a few milliseconds to seconds, which is what BC1, BC2, BC12, BC13, and F6 nest read inside.
 
-**Drift:** selectors that changed between closed phases sit in one table, `DRIFT`, keyed by `--landed`: `.table-view` reads `.table-shell` from Phase 4 (Task 4-3); the Trash's `.trash-head-name` and `.trash-head-date` read `.col-header` cells from Phase 4 (Task 4-1); the dropdown's placeholder is found by `More` before Phase 3 and `More actions` from it (Task 3-3); the page-icon switch is found by `Page Icons` (Table) or `Hide Icons` (Cards) before Phase 3 and `Title Icons` from it; the disclosure chevron's `[data-drop-outline]` reads `[data-chevron]` from Phase 7 (Task 7-1); the bundle table's `.bundle-date` reads its row's last `.data-cell` from Phase 7 (its checkpoint fold). A selector difference is drift; a behavior difference is the case itself, so BC3 and BC6 assert the new label while their regression crossings find the control by the drifted one. Phase 9 adds no row: it renamed classes only through vanilla-extract's hashes, and group 9 reads every pane by `data-picker-portal`, role, label, inline style, and computed value.
+**Drift:** selectors that changed between closed phases sit in one table, `DRIFT`, keyed by `--landed`: `.table-view` reads `.table-shell` from Phase 4 (Task 4-3); the Trash's `.trash-head-name` and `.trash-head-date` read `.col-header` cells from Phase 4 (Task 4-1); the dropdown's placeholder is found by `More` before Phase 3 and `More actions` from it (Task 3-3); the page-icon switch is found by `Page Icons` (Table) or `Hide Icons` (Cards) before Phase 3 and `Title Icons` from it; the disclosure chevron's `[data-drop-outline]` reads `[data-chevron]` from Phase 7 (Task 7-1); the bundle table's `.bundle-date` reads its row's last `.data-cell` from Phase 7 (its checkpoint fold). A selector difference is drift; a behavior difference is the case itself, so BC3 and BC6 assert the new label while their regression crossings find the control by the drifted one. Phase 9 adds no row: it renamed classes only through vanilla-extract's hashes, and group 9 reads every pane by `data-picker-portal`, role, label, inline style, and computed value. Phase 10 adds none: group 10 reads `aria-describedby`, a zone's `tabIndex`, `data-drag-source`, `aria-pressed`, and the drag announcer, which every head carries, and never `data-line-immovable`, which exists only from Phase 10.
 
 #### Pruned
 
@@ -43,6 +43,13 @@ The drive's cases, derived from the *Views Cleanup — Implementation Plan*'s *�
 - **The Color picker and the calendar's nested menus (R P9):** the Color picker mounts the shell with its defaults, which group 8's Edit Color picks cross; the Properties Drive's group 18 opens the Month, Year, Hour, and Minute menus nested over the calendar.
 - **The ghost New Option chip (R P9):** its anchor waits for a second pointer move and a dwell, and the drive didn't raise it reliably; `ghostOptionRow` composes `optionRow` as it did, and `ghostChip`'s `&&` selector outranks any single-class tie a moved stylesheet could flip.
 - **The All Properties list's rows and heading, and the assigned list's fill (R P9):** `~/Test` assigns every registry property to Collection A, so the list holds no row, and `assignedFill` is a flex grow with no drawn edge to read.
+- **A pane's hideable rows without a save (BC24):** no surface draws one; both `OptionOrderList` callers, the Grouping and Sort panes, pass `onSave`, and Phase 10's checkpoint fold removes the flag.
+- **A Trash row carried onto the sidebar (R P10):** the bundle table's zone declares no carry, so its rows lift at no head; the immovable row that carries is a nav search's result, crossed onto the tab bar.
+- **A locked Matrix label carried onto a tab strip (R P10):** the label refuses its snapshot and keeps its carry as a nav search's result does, which group 10 carries; its BC24 read is kept.
+- **The pointer half of a movable row's lift for Table rows, Set and property bands, the Grouping pane's Set list, the dropdown's rows, and a tile's pills (R P10):** groups 4, 6, 7, and 8 drag each; group 10 drags cards, Cards bands, the sidebar, and the Grouping pane's option list, which no other group does.
+- **The Sort pane's option list (R P10):** it mounts the same `OptionOrderList` the Grouping pane's option rows cross.
+- **A selected row's look (R P10, the fold's shared selection read):** the ring draws only on a row whose page is the app's selection, and a selected page replaces the view in its tab, so the drive found no surface drawing it; the fold's `activeCell` collapse and `RowApi` rename draw nothing either.
+- **The alias list under a typed filter (BC24):** drafting and renaming cross the same zone-wide freeze; the filter is reached only through the editor's alias slot, which the Alias Drive holds.
 
 #### Group 2 — The Views Root and the Live View
 
@@ -275,16 +282,48 @@ Phase 9 lands no numbered behavior change; it re-files the shell every pane moun
 
 #### Group 10 — One Lock per Row
 
+Before Phase 10 every immovable row already refused its lift: `lineList`'s `locked`, the band spec's `disabled` and `draggable` check, and `MatrixView`'s refused snap each answered no snapshot, so the engine declined a keyboard lift, and a pointer one unless the row carries. What Behavior Change 24 changes is what the rows say, `aria-describedby` dropping to nothing, and the Cards band list's Tab stop under a search; each BC24 case gates on those reads alone, and each refusal or own action rides as a regression. A lift reads the row's `data-drag-source` or a sortable's `aria-pressed` and the drag announcer's "Picked up"; a description is the element `aria-describedby` names, its text telling to press Space.
+
 | Case | Surface · Input | Expected | Decision |
 | --- | --- | --- | --- |
-| the Trash's and Archive's rows name no drag gesture | Trash and Archive rows | no `aria-describedby` | BC24 I-059 |
-| a navigation list's rows without a reorder name no drag gesture | sidebar Recents | no `aria-describedby` | BC24 I-059 |
-| a pane's hideable rows without a save name no drag gesture | a read-only option list | no `aria-describedby` | BC24 I-059 |
-| the views list's one row names no drag gesture; with two views both do | views dropdown | the description follows the count | BC24 I-059 |
-| a searching Table's rows and band heads name no drag gesture and refuse a Space lift | Table · search, Space | no description; Space runs the row's own action | BC24 I-059 |
-| a Date band head names no drag gesture | Table grouped by a Date | no description | BC24 I-059 |
-| a searching Cards view's band list keeps its Tab stop | Cards · search, Tab | the band list takes focus | BC24 I-059 |
-| a displace item in a disabled zone names no drag gesture | a locked tile's pills | no description | BC24 I-059 |
-| a movable row still lifts by Space and drops by Enter | Table row · keyboard | the row moves and `manual_order` saves | R P10 |
-| a movable row still drags by pointer | Table row · grip drag | as group 4 | R P10 |
-| an immovable row still carries out to another zone by pointer where the engine allows it | Trash row onto the sidebar | as before | R P10 |
+| a movable Table row and Set band head still name the gesture and lift by Space | Table Set bands · Space, Escape | both described; each lifts | R P10 |
+| a movable row still lifts by Space, moves by ArrowUp, and drops by Enter, saving manual_order | Table row · Space, ArrowUp, Enter | Page C above Page B on disk and drawn | R P10 |
+| a band's drop line and a row's at the same depth stand at one indent, one inset past each lead, and a row a level deeper draws its line one step right | Table Set bands · Sub-Set B's head over Sub-Set A's; Page B's grip over Page A and over Alpha 1, each cancelled | the head's line equals the row's; each the same inset past its lead; the deeper line 14px right | R P10 |
+| Enter on a movable Table row still opens its page | Table row · Enter | Page A's tab is active | R P10 |
+| a Table sorted by two keys names no drag gesture on its rows while its band heads still do | Table, two sort keys | no row described; every head described | BC24 I-059 |
+| a two-key sorted Table's row draws no drop line under a drag and writes nothing, and Space opens its page rather than lifting it | the same · grip drag released on another row; Space | no line, no `manual_order`, the value kept; Page B's tab active | R P10 |
+| a Date band head names no drag gesture | Table grouped by VD Due | no head described | BC24 I-059 |
+| Space on a Date band head folds it and Space again unfolds it, lifting nothing | the same · Space, twice | `aria-expanded` false, then true; no lift | R P10 |
+| a searching Table's rows and band heads name no drag gesture | Table · search `1` | none described | BC24 I-059 |
+| a searching Table's band list keeps its Tab stop, its band head lifts by neither Space nor drag, and a row dragged onto another band draws no line and moves nothing | the same · Space and a drag on Sub-Set B's head; Beta 1 dragged onto Alpha 1 | the zone's `tabIndex` 0; no lift; no line, nothing written | R P10 |
+| a searching Cards view's band list keeps its Tab stop | Cards Set bands · search `a` | the zone's `tabIndex` 0 | BC24 I-059 |
+| a searching Cards view's band heads name no drag gesture | the same | none described | BC24 I-059 |
+| a searching Cards band head lifts by neither Space nor drag | the same · Space; Set Beta's head dragged onto Set Alpha's | no lift; no `group_order` | R P10 |
+| a searching Cards view's Set cards name no drag gesture and lift by no Space | Cards with Set cards · search `1`, Space | none described; no lift | F10 displace |
+| a Cards view sorted by two keys names no drag gesture on its cards and lifts none by Space | Cards, two sort keys · Space | none described; no lift | F10 displace |
+| a searching ungrouped Cards view draws no empty band-list Tab stop | Cards, flat · search `Page` | no tabbable `.line-zone` without a band head | F10 flat |
+| a card and a Cards band head still name the gesture and lift by Space and by drag | Cards Set bands · Space; a drag, cancelled | all described; each lifts both ways, the head's line drawn; nothing written | R P10 |
+| the Grouping pane's option rows still name the gesture and lift by Space and by drag | Group pane, grouped by VD Stage · Space; Done dragged onto Todo, cancelled | all described; each lifts, its line drawn; no `group.order` | R P10 |
+| the Grouping pane's option eye hides Done and shows it again | the same · Hide Done, Show Done | `hidden_groups` gains Done's key, then loses it | R P10 |
+| the Grouping pane's Set rows still name the gesture and lift by Space | Group pane, Location grouping · Space | all described; lifts | R P10 |
+| the Grouping pane's Set eye hides Set Beta and shows it again | the same · Hide Set Beta, Show Set Beta | `hidden_groups` gains Set Beta, then loses it | R P10 |
+| with two views or more, every dropdown row names the gesture, lifts by Space, and switches the view on Enter | Collection A's views dropdown · Space; Enter | all described; lifts; the button reads the row's view | R P10 |
+| the views list's one row names no drag gesture | Collection B's views dropdown | its one row undescribed | BC24 I-059 |
+| the views list's one row lifts by neither Space nor drag | the same · Space | no lift | R P10 |
+| the Trash's and Archive's rows name no drag gesture | Trash and Archive rows | none described | BC24 I-059 |
+| Space on a Trash row toggles its check, and the row lifts by neither Space nor drag | a trashed folder's row · Space, twice; a drag released | the check flips; no lift either way | R P10 |
+| the sidebar's reorderable rows still name the gesture and lift by Space and by drag | sidebar, Collection A open · Space on Set Beta; Set Beta dragged onto Set Alpha, cancelled | all described; lifts both ways, its line drawn | R P10 |
+| the nav view's Recents rows, which reorder, still name the gesture and lift by Space | New Tab's nav view · Space | all described; lifts | R P10 |
+| a nav search's result rows name no drag gesture | the nav view · search `Page` | none described | BC24 I-059 |
+| a nav search result still carries onto the tab bar by pointer, opening its tab | the same · Page A's result dragged onto the tab bar | held with no drop line; a Page A tab opens | R P10 |
+| a nav search's gallery results name no drag gesture and lift by no Space | the same in the gallery · Space | none described; no lift | F10 displace |
+| Space on a nav search result opens it rather than lifting it | the list · Space on Page B | no lift; Page B's tab active | R P10 |
+| the alias list's rows still name the gesture and lift by Space | Page B's Aliases pane · Space | all described; lifts | R P10 |
+| the alias list freezes while drafting and renaming, its rows naming no drag gesture and lifting by no drag | the same · Add alias; Rename from a row's menu; a row dragged onto another in each | the field open; none described; no lift | BC24 I-059 |
+| an unlocked tile's pills still name the gesture and lift by Space | View Tile, two views · Space | all described; lifts | R P10 |
+| a locked tile's pills name no drag gesture | locked tile | none described | BC24 I-059 |
+| Space on a locked tile's pill switches the tile's view rather than lifting it | the same · Space on VD Tile B | no lift; `active` 1 | R P10 |
+| a tile's lone view pill names no drag gesture and lifts by neither Space nor drag | one-view tile · Space; a drag, cancelled | undescribed; no lift; the tile draws its Table | F10 pill |
+| a locked Matrix's node label names no drag gesture | Matrix, `display.locked` · Page A's node hovered | the anchor carries the row handle and no description | BC24 I-059 |
+
+**The fold's rows:** Phase 10's checkpoint fold gives displace items the per-item flag in place of `DisplaceSpec.fixed`, so Set cards under a search, cards under two sorts, the nav gallery's search results, and a tile's lone pill stop naming and taking a lift into a session that can't move; and an ungrouped Cards view draws its band list only around bands. The alias list keeps its zone-wide freeze, since Tab never reaches the list while a field inside it is open, so its case is BC24's disabled-zone half. Each reads FAIL at `37a08d0cb` and AWAIT at `daf7bb55f` bar the last, which reads AHEAD there, since Phase 10's own commit gave the searching list the empty Tab stop the fold takes away, where the Phase 9 zone was disabled under a search. Its `hide?: HideControls`, `listZone`'s one indent source, and the shared selection read preserve behavior, so the hide eyes and the drop lines are regressions.
