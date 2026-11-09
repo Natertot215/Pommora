@@ -45,8 +45,6 @@ Eleven phases landed in order, each reviewed by two agents before the next opene
 
 #### Your Calls
 
-**Wording:** `// The singular here is intentional.` above `VIEW_PANES` reads as you dictated it, and three reviewers plus both neutral runs stumbled on it because it doesn't say what it contrasts. Recommended: `// Rows read Group, Sort, and Filter; their panes head Grouping, Sorting, and Filtering, intentionally.`
-
 **Placements:** the plan gives every file placement to you.
 - `ViewList` and `viewNameField` live in `Settings/ViewFrame.tsx` while a tile imports them; their own `Settings/ViewList.tsx` would be easier to find.
 - `paneTargets.ts` stayed at the `Views/` root while every other pane concern sits under `Settings/`.
