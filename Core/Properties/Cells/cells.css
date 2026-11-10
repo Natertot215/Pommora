@@ -67,6 +67,14 @@
 .value-seat:has(.cell-checkbox, .cell-switch) {
   padding-inline: var(--label-pad-x);
 }
+.value-inline {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+}
 .cell-chips {
   display: inline-flex;
   align-items: center;

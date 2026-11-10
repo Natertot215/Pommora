@@ -51,7 +51,7 @@ import type { ValueContext } from '../../Properties/valueContext'
 import { NO_TRAIL, type TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { ancestryOf } from '../../Nexus/treeIndex'
 import { stabilize } from '../../Nexus/treeStabilize'
-import { Cell } from '../../Properties/Cells/Cell'
+import { SeatedValue, seatOf } from '../../Properties/Cells/SeatedValue'
 import { ValueSeat } from '../../Properties/Pickers/ValueSeat'
 import { borderedField } from '@pommora/uix/Fields/fields.css'
 import { overScrollEllipsis } from '@pommora/uix/Interactions/OverScroll'
@@ -155,7 +155,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     },
     seat: {
       commit: commitOnCard,
-      anchor: (el) => el.closest<HTMLElement>('.value-seat') ?? el,
+      anchor: seatOf,
       centered: true,
       hide: { from: 'view', run: (_, column) => hideProperty(column.id) },
       add: {
@@ -532,31 +532,21 @@ function CardProperties({
     if (e.target === e.currentTarget) onZoneClick(e)
   }
   const value = (c: ResolvedColumn): React.JSX.Element => (
-    // data-drag-slop: the whole card is a drag handle, so a press beginning on a value gets a larger activation threshold — a tap-wobble opens the picker instead of lifting the card.
-    // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix
-    <span
-      className="card-value value-seat"
-      data-drag-slop=""
-      onClick={(e) => api.click(row, c, e)}
-      onContextMenu={(e) => void api.menu(row, c, e)}
-    >
-      {(editing === c.id && api.editor(row, c)) || (
-        <Cell
-          row={row}
-          column={c}
-          ctx={ctx}
-          style={styleById.get(c.id)!}
-          empty={
-            PROPERTY_TYPES[c.type].origin !== 'filedata' ? (
-              <EmptyValue className={cx('cell-empty', text.caption.emphasized)} />
-            ) : undefined
-          }
-          commit={(v) => api.commit(row, c, v)}
-          hideRemove={!allowInlineRemove}
-          onPane={(anchor) => api.pane(row, c, anchor)}
-        />
-      )}
-    </span>
+    <SeatedValue
+      className="card-value value-inline"
+      row={row}
+      column={c}
+      ctx={ctx}
+      style={styleById.get(c.id)!}
+      api={api}
+      editor={editing === c.id ? api.editor(row, c) : null}
+      hideRemove={!allowInlineRemove}
+      empty={
+        PROPERTY_TYPES[c.type].origin !== 'filedata' ? (
+          <EmptyValue className={cx('cell-empty', text.caption.emphasized)} />
+        ) : undefined
+      }
+    />
   )
   return compact ? (
     // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix

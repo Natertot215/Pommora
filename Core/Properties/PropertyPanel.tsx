@@ -19,7 +19,7 @@ import { useEntrance } from '@pommora/uix/Animations/useEntrance'
 import { useHeldPresence } from '@pommora/uix/Animations/useExitPresence'
 import type { PageFrontmatter } from '../Nexus/schemas'
 import { type ViewRow, pageRowOf, spaceRowOf } from '../Views/viewRow'
-import { Cell } from './Cells/Cell'
+import { SeatedValue } from './Cells/SeatedValue'
 import { holdsValue } from './fieldValue'
 import { columnIcon, columnLabel } from './columnDisplay'
 import { useValueSeat, ValueSeat } from './Pickers/ValueSeat'
@@ -247,25 +247,17 @@ export function PropertyPanel({
           leading={<Icon name={columnIcon(column, ctx.contexts)} size="control" />}
           onContextMenu={(e) => void seat.menu(row, column, e, { label: true })}
           trailing={
-            // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a grid cell; the grid wants roving tabindex, not per-cell tab stops
-            <span
-              className={cx(s.value, 'value-seat')}
+            <SeatedValue
+              className={s.value}
               data-property-row={id}
-              onContextMenu={(e) => void seat.menu(row, column, e)}
-              onClick={(e) => seat.click(row, column, e)}
-            >
-              {seat.editor(row, column) ?? (
-                <Cell
-                  row={row}
-                  column={column}
-                  ctx={ctx}
-                  style={{ look: 'standard', ...dateDefaults(dateFormat) }}
-                  commit={(next) => assignValue(writer, row, column, next)}
-                  empty={<EmptyValue className={cx('cell-empty', text.caption.standard)} />}
-                  onPane={(anchor) => seat.pane(row, column, anchor)}
-                />
-              )}
-            </span>
+              row={row}
+              column={column}
+              ctx={ctx}
+              style={{ look: 'standard', ...dateDefaults(dateFormat) }}
+              api={seat}
+              editor={seat.editor(row, column)}
+              empty={<EmptyValue className={cx('cell-empty', text.caption.standard)} />}
+            />
           }
         >
           {columnLabel(column, ctx.contexts)}

@@ -303,6 +303,7 @@ export function useValueSeat(host: SeatHost) {
     open,
     anchor,
     host,
+    commit: host.commit,
     close,
     click,
     pane,

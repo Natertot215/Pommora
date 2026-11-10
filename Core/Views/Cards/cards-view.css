@@ -125,14 +125,6 @@
 .card-prop-row > .card-value:has(input) {
   text-align: start;
 }
-.card-value {
-  display: inline-flex;
-  align-items: center;
-  min-width: 0;
-  max-width: 100%;
-  white-space: nowrap;
-  overflow: hidden;
-}
 .card-props.is-flow > span:has(.cell-bar),
 .card-props.is-flow > .card-text-value {
   flex-basis: 100%;

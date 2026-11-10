@@ -506,7 +506,7 @@ export function useViewInteractions<Own extends StableHandlers>(
     pane: seat.pane,
     editor: seat.editor,
     openAdd: seat.openAdd,
-    commit: seat.host.commit,
+    commit: seat.commit,
     open: openPage,
     openSet,
     hover: ghost.onHover,
