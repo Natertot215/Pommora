@@ -44,7 +44,7 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
 | 1 | +8 / −4 | +8 / −4 | +8 / −4 |
 | 2 | +295 / −216 | +305 / −216 | +313 / −220 |
 | 3 | +145 / −120 | +146 / −131 | +459 / −351 |
-| 4 | +40 / −26 | | |
+| 4 | +40 / −26 | +40 / −26 | +499 / −377 |
 | 5 | +46 / −30 | | |
 | 6 | +590 / −111 | | |
 | 7 | — (the drive, under `.claude`) | | |
@@ -123,7 +123,7 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
 - **Comments:** a new file carries section dividers in the form Table's and Cards' files use (`// ── The render ──`) and little else. A comment is written or kept only where it states a rule the code doesn't, gives a lint suppression its reason, or marks a KNOB; none restates a name or narrates the change, and a moved comment moves with its code.
 - **Placement:** *List View — Decisions & Intention §J* is what Nathan approved: `Core/Views/List/`, `Core/Views/Rows/`, `Core/Properties/Cells/` for the clickable value, `Core/Views/Pipeline/columns.ts` for Cards' column helpers, `Core/Views/Settings/` for the two-column pane, and `Core/Views/views.ts` for the saved-view fields. The files this plan names inside those homes are listed under *§Open Items · Placements for Nathan*; a file anywhere else is not written without his word.
 - **Shared First:** nothing is built for List alone where Table, Cards, the Properties panel, or the kit already carries it or should. A piece List needs that another surface holds privately is lifted, not copied.
-- **Behavior Changes Outside List:** named, not folded in. (1) A hidden property keeps its place through a reorder in Table, Cards, and the Visibility pane (E-6; inverts `columns.test.ts:234-241`). (2) A Link value's right-click offers its per-view Format in every view (C-4). (3) The band's **+** is an `AccessoryButton`, so its hit box loses its horizontal padding (I-3). (4) A value in the Properties panel takes 12px of travel, not 5px, before its row lifts, since the shared value carries `data-drag-slop`. Nothing else outside List changes behavior; a task that finds otherwise stops and reports.
+- **Behavior Changes Outside List:** named, not folded in. (1) A hidden property keeps its place through a reorder in Table, Cards, and the Visibility pane (E-6; inverts `columns.test.ts:234-241`). (2) A Link value's right-click offers its per-view Format in every view (C-4). (3) The band's **+** is an `AccessoryButton`, so its hit box is a 20px square where it was 17px wide (I-3). (4) A value in the Properties panel takes 12px of travel, not 5px, before its row lifts, since the shared value carries `data-drag-slop`. Nothing else outside List changes behavior; a task that finds otherwise stops and reports.
 - **The Number:** every phase's VERIFY runs `python3 ~/"The Studio/.claude/scripts/view-delta/view-delta.py" <from>..<to> --exclude .claude --save <scratch>/phase-N.md`, `<from>` being the previous phase's last commit and the BASELINE head for Phase 1, and records the saved table's **Actionable** cell in the Net Ledger beside the phase's estimate, removals and additions apart. A phase that lands above its estimate is reported in chat before the next phase opens, with what the increase buys against the Principles.
 - **Conventions:** finite states are unions plus exhaustive switches; no measuring, allocating, or layout-reading work runs per row on a high-frequency trigger, and wrapping is the browser's own layout (the Decisions' **Cost** constraint); UIX reaches nothing outside itself; host-run code imports no React or UIX, and `Core/Contract/engineGraph.test.ts` and `Desktop/hostGraph.test.ts` stay green; a `*.css.ts` file exports only serializable values; a test that changes asserts the behavior a decision names, and a test whose body inverts takes a title stating what it now asserts; user-facing words are the ones the decisions quote (**Title Icons**, **Outlines**, **Wrap Rows**, **Left**, **Right**, **Move to Left**, **Move to Right**); commit messages are past tense and one to three sentences; nothing temporary, transitional, or compatibility-kept remains at a phase's end.
 - **Execution:** the plan runs end to end through `c/plan-execution`. Each task goes to an `execution-agent` (`opus-medium`) given *§Context*, *§Overview*, *§Constraints* with the Directives block, *§Open Items · Settled in Planning*, and the path of *List View — Decisions & Intention*, whose IDs the tasks cite; it reports insights, concerns, and suggestions rather than diverging, and the orchestrator checks its result against the task's AFTER and VERIFY. Each task commits once its gates are green, and commits on `active` are hook-pushed, so no task ends red. Every review checkpoint dispatches two read-only agents, one under `code-simplification` and one under `adversarial-review`, each weighing the phase against these constraints and reading outward rather than in isolation, with no implementation running meanwhile; the orchestrator verifies each finding against the tree before it folds. An in-flight call is weighed against the Approach and Principles, disclosed in chat, and recorded under *§Deviations* only where it changes an outcome. Each compaction checkpoint in *§Process Overview* runs `c/pre-compaction`; on the re-prompt the orchestrator rereads *§Constraints* and `c/plan-execution` from the files themselves before the next phase opens.
@@ -207,11 +207,11 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
   - [x] Task 3-1 · `SeatedValue`
   - [x] Task 3-2 · Cards' rules join the pipeline and the host
   - [x] Review Checkpoint
-- [ ] **Phase 4** — The Plus, the Bar, the Link Format, and the First Line
-  - [ ] Task 4-1 · One hover **+**
-  - [ ] Task 4-2 · `Segments` draws in a flex row and keeps its parts
-  - [ ] Task 4-3 · A Link's per-view Format on right-click
-  - [ ] Task 4-4 · The grip reads its row's first line
+- [x] **Phase 4** — The Plus, the Bar, the Link Format, and the First Line
+  - [x] Task 4-1 · One hover **+**
+  - [x] Task 4-2 · `Segments` draws in a flex row and keeps its parts
+  - [x] Task 4-3 · A Link's per-view Format on right-click
+  - [x] Task 4-4 · The grip reads its row's first line
   - [ ] Review Checkpoint
 - [ ] `[Compaction checkpoint: c/pre-compaction; on the re-prompt, reread §Constraints and c/plan-execution before Phase 5 opens]`
 - [ ] **Phase 5** — The Saved View and the Kind Record
@@ -1276,10 +1276,10 @@ One component carries a value's click, right-click, editor swap, and `Cell`; Car
 
 **VERIFY**
 
-- [ ] `git grep -n "group-band-add" -- Core UIX .claude/scripts` finds nothing, the drive's selector included.
-- [ ] `PropertyPanel.test.tsx` and the band suites pass untouched.
-- [ ] Live, in `~/Test`: a Set band's **+** shows on the band's hover in the tertiary color, creates a page in the Set, and takes no Tab stop; the panel's **+** stays shown while its list is open from the heading and hides again on close.
-- [ ] Run the gates and `npm run build`.
+- [x] `git grep -n "group-band-add" -- Core UIX .claude/scripts` finds nothing, the drive's selector included.
+- [x] `PropertyPanel.test.tsx` and the band suites pass untouched.
+- [x] Live, in `~/Test`: a Set band's **+** shows on the band's hover in the tertiary color, creates a page in the Set, and takes no Tab stop; the panel's **+** stays shown while its list is open from the heading and hides again on close.
+- [x] Run the gates and `npm run build`.
 
 #### Task 4-2 · `Segments` draws in a flex row and keeps its parts
 
@@ -1320,9 +1320,9 @@ The shared segment takes a height, so the component that already divides a run i
 
 **VERIFY**
 
-- [ ] The new case went red before the change and is green after; the rest of `Segments.test.tsx` passes untouched.
-- [ ] Live: the notification bar's divider between its message and count, and a page-history caption's divider between date and time, measure the same box before and after (`getBoundingClientRect` of the segment in each).
-- [ ] Run the gates and `npm run build`.
+- [x] The new case went red before the change and is green after; the rest of `Segments.test.tsx` passes untouched.
+- [x] Live: the notification bar's divider between its message and count, and a page-history caption's divider between date and time, measure the same box before and after (`getBoundingClientRect` of the segment in each).
+- [x] Run the gates and `npm run build`.
 
 #### Task 4-3 · A Link's per-view Format on right-click
 
@@ -1417,10 +1417,10 @@ A Link value's right-click offers its view's Format, the look Table's heading al
 
 **VERIFY**
 
-- [ ] The four rewritten cases and the new ones went red before the change and are green after; `ValueSeat.test.tsx`, `valueClick.test.ts`, and the editor's link-menu suites pass untouched.
-- [ ] `git grep -n "'format:link" -- Core/Properties Core/Views` finds nothing: the editor's text-rewriting Format never reaches a value.
-- [ ] Live, in `~/Test`, on a Cards view and a Table view holding a Link property: right-click a link that resolves, and one that doesn't; each offers **Format** with the three forms, the current one checked, and a pick changes every value of that property in that view alone. The Properties panel's right-click on the same value offers no Format.
-- [ ] Run the gates.
+- [x] The four rewritten cases and the new ones went red before the change and are green after; `ValueSeat.test.tsx`, `valueClick.test.ts`, and the editor's link-menu suites pass untouched.
+- [x] `git grep -n "'format:link" -- Core/Properties Core/Views` finds nothing: the editor's text-rewriting Format never reaches a value.
+- [x] Live, in `~/Test`, on a Cards view and a Table view holding a Link property: right-click a link that resolves, and one that doesn't; each offers **Format** with the three forms, the current one checked, and a pick changes every value of that property in that view alone. The Properties panel's right-click on the same value offers no Format.
+- [x] Run the gates.
 
 #### Task 4-4 · The grip reads its row's first line
 
@@ -1461,9 +1461,9 @@ The grip and the check sit on a first line their surface can state, so a row tha
 
 **VERIFY**
 
-- [ ] Live, in `~/Test`, measured with `getBoundingClientRect` against the phase's base: the grip's and the check's vertical center is unchanged, within a tenth of a pixel, on a plain Table row, a Table row holding a chip, the Archive's first row, and a Trash row; a band's chevron hasn't moved. No surface states `--row-first-line` until Task 6-2, so nothing moves in this task.
-- [ ] Run the gates, then `view-delta` for Phase 4.
-- [ ] Check for unnecessary code or mistakes.
+- [x] Live, in `~/Test`, measured with `getBoundingClientRect` against the phase's base: the grip's and the check's vertical center is unchanged, within a tenth of a pixel, on a plain Table row, a Table row holding a chip, the Archive's first row, and a Trash row; a band's chevron hasn't moved. No surface states `--row-first-line` until Task 6-2, so nothing moves in this task.
+- [x] Run the gates, then `view-delta` for Phase 4.
+- [x] Check for unnecessary code or mistakes.
 
 #### Review Checkpoint
 

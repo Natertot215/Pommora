@@ -690,7 +690,7 @@ async function group5(cdp) {
   // BC10 · a create opens its name field with its row, through every Table door.
   const bandAdd = async (label) => {
     await hover(cdp, head(label), 300)
-    await mouseClick(cdp, `(${head(label)}).querySelector('[aria-label="New page in group"], .group-band-add')`)
+    await mouseClick(cdp, `(${head(label)}).querySelector('[aria-label="New page in group"]')`)
   }
   const plus = await birth(cdp, () => bandAdd('Set Alpha'), 'VD Plus')
   bc(g, 10, 'I-040', 'the Table band\'s + opens the newborn\'s name field in the frame its row first draws', plus.first?.field === true, show(plus))
