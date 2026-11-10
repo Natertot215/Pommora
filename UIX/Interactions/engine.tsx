@@ -436,7 +436,7 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
     const from = overs.get(zoneId) ?? lifted
     if (from === to) return
     overs.set(zoneId, to)
-    if (!own && !spec.axis && entry.box) {
+    if (!own && spec.axis !== 'x' && entry.box) {
       const grown = spillOf(layout, layout.ids.length + 1, s.rect.height)
       spill(entry.box, to < 0 ? 0 : grown / layout.zoom)
     }

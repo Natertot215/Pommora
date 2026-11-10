@@ -379,6 +379,25 @@ describe('the drag engine across zones', () => {
     expect(spillOf('C')).toBe('')
   })
 
+  it('grows a foreign column by one row pitch while it is the landing, until the drop or a cancel', async () => {
+    extra = { B: { axis: 'y' } }
+    await mount()
+    const spillOf = (): string =>
+      (host.querySelector('.zone-B') as HTMLElement).style.getPropertyValue('--drag-spill')
+    await dragHold('a1', 100, 150)
+    expect(spillOf()).toBe('')
+    await move(100, 358)
+    expect(spillOf()).toBe('100.0px')
+    await release(100, 358)
+    await settle()
+    expect(spillOf()).toBe('')
+    await dragHold('a1', 100, 358)
+    expect(spillOf()).toBe('100.0px')
+    await act(async () => pressEscape())
+    await settle()
+    expect(spillOf()).toBe('')
+  })
+
   it('re-reads the landing once the floors of empty zones have grown on lift', async () => {
     const grown = (): number =>
       parseFloat(

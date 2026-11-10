@@ -18,5 +18,10 @@ export const list = style([
   { borderRadius: `${PANE.radius}px`, background: colorVars.color.fill.quaternary },
 ])
 
-/* The zone fills its column, so the room under a short column's last row is its trailing slot, and an empty one stands as tall as the row lifted over it. */
-export const zone = style({ flex: '1 1 auto', minHeight: 'var(--drag-floor, 0px)' })
+/* The zone fills its column, so the room under a short column's last row is its trailing slot, an empty one stands as tall as the row lifted over it, and one a row is carried into grows by that row, so its hidden foot moves down rather than under it. */
+export const zone = style({
+  flex: '1 1 auto',
+  boxSizing: 'border-box',
+  minHeight: 'var(--drag-floor, 0px)',
+  paddingBottom: 'var(--drag-spill, 0px)',
+})
