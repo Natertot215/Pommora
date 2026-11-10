@@ -16,7 +16,7 @@ import { ViewFrame } from './ViewFrame'
 import { stubDialer } from '../../vitest.setup'
 import { mountEachTest } from '../../Testing/viewHarness'
 import { firePointer, stubRect } from '@pommora/uix/Utilities/pointerHarness'
-import { itemPicked } from '@pommora/uix/Menus/menu-row.css'
+import { heading, itemPicked, scrollFrameBody } from '@pommora/uix/Menus/menu-row.css'
 import { presentedKind } from '../Host/viewKinds'
 
 const schema: PropertyDefinition[] = [
@@ -311,6 +311,45 @@ describe('ViewFrame — the panes the editor reaches', () => {
     expect(document.querySelector('[aria-label="Always Shown"]') !== null).toBe(list)
     for (const { label } of presentedKind(type).layout.switches)
       expect(document.querySelector(`[aria-label="${label}"]`)).not.toBeNull()
+  })
+
+  it('a list view’s switches sit at the editor’s root, and its Layout row opens the two columns', async () => {
+    useSession.setState({
+      tree: { contexts: [], collections: [], config: { personalization: {} } } as never,
+    })
+    await mount(source([view('view_a', 'Table'), { ...view('view_b', 'Board'), type: 'list' }]))
+    await act(async () => {
+      ;(document.querySelector('[aria-label="Edit Board"]') as HTMLElement).click()
+    })
+    for (const label of ['Title Icons', 'Outlines', 'Wrap Rows'])
+      expect(document.querySelector(`[role="switch"][aria-label="${label}"]`)).not.toBeNull()
+    await press('Layout')
+    const detail = [...document.querySelectorAll(`.${scrollFrameBody}`)].at(-1)!
+    expect(
+      [...detail.querySelectorAll(`.${heading.split(' ').join('.')}`)].map((h) => h.textContent),
+    ).toEqual(['Left', 'Right'])
+    expect(detail.querySelector('[aria-label="Outlines"]')).toBeNull()
+  })
+
+  it('the List tile switches a view to List, and the Gallery tile writes nothing', async () => {
+    const save = vi.fn(async () => ({ ok: true, value: { id: 'view_b' } }))
+    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({ 'views:save': save })
+    useSession.setState({
+      tree: { contexts: [], collections: [], config: { personalization: {} } } as never,
+    })
+    await mount(source([view('view_a', 'Table'), view('view_b', 'Board')]))
+    await act(async () => {
+      ;(document.querySelector('[aria-label="Edit Board"]') as HTMLElement).click()
+    })
+    await act(async () => (document.querySelector('[aria-label="Gallery"]') as HTMLElement).click())
+    expect(save).not.toHaveBeenCalled()
+    await act(async () => (document.querySelector('[aria-label="List"]') as HTMLElement).click())
+    expect(save).toHaveBeenCalledWith(
+      'Col',
+      'collection',
+      expect.objectContaining({ id: 'view_b' }),
+      expect.objectContaining({ type: 'list' }),
+    )
   })
 })
 

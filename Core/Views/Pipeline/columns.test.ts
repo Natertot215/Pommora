@@ -228,20 +228,20 @@ describe('drawnColumns', () => {
 
 describe('addColumns', () => {
   const item = itemColumns(null, [sel, chk, num], 'p')
-  const addable = (fm: Record<string, unknown>, shown: ResolvedColumn[]): string[] =>
+  const offered = (fm: Record<string, unknown>, shown: ResolvedColumn[]): string[] =>
     addColumns(item, row(fm), shown).properties.map((c) => c.id)
 
   it('leaves out the drawn columns and lists held rows last, with no stamps', () => {
-    expect(addable({ Chk: true }, [propertyColumn(sel)])).toEqual(['num', 'chk'])
+    expect(offered({ Chk: true }, [propertyColumn(sel)])).toEqual(['num', 'chk'])
   })
 
   it('lists a property hidden in the view that holds a value', () => {
-    expect(addable({ Chk: true }, [propertyColumn(sel), propertyColumn(num)])).toEqual(['chk'])
+    expect(offered({ Chk: true }, [propertyColumn(sel), propertyColumn(num)])).toEqual(['chk'])
   })
 
   it('lists a blank that dropBlanks leaves undrawn', () => {
     const columns = [resolveColumn(title, [], [])!, propertyColumn(sel), propertyColumn(chk)]
-    expect(addable({}, drawnColumns(row({}), columns, true))).toEqual(['sel', 'num'])
+    expect(offered({}, drawnColumns(row({}), columns, true))).toEqual(['sel', 'num'])
   })
 })
 

@@ -10,6 +10,12 @@ import { ViewTileScopeProvider } from '../ViewTileScope'
 import { presentedKind } from '../Host/viewKinds'
 import { makeTree } from '../../Testing/testTree'
 import { SettingsFrame } from './SettingsFrame'
+import {
+  heading,
+  scrollFrameBody,
+  scrollFrameEdge,
+  separator,
+} from '@pommora/uix/Menus/menu-row.css'
 
 const view: SavedView = {
   id: 'view_a',
@@ -96,5 +102,26 @@ describe('SettingsFrame — the panes Settings reaches', () => {
     expect(titleIcons.getAttribute('aria-checked')).toBe('true')
     await act(async () => titleIcons.click())
     expect(persist).toHaveBeenCalledWith({ hide_page_icons: true })
+  })
+
+  it('a list view’s Visibility is the two columns', async () => {
+    await open('Visibility', { ...view, type: 'list' })
+    expect(
+      [...host.querySelectorAll(`.${heading.split(' ').join('.')}`)].map((h) => h.textContent),
+    ).toEqual(['Left', 'Right'])
+  })
+
+  it('a list view’s Layout is the type grid over its three switches in the footing, with no section between', async () => {
+    await open('Layout', { ...view, type: 'list' })
+    const body = [...host.querySelectorAll(`.${scrollFrameBody}`)].at(-1)!
+    expect(body.querySelector('[aria-label="Table"]')).not.toBeNull()
+    expect(body.querySelector(`.${separator}`)).toBeNull()
+    expect(body.querySelector('[role="switch"]')).toBeNull()
+    for (const label of ['Title Icons', 'Outlines', 'Wrap Rows'])
+      expect(
+        body.parentElement!.querySelector(
+          `.${scrollFrameEdge} [role="switch"][aria-label="${label}"]`,
+        ),
+      ).not.toBeNull()
   })
 })

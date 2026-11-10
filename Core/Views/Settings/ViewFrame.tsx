@@ -196,6 +196,7 @@ function ViewEditor({
   const toViews: MenuBack = { label: 'Views', onBack: () => setPane(null) }
   const leaf: PaneProps = { view, schema, back: toViews, save }
   const { layout, Visibility } = presentedKind(view.type)
+  const switches = kindSwitches(view, save)
   const detail =
     pane !== 'layout' ? (
       pane && <ViewPane id={pane} source={source} {...leaf} />
@@ -204,10 +205,12 @@ function ViewEditor({
         {...leaf}
         current="Layout"
         footer={
-          <>
-            <MenuSeparator flush />
-            {kindSwitches(view, save)}
-          </>
+          switches && (
+            <>
+              <MenuSeparator flush />
+              {switches}
+            </>
+          )
         }
       />
     ) : (
@@ -215,7 +218,7 @@ function ViewEditor({
         header={<MenuTopRow {...toViews} current="Layout" />}
         maxHeight={s.SETTINGS_PANE_MAX_HEIGHT}
       >
-        {kindSwitches(view, save)}
+        {switches}
       </MenuScrollFrame>
     )
 

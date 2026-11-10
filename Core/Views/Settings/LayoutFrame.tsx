@@ -33,15 +33,12 @@ export function typeGrid(view: SavedView, save: ViewWriter): React.JSX.Element {
   )
 }
 
-export const kindSwitches = (view: SavedView, save: ViewWriter): React.JSX.Element => (
-  <MenuIndex
-    sections={[
-      {
-        rows: switchRows(presentedKind(view.type).layout.switches, view, save),
-      },
-    ]}
-  />
-)
+export function kindSwitches(view: SavedView, save: ViewWriter): React.JSX.Element | null {
+  const { switches } = presentedKind(view.type).layout
+  return switches.length > 0 ? (
+    <MenuIndex sections={[{ rows: switchRows(switches, view, save) }]} />
+  ) : null
+}
 
 export function kindRows(view: SavedView, save: ViewWriter): React.JSX.Element | null {
   const rows = presentedKind(view.type).layout.rows
@@ -54,6 +51,7 @@ export function kindRows(view: SavedView, save: ViewWriter): React.JSX.Element |
 }
 
 export function LayoutFrame({ view, back, save }: PaneProps): React.JSX.Element {
+  const switches = kindSwitches(view, save)
   return (
     <MenuScrollFrame
       header={<MenuTopRow {...back} current="Layout" />}
@@ -61,8 +59,8 @@ export function LayoutFrame({ view, back, save }: PaneProps): React.JSX.Element 
       maxHeight={SETTINGS_PANE_MAX_HEIGHT}
     >
       {typeGrid(view, save)}
-      <MenuSeparator flush />
-      {kindSwitches(view, save)}
+      {switches && <MenuSeparator flush />}
+      {switches}
     </MenuScrollFrame>
   )
 }
