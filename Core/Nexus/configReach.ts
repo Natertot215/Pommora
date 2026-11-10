@@ -61,6 +61,7 @@ const ROLES = {
   column_widths: 'idMap',
   column_alignments: 'idMap',
   column_styles: 'idMap',
+  column_sides: 'idMap',
   collapsed_groups: 'bandKeys',
   manual_order: 'none',
   hidden_groups: 'bandKeys',

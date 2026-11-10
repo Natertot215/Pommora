@@ -1,6 +1,7 @@
-import { FILEDATA } from '../../Properties/properties'
+import type { NexusTree } from '../../Nexus/tree'
+import { FILEDATA, type ResolvedColumn } from '../../Properties/properties'
 import { useSession } from '../../Session/store'
-import { MenuRowView } from '@pommora/uix/Menus/MenuIndex'
+import { type MenuRow, MenuRowView } from '@pommora/uix/Menus/MenuIndex'
 import { MenuTopRow, MenuScrollFrame } from '@pommora/uix/Menus/MenuRows'
 import {
   hiddenListIds,
@@ -16,75 +17,60 @@ import { contextIdsOf, contextsByIdOf } from '../../Contexts/contextIdentity'
 import { columnIcon, columnLabel } from '../../Properties/columnDisplay'
 import { Icon } from '@pommora/uix/Symbols'
 import * as s from '@pommora/uix/Menus/frames.css'
-import type { VisibilityPaneProps } from './ViewPane'
-import { type HideControls, hideEye } from './OptionOrderList'
+import type { PaneProps, VisibilityPaneProps } from './ViewPane'
+import { hideEye } from './OptionOrderList'
 
-function VisibilityGroups({
-  shownIds,
-  hiddenIds,
-  hide,
-  nameFor,
-  iconFor,
-}: {
-  shownIds: string[]
-  hiddenIds: string[]
-  hide: HideControls
-  nameFor: (id: string) => string
-  iconFor: (id: string) => string
-}): React.JSX.Element {
-  const row = (id: string): React.JSX.Element => {
-    const hidden = hide.isHidden(id)
-    return (
-      <LineRow key={id} id={id}>
-        <MenuRowView
-          row={{
-            kind: 'item',
-            icon: <Icon name={iconFor(id)} size={s.ICON.doc} />,
-            label: nameFor(id),
-            trailing:
-              id === FILEDATA.title.id
-                ? {
-                    // PLACEHOLDER
-                    kind: 'button',
-                    icon: 'eye',
-                    ariaLabel: 'Always Shown',
-                    disabled: true,
-                    onClick: () => {},
-                  }
-                : { kind: 'field', children: hideEye(nameFor(id), id, hide) },
-            className: hidden ? s.hiddenRow : undefined,
-          }}
-        />
-      </LineRow>
-    )
+export function visibilityPane({ view, schema, save }: PaneProps, tree: NexusTree) {
+  const contextIds = contextIdsOf(tree)
+  const contexts = contextsByIdOf(tree)
+  const columnOf = (id: string): ResolvedColumn => resolveColumn(id, schema, contextIds)!
+  const shown = resolveColumns(view, schema, contextIds)
+  // The hidden list's own membership, not hidden_properties: a prop absent from property_order is hidden by absence and reads as such.
+  const hidden = hiddenListIds(view, schema, contextIds).map(columnOf)
+  const hiddenIds = new Set(hidden.map((c) => c.id))
+  const hide = {
+    isHidden: (id: string) => hiddenIds.has(id),
+    onToggleHidden: (id: string) =>
+      save(hiddenIds.has(id) ? unhide(view, id) : hideShown(view, id)),
   }
-  return (
-    <>
-      <LineGroup id="members">{shownIds.map(row)}</LineGroup>
-      <PaneRestGroup className={s.hiddenZone}>{hiddenIds.map(row)}</PaneRestGroup>
-    </>
-  )
+  const label = (id: string): string => columnLabel(columnOf(id), contexts)
+  const icon = (id: string): string => columnIcon(columnOf(id), contexts)
+  const row = (c: ResolvedColumn): MenuRow => ({
+    kind: 'item',
+    icon: <Icon name={icon(c.id)} size={s.ICON.doc} />,
+    label: label(c.id),
+    trailing:
+      c.kind === 'title'
+        ? {
+            // PLACEHOLDER
+            kind: 'button',
+            icon: 'eye',
+            ariaLabel: 'Always Shown',
+            disabled: true,
+            onClick: () => {},
+          }
+        : { kind: 'field', children: hideEye(label(c.id), c.id, hide) },
+    className: hiddenIds.has(c.id) ? s.hiddenRow : undefined,
+  })
+  return { shown, hidden, label, icon, row }
 }
 
 export function VisibilityFrame({
-  schema,
-  view,
-  back,
-  save,
   footer,
   current = 'Visibility',
+  ...pane
 }: VisibilityPaneProps): React.JSX.Element | null {
   const tree = useSession((st) => st.tree)
   if (!tree) return null
 
-  const contextIds = contextIdsOf(tree)
-  const shownIds = resolveColumns(view, schema, contextIds).map((c) => c.id)
-  const hiddenIds = hiddenListIds(view, schema, contextIds)
-  // The hidden list's own membership, not hidden_properties: a prop absent from property_order is hidden by absence and reads as such.
-  const hiddenSet = new Set(hiddenIds)
-  const columnOf = (id: string) => resolveColumn(id, schema, contextIds)!
-  const nameFor = (id: string): string => columnLabel(columnOf(id), contextsByIdOf(tree))
-  const iconFor = (id: string): string => columnIcon(columnOf(id), contextsByIdOf(tree))
+  const { view, schema, back, save } = pane
+  const { shown, hidden, label, icon, row } = visibilityPane(pane, tree)
+  const shownIds = shown.map((c) => c.id)
+  const line = (c: ResolvedColumn): React.JSX.Element => (
+    <LineRow key={c.id} id={c.id}>
+      <MenuRowView row={row(c)} />
+    </LineRow>
+  )
 
   // The hidden list holds no order (`ordersRest: false`), so no drop reorders it.
   const handleDrop = (drop: PaneDrop): void => {
@@ -110,23 +96,14 @@ export function VisibilityFrame({
           ordersRest: false,
           pinned: FILEDATA.title.id,
           titles: { members: 'Shown Properties', rest: 'Hidden Properties' },
-          label: nameFor,
-          glyph: (id) => <Icon name={iconFor(id)} />,
+          label,
+          glyph: (id) => <Icon name={icon(id)} />,
           onDrop: handleDrop,
           watch: [view, schema, tree],
         })}
       >
-        <VisibilityGroups
-          shownIds={shownIds}
-          hiddenIds={hiddenIds}
-          hide={{
-            isHidden: (id) => hiddenSet.has(id),
-            onToggleHidden: (id) =>
-              save(hiddenSet.has(id) ? unhide(view, id) : hideShown(view, id)),
-          }}
-          nameFor={nameFor}
-          iconFor={iconFor}
-        />
+        <LineGroup id="members">{shown.map(line)}</LineGroup>
+        <PaneRestGroup className={s.hiddenZone}>{hidden.map(line)}</PaneRestGroup>
       </LineZone>
     </MenuScrollFrame>
   )

@@ -28,6 +28,7 @@ const rich = (id: string): Raw => ({
   column_widths: { prop_s: 120, prop_x: 80 },
   column_alignments: { prop_s: 'left' },
   column_styles: { prop_s: { wrap: true } },
+  column_sides: { prop_s: 'right' },
   filter: {
     match: 'all',
     rules: [
@@ -186,6 +187,7 @@ describe('a property clear', () => {
       expect(view.column_widths).toEqual({ prop_x: 80 })
       expect(view.column_alignments).toEqual({})
       expect(view.column_styles).toEqual({})
+      expect(view.column_sides).toEqual({})
       expect(view.filter).toEqual({
         match: 'all',
         rules: [

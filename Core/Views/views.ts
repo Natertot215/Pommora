@@ -44,6 +44,9 @@ export type CardBanner = (typeof CARD_BANNERS)[number]
 export const COLUMN_ALIGNS = ['left', 'center', 'right'] as const
 export type ColumnAlign = (typeof COLUMN_ALIGNS)[number]
 
+export const SIDES = ['left', 'right'] as const
+export type Side = (typeof SIDES)[number]
+
 const SORT_DIRECTIONS = ['ascending', 'descending'] as const
 
 const GROUP_ORDER_MODES = ['configured', 'reversed', 'manual'] as const
@@ -169,6 +172,7 @@ export const savedView = looseDecoder(
     column_widths: entriesOf(z.number()).optional().catch(undefined),
     column_alignments: entriesOf(z.enum(COLUMN_ALIGNS)).optional().catch(undefined),
     column_styles: entriesOf(columnStyle).optional().catch(undefined),
+    column_sides: entriesOf(z.enum(SIDES)).optional().catch(undefined),
     collapsed_groups: idArray.optional(),
     manual_order: idArray.optional(),
     hidden_groups: idArray.optional(),
@@ -250,6 +254,7 @@ const ENTRY_DEPTH = {
   column_widths: 1,
   column_alignments: 1,
   column_styles: 2,
+  column_sides: 1,
 } as const satisfies Partial<Record<keyof SavedView, number>>
 export type EntryKey = keyof typeof ENTRY_DEPTH
 
