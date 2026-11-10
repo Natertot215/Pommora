@@ -6,7 +6,9 @@ import { FILEDATA, type PropertyDefinition, type ResolvedColumn } from '../../Pr
 import { linkedSpacesTree } from '../../Testing/testTree'
 import type { ViewRow } from '../viewRow'
 import {
+  addable,
   addColumns,
+  contextColumn,
   drawnColumns,
   hiddenListIds,
   hideShown,
@@ -240,6 +242,39 @@ describe('addColumns', () => {
   it('lists a blank that dropBlanks leaves undrawn', () => {
     const columns = [resolveColumn(title, [], [])!, propertyColumn(sel), propertyColumn(chk)]
     expect(addable({}, drawnColumns(row({}), columns, true))).toEqual(['sel', 'num'])
+  })
+})
+
+describe('addable', () => {
+  const props = [sel, chk, num]
+  const item = itemColumns(linkedSpacesTree(), props, 'p')
+  const contexts = new Map(item.contexts.map((c) => [c.id, c]))
+  const stamp = resolveColumn(createdAt, [], [])!
+  const lists = (drawn: ResolvedColumn[]): boolean => {
+    const { contexts, properties } = addColumns(item, row({}), drawn)
+    return contexts.length + properties.length > 0
+  }
+
+  it.each([
+    ['none', []],
+    ['some', [propertyColumn(sel), item.contexts[0]]],
+    [
+      'all but one Context, a stamp drawn',
+      [...props.map(propertyColumn), ...item.contexts.slice(1), stamp],
+    ],
+    ['all, a stamp drawn', [...props.map(propertyColumn), ...item.contexts, stamp]],
+  ])('answers as the Add list’s two lists being non-empty, drawing %s', (_, drawn) => {
+    expect(addable(drawn, props, contexts)).toBe(lists(drawn))
+  })
+
+  it('answers false on a row drawing every Context and property', () => {
+    expect(
+      addable(
+        [...props.map(propertyColumn), ...item.contexts.map((c) => contextColumn(c.id))],
+        props,
+        contexts,
+      ),
+    ).toBe(false)
   })
 })
 

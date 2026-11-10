@@ -121,6 +121,7 @@ export function PageRow({
       open={() => api.open(row, false)}
       immovable={dragDisabled}
       data-rid={row.id}
+      data-view-lead="row"
       data-reveal-host=""
       className={cx('data-row', selected && 'selected', lead && 'row-lead')}
       {...rowHover(row, api.hover)}

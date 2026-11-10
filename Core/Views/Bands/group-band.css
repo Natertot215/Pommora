@@ -4,6 +4,7 @@
   --band-gap: calc(2 * var(--band-clearance));
 }
 .group-band-row {
+  padding-left: var(--band-indent, 0px);
   padding-bottom: var(--band-clearance);
   transition: padding-bottom var(--chevron-beat, var(--duration-fast)) var(--ease-base);
 }

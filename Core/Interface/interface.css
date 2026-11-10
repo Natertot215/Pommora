@@ -55,9 +55,11 @@
 .detail-scroll.has-header .detail-body {
   padding-top: 16px;
 }
+.detail-scroll.has-header .detail-body:has(.table-shell) {
+  --interface-inset-lead: calc(var(--content-inset) - var(--rail-inset));
+}
 .detail-scroll.has-header .detail-body:has(.table-head) {
   padding-top: 0;
-  --interface-inset-lead: calc(var(--content-inset) - var(--rail-inset));
 }
 /* Cards carry no grips/chevron lane, so no views gutter is reserved. */
 .detail-scroll.has-header .detail-body:has(.cards-view) {

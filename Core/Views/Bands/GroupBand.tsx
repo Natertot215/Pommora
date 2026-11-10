@@ -137,6 +137,7 @@ function HeadedBand({
     <div
       ref={box}
       className={cx('group-band', node.kind === 'bucket' && node.parentKey !== null && 'sub-band')}
+      style={indent ? ({ '--band-indent': indent } as React.CSSProperties) : undefined}
     >
       <div
         ref={springRow}
@@ -144,7 +145,6 @@ function HeadedBand({
         data-view-lead="band"
         data-collapsed={open ? undefined : ''}
         data-empty={node.empty ? '' : undefined}
-        style={indent ? { paddingLeft: indent } : undefined}
       >
         <LineRow
           id={node.key}

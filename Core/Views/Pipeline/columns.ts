@@ -86,6 +86,13 @@ export function addColumns(item: ItemColumns, row: ViewRow, drawn: ResolvedColum
   return { contexts: listed(item.contexts), properties: listed(item.properties) }
 }
 
+/** Whether an item's Add list would hold anything, by count: it draws fewer columns than its Contexts and properties number. */
+export const addable = (
+  drawn: ResolvedColumn[],
+  schema: PropertyDefinition[],
+  contexts: ReadonlyMap<string, unknown>,
+): boolean => drawn.filter((c) => c.kind !== 'stamp').length < schema.length + contexts.size
+
 export const shownIn = (view: SavedView): ((id: string) => boolean) => {
   const ordered = new Set(view.property_order)
   const hidden = new Set(view.hidden_properties)
