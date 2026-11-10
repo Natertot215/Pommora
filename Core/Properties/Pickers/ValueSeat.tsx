@@ -221,27 +221,27 @@ export function useValueSeat(host: SeatHost) {
     const chip = fileChipIndex(e.target)
     const value = resolveFieldValue(row, column)
     const hold: NonNullable<SeatHost['hold']> = host.hold ?? ((show) => show())
-    const act = (action: CellMenuAction | LinkAction): boolean =>
-      run(row, column, valueMenuIntent(action), el)
-    const restyle = (action: string): void => {
-      const style = parseStyleAction(action)
-      if (style) live.current.setStyle?.(column, style.key, style.value)
+    const style = host.style(column)
+    const act = (action: CellMenuAction | LinkAction): void => {
+      if (run(row, column, valueMenuIntent(action), el)) return
+      const parsed = parseStyleAction(action)
+      if (parsed) live.current.setStyle?.(column, parsed.key, parsed.value)
     }
     const link =
       !label && value.kind === 'link'
         ? linkMenuTarget(
             resolveLink(readLinkText(value.value), host.connections()?.index, host.holder(row)),
             true,
-            { hideable: host.hide?.from, style: host.style(column) ?? undefined },
+            { hideable: host.hide?.from, style: style ?? undefined },
           )
         : null
     if (link) {
       const action = await hold(() => showConnectionMenu(link))
-      if (action && !act(action)) restyle(action)
+      if (action) act(action)
       return
     }
     const filled = !isBlankValue(value)
-    const context = cellMenuContextFor(column.type, host.style(column), filled, {
+    const context = cellMenuContextFor(column.type, style, filled, {
       hideable: host.hide?.from,
       barCapable: numberBarCapable(column.def),
       onChip: chip !== null,
@@ -249,8 +249,8 @@ export function useValueSeat(host: SeatHost) {
     if (!context) return
     const action = await hold(() => popMenu(cellMenuModel(context)))
     const commit = (next: PropertyValue | null): void => live.current.commit(row, column, next)
-    if (!action || runFileMenuAction(action, column.def, value, chip, commit) || act(action)) return
-    restyle(action)
+    if (!action || runFileMenuAction(action, column.def, value, chip, commit)) return
+    act(action)
   }
 
   /** A typed value's field, inline or, with `popover`, floating; a popover mounts fresh for every open. */

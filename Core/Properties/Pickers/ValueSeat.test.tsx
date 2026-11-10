@@ -41,7 +41,7 @@ const row: ViewRow = {
   id: 'page_1',
   title: 'One',
   path: 'Col/One.md',
-  frontmatter: { prop_t: 'words' } as never,
+  frontmatter: { prop_t: 'words', prop_u: 'https://example.com' } as never,
   createdAt: null,
   modifiedAt: null,
 }
@@ -199,6 +199,15 @@ describe('a value seat’s right-click', () => {
     mount(columnOf(SELECT), { setStyle })
     await rightClick()
     expect(setStyle).toHaveBeenCalledWith(columnOf(SELECT), 'look', 'compact')
+  })
+
+  it('runs a Link value’s Format answer through the host’s style write', async () => {
+    const setStyle = vi.fn()
+    const URL_LINK = def('prop_u', 'link')
+    answer('style:look:link-short')
+    mount(columnOf(URL_LINK), { setStyle })
+    await rightClick()
+    expect(setStyle).toHaveBeenCalledWith(columnOf(URL_LINK), 'look', 'link-short')
   })
 
   it('holds the host’s ghost for as long as the menu is open', async () => {

@@ -107,5 +107,5 @@ export function connectionMenuModel(ctx: LinkMenuContext): ActionItem<LinkMenuAc
     : ctx.editable
       ? UNLINK_ROWS
       : []
-  return joinGroups([opens, authoring, [...copies, ...format, ...look], closing])
+  return joinGroups([opens, authoring, [...copies, ...format], look, closing])
 }

@@ -179,20 +179,18 @@
 .table [data-chevron] {
   color: var(--label-tertiary);
 }
-/* The rail slot directly left of a row's icon: its grip or check centered on the row's first line, which is the whole row unless its surface states `--row-first-line`, and a band's or nested row's chevron centered. */
+/* The rail slot directly left of a row's icon: a grip or check centers on its row's first line where a surface states `--row-first-line`, and a chevron centers on its box. */
 .row-grip,
 .row-check,
 .table .row-chevron {
   position: absolute;
   left: calc(-1 * var(--rail-inset));
   width: var(--rail-inset);
+  top: 50%;
+  transform: translateY(-50%);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-}
-.table .row-chevron {
-  top: 50%;
-  transform: translateY(-50%);
 }
 .row-rail {
   position: absolute;
@@ -203,8 +201,11 @@
 }
 .row-grip,
 .row-check {
-  top: var(--cell-padding-y);
-  height: var(--row-first-line, calc(100% - 2 * var(--cell-padding-y)));
+  top: calc(
+    var(--cell-padding-y) +
+    var(--row-first-line, calc(100% - 2 * var(--cell-padding-y))) /
+    2
+  );
   transition: opacity var(--reveal-fade) var(--ease-base);
 }
 .row-grip {

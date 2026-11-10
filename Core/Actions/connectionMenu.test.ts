@@ -111,6 +111,11 @@ describe('a link naming an address', () => {
       ['Clear', 'cell:clear'],
     ])
     expect(forms({ ...web, editable: true, value: { style } })).toEqual(expected)
+    expect(
+      connectionMenuModel({ ...web, editable: true, value: { style } }).find(
+        (i) => i.label === 'Format',
+      )?.separatorBefore,
+    ).toBe(true)
     expect(rows({ ...page, editable: true, value: { style } }).slice(-3)).toEqual([
       ['Copy Path', 'title:copypath'],
       ['Format', undefined],
