@@ -46,7 +46,7 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
 | 3 | +145 / −120 | +146 / −131 | +459 / −351 |
 | 4 | +40 / −26 | +42 / −27 | +501 / −378 |
 | 5 | +46 / −30 | +77 / −52 | +578 / −430 |
-| 6 | +590 / −111 | +592 / −92 | +1,168 / −520 |
+| 6 | +590 / −111 | +598 / −93 | +1,174 / −521 |
 | 7 | — (the drive, under `.claude`) | | |
 | 8 | — (documents) | | |
 | Final Verification | — | | |
@@ -115,7 +115,7 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
 - **Gates:** `npm run typecheck`, `npm run test`, and `npm run lint`, from the repo root; each prints its own failures, and lint runs clean. Biome formats every TS, CSS, and JSON write, so an edit failing on whitespace means it reformatted: re-read and retry. "Run the gates" in a task means these three. A phase that changes a `*.css.ts` file or a `createGlobalTheme` contract also runs `npm run build` and reads `✓ built in`.
 - **Frozen:**
   - Every entry of *List View — Decisions & Intention* and its *§Rejections*; a ratified decision changes only on Nathan's word.
-  - The drag engine (`UIX/Interactions/engine.tsx`, `gesture.ts`, `reorderModel.ts`, `lineList.ts`): the two-column pane composes it and changes nothing in it (E-7).
+  - The drag engine (`UIX/Interactions/engine.tsx`, `gesture.ts`, `reorderModel.ts`, `lineList.ts`): the two-column pane composes it, and its one change is the room a landing zone grows by, which reaches a column's zone as it reached a grid's (E-10).
   - Table's column machinery (`useColumns.ts`, `useCellSweep.ts`), `column_alignments`, the fallback for a kind without a renderer (A-3), and the two embed-zoom variables.
   - Archive's and Trash's rows, and Table's cells as they mount a value (I-7).
   - `Core/Sync/`, `Desktop/`, and Project Sapphire.
@@ -198,6 +198,26 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
 
 > The highlight thing works — trust me. If it doesnt work properly for lists, have it highlight the ris
 
+**At the Tuning Stop, 11-10-2026 (the numbers stand as landed):**
+
+> Looks good, fix the pane overlap and have it compress the view like tables and cards do. Also make the banner-line inset that of cards, not tables. Otherwise you need to live-test this yourself since I'm unavailable
+
+**Mid-Session, 11-10-2026 (on the pane's column width):**
+
+> Also make pane-max 180px each column instead of 200
+
+**Mid-Session, 11-10-2026 (on the spacing between groups):**
+
+> Also lists should use the dynamically slightly larger padding between the bottom row of a group and the next band. I beleive cards or tables already solved this so that groups have slightly larger indentation between the last row of that group and the top of the next when open, but even while closed
+
+**Mid-Session, 11-10-2026 (on screenshots):**
+
+> I also want to see screenshots of wrapped rows at multiple indentation levels, chips before titles, and grouped-properties
+
+**Mid-Session, 11-10-2026 (on live testing):**
+
+> Take it through the full testing of every single possible configuration matrix of behavior and interacrion
+
 #### Process Overview
 
 - [x] `[Before Phase 1: record the BASELINE head, the three gates, and, at that head, the Views Drive's tally for groups 2 to 10 and the Properties, Text Property, Option Picker, and Archive Drives' tallies]`
@@ -227,7 +247,7 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
   - [x] Task 6-2 · The renderer
   - [x] Task 6-3 · The record, and the tile goes live
   - [x] Review Checkpoint
-- [ ] `[Stop: Nathan reads List in the app and tunes --list-view-value-max, --list-view-title-min, --list-view-wrap-gap, --list-view-bar-width, the row's padding (--cell-padding-y), and the bar's height. The orchestrator writes each value he settles on into list-view.css, or segment.css.ts for the bar, runs the gates and npm run build, commits inside Phase 6, and re-measures Phase 6's ledger row. His word confirms the design for I-7's follow-ups]`
+- [x] `[Stop: Nathan reads List in the app and tunes --list-view-value-max, --list-view-title-min, --list-view-wrap-gap, --list-view-bar-width, the row's padding (--cell-padding-y), and the bar's height. The orchestrator writes each value he settles on into list-view.css, or segment.css.ts for the bar, runs the gates and npm run build, commits inside Phase 6, and re-measures Phase 6's ledger row. His word confirms the design for I-7's follow-ups]`
 - [ ] `[Compaction checkpoint: c/pre-compaction; on the re-prompt, reread §Constraints and c/plan-execution before Phase 7 opens]`
 - [ ] **Phase 7** — The Views Drive
   - [ ] Task 7-1 · Group 11 — List
@@ -2587,6 +2607,7 @@ List's record registers its renderer, its property pane, and its three switches 
 2. Add `'11'` to `BUILT` and `11: group11` to the run's dispatch map. Seed what List's cases need beside the drive's `VD Stage`, `VD Done`, and `VD Due`: a Link, a Text, and a Number on two throwaway pages, removed by the drive's own restore.
 3. Write the cases below as `group11`. A case that only this plan makes true is a `bc` (List's own, and E-6, C-4, and I-2, which change behavior outside List); a case that holds at every head is a `reg` (I-3's band **+** and H-3's grip). A width case reads the view's computed `--list-view-value-max` or `--list-view-title-min` rather than a literal, since both are tuned at the Stop. A case that fails is fixed in the code, or in the drive where the case misreads a decision, never bent to pass.
 4. Add *Group 11 — List* to `MATRIX.md` with the same rows, and one clause to the Views Drive's entry in `.claude/scripts/README.md`.
+5. On the owner's word of 11-10-2026, group 11 is a full matrix rather than the cases below alone: `MATRIX.md` states List's dimensions (grouping: none, folders, a property, a property with a sub-group; Wrap Rows, Outlines, and Title Icons each way; sides at their defaults, moved, and with a property ahead of Title; a row's contents: title alone, left values only, right values only, both, crowded; the window wide, at the wrap point, and narrow; indentation depth; the main pane and a View Tile; a filter, a sort, and a search active; a value of each property type) crossed with every interaction that reaches a List (the title's press and rename; each value's click and right-click menu; the **+**, Add, and Remove; the ghost row and a band's **+**; a row's drag within and across bands; the pane's drag by pointer and keyboard, its move menu, and its eye, through both doors; each switch through both doors; a kind switch to and from Table and Cards; the selection's highlight), what it prunes and why, and each case's decision. The cases below are its floor.
 
 **AFTER**
 
@@ -2857,11 +2878,10 @@ List's record registers its renderer, its property pane, and its three switches 
 2. **H-3's chevron.** The decision anchors the grip and a band's chevron to a row's first line as one rule. The plan anchors the grip and the check, and leaves the chevron centered in its own rule: it sits in a band's head or a bundle's title box, which never run to two lines.
 3. **The Text pen's room.** A Text value on a List row keeps 24px after it at rest. The alternative, the pen laid over the text's tail on hover, covers a short value whole.
 4. **Outlines in a flat Collection.** Under G-2 a top-level band draws no rail, so a Collection whose Sets hold no Sub-Sets and no sub-group shows none with Outlines on.
-5. **Tuned live at the Stop:** `--list-view-value-max`, `--list-view-title-min`, `--list-view-wrap-gap`, `--list-view-bar-width`, the bar's height, and the row's padding (2px, B-12). The spacing between bands derives from that padding as it does in Table, so a List's bands sit closer together than a Table's.
+5. **Tuned live at the Stop:** `--list-view-value-max`, `--list-view-title-min`, `--list-view-wrap-gap`, `--list-view-bar-width`, the bar's height, and the row's padding (2px, B-12). The spacing between bands is Table's (B-15).
 6. **A value inside a scrolling group.** A mouse wheel over a value that is itself a scroll cap doesn't scroll the group it sits in (`UIX/Interactions/OverScroll.tsx:46-60`), where a trackpad does; the group's own lane keeps the wheel on a crowded row. It comes from each group being one OverScroll lane (H-2) and is read at the Stop.
 7. **H-2 past the title's floor.** The decision doesn't say what gives once the right group alone nearly fills the row. As landed, both groups shrink together from that point and each fades and scrolls, so the title holds its floor and nothing overflows; the alternatives are a right group that alone gives way, or a row that wraps on its own. Read at the Stop.
-8. **A row carried into a pane column** pushes that column's last shown row over the hidden rows at its foot until the drop; the engine floors only an empty zone, and it's frozen (E-7). Read at the Stop.
-9. **Move to Left and Move to Right** write the side alone, so the property lands where its stored order puts it on the other side, not at a fixed end (D-3 covers a property's first showing). Read at the Stop.
+8. **Move to Left and Move to Right** write the side alone, so the property lands where its stored order puts it on the other side, not at a fixed end (D-3 covers a property's first showing). Read at the Stop.
 
 #### Deviations
 

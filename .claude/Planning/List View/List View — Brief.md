@@ -145,3 +145,23 @@ List rows must be less tall than tables. They’re compact
 **Mid-Session, 11-10-2026 (on a selected row's highlight; "ris" confirmed as "row"):**
 
 The highlight thing works — trust me. If it doesnt work properly for lists, have it highlight the ris
+
+**At the Tuning Stop, 11-10-2026 (the numbers stand as landed):**
+
+Looks good, fix the pane overlap and have it compress the view like tables and cards do. Also make the banner-line inset that of cards, not tables. Otherwise you need to live-test this yourself since I'm unavailable
+
+**Mid-Session, 11-10-2026 (on the pane's column width):**
+
+Also make pane-max 180px each column instead of 200
+
+**Mid-Session, 11-10-2026 (on the spacing between groups):**
+
+Also lists should use the dynamically slightly larger padding between the bottom row of a group and the next band. I beleive cards or tables already solved this so that groups have slightly larger indentation between the last row of that group and the top of the next when open, but even while closed
+
+**Mid-Session, 11-10-2026 (on screenshots):**
+
+I also want to see screenshots of wrapped rows at multiple indentation levels, chips before titles, and grouped-properties
+
+**Mid-Session, 11-10-2026 (on live testing):**
+
+Take it through the full testing of every single possible configuration matrix of behavior and interacrion
