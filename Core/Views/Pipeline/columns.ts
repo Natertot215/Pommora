@@ -10,7 +10,7 @@ import {
 import { contextIdsOf } from '../../Contexts/contextIdentity'
 import type { NexusTree } from '../../Nexus/tree'
 import { spaceNodeOf } from '../../Nexus/treeIndex'
-import { resolveRowOrder } from '@pommora/uix/Utilities/moveItem'
+import { fullOrderIndex, resolveRowOrder } from '@pommora/uix/Utilities/moveItem'
 
 const TITLE: ResolvedColumn = { id: FILEDATA.title.id, kind: 'title', type: 'title' }
 
@@ -104,10 +104,14 @@ export function placeInShown(
   id: string,
   toIndex: number,
 ): VisibilityPatch {
-  const next = shownIds.filter((x) => x !== id)
-  next.splice(toIndex, 0, id)
+  const order = [
+    ...shownIds.filter((x) => !view.property_order.includes(x)),
+    ...view.property_order,
+  ]
+  const next = order.filter((x) => x !== id)
+  next.splice(fullOrderIndex(order, shownIds, id, toIndex), 0, id)
   return {
-    property_order: [...next, ...view.property_order.filter((x) => !next.includes(x))],
+    property_order: next,
     hidden_properties: view.hidden_properties.filter((x) => x !== id),
   }
 }

@@ -232,10 +232,10 @@ describe('hiddenListIds', () => {
 })
 
 describe('placeInShown', () => {
-  it('reorders a shown row, writing the full visible order verbatim with hidden ids trailing', () => {
-    const v = listed([title, 'a', 'b', 'h', 'c'], ['h'])
+  it('reorders a shown row and leaves a hidden id where it stands', () => {
+    const v = listed([title, 'a', 'h', 'b', 'c'], ['h'])
     expect(placeInShown(v, [title, 'a', 'b', 'c'], 'c', 1)).toEqual({
-      property_order: [title, 'c', 'a', 'b', 'h'],
+      property_order: [title, 'c', 'a', 'h', 'b'],
       hidden_properties: ['h'],
     })
   })
@@ -264,7 +264,7 @@ describe('placeInShown', () => {
     })
   })
 
-  it('preserves foreign property_order ids at the tail', () => {
+  it('leaves a foreign property_order id where it stands', () => {
     const v = listed(['a', 'future_key', 'b'], [])
     expect(placeInShown(v, ['a', 'b'], 'b', 0).property_order).toEqual(['b', 'a', 'future_key'])
   })
