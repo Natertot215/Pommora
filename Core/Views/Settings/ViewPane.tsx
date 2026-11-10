@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import type { PropertyDefinition } from '../../Properties/properties'
 import type { SavedView, ViewWriter } from '../views'
@@ -7,7 +8,6 @@ import { Icon, type IconName } from '@pommora/uix/Symbols'
 import type { MenuRow } from '@pommora/uix/Menus/MenuIndex'
 import type { MenuBack } from '@pommora/uix/Menus/MenuRows'
 import { ICON } from '@pommora/uix/Menus/frames.css'
-import { VisibilityFrame } from './VisibilityFrame'
 import { LayoutFrame } from './LayoutFrame'
 import { GroupFrame } from './GroupFrame'
 import { SortFrame } from './SortFrame'
@@ -53,6 +53,8 @@ export interface PaneProps {
   save: ViewWriter
 }
 
+export type PropertyPaneProps = PaneProps & { footer?: ReactNode; current?: string }
+
 export function ViewPane({
   id,
   source,
@@ -64,8 +66,10 @@ export function ViewPane({
   const tree = useSession((st) => st.tree)
   const pane: PaneProps = { view, schema, back, save }
   switch (id) {
-    case 'visibility':
-      return <VisibilityFrame {...pane} />
+    case 'visibility': {
+      const { Properties } = presentedKind(view.type).layout
+      return <Properties {...pane} />
+    }
     case 'layout':
       return <LayoutFrame {...pane} />
     case 'group':

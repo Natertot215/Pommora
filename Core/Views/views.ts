@@ -201,6 +201,21 @@ export type ViewFlag = {
   [K in keyof SavedView]-?: SavedView[K] extends boolean | undefined ? K : never
 }[keyof SavedView]
 
+/** A flag as a kind's switch draws it; `invert` shows the switch on while the flag is off. */
+export interface ViewSwitch {
+  icon: string
+  label: string
+  key: ViewFlag
+  invert?: boolean
+}
+
+export const TITLE_ICONS: ViewSwitch = {
+  icon: 'file-text',
+  label: 'Title Icons',
+  key: 'hide_page_icons',
+  invert: true,
+}
+
 type DefaultedOption =
   | ViewFlag
   | 'format'

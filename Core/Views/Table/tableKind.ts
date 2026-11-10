@@ -1,4 +1,6 @@
 import type { ViewKindRecord } from '../Host/viewKinds'
+import { VisibilityFrame } from '../Settings/VisibilityFrame'
+import { TITLE_ICONS } from '../views'
 import { TableView } from './TableView'
 
 export const TABLE_KIND: ViewKindRecord = {
@@ -6,10 +8,11 @@ export const TABLE_KIND: ViewKindRecord = {
   nests: true,
   layout: {
     leaf: 'visibility',
+    Properties: VisibilityFrame,
     switches: [
       { icon: 'columns-3-cog', label: 'Column Icons', key: 'hide_column_icons', invert: true },
       { icon: 'view-table', label: 'Hide Borders', key: 'hide_borders' },
-      { icon: 'file-text', label: 'Title Icons', key: 'hide_page_icons', invert: true },
+      TITLE_ICONS,
     ],
   },
 }

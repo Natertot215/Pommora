@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react'
 import { FILEDATA } from '../../Properties/properties'
 import { useSession } from '../../Session/store'
 import { MenuRowView } from '@pommora/uix/Menus/MenuIndex'
@@ -17,7 +16,7 @@ import { contextIdsOf, contextsByIdOf } from '../../Contexts/contextIdentity'
 import { columnIcon, columnLabel } from '../../Properties/columnDisplay'
 import { Icon } from '@pommora/uix/Symbols'
 import * as s from '@pommora/uix/Menus/frames.css'
-import type { PaneProps } from './ViewPane'
+import type { PropertyPaneProps } from './ViewPane'
 import { type HideControls, hideEye } from './OptionOrderList'
 
 function VisibilityGroups({
@@ -74,7 +73,7 @@ export function VisibilityFrame({
   save,
   footer,
   current = 'Visibility',
-}: PaneProps & { footer?: ReactNode; current?: string }): React.JSX.Element | null {
+}: PropertyPaneProps): React.JSX.Element | null {
   const tree = useSession((st) => st.tree)
   if (!tree) return null
 

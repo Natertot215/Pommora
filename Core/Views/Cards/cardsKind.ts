@@ -2,8 +2,9 @@ import { pickerRow, steppedRow } from '@pommora/uix/Menus/MenuIndex'
 import type { PickerOption } from '@pommora/uix/Menus/PickerControl'
 import { ROOT_ROW_LOOK } from '@pommora/uix/Menus/frames.css'
 import { TENTHS_SCALE } from '../../Settings/personalization'
-import { type CardBanner, type ViewFormat, viewOption } from '../views'
+import { type CardBanner, TITLE_ICONS, type ViewFormat, viewOption } from '../views'
 import type { ViewKindRecord } from '../Host/viewKinds'
+import { VisibilityFrame } from '../Settings/VisibilityFrame'
 import { CardsView } from './CardsView'
 
 const BANNERS: PickerOption<CardBanner>[] = [
@@ -22,10 +23,11 @@ export const CARDS_KIND: ViewKindRecord = {
   nests: false,
   layout: {
     leaf: 'switches',
+    Properties: VisibilityFrame,
     switches: [
       { icon: 'map', label: 'Hide Location', key: 'hide_location' },
       { icon: 'wrap-text', label: 'Wrap Titles', key: 'wrap_titles' },
-      { icon: 'file-text', label: 'Title Icons', key: 'hide_page_icons', invert: true },
+      TITLE_ICONS,
       { icon: 'folder-closed', label: 'Set Cards', key: 'set_cards' },
     ],
     rows: (view, write) => [

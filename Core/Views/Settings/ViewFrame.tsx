@@ -33,7 +33,6 @@ import { titleInput } from '@pommora/uix/Menus/menu-row.css'
 import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
 import { kindRows, kindSwitches, typeGrid } from './LayoutFrame'
 import { chevronRows, type PaneProps, VIEW_PANES, ViewPane, type ViewPaneId } from './ViewPane'
-import { VisibilityFrame } from './VisibilityFrame'
 import { presentedKind } from '../Host/viewKinds'
 import { LineRow, LineZone, lineList } from '@pommora/uix/Interactions/drag'
 import { moveBefore } from '@pommora/uix/Utilities/moveItem'
@@ -196,11 +195,12 @@ function ViewEditor({
 
   const toViews: MenuBack = { label: 'Views', onBack: () => setPane(null) }
   const leaf: PaneProps = { view, schema, back: toViews, save }
+  const { layout } = presentedKind(view.type)
   const detail =
     pane !== 'layout' ? (
       pane && <ViewPane id={pane} source={source} {...leaf} />
-    ) : presentedKind(view.type).layout.leaf === 'visibility' ? (
-      <VisibilityFrame
+    ) : layout.leaf === 'visibility' ? (
+      <layout.Properties
         {...leaf}
         current="Layout"
         footer={
