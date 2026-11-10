@@ -35,6 +35,7 @@
 .list-view-group.list-view-right {
   flex: 0 1 auto;
   min-width: 0;
+  max-width: 100%;
   margin-left: auto;
 }
 /* The + trails the group before it and takes no room on its line, standing in the line's end padding, so it never breaks from that group. */
