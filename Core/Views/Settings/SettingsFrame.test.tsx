@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import type { Root } from 'react-dom/client'
 import type { CollectionNode } from '../../Nexus/tree'
-import type { SavedView } from '../views'
+import type { SavedView, ViewPatch } from '../views'
 import { mountEachTest } from '../../Testing/viewHarness'
 import { useSession } from '../../Session/store'
 import { ViewTileScopeProvider } from '../ViewTileScope'
@@ -40,11 +40,11 @@ beforeEach(() => {
   useSession.setState({ tree: { ...makeTree(), collections: [source] } })
 })
 
-let persist: ReturnType<typeof vi.fn>
+let persist: ReturnType<typeof vi.fn<(patch: ViewPatch) => void>>
 
 const mount = (shown: SavedView = view): Promise<void> =>
   act(async () => {
-    persist = vi.fn()
+    persist = vi.fn<(patch: ViewPatch) => void>()
     root.render(
       <ViewTileScopeProvider
         value={{ source, view: shown, persist, locked: false, setLocked: vi.fn() }}
