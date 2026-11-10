@@ -1,12 +1,13 @@
 /* A List row over the table vocabulary: one lead cell holding a line of two groups. */
 
 .table.list-view {
-  --cell-padding-y: 3px; /* KNOB — a row's top and bottom room, under Table's; the selector outranks `.table`'s own statement */
+  --cell-padding-y: 2px; /* KNOB — a row's top and bottom room, under Table's; the selector outranks `.table`'s own statement */
   --list-view-value-max: 200px; /* KNOB — where a property's values end in an ellipsis */
   --list-view-title-min: 120px; /* KNOB — how short a title's text gets before the row wraps or its left group scrolls */
   --list-view-wrap-gap: 14px; /* KNOB — the room between the two groups */
   --list-view-bar-width: 100px; /* KNOB — a bar-look Number's width */
-  --row-first-line: 20px; /* a chip's and an inline button's height: every line of a row stands this tall, and the grip centers on the first */
+  --row-first-line: var(--label-height-roomy);
+  --list-view-add-width: 20px; /* the hover +'s width */
 }
 .list-view .table-grid {
   --cols: minmax(0, 1fr);
@@ -17,7 +18,7 @@
   align-items: center;
   gap: calc(2 * var(--cell-padding-y)) var(--list-view-wrap-gap); /* a wrapped line stands a row's rhythm below the first */
 }
-.table-grid.wraps .list-view-line {
+.table-grid.wraps .list-view-line:has(> .list-view-right) {
   flex-wrap: wrap;
 }
 /* The left group's basis is its narrowest form, so the line breaks only once the title is at its floor; narrower than that, it scrolls. */
@@ -25,15 +26,24 @@
   display: flex;
   align-items: center;
   flex: 1 1 min-content;
+  max-width: max-content;
   min-height: var(--row-first-line);
 }
 .list-view-group > * {
   flex: none;
 }
 .list-view-group.list-view-right {
-  flex: none;
-  max-width: 100%;
+  flex: 0 1 auto;
+  min-width: 0;
   margin-left: auto;
+}
+/* The + trails the group before it and takes no room on its line, standing in the line's end padding, so it never breaks from that group. */
+.list-view-line:has(> .list-view-add) {
+  padding-inline-end: var(--list-view-add-width);
+}
+.list-view-add {
+  flex: none;
+  margin-inline: calc(-1 * var(--list-view-wrap-gap)) calc(-1 * var(--list-view-add-width));
 }
 
 /* A title's floor is the smaller of its text and --list-view-title-min: the unseen sizer holds the box to that, and the text, breakable anywhere under a one-line clamp, gives up the rest. */
@@ -57,7 +67,6 @@
 .list-view-title .cell-title {
   display: flex;
   align-items: center;
-  max-width: none;
 }
 .list-view-title .cell-title > svg {
   flex: none;
@@ -83,10 +92,10 @@
 }
 
 /* A nested band's rail: from under its head to its last member, at its chevron. */
-.table-grid.outlined .group-band .group-band:not(.band-tail) > [data-reveal] {
+.list-view .table-grid.outlined .group-band .group-band:not(.band-tail) > [data-reveal] {
   position: relative;
 }
-.table-grid.outlined .group-band .group-band:not(.band-tail) > [data-reveal]::before {
+.list-view .table-grid.outlined .group-band .group-band:not(.band-tail) > [data-reveal]::before {
   content: "";
   position: absolute;
   top: var(--list-outline-gap);

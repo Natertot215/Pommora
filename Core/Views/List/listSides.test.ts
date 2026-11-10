@@ -60,6 +60,12 @@ describe('sideFor', () => {
     expect(sideFor(column('s_dt'), v)).toBe('left')
     expect(sideFor(contextColumn('ctx_a'), v)).toBe('left')
   })
+
+  it('holds Title to Left over a stored side', () => {
+    expect(
+      sideFor(column(FILEDATA.title.id), view({ column_sides: { [FILEDATA.title.id]: 'right' } })),
+    ).toBe('left')
+  })
 })
 
 describe('sideColumn', () => {

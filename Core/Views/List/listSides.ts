@@ -20,7 +20,7 @@ const DEFAULT_SIDE: Record<ColumnType, Side> = {
 }
 
 export const sideFor = (column: ResolvedColumn, view: SavedView): Side =>
-  view.column_sides?.[column.id] ?? DEFAULT_SIDE[column.type]
+  column.type === 'title' ? 'left' : (view.column_sides?.[column.id] ?? DEFAULT_SIDE[column.type])
 
 /** A side's column of the property pane, top to bottom: Left as its group reads, Right from the row's edge inward. */
 export function sideColumn(

@@ -4,6 +4,8 @@ import { act } from 'react'
 import type { Root } from 'react-dom/client'
 import { hiddenRow } from '@pommora/uix/Menus/frames.css'
 import { heading } from '@pommora/uix/Menus/menu-row.css'
+import { DragGroup } from '@pommora/uix/Interactions/drag'
+import { firePointer, stubRect } from '@pommora/uix/Utilities/pointerHarness'
 import { ok } from '../../Contract/result'
 import type { PropertyDefinition } from '../../Properties/properties'
 import { useSession } from '../../Session/store'
@@ -11,7 +13,7 @@ import { mountEachTest } from '../../Testing/viewHarness'
 import { stubDialer } from '../../vitest.setup'
 import type { SavedView } from '../views'
 import { SidesFrame } from './SidesFrame'
-import { column } from './sides-frame.css'
+import { column, zone } from './sides-frame.css'
 
 const save = vi.fn()
 const menu = vi.fn(async (_ask: { items: unknown[] }) => ok('move'))
@@ -137,6 +139,71 @@ describe('SidesFrame — a row’s controls', () => {
   it('offers Title no side', async () => {
     await rightClick(columns()[0], 'Title')
     expect(menu).not.toHaveBeenCalled()
+    expect(save).not.toHaveBeenCalled()
+  })
+})
+
+describe('SidesFrame — a row’s drag', () => {
+  // Left draws Title and Stage; Right draws Count over Due, from the row's edge inward.
+  const drag = async (name: string, to: { x: number; y: number }): Promise<void> => {
+    await act(async () => {
+      root.render(
+        <DragGroup>
+          <SidesFrame
+            schema={schema}
+            view={{ ...view, hidden_properties: [] }}
+            back={{ label: 'Settings', onBack: () => {} }}
+            save={save}
+          />
+        </DragGroup>,
+      )
+    })
+    save.mockClear()
+    columns().forEach((col, i) => {
+      const left = i * 208
+      const box = col.querySelector(`.${zone}`)!
+      stubRect(box, { top: 0, bottom: 60, left, right: left + 200 })
+      ;[...box.children]
+        .filter((e) => e.textContent)
+        .forEach((row, r) => {
+          stubRect(row, { top: r * 20, bottom: r * 20 + 20, left, right: left + 200 })
+        })
+    })
+    const from = labelIn(document.body, name).closest(`.${zone} > *`)!
+    const start = from.getBoundingClientRect()
+    await act(async () => {
+      firePointer(from, 'pointerdown', { x: start.left + 100, y: start.top + 10 })
+    })
+    await act(async () => {
+      firePointer(window, 'pointermove', { x: (start.left + 100 + to.x) / 2, y: to.y })
+    })
+    await act(async () => {
+      firePointer(window, 'pointermove', to)
+    })
+    await act(async () => {
+      firePointer(window, 'pointerup', to)
+    })
+  }
+
+  it('reorders a row within Right, writing its order and no side', async () => {
+    await drag('Due', { x: 308, y: 2 })
+    expect(save).toHaveBeenCalledExactlyOnceWith({
+      property_order: ['_title', 'prop_s', 'prop_n', 'prop_d'],
+      hidden_properties: [],
+    })
+  })
+
+  it('carries a row from Left to Right, writing its side and order in one save', async () => {
+    await drag('Stage', { x: 308, y: 2 })
+    expect(save).toHaveBeenCalledExactlyOnceWith({
+      property_order: ['_title', 'prop_d', 'prop_n', 'prop_s'],
+      hidden_properties: [],
+      column_sides: { prop_s: 'right' },
+    })
+  })
+
+  it('holds Title to Left, writing nothing when it’s dragged toward Right', async () => {
+    await drag('Title', { x: 308, y: 10 })
     expect(save).not.toHaveBeenCalled()
   })
 })

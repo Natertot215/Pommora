@@ -124,7 +124,7 @@ const items = (group: Element | null): string[] =>
           ? 'check'
           : /2026/.test(e.textContent ?? '')
             ? 'date'
-            : (e.textContent ?? '').replace(/(.+?)\1+$/, '$1'),
+            : (e.textContent ?? '').replace(/^(.+?)\1+$/, '$1'),
     )
 
 describe('a List row', () => {
@@ -163,11 +163,9 @@ describe('a List row', () => {
     for (const group of groups('p1')) {
       const kids = [...group.children]
       kids.forEach((el, i) => {
-        if (i === 0) expect(isSegment(el)).toBe(false)
-        else if (el.getAttribute('aria-label') === 'Add Property')
-          expect(isSegment(kids[i - 1])).toBe(false)
-        else expect(isSegment(el)).toBe(!isSegment(kids[i - 1]))
+        expect(isSegment(el)).toBe(i > 0 && !isSegment(kids[i - 1]))
       })
+      expect(isSegment(kids.at(-1)!)).toBe(false)
     }
     expect([...left('p1').children].filter(isSegment)).toHaveLength(1)
     expect([...right('p1')!.children].filter(isSegment)).toHaveLength(1)
@@ -180,11 +178,11 @@ describe('a List row', () => {
       source(listView({ column_sides: { prop_due: 'left', prop_done: 'left', prop_n: 'left' } })),
     )
     expect(right('p1')).toBeNull()
-    expect(left('p1').lastElementChild?.getAttribute('aria-label')).toBe('Add Property')
+    expect(plus(rowOf('p1'))?.previousElementSibling).toBe(left('p1'))
 
     await renderView(root, source())
-    expect(right('p1')?.lastElementChild?.getAttribute('aria-label')).toBe('Add Property')
-    expect(plus(left('p1'))).toBeNull()
+    expect(plus(rowOf('p1'))?.previousElementSibling).toBe(right('p1'))
+    expect(groups('p1').some((g) => plus(g) !== null)).toBe(false)
 
     useSession.setState({ tree: { ...makeTree({ registry: DEFS }), contexts: [] } })
     await renderView(
@@ -221,10 +219,15 @@ describe('a List row', () => {
     expect(document.querySelector('[data-picker-portal]')).toBeNull()
 
     const title = rowOf('p1').querySelector<HTMLElement>('.cell-title-text')!
+    const hit = document.elementFromPoint
     document.elementFromPoint = () => title
-    await act(async () => {
-      title.click()
-    })
+    try {
+      await act(async () => {
+        title.click()
+      })
+    } finally {
+      document.elementFromPoint = hit
+    }
     expect(selectSpy.mock.calls.at(-1)?.[0]).toEqual({ kind: 'page', id: 'p1', path: 'Col/One.md' })
   })
 
@@ -256,6 +259,27 @@ describe('a List row', () => {
       expect.anything(),
       expect.objectContaining({ property_order: expect.arrayContaining(['prop_stage']) }),
     )
+  })
+
+  it('keeps the plus and its Add list open when a first right-side value lands from it', async () => {
+    await renderView(root, source(listView({ property_order: ['_title', 'prop_stage'] })))
+    const add = plus(rowOf('p2'))!
+    await act(async () => add.click())
+    await settle(30)
+    await act(async () => {
+      ;[...document.querySelectorAll<HTMLElement>('[data-picker-portal] [role="button"]')]
+        .find((e) => e.textContent?.includes('Due'))!
+        .click()
+    })
+    await settle(30)
+    await act(async () => {
+      document.querySelectorAll<HTMLElement>('[data-picker-portal] [data-k]')[10].click()
+    })
+    await settle(200)
+    expect(items(right('p2'))).toEqual(['date'])
+    expect(plus(rowOf('p2'))).toBe(add)
+    expect(add.hasAttribute('data-reveal-held')).toBe(true)
+    expect(document.querySelector('[data-picker-portal] [data-k]')).not.toBeNull()
   })
 
   it('outlines its grid unless hide_outlines, and wraps it under wrap_rows', async () => {

@@ -324,11 +324,11 @@ describe('ViewFrame — the panes the editor reaches', () => {
     for (const label of ['Title Icons', 'Outlines', 'Wrap Rows'])
       expect(document.querySelector(`[role="switch"][aria-label="${label}"]`)).not.toBeNull()
     await press('Layout')
-    const detail = [...document.querySelectorAll(`.${scrollFrameBody}`)].at(-1)!
+    const pane = [...document.querySelectorAll(`.${scrollFrameBody}`)].at(-1)!.parentElement!
     expect(
-      [...detail.querySelectorAll(`.${heading.split(' ').join('.')}`)].map((h) => h.textContent),
+      [...pane.querySelectorAll(`.${heading.split(' ').join('.')}`)].map((h) => h.textContent),
     ).toEqual(['Left', 'Right'])
-    expect(detail.querySelector('[aria-label="Outlines"]')).toBeNull()
+    expect(pane.querySelector('[aria-label="Outlines"]')).toBeNull()
   })
 
   it('the List tile switches a view to List, and the Gallery tile writes nothing', async () => {

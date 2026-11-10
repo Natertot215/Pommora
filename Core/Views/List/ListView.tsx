@@ -157,6 +157,7 @@ const ListPageRow = memo(function ListPageRow({
       icon="plus"
       size="body"
       ariaLabel="Add Property"
+      className="list-view-add"
       create
       reveal
       data-reveal-held={adding || undefined}
@@ -171,14 +172,13 @@ const ListPageRow = memo(function ListPageRow({
         <div className="list-view-line">
           <div className={cx('list-view-group', overScrollLabel)}>
             <Segments parts={on('left')} />
-            {right.length === 0 && add}
           </div>
           {right.length > 0 && (
             <div className={cx('list-view-group list-view-right', overScrollLabel)}>
               <Segments parts={right} />
-              {add}
             </div>
           )}
+          {add}
         </div>
       </RowLead>
     </PageRow>

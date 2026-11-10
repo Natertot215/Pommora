@@ -23,7 +23,9 @@ export const SIZE = {
   textMax: '85px',
 } as const
 
-globalStyle(':root', { vars: { '--label-pad-x': SIZE.padX } })
+globalStyle(':root', {
+  vars: { '--label-pad-x': SIZE.padX, '--label-height-roomy': SIZE.roomyHeight },
+})
 
 const labelBase = style([
   text.control.semibold,
