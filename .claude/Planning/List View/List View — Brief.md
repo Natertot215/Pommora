@@ -141,3 +141,7 @@ the headingROw Left Right should use the actual menuheading style. Don't handrol
 **Mid-Session, 11-10-2026 (on row height):**
 
 List rows must be less tall than tables. They’re compact
+
+**Mid-Session, 11-10-2026 (on a selected row's highlight; "ris" confirmed as "row"):**
+
+The highlight thing works — trust me. If it doesnt work properly for lists, have it highlight the ris

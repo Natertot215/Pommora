@@ -194,6 +194,10 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
 
 > List rows must be less tall than tables. They’re compact
 
+**Mid-Session, 11-10-2026 (on a selected row's highlight; "ris" confirmed as "row"):**
+
+> The highlight thing works — trust me. If it doesnt work properly for lists, have it highlight the ris
+
 #### Process Overview
 
 - [x] `[Before Phase 1: record the BASELINE head, the three gates, and, at that head, the Views Drive's tally for groups 2 to 10 and the Properties, Text Property, Option Picker, and Archive Drives' tallies]`

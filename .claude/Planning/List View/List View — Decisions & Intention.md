@@ -53,6 +53,7 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
 - **B-10 [INFERRED]:** The add control should keep its slot while hidden, so nothing shifts on hover, and should be absent from a row with nothing left to add.
 - **B-11 [CONFIRMED]:** Title should be an item of the left group that can move within it, so a property's values can sit before the title on a row, as a Table column can precede Title. Title always shows.
 - **B-12 [CONFIRMED]:** A List row should be compact, shorter than a Table row.
+- **B-13 [CONFIRMED]:** A List row whose page is the selection should highlight as a whole row, as a Table row does.
 
 #### C — Values
 
