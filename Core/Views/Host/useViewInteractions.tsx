@@ -21,7 +21,9 @@ import type { Geometry, Row } from '@pommora/uix/Interactions/reorderModel'
 import { TAB_FAMILY } from '../../Navigation/tabRows'
 import { EntityIcon } from '../../Assets/EntityIcon'
 import { columnLabel } from '../../Properties/columnDisplay'
-import { resolveColumn } from '../Pipeline/columns'
+import { addColumns, itemColumns, resolveColumn } from '../Pipeline/columns'
+import { isBlankValue } from '../../Properties/propertyValue'
+import type { ResolvedColumn } from '../../Properties/properties'
 import { notify } from '../../Interface/Notifications/notifications'
 import { useSession } from '../../Session/store'
 import { pickOpen } from '../../Session/chromeSlice'
@@ -72,7 +74,10 @@ interface ViewInteractionPolicy<Own extends StableHandlers> {
     travelHold?: { inZone: (enteringId: string) => boolean; holdMs: number }
   }
   seat: Pick<SeatHost, 'anchor'> &
-    Partial<Pick<SeatHost, 'commit' | 'centered' | 'add' | 'hide' | 'onClose'>>
+    Partial<Pick<SeatHost, 'centered' | 'onClose'>> & {
+      /** What an item draws of the view's columns, from a kind whose items add, show, and hide properties themselves. */
+      drawn?: (row: ViewRow) => ResolvedColumn[]
+    }
   newPages: NewPageRows
   item: Own
 }
@@ -146,6 +151,8 @@ export function useViewInteractions<Own extends StableHandlers>(
     commitValue,
     styleOf,
     setStylePatch,
+    revealProperty,
+    hideProperty,
   } = host
 
   const { schema } = ctx
@@ -159,6 +166,7 @@ export function useViewInteractions<Own extends StableHandlers>(
     return row && column && commitValue(row, column, groupKeyToValue(groupKey, column.type))
   }
   const openTarget = useSession((s) => s.openTarget)
+  const tree = useSession((s) => s.tree)
   const tile = useViewTileScope()
 
   // A single-sorted view lays its rows out in value RUNS, so a reorder landing one strictly inside another run rewrites the sorted property. Armed only when the column is shown — an unrendered property leaves the run boundaries unreadable.
@@ -473,6 +481,19 @@ export function useViewInteractions<Own extends StableHandlers>(
       host.naming !== null,
     travelHold: policy.ghost.travelHold,
   })
+  const { drawn, ...seatPolicy } = policy.seat
+  // A value from an item's Add shows its property; a right-click pick runs through `MenuSeat` and leaves the view alone.
+  const adds: Pick<SeatHost, 'commit' | 'hide' | 'add'> | undefined = drawn && {
+    commit: (row, column, value) => {
+      if (!isBlankValue(value)) revealProperty(column.id)
+      commitValue(row, column, value)
+    },
+    hide: { from: 'view', run: (_, column) => hideProperty(column.id) },
+    add: {
+      columns: (row) => addColumns(itemColumns(tree, schema, row.id), row, drawn(row)),
+      show: (column) => revealProperty(column.id),
+    },
+  }
   const seat = useValueSeat({
     rowOf: (id) => rowById.get(id),
     columnOf: (id) => resolveColumn(id, schema, identity.contextIds),
@@ -482,7 +503,8 @@ export function useViewInteractions<Own extends StableHandlers>(
     style: styleOf,
     setStyle: setStylePatch,
     hold: ghost.suppressWrap,
-    ...policy.seat,
+    ...seatPolicy,
+    ...adds,
   })
   useClearStrandedGhost(ghost, rowById)
   // The container itself holds nothing, so the ghost stands on its own as its first New Page instead of waiting on a hover anchor. Reading the container rather than the pipeline keeps it off a view whose filter is what emptied the paint — there the create would land a page the filter hides again.

@@ -4,9 +4,12 @@ import type { SavedView } from '../views'
 import {
   FILEDATA,
   FILEDATA_BY_ID,
+  PROPERTY_TYPES,
   type PropertyDefinition,
   type ResolvedColumn,
 } from '../../Properties/properties'
+import { holdsValue } from '../../Properties/fieldValue'
+import type { ViewRow } from '../viewRow'
 import { contextIdsOf } from '../../Contexts/contextIdentity'
 import type { NexusTree } from '../../Nexus/tree'
 import { spaceNodeOf } from '../../Nexus/treeIndex'
@@ -58,6 +61,29 @@ export function itemColumns(
     ]),
     properties: resolveRowOrder(schema.map(propertyColumn), idOf, rowOrder),
   }
+}
+
+/** The columns an item draws beside its title: all of them, or, where blanks drop, those holding a value or drawing their blank, as a checkbox does. */
+export function drawnColumns(
+  row: ViewRow,
+  columns: ResolvedColumn[],
+  dropBlanks: boolean,
+): ResolvedColumn[] {
+  return columns.filter(
+    (c) =>
+      c.kind !== 'title' &&
+      (!dropBlanks || holdsValue(row, c) || PROPERTY_TYPES[c.type].blankDraws === true),
+  )
+}
+
+/** What an item's Add list offers: the columns it doesn't draw, those it can fill ahead of those it only shows. */
+export function addColumns(item: ItemColumns, row: ViewRow, drawn: ResolvedColumn[]): ItemColumns {
+  const seen = new Set(drawn.map((c) => c.id))
+  const listed = (columns: ResolvedColumn[]): ResolvedColumn[] => {
+    const rest = columns.filter((c) => !seen.has(c.id))
+    return [...rest.filter((c) => !holdsValue(row, c)), ...rest.filter((c) => holdsValue(row, c))]
+  }
+  return { contexts: listed(item.contexts), properties: listed(item.properties) }
 }
 
 export const shownIn = (view: SavedView): ((id: string) => boolean) => {

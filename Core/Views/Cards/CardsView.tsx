@@ -1,7 +1,6 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ViewRow } from '../viewRow'
 import type { SetNode } from '../../Nexus/tree'
-import { isBlankValue, type PropertyValue } from '../../Properties/propertyValue'
 import { type CardBanner, isCompact, type SavedView, viewOption } from '../views'
 import type { ColumnStyle } from '../../Properties/columnStyles'
 import { isCmd } from '@pommora/uix/Interactions/chords'
@@ -56,8 +55,7 @@ import { ValueSeat } from '../../Properties/Pickers/ValueSeat'
 import { borderedField } from '@pommora/uix/Fields/fields.css'
 import { overScrollEllipsis } from '@pommora/uix/Interactions/OverScroll'
 import { TENTHS_SCALE } from '../../Settings/personalization'
-import { cardAddColumns, shownColumnsFor } from './cardColumns'
-import { itemColumns } from '../Pipeline/columns'
+import { drawnColumns } from '../Pipeline/columns'
 import { RenamableName } from '../../Interface/RenamableTitle'
 import { titleInput } from '@pommora/uix/Menus/menu-row.css'
 import { useGhostFlip } from './useGhostFlip'
@@ -102,20 +100,7 @@ const INERT_API: ValueApi = {
 // ── The view ────────────────────────────────────────────────────────────────
 
 export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
-  const {
-    view,
-    columns,
-    groups,
-    ctx,
-    rowById,
-    bands,
-    crossBand,
-    searching,
-    hideProperty,
-    revealProperty,
-    commitValue,
-    styleById,
-  } = host
+  const { view, columns, groups, ctx, rowById, bands, crossBand, searching, styleById } = host
   const tree = useSession((s) => s.tree)
   const nexusId = tree?.nexus.id ?? ''
 
@@ -142,11 +127,6 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     return Math.abs(g.top - cardEl.getBoundingClientRect().top) < g.height / 2
   }
 
-  // A value from a card's Add shows its property; a right-click pick runs through `MenuSeat` and leaves the view alone.
-  const commitOnCard = (row: ViewRow, column: ResolvedColumn, v: PropertyValue | null): void => {
-    if (!isBlankValue(v)) revealProperty(column.id)
-    commitValue(row, column, v)
-  }
   const [bannerRequest, setBannerRequest] = useState<BannerRequest | null>(null)
   const interactions = useViewInteractions(host, {
     ghost: {
@@ -154,19 +134,9 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
       travelHold: { inZone: ghostRowmate, holdMs: GHOST_TRAVEL_HOLD_MS },
     },
     seat: {
-      commit: commitOnCard,
       anchor: seatOf,
       centered: true,
-      hide: { from: 'view', run: (_, column) => hideProperty(column.id) },
-      add: {
-        columns: (row) =>
-          cardAddColumns(
-            itemColumns(tree, ctx.schema, row.id),
-            row,
-            shownColumnsFor(row, columns, isCompact(view)),
-          ),
-        show: (column) => revealProperty(column.id),
-      },
+      drawn: (row) => drawnColumns(row, columns, isCompact(view)),
     },
     newPages: 'single',
     item: { banner: setBannerRequest },
@@ -615,7 +585,7 @@ const CardFace = memo(function CardFace({
   /** The column whose inline field is open on this card. */
   editing: string | null
 }): React.JSX.Element {
-  const shown = useMemo(() => shownColumnsFor(row, columns, isCompact(view)), [columns, row, view])
+  const shown = useMemo(() => drawnColumns(row, columns, isCompact(view)), [columns, row, view])
   const titleIcon = !viewOption(view, 'hide_page_icons') && (
     <EntityIcon kind="page" icon={row.icon} className="card-title-icon" />
   )
