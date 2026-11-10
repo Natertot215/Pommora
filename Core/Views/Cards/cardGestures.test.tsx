@@ -344,7 +344,7 @@ describe('a card’s dates', () => {
 describe('a card’s link value', () => {
   const siteDef: PropertyDefinition = { id: 'prop_site', label: 'Site', key: 'Site', type: 'link' }
 
-  it('pops the link menu, which closes with Clear and Remove', async () => {
+  it('pops the link menu, which carries its view’s Format and closes with Clear and Remove', async () => {
     const base = source()
     const withSite = {
       ...base,
@@ -368,15 +368,26 @@ describe('a card’s link value', () => {
     await act(async () => {
       value.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
     })
-    const items = menuSpy.mock.calls[0][0].items as { action?: string }[]
+    const items = menuSpy.mock.calls[0][0].items as {
+      label: string
+      action?: string
+      submenu?: { action?: string }[]
+    }[]
     expect(items.map((i) => i.action)).toEqual([
       'link:window',
       'link:browser',
       'rename',
       'editLink',
       'title:copylink',
+      undefined,
       'cell:clear',
       'cell:hide',
+    ])
+    expect(items[5].label).toBe('Format')
+    expect(items[5].submenu?.map((r) => r.action)).toEqual([
+      'style:look:link-full',
+      'style:look:link-short',
+      'style:look:link-title',
     ])
   })
 })

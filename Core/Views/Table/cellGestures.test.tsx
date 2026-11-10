@@ -440,7 +440,7 @@ describe('menu-entered editing', () => {
     )
   })
 
-  it('a link value’s menu is the link menu, closing with Clear and no Remove', async () => {
+  it('a link value’s menu is the link menu, carrying its view’s Format and closing with Clear and no Remove', async () => {
     await mountTable(sourceWith())
     channels.menu = vi.fn(async () => ok(null))
     const linkCell = host.querySelectorAll<HTMLElement>('.data-cell')[4]
@@ -448,7 +448,9 @@ describe('menu-entered editing', () => {
       linkCell.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
     })
     const items = (channels.menu as ReturnType<typeof vi.fn>).mock.calls[0][0].items as {
+      label: string
       action?: string
+      submenu?: { action?: string }[]
     }[]
     expect(items.map((i) => i.action)).toEqual([
       'link:window',
@@ -456,7 +458,14 @@ describe('menu-entered editing', () => {
       'rename',
       'editLink',
       'title:copylink',
+      undefined,
       'cell:clear',
+    ])
+    expect(items[5].label).toBe('Format')
+    expect(items[5].submenu?.map((r) => r.action)).toEqual([
+      'style:look:link-full',
+      'style:look:link-short',
+      'style:look:link-title',
     ])
   })
 

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { connectionMenuModel, type LinkMenuContext, linkMenuTarget } from './connectionMenu'
+import { dateDefaults } from '../Properties/columnStyles'
 
 const rows = (ctx: LinkMenuContext): [string, string | undefined][] =>
   connectionMenuModel(ctx).map((i) => [i.label, i.action])
@@ -87,6 +88,35 @@ describe('a link naming an address', () => {
       ['Clear', 'cell:clear'],
       ['Remove', 'cell:hide'],
     ])
+  })
+
+  it('a value with a view’s look lists Format with the link forms, its current one checked', () => {
+    const style = { ...dateDefaults('full'), look: 'link-short' } as const
+    const forms = (ctx: LinkMenuContext) =>
+      connectionMenuModel(ctx)
+        .find((i) => i.label === 'Format')
+        ?.submenu?.map((r) => [r.action, r.checked])
+    const expected = [
+      ['style:look:link-full', false],
+      ['style:look:link-short', true],
+      ['style:look:link-title', false],
+    ]
+    expect(rows({ ...web, editable: true, value: { style } })).toEqual([
+      ['Preview', 'link:window'],
+      ['Open In Browser', 'link:browser'],
+      ['Edit Title', 'rename'],
+      ['Edit Link', 'editLink'],
+      ['Copy Link', 'title:copylink'],
+      ['Format', undefined],
+      ['Clear', 'cell:clear'],
+    ])
+    expect(forms({ ...web, editable: true, value: { style } })).toEqual(expected)
+    expect(rows({ ...page, editable: true, value: { style } }).slice(-3)).toEqual([
+      ['Copy Path', 'title:copypath'],
+      ['Format', undefined],
+      ['Clear', 'cell:clear'],
+    ])
+    expect(forms({ ...page, editable: true, value: { style } })).toEqual(expected)
   })
 
   it('a read-only surface is offered the opens and the copy', () => {

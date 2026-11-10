@@ -12,7 +12,7 @@ type CellMenuKind =
       clearable?: boolean
       barCapable?: boolean
     }
-  | { kind: 'link'; filled: boolean }
+  | { kind: 'link'; filled: boolean; current?: ColumnStyle }
   | { kind: 'text'; filled: boolean }
   | { kind: 'file'; onChip: boolean }
   | { kind: 'bare'; clearable: boolean }
@@ -53,7 +53,7 @@ function baseCellMenu(
   const { kind, origin } = PROPERTY_TYPES[type]
   switch (kind) {
     case 'link':
-      return { kind: 'link', filled }
+      return { kind: 'link', filled, ...(style ? { current: style } : {}) }
     case 'file':
       return { kind: 'file', onChip }
     case 'text':
@@ -108,6 +108,7 @@ function baseCellMenuModel(ctx: CellMenuContext): ActionItem<CellMenuAction>[][]
           ...(ctx.filled ? [{ label: 'Edit Title', action: 'rename' as const }] : []),
           { label: 'Edit Link', action: 'editLink' },
         ],
+        ...(ctx.current ? [styleBranch({ type: 'link', current: ctx.current })] : []),
       ]
     case 'text':
       return [[{ label: 'Edit', action: 'cell:edit' }]]

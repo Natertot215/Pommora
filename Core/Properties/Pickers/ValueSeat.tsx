@@ -223,17 +223,21 @@ export function useValueSeat(host: SeatHost) {
     const hold: NonNullable<SeatHost['hold']> = host.hold ?? ((show) => show())
     const act = (action: CellMenuAction | LinkAction): boolean =>
       run(row, column, valueMenuIntent(action), el)
+    const restyle = (action: string): void => {
+      const style = parseStyleAction(action)
+      if (style) live.current.setStyle?.(column, style.key, style.value)
+    }
     const link =
       !label && value.kind === 'link'
         ? linkMenuTarget(
             resolveLink(readLinkText(value.value), host.connections()?.index, host.holder(row)),
             true,
-            { hideable: host.hide?.from },
+            { hideable: host.hide?.from, style: host.style(column) ?? undefined },
           )
         : null
     if (link) {
       const action = await hold(() => showConnectionMenu(link))
-      if (action) act(action)
+      if (action && !act(action)) restyle(action)
       return
     }
     const filled = !isBlankValue(value)
@@ -246,8 +250,7 @@ export function useValueSeat(host: SeatHost) {
     const action = await hold(() => popMenu(cellMenuModel(context)))
     const commit = (next: PropertyValue | null): void => live.current.commit(row, column, next)
     if (!action || runFileMenuAction(action, column.def, value, chip, commit) || act(action)) return
-    const style = parseStyleAction(action)
-    if (style) live.current.setStyle?.(column, style.key, style.value)
+    restyle(action)
   }
 
   /** A typed value's field, inline or, with `popover`, floating; a popover mounts fresh for every open. */

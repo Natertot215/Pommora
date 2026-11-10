@@ -8,8 +8,13 @@ import {
 } from './pageMenu'
 import { LINK_DISPLAYS, LINK_DISPLAY_LABELS, type ResolvedLink } from '../Connections/linkValue'
 import type { HideFrom } from './cellMenu'
+import type { ColumnStyle } from '../Properties/columnStyles'
+import { parseStyleAction, type StyleAction, styleBranch } from './columnMenu'
 
-export type LinkMenuContext = { editable: boolean; value?: { hideable?: HideFrom } } & (
+export type LinkMenuContext = {
+  editable: boolean
+  value?: { hideable?: HideFrom; style?: ColumnStyle }
+} & (
   | { kind: 'page'; open: 'closed' | 'tab' | 'detail'; windowed: boolean }
   | { kind: 'url'; web: boolean }
 )
@@ -47,7 +52,7 @@ const LINK_EDIT_ACTIONS = [
 ] as const
 type LinkEditAction = (typeof LINK_EDIT_ACTIONS)[number]
 const LINK_ACTIONS = [...LINK_EDIT_ACTIONS, ...CELL_ACTIONS] as const
-export type LinkAction = (typeof LINK_ACTIONS)[number]
+export type LinkAction = (typeof LINK_ACTIONS)[number] | StyleAction
 
 const UNLINK_ROWS: readonly ActionItem<LinkEditAction>[] = [
   { label: 'Remove Link', action: 'link:remove' },
@@ -65,7 +70,7 @@ const FORMAT_ROW = (web: boolean): ActionItem<LinkEditAction> => ({
 export type LinkMenuAction = PageOpenAction | UrlOpenAction | LinkCopyAction | LinkAction
 
 export const isLinkAction = (action: LinkMenuAction): action is LinkAction =>
-  (LINK_ACTIONS as readonly string[]).includes(action)
+  (LINK_ACTIONS as readonly string[]).includes(action) || parseStyleAction(action) !== null
 
 export function cellClosingRows(
   clearable: boolean,
@@ -96,10 +101,11 @@ export function connectionMenuModel(ctx: LinkMenuContext): ActionItem<LinkMenuAc
   const copies: ActionItem<LinkMenuAction>[] =
     ctx.kind === 'page' ? [COPY_LINK_ROW, COPY_PATH_ROW] : [COPY_LINK_ROW]
   const format = ctx.kind === 'url' && ctx.editable && !ctx.value ? [FORMAT_ROW(ctx.web)] : []
+  const look = ctx.value?.style ? styleBranch({ type: 'link', current: ctx.value.style }) : []
   const closing = ctx.value
     ? cellClosingRows(true, !!ctx.value.hideable)
     : ctx.editable
       ? UNLINK_ROWS
       : []
-  return joinGroups([opens, authoring, [...copies, ...format], closing])
+  return joinGroups([opens, authoring, [...copies, ...format, ...look], closing])
 }

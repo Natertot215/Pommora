@@ -86,6 +86,26 @@ describe('cellMenuModel', () => {
     expect(cellMenuModel({ kind: 'text', filled: false }).map((i) => i.label)).toEqual(['Edit'])
   })
 
+  it('a Link cell holding its view’s look offers Format after its authoring rows', () => {
+    const m = cellMenuModel({
+      kind: 'link',
+      filled: true,
+      current: { ...DATES, look: 'link-short' },
+    })
+    expect(m.map((i) => [i.label, i.action])).toEqual([
+      ['Edit Title', 'rename'],
+      ['Edit Link', 'editLink'],
+      ['Format', undefined],
+      ['Clear', 'cell:clear'],
+    ])
+    expect(m[2].separatorBefore).toBe(true)
+    expect(m[2].submenu?.map((r) => [r.action, r.checked])).toEqual([
+      ['style:look:link-full', false],
+      ['style:look:link-short', true],
+      ['style:look:link-title', false],
+    ])
+  })
+
   it('an empty Link cell: Edit Link alone, since Edit Title and Clear have no value to act on', () => {
     const m = cellMenuModel({ kind: 'link', filled: false })
     expect(m.map((i) => [i.label, i.action])).toEqual([['Edit Link', 'editLink']])
@@ -131,8 +151,12 @@ describe('cellMenuContextFor', () => {
     expect(cellMenuContextFor('text', DATES, false)).toEqual({ kind: 'text', filled: false })
   })
 
-  it('a link column → the link menu, carrying filled; a file cell has no look left to offer', () => {
-    expect(cellMenuContextFor('link', DATES, true)).toEqual({ kind: 'link', filled: true })
+  it('a link column → the link menu, carrying filled and its view’s look; a file cell has no look left to offer', () => {
+    expect(cellMenuContextFor('link', DATES, true)).toEqual({
+      kind: 'link',
+      filled: true,
+      current: DATES,
+    })
     expect(cellMenuContextFor('file', DATES, false)).toEqual({
       kind: 'file',
       onChip: false,
