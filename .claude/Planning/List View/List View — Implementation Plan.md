@@ -8,7 +8,9 @@
 
 | Head | Tests | Start | End |
 |------|-------|-------|-----|
-| `4b18149ac` at planning | 9,269 passed, 2 skipped (546 files) at planning | | |
+| `b43de2c4a` | 9,269 passed, 2 skipped (546 files) | 11-10-2026 | |
+
+The drives at that head: Views `--landed 10`, groups 2 to 10, 215 of 215 held (12, 38, 11, 18, 21, 25, 22, 28, 40); Properties, groups 1 to 19, 209 of 209; Text Property, 127 of 127; Option Picker, 58 of 58; Archive, 159 of 159. Typecheck and lint ran clean.
 
 ### Context
 
@@ -39,8 +41,8 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
 
 | Phase | Estimate | Measured | Cumulative |
 | ----- | -------- | -------- | ---------- |
-| 1 | +8 / −4 | | |
-| 2 | +295 / −216 | | |
+| 1 | +8 / −4 | +8 / −4 | +8 / −4 |
+| 2 | +295 / −216 | +305 / −216 | +313 / −220 |
 | 3 | +145 / −120 | | |
 | 4 | +40 / −26 | | |
 | 5 | +46 / −30 | | |
@@ -60,7 +62,7 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
 | `BandRows` • Component | The walk that lays rows and the hover ghost inside their bands, taking a kind's row and ghost. | `Core/Views/Rows/RowFrame.tsx` |
 | `PageRow` • Component | A page's row shell: the line row, its selection, hover, and `data-rid`. | `Core/Views/Rows/RowFrame.tsx` |
 | `rowMenu` · `rowOpen` • Functions | A row's page menu, anchored on its title's glyph, and its title's press that opens the page. | `Core/Views/Rows/RowFrame.tsx` |
-| `RowGrip` · `RowTitle` • Components | The grip in the rail slot, and the page icon with its renamable title. | `Core/Views/Rows/RowFrame.tsx` |
+| `RowGrip` · `PageTitle` • Components | The grip in the rail slot, and the page icon with its renamable title. | `Core/Views/Rows/RowFrame.tsx` |
 | `GhostTitle` • Component | The hover ghost's "New Page" title; the ghost's shell is the walk's own. | `Core/Views/Rows/RowFrame.tsx` |
 | `table-shell.css` • File | The shell, the heading's bleed, the grid's zoom, and the band rhythm. | `Core/Views/Rows/table-shell.css` |
 | `SeatedValue` • Component | One property's value where it's clicked, right-clicked, and edited. | `Core/Properties/Cells/SeatedValue.tsx` |
@@ -194,13 +196,13 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
 
 #### Process Overview
 
-- [ ] `[Before Phase 1: record the BASELINE head, the three gates, and, at that head, the Views Drive's tally for groups 2 to 10 and the Properties, Text Property, Option Picker, and Archive Drives' tallies]`
-- [ ] **Phase 1** — A Hidden Property Keeps Its Place
-  - [ ] Task 1-1 · `placeInShown` places in the full order
-- [ ] **Phase 2** — The Row Frame Leaves Table
-  - [ ] Task 2-1 · The shell sheet
-  - [ ] Task 2-2 · The row frame
-  - [ ] Review Checkpoint (Phases 1 and 2)
+- [x] `[Before Phase 1: record the BASELINE head, the three gates, and, at that head, the Views Drive's tally for groups 2 to 10 and the Properties, Text Property, Option Picker, and Archive Drives' tallies]`
+- [x] **Phase 1** — A Hidden Property Keeps Its Place
+  - [x] Task 1-1 · `placeInShown` places in the full order
+- [x] **Phase 2** — The Row Frame Leaves Table
+  - [x] Task 2-1 · The shell sheet
+  - [x] Task 2-2 · The row frame
+  - [x] Review Checkpoint (Phases 1 and 2)
 - [ ] **Phase 3** — One Clickable Value, One Statement of the Rules
   - [ ] Task 3-1 · `SeatedValue`
   - [ ] Task 3-2 · Cards' rules join the pipeline and the host
@@ -298,10 +300,10 @@ A drop in Table's heading or the Visibility pane should write the dragged id at 
 
 **VERIFY**
 
-- [ ] The rewritten case went red before the body changed and is green after; four of the other five `placeInShown` cases pass untouched and one is retitled; `useColumns`' column-drop tests and `VisibilityFrame`'s tests pass untouched.
-- [ ] In `~/Test`, on a Table view showing four properties A, B, C, D after Title: hide B from its heading menu, drag D ahead of C, then show B from Visibility. B returns directly after A, where the old body put it last.
-- [ ] Run the gates, then `view-delta` for Phase 1.
-- [ ] Check for unnecessary code or mistakes.
+- [x] The rewritten case went red before the body changed and is green after; four of the other five `placeInShown` cases pass untouched and one is retitled; `useColumns`' column-drop tests and `VisibilityFrame`'s tests pass untouched.
+- [x] In `~/Test`, on a Table view showing four properties A, B, C, D after Title: hide B from its heading menu, drag D ahead of C, then show B from Visibility. B returns directly after A, where the old body put it last.
+- [x] Run the gates, then `view-delta` for Phase 1.
+- [x] Check for unnecessary code or mistakes.
 
 ### Phase 2 — The Row Frame Leaves Table
 
@@ -409,10 +411,10 @@ The rules Table and Archive both wear, and List will, leave Table's sheet for on
 
 **VERIFY**
 
-- [ ] `git grep -n "table-view.css" -- Core` finds `TableView.tsx`'s import alone.
-- [ ] `table-view.css` plus `table-shell.css` hold every declaration the old sheet did, each once: `git show <BASELINE>:Core/Views/Table/table-view.css | grep -c '{'` equals the two files' counts summed.
-- [ ] Live, in `~/Test`: a Table view, a Table view in a View Tile, and the Archive read the same before and after (shell edges against the glass, the heading's bleed, band spacing, a sticky band head while columns scroll).
-- [ ] Run the gates.
+- [x] `git grep -n "table-view.css" -- Core` finds `TableView.tsx`'s import alone.
+- [x] `table-view.css` plus `table-shell.css` hold every declaration the old sheet did, each once: `git show <BASELINE>:Core/Views/Table/table-view.css | grep -c '{'` equals the two files' counts summed.
+- [x] Live, in `~/Test`: a Table view, a Table view in a View Tile, and the Archive read the same before and after (shell edges against the glass, the heading's bleed, band spacing, a sticky band head while columns scroll).
+- [x] Run the gates.
 
 #### Task 2-2 · The row frame
 
@@ -774,15 +776,15 @@ Table's row shell, grip, title, ghost row, and band walk become exports of one f
 
 **VERIFY**
 
-- [ ] `git grep -nE "renderRows|ghostRowProps|function GhostRow|titleGlyph" -- Core/Views/Table` finds nothing, and `TableView.tsx` holds no import or destructure it no longer uses (`npm run lint` reports no `noUnusedVariables` or unused import).
-- [ ] `cellGestures`, `useViewHost`, `rowDrops`, `bandDrops`, and every other suite under `Core/Views` pass untouched, with no test file edited by this task.
-- [ ] Live, in `~/Test`, a grouped Table view: the first row under a tail draws no top line, a band's first row draws none, the hover ghost appears under the hovered row and creates a page, the standing ghost shows on an empty Collection, a rename seats in the title, a selected row washes, the grip's right-click opens the page menu, and a row drags within and across bands.
-- [ ] Run the gates, then `view-delta` for Phases 1 and 2.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `git grep -nE "renderRows|ghostRowProps|function GhostRow|titleGlyph" -- Core/Views/Table` finds nothing, and `TableView.tsx` holds no import or destructure it no longer uses (`npm run lint` reports no `noUnusedVariables` or unused import).
+- [x] `cellGestures`, `useViewHost`, `rowDrops`, `bandDrops`, and every other suite under `Core/Views` pass untouched, with no test file edited by this task.
+- [x] Live, in `~/Test`, a grouped Table view: the first row under a tail draws no top line, a band's first row draws none, the hover ghost appears under the hovered row and creates a page, the standing ghost shows on an empty Collection, a rename seats in the title, a selected row washes, the grip's right-click opens the page menu, and a row drags within and across bands.
+- [x] Run the gates, then `view-delta` for Phases 1 and 2.
+- [x] Check for unnecessary code or mistakes.
 
 #### Review Checkpoint
 
-- [ ] Two review agents, `code-simplification` and `adversarial-review`, reading outward over Phases 1 and 2: `placeInShown` leaves every id but the dragged one in place for both callers and for a view whose order doesn't list Title; nothing else writes `property_order` shown-first (`hideShown`, `unhide`, the config sweeps); the frame's seven exports carry no Table-only knowledge (no column, cell, sweep, or alignment) and Table's DOM is byte-for-byte what it was; the shared sheet holds no Table-only rule and Table's sheet no shared one; Archive reads the same.
+- [x] Two review agents, `code-simplification` and `adversarial-review`, reading outward over Phases 1 and 2: `placeInShown` leaves every id but the dragged one in place for both callers and for a view whose order doesn't list Title; nothing else writes `property_order` shown-first (`hideShown`, `unhide`, the config sweeps); the frame's seven exports carry no Table-only knowledge (no column, cell, sweep, or alignment) and Table's DOM is byte-for-byte what it was; the shared sheet holds no Table-only rule and Table's sheet no shared one; Archive reads the same.
 
 ### Phase 3 — One Clickable Value, One Statement of the Rules
 
@@ -2025,7 +2027,7 @@ A property's side is stored per view over a default for its type, and List's pro
 
 `ListView` draws a page as one row: the grip, then a left group and a right group of the title and the values each side holds, a bar between properties, and a hover **+** after the last one (A-1, A-2, A-4, B-1 to B-11, C-1 to C-5, G-1, G-2, H-1 to H-3).
 
-**NOW:** no file draws a List. The pieces stand ready from Phases 2 to 5 and Task 6-1: `BandRows`, `PageRow`, `RowGrip`, `RowTitle`, `rowMenu`, `rowOpen`, `GhostTitle` (`Core/Views/Rows/RowFrame.tsx`), `SeatedValue` with `seatOf` and `.value-inline`, the policy's `drawn`, `drawnColumns` and `addColumns`, `Segments` at a height, `AccessoryButton` forwarding `tabIndex` and `data-reveal-held`, and `sideFor`. `GroupBand` writes a headed band's indent as inline `padding-left` on its row (`Core/Views/Bands/GroupBand.tsx:147`), so nothing below the row can read it. The shell selectors key on Table's heading and shell: the gutter-reserving lead inset and the zero top padding on `.detail-body:has(.table-head)` (`Core/Interface/interface.css:58-61`), and the banner divider's full bleed on `.detail-scroll:has(.table-shell)` (`Core/Interface/Header/content-banner.css:94-98`); Archive wears both a shell and a heading, and TrashFrame wears neither inside `.detail-scroll`. The tile peek anchors on the first `[data-view-lead]` in a view, which Table puts on its heading, bands on their row, and Cards on every card (`Core/Tiles/Surfaces/ViewTile.tsx:68-81`); an ungrouped List holds neither a heading nor a band. Three measurements from the live checks shape the sheet: the wrap order holds with a left group at `flex: 1 1 min-content`, a title box at `min-width: min-content` over an unseen sizer capped at the minimum, and a right group at `flex: none`; a Text value's seat grows 24px on hover unless its pen's room is held at rest, the room `cells.css:35` writes as `20px + 4px`; a List value sits in `RowLead`'s `.data-cell` (`UIX/Table/RowLead.tsx:13`), so its Text takes Table's in-cell pen form (`cells.css:47-57`), which is C-3's "as it does in Table"; and a short title keeps its own width at every row width (*§Open Items · Settled in Planning*).
+**NOW:** no file draws a List. The pieces stand ready from Phases 2 to 5 and Task 6-1: `BandRows`, `PageRow`, `RowGrip`, `PageTitle`, `rowMenu`, `rowOpen`, `GhostTitle` (`Core/Views/Rows/RowFrame.tsx`), `SeatedValue` with `seatOf` and `.value-inline`, the policy's `drawn`, `drawnColumns` and `addColumns`, `Segments` at a height, `AccessoryButton` forwarding `tabIndex` and `data-reveal-held`, and `sideFor`. `GroupBand` writes a headed band's indent as inline `padding-left` on its row (`Core/Views/Bands/GroupBand.tsx:147`), so nothing below the row can read it. The shell selectors key on Table's heading and shell: the gutter-reserving lead inset and the zero top padding on `.detail-body:has(.table-head)` (`Core/Interface/interface.css:58-61`), and the banner divider's full bleed on `.detail-scroll:has(.table-shell)` (`Core/Interface/Header/content-banner.css:94-98`); Archive wears both a shell and a heading, and TrashFrame wears neither inside `.detail-scroll`. The tile peek anchors on the first `[data-view-lead]` in a view, which Table puts on its heading, bands on their row, and Cards on every card (`Core/Tiles/Surfaces/ViewTile.tsx:68-81`); an ungrouped List holds neither a heading nor a band. Three measurements from the live checks shape the sheet: the wrap order holds with a left group at `flex: 1 1 min-content`, a title box at `min-width: min-content` over an unseen sizer capped at the minimum, and a right group at `flex: none`; a Text value's seat grows 24px on hover unless its pen's room is held at rest, the room `cells.css:35` writes as `20px + 4px`; a List value sits in `RowLead`'s `.data-cell` (`UIX/Table/RowLead.tsx:13`), so its Text takes Table's in-cell pen form (`cells.css:47-57`), which is C-3's "as it does in Table"; and a short title keeps its own width at every row width (*§Open Items · Settled in Planning*).
 
 **PROCEDURE**
 
@@ -2131,8 +2133,8 @@ A property's side is stored per view over a default for its type, and List's pro
 +  BandRows,
 +  GhostTitle,
 +  PageRow,
++  PageTitle,
 +  RowGrip,
-+  RowTitle,
 +  rowMenu,
 +  rowOpen,
 +} from '../Rows/RowFrame'
@@ -2243,7 +2245,7 @@ A property's side is stored per view over a default for its type, and List's pro
 +    c.kind === 'title' ? (
 +      // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: the row has the keys, and Enter opens it
 +      <span key={c.id} className="list-view-title" data-title={row.title} onClick={rowOpen(api, row)}>
-+        <RowTitle row={row} naming={naming} hideIcon={hideIcon} api={api} className="cell-title" />
++        <PageTitle row={row} naming={naming} hideIcon={hideIcon} api={api} />
 +      </span>
 +    ) : (
 +      <SeatedValue
@@ -2597,6 +2599,7 @@ List's record registers its renderer, its property pane, and its three switches 
   - [ ] **Outlines:** on by default; a Set inside a Set and a sub-group draw one rail each under their chevron, a top-level band draws none, and the switch removes them.
   - [ ] **The pane:** SettingsFrame's Visibility and the view editor's Layout both open the two columns under **Left** and **Right** menu headings; the menu widens to them and returns on the way back, in a View Tile too; rows reorder within a column and cross both ways; Title reorders within Left and can't cross; a hidden property sits ghosted at its own column's foot and returns to its place and side when shown; a row's right-click moves it to the other side; a drop into an empty column and from a scrolled column both land; the keyboard lifts, steps, and drops within a column; Escape and a drop leave the menu open.
   - [ ] **Switches:** Title Icons, Outlines, and Wrap Rows sit at the view editor's root and in SettingsFrame's Layout footing; SettingsFrame's Layout draws no empty section between the grid and the footing; Table's and Cards' switches sit where they did.
+  - [ ] **Selection:** a List row whose page is the selection washes as a Table row does.
   - [ ] **Shell:** a List view takes the grip's gutter and the default top padding; the banner divider doesn't bleed over it; embedded in a View Tile it zooms as a Table does and the tile's peek resolves on its first band, or its first row when ungrouped.
 - [ ] Run the gates and `npm run build`, then `view-delta` for Phase 6. The Stop in *§Process Overview* follows this phase's checkpoint.
 - [ ] Check for unnecessary code or mistakes.
@@ -2860,7 +2863,7 @@ List's record registers its renderer, its property pane, and its three switches 
 
 **Issues, Raised in *§Final Verification · Reconciliation*, After the Stop That Follows Phase 6 (I-7)**
 
-- `IssuesPM.md` — "Archive's and Trash's rows draw a second copy of the row frame": `BundleRow` (`Core/Bundles/BundleTable.tsx:262-318`) composes `LineRow`, `RowLead`, a check, and the title markup by hand, with its row height held as a constant; folding it onto `PageRow` and `RowTitle` is the fix.
+- `IssuesPM.md` — "Archive's and Trash's rows draw a second copy of the row frame": `BundleRow` (`Core/Bundles/BundleTable.tsx:262-318`) composes `LineRow`, `RowLead`, a check, and the title markup by hand, with its row height held as a constant; folding it onto `PageRow` and `PageTitle` is the fix.
 - `IssuesPM.md` — "Table's cells mount a value a third way": `DataRow`'s cell (`Core/Views/Table/TableView.tsx`) wires `click`, `menu`, the editor, and `Cell` beside the sweep's `pointerdown`; folding it onto `SeatedValue` is the fix.
 
 #### Open Items
