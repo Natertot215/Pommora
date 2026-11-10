@@ -13,6 +13,8 @@ export const inlineSegment = style([
   segment,
   {
     display: 'inline',
+    // An inline box ignores it; a flex row blockifies the span, which then has no content to stand on.
+    height: '1.2em',
     paddingInline: 'calc(var(--segment-width, 2px) / 2)',
     marginInline: '6px',
   },
