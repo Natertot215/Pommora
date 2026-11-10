@@ -53,7 +53,7 @@ export interface PaneProps {
   save: ViewWriter
 }
 
-export type PropertyPaneProps = PaneProps & { footer?: ReactNode; current?: string }
+export type VisibilityPaneProps = PaneProps & { footer?: ReactNode; current?: string }
 
 export function ViewPane({
   id,
@@ -67,8 +67,8 @@ export function ViewPane({
   const pane: PaneProps = { view, schema, back, save }
   switch (id) {
     case 'visibility': {
-      const { Properties } = presentedKind(view.type).layout
-      return <Properties {...pane} />
+      const { Visibility } = presentedKind(view.type)
+      return <Visibility {...pane} />
     }
     case 'layout':
       return <LayoutFrame {...pane} />

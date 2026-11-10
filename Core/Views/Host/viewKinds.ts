@@ -1,16 +1,17 @@
 import type { MenuRow } from '@pommora/uix/Menus/MenuIndex'
-import type { SavedView, ViewSwitch, ViewType, ViewWriter } from '../views'
-import type { PropertyPaneProps } from '../Settings/ViewPane'
+import type { SavedView, ViewType, ViewWriter } from '../views'
+import type { VisibilityPaneProps } from '../Settings/ViewPane'
+import type { ViewSwitch } from '../Settings/switchRows'
 import type { ViewHostApi } from './useViewHost'
 import { TABLE_KIND } from '../Table/tableKind'
 import { CARDS_KIND } from '../Cards/cardsKind'
 
 export interface ViewKindRecord {
   Renderer: (p: { host: ViewHostApi }) => React.JSX.Element
+  Visibility: (p: VisibilityPaneProps) => React.JSX.Element | null
   nests: boolean
   layout: {
     leaf: 'visibility' | 'switches'
-    Properties: (p: PropertyPaneProps) => React.JSX.Element | null
     switches: ViewSwitch[]
     rows?: (view: SavedView, write: ViewWriter) => MenuRow[]
   }

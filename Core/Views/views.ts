@@ -1,7 +1,7 @@
 // Each enum has ONE source: an `as const` array drives both the TS type and the zod codec / runtime membership Set — never re-listed.
 
 import { z } from 'zod'
-import { isPlainObject } from '../Contract/validators'
+import { isKeyOf, isPlainObject } from '../Contract/validators'
 import { newId } from '../Nexus/ids'
 import { freeName } from '../Paths/names'
 import { columnStyle, holdsStyle } from '../Properties/columnStyles'
@@ -201,21 +201,6 @@ export type ViewFlag = {
   [K in keyof SavedView]-?: SavedView[K] extends boolean | undefined ? K : never
 }[keyof SavedView]
 
-/** A flag as a kind's switch draws it; `invert` shows the switch on while the flag is off. */
-export interface ViewSwitch {
-  icon: string
-  label: string
-  key: ViewFlag
-  invert?: boolean
-}
-
-export const TITLE_ICONS: ViewSwitch = {
-  icon: 'file-text',
-  label: 'Title Icons',
-  key: 'hide_page_icons',
-  invert: true,
-}
-
 type DefaultedOption =
   | ViewFlag
   | 'format'
@@ -267,11 +252,10 @@ const ENTRY_DEPTH = {
   column_styles: 2,
 } as const satisfies Partial<Record<keyof SavedView, number>>
 export type EntryKey = keyof typeof ENTRY_DEPTH
-const isEntryKey = (k: string): k is EntryKey => Object.hasOwn(ENTRY_DEPTH, k)
 
 export const slotsOf = (patch: ViewPatch): [key: string, value: unknown][] =>
   Object.entries(patch).flatMap(([k, v]) =>
-    isEntryKey(k) && v !== undefined
+    isKeyOf(ENTRY_DEPTH, k) && v !== undefined
       ? Object.entries(v as Record<string, unknown>).map(([id, e]): [string, unknown] => [
           `${k}/${id}`,
           e,

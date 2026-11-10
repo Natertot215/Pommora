@@ -16,7 +16,7 @@ import { contextIdsOf, contextsByIdOf } from '../../Contexts/contextIdentity'
 import { columnIcon, columnLabel } from '../../Properties/columnDisplay'
 import { Icon } from '@pommora/uix/Symbols'
 import * as s from '@pommora/uix/Menus/frames.css'
-import type { PropertyPaneProps } from './ViewPane'
+import type { VisibilityPaneProps } from './ViewPane'
 import { type HideControls, hideEye } from './OptionOrderList'
 
 function VisibilityGroups({
@@ -73,7 +73,7 @@ export function VisibilityFrame({
   save,
   footer,
   current = 'Visibility',
-}: PropertyPaneProps): React.JSX.Element | null {
+}: VisibilityPaneProps): React.JSX.Element | null {
   const tree = useSession((st) => st.tree)
   if (!tree) return null
 

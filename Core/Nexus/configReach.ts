@@ -1,4 +1,11 @@
-import { bandKey, mapTiles, mapViews, type SavedView, savedView } from '../Views/views'
+import {
+  bandKey,
+  type EntryKey,
+  mapTiles,
+  mapViews,
+  type SavedView,
+  savedView,
+} from '../Views/views'
 import {
   answerable,
   type FilterGroup,
@@ -78,7 +85,7 @@ const ROLES = {
   sub_group: 'subGroup',
   ungrouped_placement: 'none',
   date_separator: 'none',
-} as const satisfies Record<keyof SavedView, Role>
+} as const satisfies Record<keyof SavedView, Role> & Record<EntryKey, 'idMap'>
 
 // ── Edits ──
 type Gone = { propertyId: string; ids: readonly string[] }

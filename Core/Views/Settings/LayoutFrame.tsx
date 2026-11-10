@@ -1,20 +1,14 @@
-import {
-  type SavedView,
-  VIEW_KINDS,
-  VIEW_TYPES,
-  type ViewType,
-  type ViewWriter,
-  viewOption,
-} from '../views'
+import { type SavedView, VIEW_KINDS, VIEW_TYPES, type ViewType, type ViewWriter } from '../views'
 import { Icon } from '@pommora/uix/Symbols'
-import { MenuIndex, switchRow } from '@pommora/uix/Menus/MenuIndex'
+import { MenuIndex } from '@pommora/uix/Menus/MenuIndex'
 import { MenuSeparator, MenuTopRow, MenuScrollFrame } from '@pommora/uix/Menus/MenuRows'
-import { ROOT_ROW_LOOK, SETTINGS_PANE_MAX_HEIGHT } from '@pommora/uix/Menus/frames.css'
+import { SETTINGS_PANE_MAX_HEIGHT } from '@pommora/uix/Menus/frames.css'
 import { iconForTypeSwitch } from '../viewIcon'
 import { cx } from '@pommora/uix/Utilities/cx'
 import * as vs from './layout-frame.css'
 import { BUILT_KINDS, presentedKind } from '../Host/viewKinds'
 import type { PaneProps } from './ViewPane'
+import { switchRows } from './switchRows'
 
 export function typeGrid(view: SavedView, save: ViewWriter): React.JSX.Element {
   const setType = (type: ViewType): void => {
@@ -43,15 +37,7 @@ export const kindSwitches = (view: SavedView, save: ViewWriter): React.JSX.Eleme
   <MenuIndex
     sections={[
       {
-        rows: presentedKind(view.type).layout.switches.map(({ icon, label, key, invert = false }) =>
-          switchRow(
-            icon,
-            label,
-            viewOption(view, key) !== invert,
-            (next) => void save({ [key]: next !== invert }),
-            ROOT_ROW_LOOK,
-          ),
-        ),
+        rows: switchRows(presentedKind(view.type).layout.switches, view, save),
       },
     ]}
   />

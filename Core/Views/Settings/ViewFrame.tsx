@@ -195,12 +195,12 @@ function ViewEditor({
 
   const toViews: MenuBack = { label: 'Views', onBack: () => setPane(null) }
   const leaf: PaneProps = { view, schema, back: toViews, save }
-  const { layout } = presentedKind(view.type)
+  const { layout, Visibility } = presentedKind(view.type)
   const detail =
     pane !== 'layout' ? (
       pane && <ViewPane id={pane} source={source} {...leaf} />
     ) : layout.leaf === 'visibility' ? (
-      <layout.Properties
+      <Visibility
         {...leaf}
         current="Layout"
         footer={

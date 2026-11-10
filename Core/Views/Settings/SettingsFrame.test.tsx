@@ -40,18 +40,21 @@ beforeEach(() => {
   useSession.setState({ tree: { ...makeTree(), collections: [source] } })
 })
 
-const mount = (): Promise<void> =>
+let persist: ReturnType<typeof vi.fn>
+
+const mount = (shown: SavedView = view): Promise<void> =>
   act(async () => {
+    persist = vi.fn()
     root.render(
       <ViewTileScopeProvider
-        value={{ source, view, persist: vi.fn(), locked: false, setLocked: vi.fn() }}
+        value={{ source, view: shown, persist, locked: false, setLocked: vi.fn() }}
       >
         <SettingsFrame />
       </ViewTileScopeProvider>,
     )
   })
-const open = async (entry: string): Promise<void> => {
-  await mount()
+const open = async (entry: string, shown?: SavedView): Promise<void> => {
+  await mount(shown)
   const row = [...host.querySelectorAll('[role="button"], button')].find(
     (e) => e.textContent === entry,
   )
@@ -80,5 +83,18 @@ describe('SettingsFrame — the panes Settings reaches', () => {
     expect(has('Table')).toBe(true)
     expect(switches.every(has)).toBe(true)
     expect(has('Always Shown')).toBe(false)
+  })
+
+  it.each([
+    'table',
+    'cards',
+  ] as const)('a %s view’s Title Icons switch shows page icons on and writes hiding them', async (type) => {
+    await open('Layout', { ...view, type })
+    const titleIcons = host.querySelector(
+      '[role="switch"][aria-label="Title Icons"]',
+    ) as HTMLElement
+    expect(titleIcons.getAttribute('aria-checked')).toBe('true')
+    await act(async () => titleIcons.click())
+    expect(persist).toHaveBeenCalledWith({ hide_page_icons: true })
   })
 })

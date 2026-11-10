@@ -2,7 +2,8 @@ import { pickerRow, steppedRow } from '@pommora/uix/Menus/MenuIndex'
 import type { PickerOption } from '@pommora/uix/Menus/PickerControl'
 import { ROOT_ROW_LOOK } from '@pommora/uix/Menus/frames.css'
 import { TENTHS_SCALE } from '../../Settings/personalization'
-import { type CardBanner, TITLE_ICONS, type ViewFormat, viewOption } from '../views'
+import { type CardBanner, type ViewFormat, viewOption } from '../views'
+import { TITLE_ICONS } from '../Settings/switchRows'
 import type { ViewKindRecord } from '../Host/viewKinds'
 import { VisibilityFrame } from '../Settings/VisibilityFrame'
 import { CardsView } from './CardsView'
@@ -20,10 +21,10 @@ const FORMATS: PickerOption<ViewFormat>[] = [
 
 export const CARDS_KIND: ViewKindRecord = {
   Renderer: CardsView,
+  Visibility: VisibilityFrame,
   nests: false,
   layout: {
     leaf: 'switches',
-    Properties: VisibilityFrame,
     switches: [
       { icon: 'map', label: 'Hide Location', key: 'hide_location' },
       { icon: 'wrap-text', label: 'Wrap Titles', key: 'wrap_titles' },
