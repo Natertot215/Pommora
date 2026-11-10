@@ -46,7 +46,7 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
 | 3 | +145 / −120 | +146 / −131 | +459 / −351 |
 | 4 | +40 / −26 | +42 / −27 | +501 / −378 |
 | 5 | +46 / −30 | +77 / −52 | +578 / −430 |
-| 6 | +590 / −111 | | |
+| 6 | +590 / −111 | +592 / −92 | +1,168 / −520 |
 | 7 | — (the drive, under `.claude`) | | |
 | 8 | — (documents) | | |
 | Final Verification | — | | |
@@ -128,7 +128,7 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
 - **Conventions:** finite states are unions plus exhaustive switches; no measuring, allocating, or layout-reading work runs per row on a high-frequency trigger, and wrapping is the browser's own layout (the Decisions' **Cost** constraint); UIX reaches nothing outside itself; host-run code imports no React or UIX, and `Core/Contract/engineGraph.test.ts` and `Desktop/hostGraph.test.ts` stay green; a `*.css.ts` file exports only serializable values; a test that changes asserts the behavior a decision names, and a test whose body inverts takes a title stating what it now asserts; user-facing words are the ones the decisions quote (**Title Icons**, **Outlines**, **Wrap Rows**, **Left**, **Right**, **Move to Left**, **Move to Right**); commit messages are past tense and one to three sentences; nothing temporary, transitional, or compatibility-kept remains at a phase's end.
 - **Execution:** the plan runs end to end through `c/plan-execution`. Each task goes to an `execution-agent` (`opus-medium`) given *§Context*, *§Overview*, *§Constraints* with the Directives block, *§Open Items · Settled in Planning*, and the path of *List View — Decisions & Intention*, whose IDs the tasks cite; it reports insights, concerns, and suggestions rather than diverging, and the orchestrator checks its result against the task's AFTER and VERIFY. Each task commits once its gates are green, and commits on `active` are hook-pushed, so no task ends red. Every review checkpoint dispatches two read-only agents, one under `code-simplification` and one under `adversarial-review`, each weighing the phase against these constraints and reading outward rather than in isolation, with no implementation running meanwhile; the orchestrator verifies each finding against the tree before it folds. An in-flight call is weighed against the Approach and Principles, disclosed in chat, and recorded under *§Deviations* only where it changes an outcome. Each compaction checkpoint in *§Process Overview* runs `c/pre-compaction`; on the re-prompt the orchestrator rereads *§Constraints* and `c/plan-execution` from the files themselves before the next phase opens.
 - **Live Driving:** `.claude/Guidelines/Development-Environment.md` is required reading before the app is driven. A live check runs in a scratch instance on its own `POMMORA_USERDATA` and `POMMORA_DEBUG_PORT` over `~/Test`, backs `~/Test` up first, and restores it after; every fixture, process, and temporary file is removed as part of the check. `~/Test` seeds no properties, one Cards view, and nothing archived or trashed, so a check seeds what it reads after the backup: the Views Drive's `VD Stage`, `VD Done`, and `VD Due`, a Link, a Text, a Number in its bar look, and a Context value on Collection A's pages; a Table view and a grouped Table view beside its Cards view; one archived and one trashed page. A check that compares against a task's base captures its "before" ahead of the task's first edit.
-- **Tuned Live With Nathan:** `--list-view-value-max` (200px), `--list-view-title-min` (120px), `--list-view-wrap-gap` (14px), and `--list-view-bar-width` (100px) are tokens on List's sheet, the row's padding is Table's `--cell-padding-y` stated there at 3px, and the bar's height (`1.2em`) is one literal on the shared segment; the plan lands them at these values and Nathan adjusts them in the app at the Stop after Phase 6.
+- **Tuned Live With Nathan:** `--list-view-value-max` (200px), `--list-view-title-min` (120px), `--list-view-wrap-gap` (14px), and `--list-view-bar-width` (100px) are tokens on List's sheet, the row's padding is Table's `--cell-padding-y` stated there at 2px over a first line as tall as the kit's roomy chip (a 26px row), and the bar's height (`1.2em`) is one literal on the shared segment; the plan lands them at these values and Nathan adjusts them in the app at the Stop after Phase 6.
 - **Neutral Gate:** the work ends with a `fable-high` neutral reviewer given only the BASELINE head, HEAD, and this intention, with no plan, log, or document: *"Pommora drew a saved view as a Table or as Cards; a view saved as a List drew as a Table. Table kept its row's composition to itself, a clickable property value was written out separately on Cards and in the Properties panel, Cards owned the rules for adding, showing, and hiding a property, and a hidden property lost its place whenever the others were reordered. This work makes List a third renderer: Table's row without cells, the title and each property's values side by side in a left group and a right group, each property's side stored per view over a default for its type and edited in a two-column pane, with switches for title icons, outlines, and row wrapping. It builds List from pieces lifted out of Table, Cards, and the panel rather than copies of them (one row frame, one clickable value, one statement of the add, show, and hide rules, one hover plus), deliberately leaving Table's own cells and the Archive's and Trash's rows on their existing code for a later change, makes a hidden property keep its place in every kind, and offers a Link's per-view format on right-click everywhere, with each rule stated once and nothing left over."* It answers, without hedging, whether the result holds to every principle in the Directives block and what it would correct. Every phase is written so that review passes.
 - **Out of Scope Everywhere:** folding Archive's and Trash's rows into the row frame and Table's cells into the clickable value (I-7; *§Reconciliation* raises each as an `IssuesPM.md` entry once List's design is confirmed in the app); Gallery, Calendar, and Timeline (A-3); every entry under the Decisions' *§Prospects* (wrapped titles, values wrapping within a side, wrapped Table cells, Flatten, virtualized rows).
 
@@ -222,11 +222,11 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
   - [x] Task 5-1 · A per-id map's keys and depth are one record
   - [x] Task 5-2 · The record names its property pane, and Title Icons is written once
   - [x] Review Checkpoint
-- [ ] **Phase 6** — List
-  - [ ] Task 6-1 · Sides, and the two-column pane
-  - [ ] Task 6-2 · The renderer
-  - [ ] Task 6-3 · The record, and the tile goes live
-  - [ ] Review Checkpoint
+- [x] **Phase 6** — List
+  - [x] Task 6-1 · Sides, and the two-column pane
+  - [x] Task 6-2 · The renderer
+  - [x] Task 6-3 · The record, and the tile goes live
+  - [x] Review Checkpoint
 - [ ] `[Stop: Nathan reads List in the app and tunes --list-view-value-max, --list-view-title-min, --list-view-wrap-gap, --list-view-bar-width, the row's padding (--cell-padding-y), and the bar's height. The orchestrator writes each value he settles on into list-view.css, or segment.css.ts for the bar, runs the gates and npm run build, commits inside Phase 6, and re-measures Phase 6's ledger row. His word confirms the design for I-7's follow-ups]`
 - [ ] `[Compaction checkpoint: c/pre-compaction; on the re-prompt, reread §Constraints and c/plan-execution before Phase 7 opens]`
 - [ ] **Phase 7** — The Views Drive
@@ -2021,11 +2021,11 @@ A property's side is stored per view over a default for its type, and List's pro
 
 **VERIFY**
 
-- [ ] Every new case went red before its code and is green after; `VisibilityFrame`'s suites pass untouched.
-- [ ] `configReach.test.ts`: the `rich` fixture takes `column_sides: { prop_s: 'right' }`, and "a property clear" expects `view.column_sides` to equal `{}` beside its `column_styles` line.
-- [ ] `npm run build` reads `✓ built in` (a new `*.css.ts`).
-- [ ] The pane is unreachable until Task 6-3 registers the record; its live checks run there.
-- [ ] Run the gates.
+- [x] Every new case went red before its code and is green after; `VisibilityFrame`'s suites pass untouched.
+- [x] `configReach.test.ts`: the `rich` fixture takes `column_sides: { prop_s: 'right' }`, and "a property clear" expects `view.column_sides` to equal `{}` beside its `column_styles` line.
+- [x] `npm run build` reads `✓ built in` (a new `*.css.ts`).
+- [x] The pane is unreachable until Task 6-3 registers the record; its live checks run there.
+- [x] Run the gates.
 
 #### Task 6-2 · The renderer
 
@@ -2427,11 +2427,11 @@ A property's side is stored per view over a default for its type, and List's pro
 
 **VERIFY**
 
-- [ ] The `addable` case went red before its code and is green after; the band, row-drop, and Cards suites pass untouched (the band's indent now arrives by variable).
-- [ ] `git grep -nE "useColumns|useCellSweep|alignFor|COLUMN_LAYOUT" -- Core/Views/List` finds nothing: List reads no Table machinery.
-- [ ] Table, Cards, and Archive read the same live as at the phase's base: band heads indent as before, the banner divider still bleeds over a Table and the Archive, and a Table view's first row sits flush under its heading.
-- [ ] List's own live checks run in Task 6-3, once the record is registered.
-- [ ] Run the gates.
+- [x] The `addable` case went red before its code and is green after; the band, row-drop, and Cards suites pass untouched (the band's indent now arrives by variable).
+- [x] `git grep -nE "useColumns|useCellSweep|alignFor|COLUMN_LAYOUT" -- Core/Views/List` finds nothing: List reads no Table machinery.
+- [x] Table, Cards, and Archive read the same live as at the phase's base: band heads indent as before, the banner divider still bleeds over a Table and the Archive, and a Table view's first row sits flush under its heading.
+- [x] List's own live checks run in Task 6-3, once the record is registered.
+- [x] Run the gates.
 
 #### Task 6-3 · The record, and the tile goes live
 
@@ -2551,25 +2551,25 @@ List's record registers its renderer, its property pane, and its three switches 
 
 **VERIFY**
 
-- [ ] Every new case went red before its code and is green after; `useViewHost.test.tsx`' "cards seam" and every Table and Cards suite pass untouched.
-- [ ] A scan of runtime imports, type-only ones dropped, finds no cycle through `viewKinds.ts` (the record now imports `SidesFrame` and `switchRows`). `git grep -n "list: LIST_KIND" -- Core/Views/Host/viewKinds.ts` finds the registration, and `git grep -nE "type === 'list'|=== 'list'" -- Core/Views` finds nothing: no file under Views branches on the List type.
-- [ ] Live, in a scratch instance over `~/Test`, on a Collection whose pages hold a Select, a Multi-Select, a Date, a Number, a Checkbox, a Link, a Text, and a Context (seed them on throwaway pages, removed after):
-  - [ ] **The kind:** the picker's List tile switches a Table view to List and back; Gallery's tile does nothing; bands, sub-groups, the Location sort, filter, sort, search, creation from the hover ghost and the band's **+**, and a row's drag within and across bands behave as on the Table view of the same Collection (A-2).
-  - [ ] **The row:** each type sits on its default side; values of one property sit `--labels-gap` apart and a bar sits between properties and beside the title; a blank value is absent and an unchecked Checkbox shows; no line draws between rows; the title alone opens the page; a click on the empty stretch or a Created value does nothing, and a right-click there opens the page menu.
-  - [ ] **Values:** each type clicks, right-clicks, and edits as on a card; a Link's right-click offers Format; a Text value shows its first line and its pen, and hovering it moves nothing on the row; a long Text, Link, or chip run ends at 200px under the fade and scrolls on hover; a bar-look Number draws at its set width.
-  - [ ] **The +:** it reveals on the row's hover after the right group, or after the left group's last item on a row with no right values, holds while its list is open, takes no Tab stop, and is absent on a row with nothing left to add; a picked property shows on the view, and a value's Remove hides it.
-  - [ ] **Width:** narrowing the window shortens a long title to 120px of text and no further, then fades the left group, which scrolls on hover; a short title never reserves room it doesn't use. With **Wrap Rows** on, the right group drops to a second line, flush right, once the title is at its floor, and the title regains its room; the grip's center is the first line's center, wrapped and unwrapped, and every one-line row, the hover ghost and the standing ghost included, is the same height whether or not it draws a chip or a **+**, and shorter, measured, than a plain Table row of the same Collection (B-12); a wrapped row's second line stands as far below its first as the next row would; a wrapped row stays inside its band's width. Typing in a value's field or a rename doesn't strand the caret when the row re-wraps.
-  - [ ] **Outlines:** on by default; a Set inside a Set and a sub-group draw one rail each under their chevron, a top-level band draws none, and the switch removes them.
-  - [ ] **The pane:** SettingsFrame's Visibility and the view editor's Layout both open the two columns under **Left** and **Right** menu headings; the menu widens to them and returns on the way back, in a View Tile too; rows reorder within a column and cross both ways; Title reorders within Left and can't cross; a hidden property sits ghosted at its own column's foot and returns to its place and side when shown; a row's right-click moves it to the other side; a drop into an empty column and from a scrolled column both land; the keyboard lifts, steps, and drops within a column; Escape and a drop leave the menu open.
-  - [ ] **Switches:** Title Icons, Outlines, and Wrap Rows sit at the view editor's root and in SettingsFrame's Layout footing; SettingsFrame's Layout draws no empty section between the grid and the footing; Table's and Cards' switches sit where they did.
-  - [ ] **Selection:** a List row whose page is the selection washes as a Table row does.
-  - [ ] **Shell:** a List view takes the grip's gutter and the default top padding; the banner divider doesn't bleed over it; embedded in a View Tile it zooms as a Table does and the tile's peek resolves on its first band, or its first row when ungrouped.
-- [ ] Run the gates and `npm run build`, then `view-delta` for Phase 6. The Stop in *§Process Overview* follows this phase's checkpoint.
-- [ ] Check for unnecessary code or mistakes.
+- [x] Every new case went red before its code and is green after; `useViewHost.test.tsx`' "cards seam" and every Table and Cards suite pass untouched.
+- [x] A scan of runtime imports, type-only ones dropped, finds no cycle through `viewKinds.ts` (the record now imports `SidesFrame` and `switchRows`). `git grep -n "list: LIST_KIND" -- Core/Views/Host/viewKinds.ts` finds the registration, and `git grep -nE "type === 'list'|=== 'list'" -- Core/Views` finds nothing: no file under Views branches on the List type.
+- [x] Live, in a scratch instance over `~/Test`, on a Collection whose pages hold a Select, a Multi-Select, a Date, a Number, a Checkbox, a Link, a Text, and a Context (seed them on throwaway pages, removed after):
+  - [x] **The kind:** the picker's List tile switches a Table view to List and back; Gallery's tile does nothing; bands, sub-groups, the Location sort, filter, sort, search, creation from the hover ghost and the band's **+**, and a row's drag within and across bands behave as on the Table view of the same Collection (A-2).
+  - [x] **The row:** each type sits on its default side; values of one property sit `--labels-gap` apart and a bar sits between properties and beside the title; a blank value is absent and an unchecked Checkbox shows; no line draws between rows; the title alone opens the page; a click on the empty stretch or a Created value does nothing, and a right-click there opens the page menu.
+  - [x] **Values:** each type clicks, right-clicks, and edits as on a card; a Link's right-click offers Format; a Text value shows its first line and its pen, and hovering it moves nothing on the row; a long Text, Link, or chip run ends at 200px under the fade and scrolls on hover; a bar-look Number draws at its set width.
+  - [x] **The +:** it reveals on the row's hover after the right group, or after the left group's last item on a row with no right values, holds while its list is open, takes no Tab stop, and is absent on a row with nothing left to add; a picked property shows on the view, and a value's Remove hides it.
+  - [x] **Width:** narrowing the window shortens a long title to 120px of text and no further, then fades the left group, which scrolls on hover; a short title never reserves room it doesn't use. With **Wrap Rows** on, the right group drops to a second line, flush right, once the title is at its floor, and the title regains its room; the grip's center is the first line's center, wrapped and unwrapped, and every one-line row, the hover ghost and the standing ghost included, is the same height whether or not it draws a chip or a **+**, and shorter, measured, than a plain Table row of the same Collection (B-12); a wrapped row's second line stands as far below its first as the next row would; a wrapped row stays inside its band's width. Typing in a value's field or a rename doesn't strand the caret when the row re-wraps.
+  - [x] **Outlines:** on by default; a Set inside a Set and a sub-group draw one rail each under their chevron, a top-level band draws none, and the switch removes them.
+  - [x] **The pane:** SettingsFrame's Visibility and the view editor's Layout both open the two columns under **Left** and **Right** menu headings; the menu widens to them and returns on the way back, in a View Tile too; rows reorder within a column and cross both ways; Title reorders within Left and can't cross; a hidden property sits ghosted at its own column's foot and returns to its place and side when shown; a row's right-click moves it to the other side; a drop into an empty column and from a scrolled column both land; the keyboard lifts, steps, and drops within a column; Escape and a drop leave the menu open.
+  - [x] **Switches:** Title Icons, Outlines, and Wrap Rows sit at the view editor's root and in SettingsFrame's Layout footing; SettingsFrame's Layout draws no empty section between the grid and the footing; Table's and Cards' switches sit where they did.
+  - [x] **Selection:** a List row whose page is the selection washes as a Table row does.
+  - [x] **Shell:** a List view takes the grip's gutter and the default top padding; the banner divider doesn't bleed over it; embedded in a View Tile it zooms as a Table does and the tile's peek resolves on its first band, or its first row when ungrouped.
+- [x] Run the gates and `npm run build`, then `view-delta` for Phase 6. The Stop in *§Process Overview* follows this phase's checkpoint.
+- [x] Check for unnecessary code or mistakes.
 
 #### Review Checkpoint
 
-- [ ] Two review agents, `code-simplification` and `adversarial-review`, reading outward: `ListView.tsx` holds presentation alone and repeats nothing `RowFrame.tsx`, `SeatedValue`, or the host already states; the sheet holds no rule another sheet has (the borderless state is Table's, the gutter is the shell's); the rail reads the outline tokens, and its `::before` is a deliberate third beside the menus' and the editor's, since a band's body takes no class from its kind; `SidesFrame` and `VisibilityFrame` share their row and differ only where E-7 says they do; no renderer, pane, or frame branches on a view's type; `leaf` keeps its two members and its one reader, and `switchRows` is the only mapping from a switch entry to its row; `nests: true` gives List every grouping behavior with no List code; a view of an unbuilt kind still draws as a Table; a property's delete drops its side; the wrap order holds with no script measuring a row.
+- [x] Two review agents, `code-simplification` and `adversarial-review`, reading outward: `ListView.tsx` holds presentation alone and repeats nothing `RowFrame.tsx`, `SeatedValue`, or the host already states; the sheet holds no rule another sheet has (the borderless state is Table's, the gutter is the shell's); the rail reads the outline tokens, and its `::before` is a deliberate third beside the menus' and the editor's, since a band's body takes no class from its kind; `SidesFrame` and `VisibilityFrame` share their row and differ only where E-7 says they do; no renderer, pane, or frame branches on a view's type; `leaf` keeps its two members and its one reader, and `switchRows` is the only mapping from a switch entry to its row; `nests: true` gives List every grouping behavior with no List code; a view of an unbuilt kind still draws as a Table; a property's delete drops its side; the wrap order holds with no script measuring a row.
 
 ### Phase 7 — The Views Drive
 
@@ -2829,6 +2829,7 @@ List's record registers its renderer, its property pane, and its three switches 
 - `IssuesPM.md` — "Archive's and Trash's rows draw a second copy of the row frame": `BundleRow` (`Core/Bundles/BundleTable.tsx:262-318`) composes `LineRow`, `RowLead`, a check, and the title markup by hand, with its row height held as a constant; folding it onto `PageRow` and `PageTitle` is the fix.
 - `IssuesPM.md` — "Table's cells mount a value a third way": `DataRow`'s cell (`Core/Views/Table/TableView.tsx`) wires `click`, `menu`, the editor, and `Cell` beside the sweep's `pointerdown`; folding it onto `SeatedValue` is the fix.
 - `IssuesPM.md` — "A value at a labeled row's end is ruled twice": the Properties panel's value rule (`Core/Properties/property-panel.css.ts`) and a Standard card's (`Core/Views/Cards/cards-view.css`, whose comment says "as the panel's does") both grow the value into the room its label leaves, at the row's end. Raised by Phase 3's review as a candidate; whether the two are equivalent is unproven.
+- `IssuesPM.md` — "A card's value row restates a chip's height": `--card-row-h: 20px` (`Core/Views/Cards/cards-view.css`) is a hand-typed chip height, where List reads the kit's published `--label-height-roomy`. Raised by Phase 6's review as a candidate.
 
 #### Open Items
 
@@ -2856,8 +2857,11 @@ List's record registers its renderer, its property pane, and its three switches 
 2. **H-3's chevron.** The decision anchors the grip and a band's chevron to a row's first line as one rule. The plan anchors the grip and the check, and leaves the chevron centered in its own rule: it sits in a band's head or a bundle's title box, which never run to two lines.
 3. **The Text pen's room.** A Text value on a List row keeps 24px after it at rest. The alternative, the pen laid over the text's tail on hover, covers a short value whole.
 4. **Outlines in a flat Collection.** Under G-2 a top-level band draws no rail, so a Collection whose Sets hold no Sub-Sets and no sub-group shows none with Outlines on.
-5. **Tuned live at the Stop:** `--list-view-value-max`, `--list-view-title-min`, `--list-view-wrap-gap`, `--list-view-bar-width`, the bar's height, and the row's padding (3px, B-12). The spacing between bands derives from that padding as it does in Table, so a List's bands sit closer together than a Table's.
-6. **Two edges of the scrolling left group.** On a row with no right values, the **+** trails the left group (B-7), so a row too narrow for that group clips the **+** with its tail until the group is scrolled. And a mouse wheel over a value that is itself a scroll cap doesn't scroll the group it sits in (`UIX/Interactions/OverScroll.tsx:46-60`), where a trackpad does. Both come from the left group being one OverScroll lane (H-2) and are read at the Stop.
+5. **Tuned live at the Stop:** `--list-view-value-max`, `--list-view-title-min`, `--list-view-wrap-gap`, `--list-view-bar-width`, the bar's height, and the row's padding (2px, B-12). The spacing between bands derives from that padding as it does in Table, so a List's bands sit closer together than a Table's.
+6. **A value inside a scrolling group.** A mouse wheel over a value that is itself a scroll cap doesn't scroll the group it sits in (`UIX/Interactions/OverScroll.tsx:46-60`), where a trackpad does; the group's own lane keeps the wheel on a crowded row. It comes from each group being one OverScroll lane (H-2) and is read at the Stop.
+7. **H-2 past the title's floor.** The decision doesn't say what gives once the right group alone nearly fills the row. As landed, both groups shrink together from that point and each fades and scrolls, so the title holds its floor and nothing overflows; the alternatives are a right group that alone gives way, or a row that wraps on its own. Read at the Stop.
+8. **A row carried into a pane column** pushes that column's last shown row over the hidden rows at its foot until the drop; the engine floors only an empty zone, and it's frozen (E-7). Read at the Stop.
+9. **Move to Left and Move to Right** write the side alone, so the property lands where its stored order puts it on the other side, not at a fixed end (D-3 covers a property's first showing). Read at the Stop.
 
 #### Deviations
 
