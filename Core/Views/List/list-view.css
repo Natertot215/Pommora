@@ -59,6 +59,9 @@
   align-items: center;
   max-width: none;
 }
+.list-view-title .cell-title > svg {
+  flex: none;
+}
 .list-view-title .cell-title-text {
   display: -webkit-box;
   -webkit-box-orient: vertical;
