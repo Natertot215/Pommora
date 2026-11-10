@@ -13,7 +13,6 @@ import { LineRow, LineZone, lineList } from '@pommora/uix/Interactions/drag'
 import { fullOrderIndex, moveItem } from '@pommora/uix/Utilities/moveItem'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { text } from '@pommora/uix/Theme/typography.css'
-import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { useEntrance } from '@pommora/uix/Animations/useEntrance'
 import { useHeldPresence } from '@pommora/uix/Animations/useExitPresence'
@@ -297,7 +296,8 @@ export function PropertyPanel({
                       icon="plus"
                       size={ICON.optionsAdd}
                       ariaLabel={add}
-                      className={opened && !rowOpened ? undefined : revealTarget}
+                      reveal
+                      data-reveal-held={(opened && !rowOpened) || undefined}
                       create
                       onClick={() => openAdd(key)}
                     />

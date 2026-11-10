@@ -294,6 +294,7 @@ export function AccessoryButton({
   reveal,
   onMouseDown,
   ref,
+  ...rest
 }: {
   icon: IconName
   size: IconSize
@@ -306,6 +307,8 @@ export function AccessoryButton({
   reveal?: boolean
   onMouseDown?: (e: MouseEvent<HTMLButtonElement>) => void
   ref?: Ref<HTMLButtonElement>
+  tabIndex?: number
+  'data-reveal-held'?: true
 }): React.JSX.Element {
   return (
     <Button
@@ -325,6 +328,7 @@ export function AccessoryButton({
         e.stopPropagation()
         onClick(e)
       }}
+      {...rest}
     />
   )
 }

@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react'
 import type { SetNode } from '../../Nexus/tree'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
-import { Button } from '@pommora/uix/Buttons/Button'
+import { AccessoryButton } from '@pommora/uix/Menus/MenuRows'
 import { base } from '@pommora/uix/Fields/fields.css'
 import { isCmd } from '@pommora/uix/Interactions/chords'
 import { LineRow, type LineSpec, useLineGroup, useLineSpring } from '@pommora/uix/Interactions/drag'
@@ -189,16 +189,14 @@ function HeadedBand({
             <BandGlyph node={node} renamable />
           </span>
           {set ? (
-            <Button
-              size="button-inline"
+            <AccessoryButton
               icon="plus"
-              iconSize="body"
+              size="body"
+              ariaLabel="New page in group"
+              create
               reveal
-              className="group-band-add"
               tabIndex={-1}
               onClick={() => bands.add(set.key)}
-              data-create
-              aria-label="New page in group"
             />
           ) : null}
         </LineRow>
