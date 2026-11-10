@@ -246,13 +246,13 @@ function withoutEmptyStyles({ column_styles, ...view }: Json): Json {
 export type ViewPatch = Partial<SavedView>
 export type ViewWriter = (patch: ViewPatch) => Promise<Result<{ id: string }>>
 
-const ENTRY_KEYS = [
-  'column_widths',
-  'column_alignments',
-  'column_styles',
-] as const satisfies readonly (keyof SavedView)[]
-export type EntryKey = (typeof ENTRY_KEYS)[number]
-const isEntryKey = (k: string): k is EntryKey => (ENTRY_KEYS as readonly string[]).includes(k)
+const ENTRY_DEPTH = {
+  column_widths: 1,
+  column_alignments: 1,
+  column_styles: 2,
+} as const satisfies Partial<Record<keyof SavedView, number>>
+export type EntryKey = keyof typeof ENTRY_DEPTH
+const isEntryKey = (k: string): k is EntryKey => Object.hasOwn(ENTRY_DEPTH, k)
 
 export const slotsOf = (patch: ViewPatch): [key: string, value: unknown][] =>
   Object.entries(patch).flatMap(([k, v]) =>
@@ -291,7 +291,7 @@ export function mergeViewEdit(raw: unknown, next: SavedView): Json {
           stored.data,
           next,
           raw as Json,
-          { group: 1, sub_group: 1, column_widths: 1, column_alignments: 1, column_styles: 2 },
+          { group: 1, sub_group: 1, ...ENTRY_DEPTH },
           () => 'local',
         )
       : next,
