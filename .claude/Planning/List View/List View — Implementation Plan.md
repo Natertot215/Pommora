@@ -43,7 +43,7 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
 | ----- | -------- | -------- | ---------- |
 | 1 | +8 / −4 | +8 / −4 | +8 / −4 |
 | 2 | +295 / −216 | +305 / −216 | +313 / −220 |
-| 3 | +145 / −120 | | |
+| 3 | +145 / −120 | +146 / −131 | +459 / −351 |
 | 4 | +40 / −26 | | |
 | 5 | +46 / −30 | | |
 | 6 | +590 / −111 | | |
@@ -203,10 +203,10 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
   - [x] Task 2-1 · The shell sheet
   - [x] Task 2-2 · The row frame
   - [x] Review Checkpoint (Phases 1 and 2)
-- [ ] **Phase 3** — One Clickable Value, One Statement of the Rules
-  - [ ] Task 3-1 · `SeatedValue`
-  - [ ] Task 3-2 · Cards' rules join the pipeline and the host
-  - [ ] Review Checkpoint
+- [x] **Phase 3** — One Clickable Value, One Statement of the Rules
+  - [x] Task 3-1 · `SeatedValue`
+  - [x] Task 3-2 · Cards' rules join the pipeline and the host
+  - [x] Review Checkpoint
 - [ ] **Phase 4** — The Plus, the Bar, the Link Format, and the First Line
   - [ ] Task 4-1 · One hover **+**
   - [ ] Task 4-2 · `Segments` draws in a flex row and keeps its parts
@@ -1003,10 +1003,10 @@ One component carries a value's click, right-click, editor swap, and `Cell`; Car
 
 **VERIFY**
 
-- [ ] `git grep -n "value-seat" -- Core` finds the class written in `SeatedValue.tsx` (its span and `seatOf`) and in `cells.css`' selectors, tests, and drives only.
-- [ ] `PropertyPanel.test.tsx`, `cardGestures.test.tsx`, and `cardCreation.test.tsx` pass untouched.
-- [ ] Live, in `~/Test`: a Standard card's value sits at its row's end and a bar-look Number fills its row; a Compact card's values flow and clip; a panel value clicks, right-clicks, and edits as before; pressing on a panel value and moving 8px lifts nothing, and 14px lifts the row.
-- [ ] Run the gates.
+- [x] `git grep -n "value-seat" -- Core` finds the class written in `SeatedValue.tsx` (its span and `seatOf`) and in `cells.css`' selectors, tests, and drives only.
+- [x] `PropertyPanel.test.tsx`, `cardGestures.test.tsx`, and `cardCreation.test.tsx` pass untouched.
+- [x] Live, in `~/Test`: a Standard card's value sits at its row's end and a bar-look Number fills its row; a Compact card's values flow and clip; a panel value clicks, right-clicks, and edits as before; pressing on a panel value and moving 8px lifts nothing, and 14px lifts the row.
+- [x] Run the gates.
 
 #### Task 3-2 · Cards' rules join the pipeline and the host
 
@@ -1172,15 +1172,15 @@ One component carries a value's click, right-click, editor swap, and `Cell`; Car
 
 **VERIFY**
 
-- [ ] `git grep -nE "cardColumns|shownColumnsFor|cardAddColumns|commitOnCard" -- Core .claude/scripts` finds nothing; `SeatHost`'s `commit`, `add`, and `hide` are written by `useViewInteractions.tsx`, `PropertyPanel.tsx`, and `MenuSeat` alone.
-- [ ] The five moved cases pass under their new names; `cardGestures.test.tsx`, `cardCreation.test.tsx`, and `useViewHost.test.tsx` pass untouched; `cellGestures.test.tsx` shows Table's menus still offer no Remove; `Core/Contract/engineGraph.test.ts` and `Desktop/hostGraph.test.ts` stay green.
-- [ ] Live, in `~/Test`, on a Cards view: a click on empty card space opens the add list; picking a property and setting a value shows it on every card; a value's Remove hides the property from the view; a right-click pick from the page menu leaves the view's columns alone.
-- [ ] Run the gates, then `view-delta` for Phase 3.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `git grep -nE "cardColumns|shownColumnsFor|cardAddColumns|commitOnCard" -- Core .claude/scripts` finds nothing; `SeatHost`'s `commit`, `add`, and `hide` are written by `useViewInteractions.tsx`, `PropertyPanel.tsx`, and `MenuSeat` alone.
+- [x] The five moved cases pass under their new names; `cardGestures.test.tsx`, `cardCreation.test.tsx`, and `useViewHost.test.tsx` pass untouched; `cellGestures.test.tsx` shows Table's menus still offer no Remove; `Core/Contract/engineGraph.test.ts` and `Desktop/hostGraph.test.ts` stay green.
+- [x] Live, in `~/Test`, on a Cards view: a click on empty card space opens the add list; picking a property and setting a value shows it on every card; a value's Remove hides the property from the view; a right-click pick from the page menu leaves the view's columns alone.
+- [x] Run the gates, then `view-delta` for Phase 3.
+- [x] Check for unnecessary code or mistakes.
 
 #### Review Checkpoint
 
-- [ ] Two review agents, `code-simplification` and `adversarial-review`, reading outward: `SeatedValue` has no surface's knowledge in it (no card, panel, or list word, and no attribute it names for one surface) and Table's cells are untouched (I-7); `.value-inline` resolves the same on a card as `.card-value` did under either stylesheet order; no importer of `cardColumns` remains; `drawn` is the only thing a kind states and the host's three derived rules read as Cards' did, including the page-menu pick that leaves the view alone; `Core/Views/Pipeline/columns.ts` stays free of React and UIX components.
+- [x] Two review agents, `code-simplification` and `adversarial-review`, reading outward: `SeatedValue` has no surface's knowledge in it (no card, panel, or list word, and no attribute it names for one surface) and Table's cells are untouched (I-7); `.value-inline` resolves the same on a card as `.card-value` did under either stylesheet order; no importer of `cardColumns` remains; `drawn` is the only thing a kind states and the host's three derived rules read as Cards' did, including the page-menu pick that leaves the view alone; `Core/Views/Pipeline/columns.ts` stays free of React and UIX components.
 
 ### Phase 4 — The Plus, the Bar, the Link Format, and the First Line
 
@@ -2865,6 +2865,7 @@ List's record registers its renderer, its property pane, and its three switches 
 
 - `IssuesPM.md` — "Archive's and Trash's rows draw a second copy of the row frame": `BundleRow` (`Core/Bundles/BundleTable.tsx:262-318`) composes `LineRow`, `RowLead`, a check, and the title markup by hand, with its row height held as a constant; folding it onto `PageRow` and `PageTitle` is the fix.
 - `IssuesPM.md` — "Table's cells mount a value a third way": `DataRow`'s cell (`Core/Views/Table/TableView.tsx`) wires `click`, `menu`, the editor, and `Cell` beside the sweep's `pointerdown`; folding it onto `SeatedValue` is the fix.
+- `IssuesPM.md` — "A value at a labeled row's end is ruled twice": the Properties panel's value rule (`Core/Properties/property-panel.css.ts`) and a Standard card's (`Core/Views/Cards/cards-view.css`, whose comment says "as the panel's does") both grow the value into the room its label leaves, at the row's end. Raised by Phase 3's review as a candidate; whether the two are equivalent is unproven.
 
 #### Open Items
 
