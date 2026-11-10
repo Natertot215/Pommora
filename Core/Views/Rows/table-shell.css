@@ -1,0 +1,44 @@
+/* The shell a row-drawing view wears over the table vocabulary: its width against the glass, the heading's bleed, the grid's zoom, and the band rhythm. */
+
+.table-shell {
+  /* Width is auto so the negative side margins widen the box to both glass edges while the grid's content box (and so every row) stays exactly where it was. */
+  margin-left: calc(var(--rail-inset) - var(--content-inset));
+  margin-right: calc(-1 * var(--content-inset));
+  --table-right-inset: var(--content-inset);
+  padding-left: var(--content-inset);
+  padding-right: var(--table-right-inset);
+  overflow-x: auto;
+}
+
+/* Full-bleeds the heading's fill and seam to both glass edges; the matching padding re-lands the tracks on a data row's content width — un-padded, every column drifts. */
+.table-shell .table-head {
+  margin-left: calc(-1 * var(--content-inset));
+  margin-right: calc(-1 * var(--table-right-inset));
+  padding-left: var(--content-inset);
+  padding-right: var(--table-right-inset);
+}
+
+/* Each band is itself a grid reading --cols; inline min-width forces scroll, width:100% lets the Title track eat slack. */
+.table-shell .table-grid {
+  width: 100%;
+  zoom: calc(var(--zoom) * var(--tile-zoom, 1));
+}
+[data-view-embed] .table-shell {
+  --zoom: var(--view-embed-zoom);
+}
+
+/* Chrome lives in group-band.css; this scopes the section rhythm (the row) and the sticky pin (the head). */
+.table-shell .group-band-row,
+.table-shell .group-band + .band-tail {
+  padding-top: var(--band-gap);
+}
+.table-shell .group-band.sub-band .group-band-row,
+.table-shell .sub-band + .band-tail {
+  padding-top: var(--band-clearance);
+}
+.table-shell .group-band-head {
+  /* Sticky-left keeps the group label and chevron in the gutter when columns scroll; left:0 is the grid's content start, only pinning once scrolled. */
+  position: sticky;
+  left: 0;
+  display: inline-flex;
+}

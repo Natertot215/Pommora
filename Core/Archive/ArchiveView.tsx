@@ -11,11 +11,11 @@ import { containerOwner } from '../Nexus/treeIndex'
 import { propertyTypeIconName } from '../Properties/typeDisplay'
 import { personalizationOf } from '../Session/configSlice'
 import { useSession } from '../Session/store'
-import '../Views/Table/table-view.css'
+import '../Views/Rows/table-shell.css'
 import { ARCHIVE_TITLE } from './archiveLabel'
 import './archive-view.css'
 
-/** A Collection's or a top-level Set's archived items on TableView's sheet: checked for Restore and Delete. A Set discloses what it holds, and a page opens in the reader on a double-click. */
+/** A Collection's or a top-level Set's archived items in the row views' shell: checked for Restore and Delete. A Set discloses what it holds, and a page opens in the reader on a double-click. */
 export function ArchiveView({
   owner,
   archiveId,
