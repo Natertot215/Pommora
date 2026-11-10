@@ -160,13 +160,13 @@ describe('SidesFrame — a row’s drag', () => {
     })
     save.mockClear()
     columns().forEach((col, i) => {
-      const left = i * 208
+      const left = i * 188
       const box = col.querySelector(`.${zone}`)!
-      stubRect(box, { top: 0, bottom: 60, left, right: left + 200 })
+      stubRect(box, { top: 0, bottom: 60, left, right: left + 180 })
       ;[...box.children]
         .filter((e) => e.textContent)
         .forEach((row, r) => {
-          stubRect(row, { top: r * 20, bottom: r * 20 + 20, left, right: left + 200 })
+          stubRect(row, { top: r * 20, bottom: r * 20 + 20, left, right: left + 180 })
         })
     })
     const from = labelIn(document.body, name).closest(`.${zone} > *`)!

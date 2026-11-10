@@ -3,7 +3,7 @@ import { vars as colorVars } from '@pommora/uix/Theme/color.css'
 import { frameZone } from '@pommora/uix/Menus/frames.css'
 
 // KNOBS — the two columns
-const PANE = { width: 200, gap: 8, radius: 8 }
+const PANE = { width: 180, gap: 8, radius: 8 }
 
 export const columns = style({
   display: 'grid',
