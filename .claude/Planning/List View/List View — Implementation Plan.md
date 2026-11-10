@@ -22,7 +22,7 @@ A view is a saved presentation of a Collection's or Set's pages. Six kinds are r
 
 List becomes Pommora's third view kind with a renderer. A List row is Table's row without cells: one lead cell holding the grip and a row line, the line a left group (the title and the values beside it) and a right group flush to the row's edge, with a bar between properties and a hover **+** that opens the add list. Each property has a side, stored per view over a default for its type, and List's property pane shows the two sides as two columns that trade rows by displacement. Three switches, Title Icons, Outlines, and Wrap Rows, sit at the root of the view editor. Bands, grouping, filtering, sorting, creation, and drag come from the host unchanged.
 
-The work shares what Table, Cards, and the Properties panel each hold privately rather than writing a third copy, and it lands in dependency order, removal first: a hidden property keeps its place through a reorder in every kind (Phase 1); the row frame and the shell sheet leave Table for `Core/Views/Rows/` (Phase 2); one clickable value, and Cards' add, show, and hide rules stated once on the host (Phase 3); the one hover **+**, the bar, a Link's per-view Format on right-click, and the grip on a row's first line (Phase 4); the saved view's side map and two flags, and the kind record naming its property pane (Phase 5); the two-column pane, the renderer, and the registration that makes List's tile live (Phase 6); the Views Drive's List cases (Phase 7); and the documents (Phase 8).
+The work shares what Table, Cards, and the Properties panel each hold privately rather than writing a third copy, and it lands in dependency order, removal first: a hidden property keeps its place through a reorder in every kind (Phase 1); the row frame and the shell sheet leave Table for `Core/Views/Rows/` (Phase 2); one clickable value, and Cards' add, show, and hide rules stated once on the host (Phase 3); the one hover **+**, the bar, a Link's per-view Format on right-click, and the grip on a row's first line (Phase 4); a per-id map's one registration, and the kind record naming its Visibility pane (Phase 5); the saved view's side map and two flags, the two-column pane, the renderer, and the registration that makes List's tile live (Phase 6); the Views Drive's List cases (Phase 7); and the documents (Phase 8).
 
 **The System, Layer by Layer:**
 
@@ -31,7 +31,7 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
 - **The Value** (`Core/Properties/Cells/SeatedValue.tsx`, `cells.css`): one component carries a value's click, right-click, editor swap, and `Cell`, for Cards, the Properties panel, and List; `.value-inline` is the box of a seat among others on one line (Phase 3).
 - **The Rules** (`Core/Views/Pipeline/columns.ts`, `Core/Views/Host/useViewInteractions.tsx`): `drawnColumns` and `addColumns` sit in the pipeline; a kind states what an item draws and the host builds the commit that shows a property, the Remove that hides it, and the Add list (Phase 3).
 - **The Shared Small Pieces** (`UIX/Menus/MenuRows.tsx`, `UIX/Elements/segment.css.ts`, `Core/Actions/`, `UIX/Table/table.css`): the band's, the panel's, and a row's hover **+** are one `AccessoryButton`; `Segments` draws in a flex row; a Link value's right-click offers its view's Format on both of its menus; the grip and the check sit on a row's first line (Phase 4).
-- **The Saved View and the Record** (`Core/Views/views.ts`, `Core/Nexus/configReach.ts`, `Core/Views/Host/viewKinds.ts`): a per-id map registers once (`ENTRY_DEPTH`); the record names its property pane (`layout.Properties`), and reads the one `TITLE_ICONS`; a kind's switches can ride its `rows` through `switchRows`, the one mapping from a switch entry to its row; the view gains `column_sides`, `hide_outlines`, and `wrap_rows` (Phases 5, 6).
+- **The Saved View and the Record** (`Core/Views/views.ts`, `Core/Nexus/configReach.ts`, `Core/Views/Host/viewKinds.ts`): a per-id map registers once (`ENTRY_DEPTH`); the record names its Visibility pane (`Visibility`), and reads the one `TITLE_ICONS`; a kind's switches can ride its `rows` through `switchRows`, the one mapping from a switch entry to its row; the view gains `column_sides`, `hide_outlines`, and `wrap_rows` (Phases 5, 6).
 - **List** (`Core/Views/List/`, `Core/Views/Settings/SidesFrame.tsx`): `ListView` composes the frame, the value, `Segments`, and the **+** into a row line of two groups, with the compact row height, the wrap order, the title's floor, the value maximum, and the outline rail as CSS on one sheet; `listSides.ts` holds the per-type defaults, a side's column, and what a drop writes; `SidesFrame` is two displacement zones over the row `VisibilityFrame` already drew; `listKind.ts` registers them (Phase 6).
 - **The Drive and the Documents:** the Views Drive's group 11 re-runs List's cases and the regressions the shared pieces could cause; `ViewTypesPM.md` gains *§List* and its false sentences are replaced in place (Phases 7, 8).
 
@@ -45,7 +45,7 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
 | 2 | +295 / −216 | +305 / −216 | +313 / −220 |
 | 3 | +145 / −120 | +146 / −131 | +459 / −351 |
 | 4 | +40 / −26 | +42 / −27 | +501 / −378 |
-| 5 | +46 / −30 | | |
+| 5 | +46 / −30 | +77 / −52 | +578 / −430 |
 | 6 | +590 / −111 | | |
 | 7 | — (the drive, under `.claude`) | | |
 | 8 | — (documents) | | |
@@ -74,8 +74,8 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
 | `seat.drawn` • Policy Field | What a kind's items draw, from which the host builds the add, show, and hide rules. | `Core/Views/Host/useViewInteractions.tsx` |
 | `tabIndex` · `data-reveal-held` • Forwarded Attributes | `AccessoryButton`'s tab stop and held reveal. | `UIX/Menus/MenuRows.tsx` |
 | `ENTRY_DEPTH` • Constant | The saved view's per-id maps and their merge depth, in place of `ENTRY_KEYS`. | `Core/Views/views.ts` |
-| `ViewSwitch` • Type · `TITLE_ICONS` • Constant | A flag as a kind's switch draws it, in place of `SwitchEntry`, and the one Title Icons entry. | `Core/Views/views.ts` |
-| `layout.Properties` • Record Field | The kind's property pane. | `Core/Views/Host/viewKinds.ts` |
+| `ViewSwitch` • Type · `TITLE_ICONS` • Constant | A flag as a kind's switch draws it, in place of `SwitchEntry`, and the one Title Icons entry. | `Core/Views/Settings/switchRows.ts` |
+| `Visibility` • Record Field | The kind's Visibility pane. | `Core/Views/Host/viewKinds.ts` |
 | `switchRows` • Function | A kind's switch entries as rows; `kindSwitches`' inline mapping as an export a record can import. | `Core/Views/Settings/switchRows.ts` |
 | `SIDES` • Constant · `Side` • Type | Left or right. | `Core/Views/views.ts` |
 | `column_sides` · `hide_outlines` · `wrap_rows` • Saved-View Fields | A property's side per view, and List's two flags. | `Core/Views/views.ts` |
@@ -86,8 +86,8 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
 | `list-view.css` • File | The row line, the compact row padding, the title's floor, the value maximum, and the outline rail, with `--list-view-value-max`, `--list-view-title-min`, `--list-view-wrap-gap`, and `--list-view-bar-width`. | `Core/Views/List/list-view.css` |
 | `SidesFrame` • Component | List's property pane: two columns that trade rows. | `Core/Views/Settings/SidesFrame.tsx` |
 | `sides-frame.css.ts` • File | The two columns' layout. | `Core/Views/Settings/sides-frame.css.ts` |
-| `propertyPane` • Function | What a view's property pane lists: its shown and hidden columns, their names, the hide toggle, and the row; `VisibilityFrame`'s inline derivation as an export both panes read. | `Core/Views/Settings/VisibilityFrame.tsx` |
-| `PropertyPaneProps` • Type | A property pane's props, named once. | `Core/Views/Settings/ViewPane.tsx` |
+| `visibilityPane` • Function | What a view's property pane lists: its shown and hidden columns, their names, the hide toggle, and the row; `VisibilityFrame`'s inline derivation as an export both panes read. | `Core/Views/Settings/VisibilityFrame.tsx` |
+| `VisibilityPaneProps` • Type | A Visibility pane's props, named once. | `Core/Views/Settings/ViewPane.tsx` |
 | `--band-indent` • Variable | A headed band's indent, in place of its row's inline padding. | `Core/Views/Bands/GroupBand.tsx` |
 | `--pen-span` • Variable | The pen's room, named once: shown on hover everywhere, held at rest on a List row. | `Core/Properties/Cells/cells.css` |
 | `--row-first-line` • Variable | The height of a row's first line, which the grip and the check center on; List states it. | `UIX/Table/table.css` · `Core/Views/List/list-view.css` |
@@ -106,7 +106,7 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
 | `.group-band-add` • Class | The band **+**'s own color rule. | `Core/Views/Bands/group-band.css` |
 | `ENTRY_KEYS` • Constant | The per-id maps' first registration. | `Core/Views/views.ts` |
 | `SwitchEntry` • Type | The record's private switch type. | `Core/Views/Host/viewKinds.ts` |
-| `VisibilityGroups` • Component | The Visibility pane's private row and groups, now `propertyPane` and two inline groups. | `Core/Views/Settings/VisibilityFrame.tsx` |
+| `VisibilityGroups` • Component | The Visibility pane's private row and groups, now `visibilityPane` and two inline groups. | `Core/Views/Settings/VisibilityFrame.tsx` |
 | ArchiveView's import of `table-view.css` • Import | A surface wearing a kind's sheet. | `Core/Archive/ArchiveView.tsx` |
 
 #### Constraints
@@ -217,11 +217,11 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
   - [x] Task 4-3 · A Link's per-view Format on right-click
   - [x] Task 4-4 · The grip reads its row's first line
   - [x] Review Checkpoint
-- [ ] `[Compaction checkpoint: c/pre-compaction; on the re-prompt, reread §Constraints and c/plan-execution before Phase 5 opens]`
-- [ ] **Phase 5** — The Saved View and the Kind Record
-  - [ ] Task 5-1 · A per-id map's keys and depth are one record
-  - [ ] Task 5-2 · The record names its property pane, and Title Icons is written once
-  - [ ] Review Checkpoint
+- [x] `[Compaction checkpoint: c/pre-compaction; on the re-prompt, reread §Constraints and c/plan-execution before Phase 5 opens]`
+- [x] **Phase 5** — The Saved View and the Kind Record
+  - [x] Task 5-1 · A per-id map's keys and depth are one record
+  - [x] Task 5-2 · The record names its property pane, and Title Icons is written once
+  - [x] Review Checkpoint
 - [ ] **Phase 6** — List
   - [ ] Task 6-1 · Sides, and the two-column pane
   - [ ] Task 6-2 · The renderer
@@ -1508,8 +1508,8 @@ The grip and the check sit on a first line their surface can state, so a row tha
 
 **VERIFY**
 
-- [ ] `views.test.ts`' `mergeViewEdit`, `slotsOf`, and `foldView` cases and `liveView`'s suites pass untouched.
-- [ ] Run the gates.
+- [x] `views.test.ts`' `mergeViewEdit`, `slotsOf`, and `foldView` cases and `liveView`'s suites pass untouched.
+- [x] Run the gates.
 
 #### Task 5-2 · The record names its property pane, and Title Icons is written once
 
@@ -1664,14 +1664,14 @@ A kind's record states the pane that lists its properties, which `ViewPane` and 
 
 **VERIFY**
 
-- [ ] `git grep -n "'Title Icons'" -- Core` finds `views.ts` and tests only; `git grep -n "VisibilityFrame" -- Core/Views/Settings/ViewPane.tsx Core/Views/Settings/ViewFrame.tsx` finds nothing.
-- [ ] `ViewFrame.test.tsx`, `SettingsFrame.test.tsx`, and `viewWrite.test.tsx` pass untouched; `Core/Session/sliceGraph.test.ts` and the engine and host graph tests stay green, and `npm run build` reads `✓ built in` (a record importing a pane is a new import edge; a scan of runtime imports, type-only ones dropped, finds no cycle through `viewKinds.ts`).
-- [ ] Run the gates, then `view-delta` for Phase 5.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `git grep -n "'Title Icons'" -- Core` finds `views.ts` and tests only; `git grep -n "VisibilityFrame" -- Core/Views/Settings/ViewPane.tsx Core/Views/Settings/ViewFrame.tsx` finds nothing.
+- [x] `ViewFrame.test.tsx`, `SettingsFrame.test.tsx`, and `liveView.test.tsx` pass untouched; `Core/Session/sliceGraph.test.ts` and the engine and host graph tests stay green, and `npm run build` reads `✓ built in` (a record importing a pane is a new import edge; a scan of runtime imports, type-only ones dropped, finds no cycle through `viewKinds.ts`).
+- [x] Run the gates, then `view-delta` for Phase 5.
+- [x] Check for unnecessary code or mistakes.
 
 #### Review Checkpoint
 
-- [ ] Two review agents, `code-simplification` and `adversarial-review`, reading outward: `ENTRY_DEPTH` is read wherever `ENTRY_KEYS` was and nowhere names a per-id map twice; `views.ts` gained plain data alone and still imports no React or UIX; no import cycle runs through `viewKinds.ts` (records import panes, panes import the registry's `presentedKind` only where they did); the two doors draw the same panes for Table and Cards as before.
+- [x] Two review agents, `code-simplification` and `adversarial-review`, reading outward: `ENTRY_DEPTH` is read wherever `ENTRY_KEYS` was and nowhere names a per-id map twice; `views.ts` gained plain data alone and still imports no React or UIX; no import cycle runs through `viewKinds.ts` (records import panes, panes import the registry's `presentedKind` only where they did); the two doors draw the same panes for Table and Cards as before.
 
 ### Phase 6 — List
 
@@ -1688,7 +1688,7 @@ A property's side is stored per view over a default for its type, and List's pro
 1. Write and watch fail: `Core/Views/List/listSides.test.ts` — `sideFor` answers D-2's default for each type and a stored side over it; `sideColumn` lists Left in stored order and Right reversed (E-3); `sideDrop` at Right's top writes the id last in `property_order`, between two Right rows writes it just before the row drawn above it in `property_order` (after the row drawn below), at Left's end writes it last, across sides writes `column_sides` in the same patch, within a side writes no `column_sides`, and leaves a hidden id where it stands (E-6). `Core/Views/Settings/SidesFrame.test.tsx` — two headings, **Left** and **Right**, each a menu heading; Title among Left's rows with a disabled eye (E-8); a hidden property at the foot of its own column, ghosted (E-5), where a view that never placed the two stamps shows Creation Time and Last Modified at Right's foot; an eye click writes `hideShown` or `unhide`; a row's right-click offers **Move to Right** in Left and **Move to Left** in Right, Title offers neither, and a pick writes `column_sides` (E-7).
 2. `views.ts` takes `SIDES`, `Side`, and `column_sides` (a per-id map: one `ENTRY_DEPTH` entry); `configReach.ts` names its role.
 3. Create `Core/Views/List/listSides.ts`. A stored side stays stored when it equals its type's default, as a stored alignment does (`useColumns.ts:219-222`); nothing prunes the map.
-4. `VisibilityFrame.tsx` exports `propertyPane`, the one derivation of what a property pane lists (the shown and hidden columns, their names and icons, the hide toggle, and the row), and reads it itself in place of `VisibilityGroups` and its inline derivation; `SidesFrame` reads the same.
+4. `VisibilityFrame.tsx` exports `visibilityPane`, the one derivation of what a property pane lists (the shown and hidden columns, their names and icons, the hide toggle, and the row), and reads it itself in place of `VisibilityGroups` and its inline derivation; `SidesFrame` reads the same.
 5. Create `Core/Views/Settings/SidesFrame.tsx` and `Core/Views/Settings/sides-frame.css.ts`.
 
 **AFTER**
@@ -1780,15 +1780,15 @@ A property's side is stored per view over a default for its type, and List's pro
 +import { FILEDATA, type ResolvedColumn } from '../../Properties/properties'
 -import { MenuRowView } from '@pommora/uix/Menus/MenuIndex'
 +import { type MenuRow, MenuRowView } from '@pommora/uix/Menus/MenuIndex'
--import type { PropertyPaneProps } from './ViewPane'
-+import type { PaneProps, PropertyPaneProps } from './ViewPane'
+-import type { VisibilityPaneProps } from './ViewPane'
++import type { PaneProps, VisibilityPaneProps } from './ViewPane'
 -import { type HideControls, hideEye } from './OptionOrderList'
 +import { hideEye } from './OptionOrderList'
 @@ VisibilityGroups @@
 -function VisibilityGroups({ … }): React.JSX.Element {
 -  … (the whole component, lines 23-68)
 -}
-+export function propertyPane({ view, schema, save }: PaneProps, tree: NexusTree) {
++export function visibilityPane({ view, schema, save }: PaneProps, tree: NexusTree) {
 +  const contextIds = contextIdsOf(tree)
 +  const contexts = contextsByIdOf(tree)
 +  const columnOf = (id: string): ResolvedColumn => resolveColumn(id, schema, contextIds)!
@@ -1831,7 +1831,7 @@ A property's side is stored per view over a default for its type, and List's pro
    footer,
    current = 'Visibility',
 +  ...pane
- }: PropertyPaneProps): React.JSX.Element | null {
+ }: VisibilityPaneProps): React.JSX.Element | null {
    const tree = useSession((st) => st.tree)
    if (!tree) return null
 -
@@ -1844,7 +1844,7 @@ A property's side is stored per view over a default for its type, and List's pro
 -  const nameFor = (id: string): string => columnLabel(columnOf(id), contextsByIdOf(tree))
 -  const iconFor = (id: string): string => columnIcon(columnOf(id), contextsByIdOf(tree))
 +  const { view, schema, back, save } = pane
-+  const { shown, hidden, label, icon, row } = propertyPane(pane, tree)
++  const { shown, hidden, label, icon, row } = visibilityPane(pane, tree)
 +  const shownIds = shown.map((c) => c.id)
 +  const line = (c: ResolvedColumn): React.JSX.Element => (
 +    <LineRow key={c.id} id={c.id}>
@@ -1920,8 +1920,8 @@ A property's side is stored per view over a default for its type, and List's pro
 +import { useSession } from '../../Session/store'
 +import { sideColumn, sideDrop, sideFor } from '../List/listSides'
 +import type { Side } from '../views'
-+import type { PropertyPaneProps } from './ViewPane'
-+import { propertyPane } from './VisibilityFrame'
++import type { VisibilityPaneProps } from './ViewPane'
++import { visibilityPane } from './VisibilityFrame'
 +import * as s from './sides-frame.css'
 +
 +const SIDES_FAMILY: Family<string> = { name: 'view-sides' }
@@ -1953,11 +1953,11 @@ A property's side is stored per view over a default for its type, and List's pro
 +  footer,
 +  current = 'Visibility',
 +  ...pane
-+}: PropertyPaneProps): React.JSX.Element | null {
++}: VisibilityPaneProps): React.JSX.Element | null {
 +  const tree = useSession((st) => st.tree)
 +  if (!tree) return null
 +  const { view, back, save } = pane
-+  const { shown, hidden, label, row } = propertyPane(pane, tree)
++  const { shown, hidden, label, row } = visibilityPane(pane, tree)
 +
 +  return (
 +    <MenuScrollFrame
@@ -2446,9 +2446,8 @@ List's record registers its renderer, its property pane, and its three switches 
    - `ViewFrame.test.tsx` gains List's case as its own `it`, beside the `it.each` that stays at Table and Cards: before Layout is pressed, **Title Icons**, **Outlines**, and **Wrap Rows** are each found at the editor's root; after it, the Layout detail (the last scroll body; the root stays mounted under `FrameSlide`) holds two menu headings reading **Left** and **Right** and no **Outlines** switch.
    - `SettingsFrame.test.tsx` gains a List view: Visibility shows both headings; Layout shows the type grid and the three switches in its footing, with no separator between the grid and an empty body.
    - `ViewFrame.test.tsx` gains a case that presses the List tile on a Table view and reads `type: 'list'` in the saved patch (A-1), and presses the Gallery tile and reads no write (A-3).
-2. Create `Core/Views/Settings/switchRows.ts`: the one mapping from a kind's switch entries to their rows, which `kindSwitches` reads in place of its inline copy and List's record reads to build its `rows`. It sits off the registry's import path, so a record can import it.
-3. `kindSwitches` answers null for a kind with no switches, and both of its separated callers draw their separator only over switches (I-5: an empty switch list draws nothing).
-4. Create `Core/Views/List/listKind.ts`, its `switches` empty and its three switches in `rows`, and register it.
+2. `kindSwitches` answers null for a kind with no switches, and both of its separated callers draw their separator only over switches (I-5: an empty switch list draws nothing).
+3. Create `Core/Views/List/listKind.ts`, its `switches` empty and its three switches in `rows` through `switchRows` (`Core/Views/Settings/switchRows.ts`, which holds `ViewSwitch` and `TITLE_ICONS` beside it), and register it.
 
 **AFTER**
 
@@ -2463,28 +2462,10 @@ List's record registers its renderer, its property pane, and its three switches 
 +  list: LIST_KIND,
 ```
 
-```Core/Views/Settings/switchRows.ts diff
-+import { type MenuRow, switchRow } from '@pommora/uix/Menus/MenuIndex'
-+import { ROOT_ROW_LOOK } from '@pommora/uix/Menus/frames.css'
-+import { type SavedView, type ViewSwitch, type ViewWriter, viewOption } from '../views'
-+
-+export const switchRows = (switches: ViewSwitch[], view: SavedView, save: ViewWriter): MenuRow[] =>
-+  switches.map(({ icon, label, key, invert = false }) =>
-+    switchRow(
-+      icon,
-+      label,
-+      viewOption(view, key) !== invert,
-+      (next) => void save({ [key]: next !== invert }),
-+      ROOT_ROW_LOOK,
-+    ),
-+  )
-```
-
 ```Core/Views/List/listKind.ts diff
 +import type { ViewKindRecord } from '../Host/viewKinds'
 +import { SidesFrame } from '../Settings/SidesFrame'
-+import { switchRows } from '../Settings/switchRows'
-+import { TITLE_ICONS, type ViewSwitch } from '../views'
++import { switchRows, TITLE_ICONS, type ViewSwitch } from '../Settings/switchRows'
 +import { ListView } from './ListView'
 +
 +const SWITCHES: ViewSwitch[] = [
@@ -2495,10 +2476,10 @@ List's record registers its renderer, its property pane, and its three switches 
 +
 +export const LIST_KIND: ViewKindRecord = {
 +  Renderer: ListView,
++  Visibility: SidesFrame,
 +  nests: true,
 +  layout: {
 +    leaf: 'visibility',
-+    Properties: SidesFrame,
 +    switches: [],
 +    rows: (view, write) => switchRows(SWITCHES, view, write),
 +  },
@@ -2506,34 +2487,12 @@ List's record registers its renderer, its property pane, and its three switches 
 ```
 
 ```Core/Views/Settings/LayoutFrame.tsx diff
-@@ imports @@
- import {
-   type SavedView,
-   VIEW_KINDS,
-   VIEW_TYPES,
-   type ViewType,
-   type ViewWriter,
--  viewOption,
- } from '../views'
--import { MenuIndex, switchRow } from '@pommora/uix/Menus/MenuIndex'
-+import { MenuIndex } from '@pommora/uix/Menus/MenuIndex'
--import { ROOT_ROW_LOOK, SETTINGS_PANE_MAX_HEIGHT } from '@pommora/uix/Menus/frames.css'
-+import { SETTINGS_PANE_MAX_HEIGHT } from '@pommora/uix/Menus/frames.css'
-+import { switchRows } from './switchRows'
 @@ kindSwitches @@
 -export const kindSwitches = (view: SavedView, save: ViewWriter): React.JSX.Element => (
 -  <MenuIndex
 -    sections={[
 -      {
--        rows: presentedKind(view.type).layout.switches.map(({ icon, label, key, invert = false }) =>
--          switchRow(
--            icon,
--            label,
--            viewOption(view, key) !== invert,
--            (next) => void save({ [key]: next !== invert }),
--            ROOT_ROW_LOOK,
--          ),
--        ),
+-        rows: switchRows(presentedKind(view.type).layout.switches, view, save),
 -      },
 -    ]}
 -  />
@@ -2559,11 +2518,11 @@ List's record registers its renderer, its property pane, and its three switches 
 
 ```Core/Views/Settings/ViewFrame.tsx diff
 @@ ViewEditor @@
-   const { layout } = presentedKind(view.type)
+   const { layout, Visibility } = presentedKind(view.type)
 +  const switches = kindSwitches(view, save)
    const detail =
 @@
-       <layout.Properties
+       <Visibility
          {...leaf}
          current="Layout"
          footer={
