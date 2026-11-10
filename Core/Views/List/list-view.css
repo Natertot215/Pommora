@@ -1,7 +1,6 @@
 /* A List row over the table vocabulary: one lead cell holding a line of two groups. */
 
-.table.list-view {
-  --cell-padding-y: 2px; /* KNOB — a row's top and bottom room, under Table's; the selector outranks `.table`'s own statement */
+.list-view {
   --list-view-value-max: 200px; /* KNOB — where a property's values end in an ellipsis */
   --list-view-title-min: 120px; /* KNOB — how short a title's text gets before the row wraps or its left group scrolls */
   --list-view-wrap-gap: 14px; /* KNOB — the room between the two groups */
@@ -11,6 +10,7 @@
 }
 .list-view .table-grid {
   --cols: minmax(0, 1fr);
+  --cell-padding-y: 2px; /* KNOB — a row's top and bottom room, under Table's; stated below `.table`, so the band rhythm keeps Table's */
 }
 
 .list-view-line {
