@@ -44,7 +44,7 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
 | 1 | +8 / −4 | +8 / −4 | +8 / −4 |
 | 2 | +295 / −216 | +305 / −216 | +313 / −220 |
 | 3 | +145 / −120 | +146 / −131 | +459 / −351 |
-| 4 | +40 / −26 | +40 / −26 | +499 / −377 |
+| 4 | +40 / −26 | +42 / −27 | +501 / −378 |
 | 5 | +46 / −30 | | |
 | 6 | +590 / −111 | | |
 | 7 | — (the drive, under `.claude`) | | |
@@ -212,7 +212,7 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
   - [x] Task 4-2 · `Segments` draws in a flex row and keeps its parts
   - [x] Task 4-3 · A Link's per-view Format on right-click
   - [x] Task 4-4 · The grip reads its row's first line
-  - [ ] Review Checkpoint
+  - [x] Review Checkpoint
 - [ ] `[Compaction checkpoint: c/pre-compaction; on the re-prompt, reread §Constraints and c/plan-execution before Phase 5 opens]`
 - [ ] **Phase 5** — The Saved View and the Kind Record
   - [ ] Task 5-1 · A per-id map's keys and depth are one record
@@ -1467,7 +1467,7 @@ The grip and the check sit on a first line their surface can state, so a row tha
 
 #### Review Checkpoint
 
-- [ ] Two review agents, `code-simplification` and `adversarial-review`, reading outward: no other hover **+** in Core is a raw `Button` that should be an `AccessoryButton`, and `tabIndex` and `data-reveal-held` are the only attributes it forwards; no inline consumer of `Segments` changed size; the editor's link menus, the tables' link cells, and `applyLinkAction` are untouched by `LinkAction`'s wider type, and a style action can't reach `linkEdit` as anything but a no-op; the per-view Format appears exactly where `SeatHost.style` answers a style; every `.row-grip`, `.row-check`, and `.row-chevron` in Core sits exactly where it did (Table, Archive, Trash, bands).
+- [x] Two review agents, `code-simplification` and `adversarial-review`, reading outward: no other hover **+** in Core is a raw `Button` that should be an `AccessoryButton`, and `tabIndex` and `data-reveal-held` are the only attributes it forwards; no inline consumer of `Segments` changed size; the editor's link menus, the tables' link cells, and `applyLinkAction` are untouched by `LinkAction`'s wider type, and a style action can't reach `linkEdit` as anything but a no-op; the per-view Format appears exactly where `SeatHost.style` answers a style; every `.row-grip`, `.row-check`, and `.row-chevron` in Core sits exactly where it did (Table, Archive, Trash, bands).
 
 ### Phase 5 — The Saved View and the Kind Record
 
