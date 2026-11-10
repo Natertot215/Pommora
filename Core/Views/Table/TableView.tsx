@@ -15,7 +15,7 @@ import {
   GhostTitle,
   PageRow,
   RowGrip,
-  RowTitle,
+  PageTitle,
   rowMenu,
   rowOpen,
 } from '../Rows/RowFrame'
@@ -27,6 +27,7 @@ import '../Rows/table-shell.css'
 import './table-view.css'
 import { useCellSweep } from './useCellSweep'
 import { LineZone } from '@pommora/uix/Interactions/drag'
+import { overScrollLabel } from '@pommora/uix/Interactions/OverScroll'
 
 export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const { view, columns, ctx, rowById, dragDisabled } = host
@@ -225,7 +226,13 @@ const DataRow = memo(function DataRow({
         }
         const content =
           c.kind === 'title' ? (
-            <RowTitle row={row} naming={naming} hideIcon={hideIcon} api={api} />
+            <PageTitle
+              row={row}
+              naming={naming}
+              hideIcon={hideIcon}
+              api={api}
+              className={overScrollLabel}
+            />
           ) : (
             ((editingCol === c.id ? api.editor(row, c) : null) ?? (
               <Cell

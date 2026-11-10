@@ -1,10 +1,9 @@
-import { Fragment, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { fillInput } from '@pommora/uix/Fields/fields.css'
 import { isCmd, isSecondaryClick } from '@pommora/uix/Interactions/chords'
 import { LineRow } from '@pommora/uix/Interactions/drag'
 import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
-import { overScrollLabel } from '@pommora/uix/Interactions/OverScroll'
 import { Icon } from '@pommora/uix/Symbols'
 import { rowIndent } from '@pommora/uix/Table/rowIndent'
 import { cx } from '@pommora/uix/Utilities/cx'
@@ -36,8 +35,14 @@ export function BandRows({
   ghost: (padLeft: string) => ReactNode
 }): React.JSX.Element {
   const { groups, bands, disclosure } = host
-  const ghostRow = (padLeft: string, closing: boolean): React.JSX.Element => (
-    <Reveal open={!closing} fill={fill} enterOnMount onCollapsed={interactions.onGhostClosed}>
+  const ghostRow = (padLeft: string, closing: boolean, key?: string): React.JSX.Element => (
+    <Reveal
+      key={key}
+      open={!closing}
+      fill={fill}
+      enterOnMount
+      onCollapsed={interactions.onGhostClosed}
+    >
       {/* biome-ignore lint/a11y/useSemanticElements: a hover-born affordance that must use the row grid's own chrome — a real <button> can't host a .data-row, and keyboard creation lives in the menus */}
       <div
         {...interactions.ghostRootProps}
@@ -60,11 +65,7 @@ export function BandRows({
         if (itemsVisible) renderedAnyRow = true
         const drawn = [row(r, { padLeft, lead })]
         if (itemsVisible && interactions.ghostAt === r.id)
-          drawn.push(
-            <Fragment key={`ghost-${r.id}`}>
-              {ghostRow(padLeft, interactions.ghostClosing)}
-            </Fragment>,
-          )
+          drawn.push(ghostRow(padLeft, interactions.ghostClosing, `ghost-${r.id}`))
         return drawn
       }),
       ...(g.children ?? []).map((child) => walk(child, memberDepth(g.kind, depth), itemsVisible)),
@@ -172,21 +173,21 @@ export function RowGrip({
   )
 }
 
-export function RowTitle({
+export function PageTitle({
   row,
   naming,
   hideIcon,
   api,
-  className = cx(overScrollLabel, 'cell-title'),
+  className,
 }: {
   row: ViewRow
   naming: ViewHostApi['naming']
   hideIcon: boolean
-  api: Pick<ItemApi, 'endNaming'>
+  api: ItemApi
   className?: string
 }): React.JSX.Element {
   return (
-    <span className={naming ? 'cell-rename' : className}>
+    <span className={naming ? 'cell-rename' : cx('cell-title', className)}>
       {hideIcon ? null : <EntityIcon kind="page" icon={row.icon} size="body" />}
       <RenamableName
         title={row.title}

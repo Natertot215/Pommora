@@ -269,11 +269,10 @@ describe('placeInShown', () => {
     expect(placeInShown(v, ['a', 'b'], 'b', 0).property_order).toEqual(['b', 'a', 'future_key'])
   })
 
-  it('writes default-on Context/title columns explicitly even when absent from property_order', () => {
-    expect(placeInShown(listed([], []), [title, areas], areas, 0).property_order).toEqual([
-      areas,
-      title,
-    ])
+  it("writes Title into the order when the view doesn't list it, and leaves a hidden id where it stands", () => {
+    expect(
+      placeInShown(listed(['a', 'h', 'b'], ['h']), [title, 'a', 'b'], 'b', 0).property_order,
+    ).toEqual(['b', title, 'a', 'h'])
   })
 })
 

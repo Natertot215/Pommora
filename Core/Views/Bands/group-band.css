@@ -1,4 +1,4 @@
-/* Shared group-band chrome — the disclosure head over the band body. The row views' shell and the cards view each scope the divergent bits: the shell's gutter chevron + sticky head, the cards' sibling seams. */
+/* Shared group-band chrome — the disclosure head over the band body. The row views' shell and the cards view each scope the divergent bits: the shell's sticky head, the cards' sibling seams. */
 
 .group-band {
   --band-gap: calc(2 * var(--band-clearance));
