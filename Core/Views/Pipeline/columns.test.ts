@@ -31,6 +31,12 @@ function view(over: Partial<SavedView>): SavedView {
 
 const ids = (cols: { id: string }[]): string[] => cols.map((c) => c.id)
 
+const [title, createdAt, modifiedAt] = [
+  FILEDATA.title.id,
+  FILEDATA.createdAt.id,
+  FILEDATA.modifiedAt.id,
+]
+
 describe('resolveColumns — fixture', () => {
   it('emits propertyOrder verbatim, never auto-shows an unaccounted prop, no _modified_at default-on', () => {
     const v = savedView.parse(fixture.views[0])
@@ -186,11 +192,57 @@ describe('itemColumns', () => {
   })
 })
 
-const [title, createdAt, modifiedAt] = [
-  FILEDATA.title.id,
-  FILEDATA.createdAt.id,
-  FILEDATA.modifiedAt.id,
-]
+const sel = {
+  id: 'sel',
+  label: 'Sel',
+  key: 'Sel',
+  type: 'select',
+  select_options: [{ id: 'opt_Done', key: 'Done', label: 'Done' }],
+} as PropertyDefinition
+const chk = { id: 'chk', label: 'Chk', key: 'Chk', type: 'checkbox' } as PropertyDefinition
+const num = { id: 'num', label: 'Num', key: 'Num', type: 'number' } as PropertyDefinition
+const row = (fm: Record<string, unknown>): ViewRow =>
+  ({ id: 'p', title: 'P', path: 'P.md', frontmatter: fm }) as unknown as ViewRow
+
+describe('drawnColumns', () => {
+  const columns: ResolvedColumn[] = [
+    resolveColumn(title, [], [])!,
+    propertyColumn(sel),
+    propertyColumn(chk),
+  ]
+
+  it('keeps blank columns as fillable rows without dropBlanks; the title column never shows', () => {
+    expect(drawnColumns(row({}), columns, false).map((c) => c.id)).toEqual(['sel', 'chk'])
+  })
+
+  it('drops blank values except checkbox with dropBlanks and keeps filled ones', () => {
+    expect(drawnColumns(row({}), columns, true).map((c) => c.id)).toEqual(['chk'])
+    expect(drawnColumns(row({ [sel.key]: 'Done' }), columns, true).map((c) => c.id)).toEqual([
+      'sel',
+      'chk',
+    ])
+  })
+})
+
+describe('addColumns', () => {
+  const item = itemColumns(null, [sel, chk, num], 'p')
+  const addable = (fm: Record<string, unknown>, shown: ResolvedColumn[]): string[] =>
+    addColumns(item, row(fm), shown).properties.map((c) => c.id)
+
+  it('leaves out the drawn columns and lists held rows last, with no stamps', () => {
+    expect(addable({ Chk: true }, [propertyColumn(sel)])).toEqual(['num', 'chk'])
+  })
+
+  it('lists a property hidden in the view that holds a value', () => {
+    expect(addable({ Chk: true }, [propertyColumn(sel), propertyColumn(num)])).toEqual(['chk'])
+  })
+
+  it('lists a blank that dropBlanks leaves undrawn', () => {
+    const columns = [resolveColumn(title, [], [])!, propertyColumn(sel), propertyColumn(chk)]
+    expect(addable({}, drawnColumns(row({}), columns, true))).toEqual(['sel', 'num'])
+  })
+})
+
 const [areas, projects] = ['ctx_areas', 'ctx_projects']
 const stamps = [createdAt, modifiedAt]
 
@@ -297,57 +349,5 @@ describe('hideShown / unhide', () => {
       property_order: ['a'],
       hidden_properties: [],
     })
-  })
-})
-
-const TITLE_COLUMN = resolveColumn(FILEDATA.title.id, [], [])!
-
-describe('drawnColumns', () => {
-  const sel = {
-    id: 'sel',
-    label: 'Sel',
-    key: 'Sel',
-    type: 'select',
-    select_options: [{ id: 'opt_Done', key: 'Done', label: 'Done' }],
-  } as PropertyDefinition
-  const chk = { id: 'chk', label: 'Chk', key: 'Chk', type: 'checkbox' } as PropertyDefinition
-  const columns: ResolvedColumn[] = [TITLE_COLUMN, propertyColumn(sel), propertyColumn(chk)]
-  const row = (fm: Record<string, unknown>): ViewRow =>
-    ({ id: 'p', title: 'P', path: 'P.md', frontmatter: fm }) as unknown as ViewRow
-
-  it('Standard keeps blank columns as fillable rows; the title column never shows', () => {
-    expect(drawnColumns(row({}), columns, false).map((c) => c.id)).toEqual(['sel', 'chk'])
-  })
-
-  it('Compact drops blank values except checkbox and keeps filled ones', () => {
-    expect(drawnColumns(row({}), columns, true).map((c) => c.id)).toEqual(['chk'])
-    expect(drawnColumns(row({ [sel.key]: 'Done' }), columns, true).map((c) => c.id)).toEqual([
-      'sel',
-      'chk',
-    ])
-  })
-})
-
-describe('addColumns', () => {
-  const sel = { id: 'sel', label: 'Sel', key: 'Sel', type: 'select' } as PropertyDefinition
-  const chk = { id: 'chk', label: 'Chk', key: 'Chk', type: 'checkbox' } as PropertyDefinition
-  const num = { id: 'num', label: 'Num', key: 'Num', type: 'number' } as PropertyDefinition
-  const item = itemColumns(null, [sel, chk, num], 'p')
-  const row = (fm: Record<string, unknown>): ViewRow =>
-    ({ id: 'p', title: 'P', path: 'P.md', frontmatter: fm }) as unknown as ViewRow
-  const listed = (fm: Record<string, unknown>, shown: ResolvedColumn[]): string[] =>
-    addColumns(item, row(fm), shown).properties.map((c) => c.id)
-
-  it('leaves out what the card draws and lists held rows last, with no stamps', () => {
-    expect(listed({ Chk: true }, [propertyColumn(sel)])).toEqual(['num', 'chk'])
-  })
-
-  it('lists a property hidden in the view that holds a value', () => {
-    expect(listed({ Chk: true }, [propertyColumn(sel), propertyColumn(num)])).toEqual(['chk'])
-  })
-
-  it('lists a blank a Compact card leaves undrawn', () => {
-    const columns = [TITLE_COLUMN, propertyColumn(sel), propertyColumn(chk)]
-    expect(listed({}, drawnColumns(row({}), columns, true))).toEqual(['sel', 'num'])
   })
 })

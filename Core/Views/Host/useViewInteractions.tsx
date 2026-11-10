@@ -49,13 +49,10 @@ import { mergedRanking, tieOrderWith, useViewCreation } from './useViewCreation'
 import { dropIO } from './liveView'
 import { mutateAhead, refusedDrop } from './paintAhead'
 
-export type ItemApi = {
-  click: ValueSeatApi['click']
-  menu: ValueSeatApi['menu']
-  pane: ValueSeatApi['pane']
-  editor: ValueSeatApi['editor']
-  openAdd: ValueSeatApi['openAdd']
-  commit: SeatHost['commit']
+export type ItemApi = Pick<
+  ValueSeatApi,
+  'click' | 'menu' | 'pane' | 'editor' | 'openAdd' | 'commit'
+> & {
   open: (row: ViewRow, newTab: boolean) => void
   openSet: (set: SetNode, newTab: boolean) => void
   hover: GhostAnchor['onHover']

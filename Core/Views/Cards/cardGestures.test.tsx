@@ -181,6 +181,34 @@ describe('a card value', () => {
     })
     expect(portalButtons().some((b) => b.textContent?.trim() === 'Fresh')).toBe(true)
   })
+
+  it('choosing Remove hides its property in the view', async () => {
+    const saveSpy = vi.fn(async (_req: unknown) => ({ ok: true, value: { id: 'view_1' } }))
+    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+      'view:loadValues': async () => VALUES,
+      'views:save': saveSpy,
+      menu: menuSpy,
+    })
+    await renderView(root, source())
+    menuAnswer = 'cell:hide'
+    await act(async () => {
+      ;(card('p1').querySelector('.card-value') as HTMLElement).dispatchEvent(
+        new MouseEvent('contextmenu', { bubbles: true }),
+      )
+    })
+    await act(async () => {})
+    expect(saveSpy).toHaveBeenCalledWith(
+      'Col',
+      'collection',
+      expect.objectContaining({ hidden_properties: ['prop_status'] }),
+      { hidden_properties: ['prop_status'] },
+    )
+  })
+
+  it('carries the drag slop, so a tap-wobble opens its picker instead of lifting the card', async () => {
+    await renderView(root, source())
+    expect(card('p1').querySelector('.card-value')?.hasAttribute('data-drag-slop')).toBe(true)
+  })
 })
 
 describe('the card menu', () => {
