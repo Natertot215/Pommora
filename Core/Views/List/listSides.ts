@@ -1,9 +1,9 @@
 import { nextOrder } from '@pommora/uix/Utilities/moveItem'
-import type { ColumnType, ResolvedColumn } from '../../Properties/properties'
+import type { ResolvedColumn } from '../../Properties/properties'
 import { placeInShown } from '../Pipeline/columns'
 import type { SavedView, Side, ViewPatch } from '../views'
 
-const DEFAULT_SIDE: Record<Exclude<ColumnType, 'title'>, Side> = {
+const DEFAULT_SIDE: Record<Exclude<ResolvedColumn, { kind: 'title' }>['type'], Side> = {
   context: 'left',
   status: 'left',
   select: 'left',

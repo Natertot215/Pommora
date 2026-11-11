@@ -12,6 +12,7 @@ import { menuCompact } from '@pommora/uix/Menus/menu-row.css'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { popMenu } from '../../Actions/menuActions'
 import { sideMoveMenuItems } from '../../Actions/viewMenus'
+import { FILEDATA } from '../../Properties/properties'
 import { useSession } from '../../Session/store'
 import { sideColumn, sideDrop, sideFor } from '../List/listSides'
 import type { Side } from '../views'
@@ -73,18 +74,14 @@ export function SidesFrame({
             <div key={side} className={s.column}>
               <MenuRowView row={{ kind: 'heading', label: heading }} />
               <div className={s.list}>
-                {/* The one settings pane that displaces: a row carried to the other column makes room there, never drawn over the hidden rows at its foot, which stand outside the zone, so the eye alone hides and shows a property here. */}
+                {/* The one settings pane that displaces: a carried row makes room in the other column. The hidden rows at a column's foot stand outside its zone, so only the eye moves a property between shown and hidden. */}
                 <SortableZone
                   className={s.zone}
                   items={drawn.map((c) => c.id)}
                   axis="y"
                   family={SIDES_FAMILY}
                   label={label}
-                  carry={[
-                    carries(SIDES_FAMILY, (id) =>
-                      drawn.find((c) => c.id === id)?.kind === 'title' ? null : id,
-                    ),
-                  ]}
+                  carry={[carries(SIDES_FAMILY, (id) => (id === FILEDATA.title.id ? null : id))]}
                   onMove={drop}
                   receive={drop}
                   closesGap

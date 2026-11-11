@@ -27,7 +27,8 @@ export type ColumnType = PropertyType | FiledataType
 export type ResolvedColumn =
   | { id: string; kind: 'property'; type: PropertyType; def: PropertyDefinition }
   | { id: string; kind: 'title'; type: 'title'; def?: undefined }
-  | { id: string; kind: 'context' | 'stamp'; type: Exclude<ColumnType, 'title'>; def?: undefined }
+  | { id: string; kind: 'context'; type: 'context'; def?: undefined }
+  | { id: string; kind: 'stamp'; type: 'createdTime' | 'lastEditedTime'; def?: undefined }
 
 // `options` names where a type keeps its options: `select_options`, or `status_groups` for Status.
 // `connections` names a type whose values hold connections: Link's whole value, or the links inside Text's prose.
