@@ -308,7 +308,9 @@ describe('ViewFrame — the panes the editor reaches', () => {
       ;(document.querySelector('[aria-label="Edit Board"]') as HTMLElement).click()
     })
     await press('Layout')
-    expect(document.querySelector('[aria-label="Always Shown"]') !== null).toBe(list)
+    expect(
+      [...document.querySelectorAll('[data-line-row]')].some((r) => r.textContent === 'Title'),
+    ).toBe(list)
     for (const { label } of presentedKind(type).layout.leafSwitches!)
       expect(document.querySelector(`[aria-label="${label}"]`)).not.toBeNull()
   })

@@ -7,6 +7,7 @@ import type { SavedView } from '../views'
 import { firePointer, stubRect } from '@pommora/uix/Utilities/pointerHarness'
 import { useSession } from '../../Session/store'
 import { mountEachTest } from '../../Testing/viewHarness'
+import { revealDim } from '@pommora/uix/Interactions/hover-reveal.css'
 import { VisibilityFrame } from './VisibilityFrame'
 
 const save = vi.fn()
@@ -108,5 +109,48 @@ describe('VisibilityFrame — the rows', () => {
       )
     })
     expect(row('Areas').querySelector('.lucide-hash')).not.toBeNull()
+  })
+})
+
+describe('VisibilityFrame — the eyes', () => {
+  const mount = async (): Promise<void> => {
+    save.mockClear()
+    useSession.setState({
+      tree: {
+        contexts: [],
+        collections: [],
+        config: { personalization: { defaultIcons: {} } },
+      } as never,
+    })
+    await act(async () => {
+      root.render(
+        <VisibilityFrame
+          schema={schema}
+          view={view}
+          back={{ label: 'Settings', onBack: () => {} }}
+          save={save}
+        />,
+      )
+    })
+  }
+  const eye = (label: string): HTMLButtonElement =>
+    document.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`)!
+
+  it('draws no eye on Title, a shown row’s eye revealed from its row, and a hidden row’s crossed-out eye standing', async () => {
+    await mount()
+    expect(row('Title').querySelector('button')).toBeNull()
+    expect(eye('Hide Alpha').classList.contains(revealDim)).toBe(true)
+    expect(row('Alpha').getAttribute('data-reveal-host')).toBe('')
+    expect(eye('Show Gamma').classList.contains(revealDim)).toBe(false)
+  })
+
+  it('hides a shown property by its eye, and shows a hidden one by its own', async () => {
+    await mount()
+    await act(async () => eye('Hide Alpha').click())
+    expect(save).toHaveBeenLastCalledWith(
+      expect.objectContaining({ hidden_properties: ['prop_c', 'prop_a'] }),
+    )
+    await act(async () => eye('Show Gamma').click())
+    expect(save).toHaveBeenLastCalledWith(expect.objectContaining({ hidden_properties: [] }))
   })
 })

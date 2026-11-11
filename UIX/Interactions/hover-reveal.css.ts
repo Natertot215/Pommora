@@ -10,7 +10,11 @@ const HIDDEN = { vars: { '--reveal': '0', '--reveal-hits': 'none' } }
 // ── Hosts ──
 globalStyle(':root', { vars: { '--reveal-fade': duration.fast } })
 globalStyle(HOST, HIDDEN)
-globalStyle(`${HOVER_HOST}:hover, ${HOVER_HOST}:focus-visible, [data-reveal-host="on"]`, SHOWN)
+// A host that takes keyboard focus for the row it wraps reveals that row as its own.
+globalStyle(
+  `${HOVER_HOST}:hover, ${HOVER_HOST}:focus-visible, ${HOVER_HOST}:focus-visible > ${HOVER_HOST}, [data-reveal-host="on"]`,
+  SHOWN,
+)
 globalStyle(HOVER_HOST, { '@media': { '(hover: none)': SHOWN } })
 globalStyle(`${HOST}[data-drag-source], ${HOST}:has([data-drag-source])`, HIDDEN)
 

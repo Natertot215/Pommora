@@ -55,7 +55,7 @@ export function hideEye(
   label: string,
   key: string,
   hide?: HideControls,
-  dim = false,
+  reveal = false,
 ): React.JSX.Element | null {
   if (!hide) return null
   const hidden = hide.isHidden(key)
@@ -63,7 +63,7 @@ export function hideEye(
     <EyeToggle
       hidden={hidden}
       name={label}
-      className={dim && !hidden ? revealDim : undefined}
+      className={reveal && !hidden ? revealDim : undefined}
       onToggle={() => hide.onToggleHidden(key)}
     />
   )

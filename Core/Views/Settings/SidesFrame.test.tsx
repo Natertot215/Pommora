@@ -5,6 +5,7 @@ import type { Root } from 'react-dom/client'
 import { hiddenRow } from '@pommora/uix/Menus/frames.css'
 import { heading } from '@pommora/uix/Menus/menu-row.css'
 import { DragGroup } from '@pommora/uix/Interactions/drag'
+import { revealDim } from '@pommora/uix/Interactions/hover-reveal.css'
 import { firePointer, stubRect } from '@pommora/uix/Utilities/pointerHarness'
 import { ok } from '../../Contract/result'
 import type { PropertyDefinition } from '../../Properties/properties'
@@ -81,13 +82,21 @@ describe('SidesFrame — the columns', () => {
     ).toEqual(['Left', 'Right'])
   })
 
-  it('lists Title among Left’s rows with a disabled eye', () => {
+  it('lists Title among Left’s rows with no eye', () => {
     const [left] = columns()
     expect(labelIn(left, 'Title')).toBeDefined()
-    expect(eyes(left)).toEqual(['Always Shown', 'Hide Stage'])
+    expect(eyes(left)).toEqual(['Hide Stage'])
+  })
+
+  it('reveals a shown row’s eye from its row, and stands a hidden row’s crossed-out eye', () => {
+    const eye = (label: string): Element => document.querySelector(`button[aria-label="${label}"]`)!
+    expect(eye('Hide Stage').classList.contains(revealDim)).toBe(true)
+    expect(eye('Show Count').classList.contains(revealDim)).toBe(false)
     expect(
-      left.querySelector<HTMLButtonElement>('button[aria-label="Always Shown"]')!.disabled,
-    ).toBe(true)
+      labelIn(columns()[0], 'Stage')
+        .closest('[aria-roledescription=sortable]')!
+        .getAttribute('data-reveal-host'),
+    ).toBe('')
   })
 
   it('sets a hidden property ghosted at its own column’s foot, the unplaced stamps at Right’s', () => {

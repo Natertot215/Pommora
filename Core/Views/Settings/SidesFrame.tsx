@@ -39,7 +39,13 @@ function SideRow({
   const drag = useDragItem(id)
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
-    <div ref={drag.setNodeRef} style={drag.style} onContextMenu={onMenu} {...drag.handle}>
+    <div
+      ref={drag.setNodeRef}
+      style={drag.style}
+      onContextMenu={onMenu}
+      data-reveal-host=""
+      {...drag.handle}
+    >
       <MenuRowView row={row} />
     </div>
   )

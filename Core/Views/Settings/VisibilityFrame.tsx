@@ -41,15 +41,8 @@ export function visibilityPane({ view, schema, save }: PaneProps, tree: NexusTre
     label: label(c.id),
     trailing:
       c.kind === 'title'
-        ? {
-            // PLACEHOLDER
-            kind: 'button',
-            icon: 'eye',
-            ariaLabel: 'Always Shown',
-            disabled: true,
-            onClick: () => {},
-          }
-        : { kind: 'field', children: hideEye(label(c.id), c.id, hide) },
+        ? undefined
+        : { kind: 'field', children: hideEye(label(c.id), c.id, hide, true) },
     className: hiddenIds.has(c.id) ? s.hiddenRow : undefined,
   })
   return { shown, hidden, label, icon, row }
@@ -65,7 +58,7 @@ export function VisibilityFrame({
   const { shown, hidden, label, icon, row } = visibilityPane(pane, tree)
   const shownIds = shown.map((c) => c.id)
   const line = (c: ResolvedColumn): React.JSX.Element => (
-    <LineRow key={c.id} id={c.id}>
+    <LineRow key={c.id} id={c.id} data-reveal-host="">
       <MenuRowView row={row(c)} />
     </LineRow>
   )

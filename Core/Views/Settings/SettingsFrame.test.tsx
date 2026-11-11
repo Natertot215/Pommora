@@ -67,6 +67,8 @@ const open = async (entry: string, shown?: SavedView): Promise<void> => {
   await act(async () => (row as HTMLElement).click())
 }
 const has = (label: string): boolean => host.querySelector(`[aria-label="${label}"]`) !== null
+const listed = (): boolean =>
+  [...host.querySelectorAll('[data-line-row]')].some((r) => r.textContent === 'Title')
 const switches = presentedKind(view.type).layout.leafSwitches!.map((s) => s.label)
 
 describe('SettingsFrame — the panes Settings reaches', () => {
@@ -80,7 +82,7 @@ describe('SettingsFrame — the panes Settings reaches', () => {
 
   it('Visibility is the list alone', async () => {
     await open('Visibility')
-    expect(has('Always Shown')).toBe(true)
+    expect(listed()).toBe(true)
     expect(switches.some(has)).toBe(false)
   })
 
@@ -88,7 +90,7 @@ describe('SettingsFrame — the panes Settings reaches', () => {
     await open('Layout')
     expect(has('Table')).toBe(true)
     expect(switches.every(has)).toBe(true)
-    expect(has('Always Shown')).toBe(false)
+    expect(listed()).toBe(false)
   })
 
   it.each([
