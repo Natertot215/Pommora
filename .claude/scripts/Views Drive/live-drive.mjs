@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from 'node:fs'
+import { readFileSync, statSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
   activeTab, ask, boxOf, click, clicks, closePanel, holds, hover, closeSettings, escapeAll, FM, inMain, labels, launch, manageButton, manageRow, menuByEvent, mintPageId,
@@ -1950,8 +1950,18 @@ const hush = (cdp) => cdp.evaluate(`(() => { const r = ${ANNOUNCER}; if (r) r.te
 const describes = (cdp, list) => cdp.evaluate(`${list}.filter((e) => e.getClientRects().length && !e.closest('[inert]')).map((e) => { const by = e.getAttribute('aria-describedby'); return !!by && /press space/i.test(document.getElementById(by)?.textContent ?? '') })`)
 const none = (reads) => reads.length > 0 && reads.every((r) => !r)
 const all = (reads) => reads.length > 0 && reads.every((r) => r)
-/** What's held: a line row's drag source or a sortable's pressed state, whether a drop line draws, and what the announcer said. */
-const HELD = `(() => ({ held: !!document.querySelector('[data-drag-source], [aria-roledescription=sortable][aria-pressed=true]'), line: [...document.querySelectorAll('.drop-line')].some((l) => l.getClientRects().length), said: ${ANNOUNCER}?.textContent ?? '' }))()`
+/** What's held: a line row's drag source or a sortable's pressed state, whether a drop line draws, whether the tab bar spills, and what the announcer said. */
+const HELD = `(() => ({ held: !!document.querySelector('[data-drag-source], [aria-roledescription=sortable][aria-pressed=true]'), line: [...document.querySelectorAll('.drop-line')].some((l) => l.getClientRects().length), spill: (() => { let e = [...document.querySelectorAll('[role=tab]')].find((t) => t.getClientRects().length)?.parentElement; while (e && e !== document.body) { if (e.style.getPropertyValue('--drag-spill')) return true; e = e.parentElement } return false })(), said: ${ANNOUNCER}?.textContent ?? '' }))()`
+/** The nav search's Page A result carried onto the tab bar past its first tab: what's held on the way, the tabs before, and whether its tab opened. */
+async function navCarry(cdp) {
+  const before = await tabTitles(cdp)
+  const firstTab = await boxOf(cdp, `[...document.querySelectorAll('[role=tab]')].find((t) => t.getAttribute('title'))`)
+  await hush(cdp)
+  let carried
+  await dragPoints(cdp, await boxOf(cdp, navRow('Page A')), { x: firstTab.right + 20, y: firstTab.y }, { steps: 14, held: async () => { await sleep(300); carried = await cdp.evaluate(HELD) } })
+  const opened = await settles(async () => (await tabTitles(cdp)).filter((t) => t === 'Page A').length > before.filter((t) => t === 'Page A').length, 3000)
+  return { carried, before, opened }
+}
 /** Space on a focused element: whether it lifted, cancelled by Escape when it did. */
 async function spaceLift(cdp, expr) {
   await hush(cdp)
@@ -2253,13 +2263,7 @@ async function group10(cdp) {
   await sleep(400)
   const results = await describes(cdp, NAV_ROWS)
   bc(g, 24, 'I-059', 'a nav search\'s result rows name no drag gesture', none(results), show(results))
-  const before = await tabTitles(cdp)
-  const firstTab = await boxOf(cdp, `[...document.querySelectorAll('[role=tab]')].find((t) => t.getAttribute('title'))`)
-  await hush(cdp)
-  const from = await boxOf(cdp, navRow('Page A'))
-  let carried
-  await dragPoints(cdp, from, { x: firstTab.right + 20, y: firstTab.y }, { steps: 14, held: async () => { await sleep(300); carried = await cdp.evaluate(HELD) } })
-  const opened = await settles(async () => (await tabTitles(cdp)).filter((t) => t === 'Page A').length > before.filter((t) => t === 'Page A').length, 3000)
+  const { carried, before, opened } = await navCarry(cdp)
   reg(g, 'a nav search result still carries onto the tab bar by pointer, opening its tab', carried?.held && !carried.line && opened, show({ carried, before, after: await tabTitles(cdp) }))
   const GALLERY = `[...document.querySelectorAll('.nav-view [aria-roledescription=sortable]')]`
   await mouseClick(cdp, `[...document.querySelectorAll('button[title="Switch to Gallery"]')].find((e) => e.getClientRects().length && !e.closest('[inert]'))`)
@@ -2356,6 +2360,8 @@ async function group10(cdp) {
 
 /** A List decision, owned by the List View plan, which `--landed 11` names: printed as `[P11 <decision>]`. */
 const decided = (decision, name, pass, detail) => item('11', 11, decision, name, pass, detail)
+/** A measurement the decisions name without a rule, printed beside the cases and leaving the tally alone. */
+const note = (decision, name, value) => console.log(`NOTE   g11 [P11 ${decision}] ${name}: ${show(value)}`)
 const TAGS = { id: 'prop_vl_tags', label: 'VL Tags', key: 'VL Tags', type: 'multiSelect', select_options: ['One', 'Two', 'Three'].map((k) => ({ id: `opt_vl_${k.toLowerCase()}`, key: k, label: k })) }
 const PHASE = {
   id: 'prop_vl_phase', label: 'VL Phase', key: 'VL Phase', type: 'status',
@@ -2430,7 +2436,7 @@ async function seedList(cdp) {
 async function listPages(cdp) {
   const out = new Map()
   const walk = (n) => {
-    for (const p of n.pages ?? []) out.set(p.id, { title: p.title, path: p.path, contexts: p.contextValues ?? {} })
+    for (const p of n.pages ?? []) out.set(p.id, { id: p.id, title: p.title, path: p.path, contexts: p.contextValues ?? {} })
     for (const s of n.sets ?? []) walk(s)
   }
   walk((await ask(cdp, 'nexus:state')).value.tree.collections.find((c) => c.path === COLLECTION))
@@ -2459,7 +2465,15 @@ function expectedSides(view, page) {
   const drawn = columns.filter((id) => id === '_title' || heldValue(page, id) !== null)
   return { left: drawn.filter((id) => sideOf(view, id) === 'left'), right: drawn.filter((id) => sideOf(view, id) === 'right') }
 }
-/** Whether a drawn value shows what its page holds for `id`: its option labels, digits, text, link, file, Space, a date, a bar, or a checkbox in its state. */
+/** The time a page's id was minted, its created stamp (`Core/Views/pageValues.ts`): the id's first ten Crockford base-32 digits, in ms. */
+const idTime = (id) => new Date([...id.slice(0, 10)].reduce((t, c) => t * 32 + '0123456789ABCDEFGHJKMNPQRSTVWXYZ'.indexOf(c), 0))
+/** A date as a view's Full Date format draws it, the default every case's view keeps. */
+const fullDate = (d) => {
+  const n = d.getDate()
+  const th = n % 100 >= 11 && n % 100 <= 13 ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' })[n % 10] ?? 'th'
+  return `${d.toLocaleString('en-US', { month: 'long' })} ${n}${th}, ${d.getFullYear()}`
+}
+/** Whether a drawn value shows what its page holds for `id`: its option labels, digits, text, link, file, Space, its date as the Full Date format writes it (a created stamp's from its id's time, a modified one's from its file's), a bar, or a checkbox in its state. */
 function shows(view, page, id, seat) {
   const v = heldValue(page, id)
   const type = TYPE_OF[id]
@@ -2472,21 +2486,24 @@ function shows(view, page, id, seat) {
     case 'link': return seat.text.includes(String(v).replace(/^\[\[|\]\]$/g, ''))
     case 'file': return seat.text.includes('Collection A Banner')
     case 'checkbox': return seat.check && seat.checked === v
-    case 'dateTime': case 'createdTime': case 'lastEditedTime': return /\d/.test(seat.text)
+    case 'dateTime': return seat.text === fullDate(new Date(`${String(v).slice(0, 10)}T12:00`))
+    case 'createdTime': return seat.text === fullDate(idTime(page.id))
+    case 'lastEditedTime': return seat.text === fullDate(statSync(abs(page.path)).mtime)
     default: return false
   }
 }
 
-/** Every drawn List row: its boxes, its two groups' parts, its grip, its +, and the zoom it draws at, each in page pixels. */
+/** Every drawn List row: its boxes, its two groups' parts with the bars inside each value, its grip, its + and what stands before it, and the zoom it draws at, each in page pixels. */
 const LIST_READ = `(() => {
   const box = (el) => { const b = el.getBoundingClientRect(); return { l: b.left, r: b.right, t: b.top, b: b.bottom, w: b.width, h: b.height, cy: b.top + b.height / 2 } }
   const part = (c) => c.classList.contains('list-view-title')
     ? { kind: 'title', box: box(c), text: c.querySelector('.cell-title-text')?.getBoundingClientRect().width ?? 0, icon: !!c.querySelector('.cell-title > svg'), name: c.dataset.title }
     : c.classList.contains('value-seat')
-      ? { kind: 'seat', box: box(c), text: c.textContent.trim(), bar: !!c.querySelector('.cell-bar'), check: !!c.querySelector('.cell-checkbox'), checked: !!c.querySelector('.checkbox-checked') }
+      ? { kind: 'seat', box: box(c), text: c.textContent.trim(), bar: !!c.querySelector('.cell-bar'), check: !!c.querySelector('.cell-checkbox'), checked: !!c.querySelector('.checkbox-checked'), bars: barClass ? c.getElementsByClassName(barClass).length : 0 }
       : { kind: c.getAttribute('aria-hidden') === 'true' ? 'bar' : c.tagName.toLowerCase(), box: box(c) }
   const group = (g) => g && { box: box(g), sw: g.scrollWidth, cw: g.clientWidth, parts: [...g.children].map(part) }
   const shell = [...document.querySelectorAll('.list-view')].find((e) => e.getClientRects().length && !e.closest('[inert]'))
+  const barClass = shell?.querySelector('.list-view-group > [aria-hidden="true"]')?.className
   const rows = [...(shell?.querySelectorAll('.data-row[data-rid]') ?? [])].filter((r) => r.getClientRects().length).map((r) => {
     const line = r.querySelector('.list-view-line')
     const z = line.currentCSSZoom ?? 1
@@ -2497,7 +2514,7 @@ const LIST_READ = `(() => {
     return {
       rid: r.dataset.rid, z, depth: r.querySelector('.cell-lead').style.paddingLeft, row: box(r), rowSW: r.scrollWidth, rowCW: r.clientWidth, line: lb,
       lineEnd: lb.r - parseFloat(getComputedStyle(line).paddingRight) * z, last: line.lastElementChild === add ? 'add' : line.lastElementChild === right ? 'right' : 'left',
-      grip: box(r.querySelector('.row-grip')), left: group(left), right: group(right), add: add && { box: box(add), opacity: getComputedStyle(add).opacity, held: add.hasAttribute('data-reveal-held') },
+      grip: box(r.querySelector('.row-grip')), left: group(left), right: group(right), add: add && { box: box(add), opacity: getComputedStyle(add).opacity, held: add.hasAttribute('data-reveal-held'), after: add.previousElementSibling?.classList.contains('list-view-group') ?? false },
     }
   })
   const cs = shell && getComputedStyle(shell)
@@ -2521,7 +2538,7 @@ async function viewport(cdp, width, height = null) {
 const SIDE_SETS = {
   defaults: {},
   moved: { column_sides: { [STAGE.id]: 'right', [DUE.id]: 'left' } },
-  ahead: { property_order: [STAGE.id, TAGS.id, ...LIST_ORDER.filter((id) => id !== STAGE.id && id !== TAGS.id)] },
+  ahead: { property_order: [STAGE.id, TAGS.id, ...LIST_ORDER.filter((id) => id !== STAGE.id && id !== TAGS.id), ...Object.keys(STAMPS)] },
   allLeft: { column_sides: Object.fromEntries(LIST_ORDER.slice(1).map((id) => [id, 'left'])) },
   allRight: { column_sides: Object.fromEntries(LIST_ORDER.slice(1).map((id) => [id, 'right'])) },
   hidden: { hidden_properties: [PHASE.id, DONE.id, NOTE.id] },
@@ -2534,20 +2551,20 @@ const PIPES = {
   sort: { sort: [{ property_id: '_title', direction: 'descending' }] },
   search: {},
 }
-/** A pairwise cover of sides × grouping × pipeline × surface × Wrap Rows × Outlines × Title Icons: every pair of two dimensions' values shows in some row, a tile taking no search. */
+/** A pairwise cover of sides × grouping × pipeline × surface × Wrap Rows × Outlines × Title Icons × Scale: every pair of two dimensions' values shows in some row, a tile taking no search and drawing at its own size whatever the view's Scale (`ViewHost.tsx`). */
 const CONFIGS = [
-  ['defaults', 'flat', 'none', 'tile', 0, 0, 0], ['defaults', 'sets', 'search', 'collection', 1, 1, 1], ['defaults', 'stage', 'filter', 'collection', 1, 0, 1], ['defaults', 'setsSub', 'sort', 'set', 0, 1, 0],
-  ['moved', 'flat', 'sort', 'collection', 0, 1, 1], ['moved', 'sets', 'filter', 'collection', 1, 0, 0], ['moved', 'stage', 'search', 'set', 0, 0, 1], ['moved', 'setsSub', 'none', 'tile', 1, 1, 0],
-  ['ahead', 'flat', 'none', 'tile', 1, 1, 1], ['ahead', 'sets', 'search', 'set', 0, 0, 0], ['ahead', 'stage', 'filter', 'set', 1, 1, 1], ['ahead', 'setsSub', 'sort', 'collection', 1, 0, 0],
-  ['allLeft', 'flat', 'filter', 'collection', 1, 1, 0], ['allLeft', 'sets', 'sort', 'tile', 1, 0, 1], ['allLeft', 'stage', 'none', 'set', 0, 0, 1], ['allLeft', 'setsSub', 'search', 'collection', 0, 0, 0],
-  ['allRight', 'flat', 'search', 'set', 1, 0, 1], ['allRight', 'sets', 'filter', 'tile', 1, 0, 1], ['allRight', 'stage', 'sort', 'collection', 0, 1, 0], ['allRight', 'setsSub', 'none', 'collection', 1, 0, 1],
-  ['hidden', 'flat', 'search', 'set', 0, 1, 0], ['hidden', 'sets', 'none', 'collection', 1, 1, 0], ['hidden', 'stage', 'sort', 'tile', 0, 1, 0], ['hidden', 'setsSub', 'filter', 'tile', 0, 0, 1],
-  ['titleRight', 'flat', 'sort', 'set', 1, 0, 1], ['titleRight', 'sets', 'filter', 'tile', 0, 1, 0], ['titleRight', 'stage', 'none', 'tile', 1, 1, 1], ['titleRight', 'setsSub', 'search', 'collection', 0, 0, 0],
+  ['defaults', 'flat', 'none', 'tile', 0, 0, 0, 1], ['defaults', 'sets', 'search', 'collection', 1, 1, 1, 1.25], ['defaults', 'stage', 'filter', 'collection', 1, 0, 1, 1.25], ['defaults', 'setsSub', 'sort', 'set', 0, 1, 0, 1.25],
+  ['moved', 'flat', 'sort', 'collection', 0, 1, 1, 1.25], ['moved', 'sets', 'filter', 'collection', 1, 0, 0, 1], ['moved', 'stage', 'search', 'set', 0, 0, 1, 1], ['moved', 'setsSub', 'none', 'tile', 1, 1, 0, 1],
+  ['ahead', 'flat', 'none', 'tile', 1, 1, 1, 1], ['ahead', 'sets', 'search', 'set', 0, 0, 0, 1.25], ['ahead', 'stage', 'filter', 'set', 1, 1, 1, 1], ['ahead', 'setsSub', 'sort', 'collection', 1, 0, 0, 1],
+  ['allLeft', 'flat', 'filter', 'collection', 1, 1, 0, 1], ['allLeft', 'sets', 'sort', 'tile', 1, 0, 1, 1], ['allLeft', 'stage', 'none', 'set', 0, 0, 1, 1.25], ['allLeft', 'setsSub', 'search', 'collection', 0, 0, 0, 1],
+  ['allRight', 'flat', 'search', 'set', 1, 0, 1, 1.25], ['allRight', 'sets', 'filter', 'tile', 1, 0, 1, 1], ['allRight', 'stage', 'sort', 'collection', 0, 1, 0, 1], ['allRight', 'setsSub', 'none', 'collection', 1, 0, 1, 1],
+  ['hidden', 'flat', 'search', 'set', 0, 1, 0, 1.25], ['hidden', 'sets', 'none', 'collection', 1, 1, 0, 1], ['hidden', 'stage', 'sort', 'tile', 0, 1, 0, 1], ['hidden', 'setsSub', 'filter', 'tile', 0, 0, 1, 1],
+  ['titleRight', 'flat', 'sort', 'set', 1, 0, 1, 1.25], ['titleRight', 'sets', 'filter', 'tile', 0, 1, 0, 1], ['titleRight', 'stage', 'none', 'tile', 1, 1, 1, 1], ['titleRight', 'setsSub', 'search', 'collection', 0, 0, 0, 1],
 ]
-const configView = (n, [sides, grouping, pipe, , wrap, outlines, icons]) =>
-  listView(vid(`g11c${n}`), `VL Config ${n}`, { ...GROUPINGS[grouping], ...PIPES[pipe], ...SIDE_SETS[sides], wrap_rows: !!wrap, hide_outlines: !outlines, hide_page_icons: !icons })
-const configName = (n, [sides, grouping, pipe, surface, wrap, outlines, icons]) =>
-  `config ${n}: sides ${sides}, grouping ${grouping}, pipeline ${pipe}, ${surface}, Wrap Rows ${wrap ? 'on' : 'off'}, Outlines ${outlines ? 'on' : 'off'}, Title Icons ${icons ? 'on' : 'off'}`
+const configView = (n, [sides, grouping, pipe, , wrap, outlines, icons, scale]) =>
+  listView(vid(`g11c${n}`), `VL Config ${n}`, { ...GROUPINGS[grouping], ...PIPES[pipe], ...SIDE_SETS[sides], wrap_rows: !!wrap, hide_outlines: !outlines, hide_page_icons: !icons, ...(scale !== 1 && { view_scale: scale }) })
+const configName = (n, [sides, grouping, pipe, surface, wrap, outlines, icons, scale]) =>
+  `config ${n}: sides ${sides}, grouping ${grouping}, pipeline ${pipe}, ${surface}, Wrap Rows ${wrap ? 'on' : 'off'}, Outlines ${outlines ? 'on' : 'off'}, Title Icons ${icons ? 'on' : 'off'}, Scale ${scale}`
 
 /** Set Beta's own view, shown from the sidebar. */
 async function showSetView(cdp, view, set = 'Set Beta') {
@@ -2575,7 +2592,7 @@ const scrolls = (r) => r.left.sw > r.left.cw + 1
 const crossed = (wrap) => (r) => (wrap && r.right ? wrapped(r) : scrolls(r))
 const titleOf11 = (rid) => listPages.cache.get(rid)?.title ?? titleOf(rid)
 
-/** Each drawn row against its page: its two groups' items in order, each value showing what its page holds, a bar between each two items, the Title Icons switch, and the + after the last group. */
+/** Each drawn row against its page: its two groups' items in order, drawn left to right, each value showing what its page holds, a bar between each two items and none inside one, the Title Icons switch, and the + after the last group, on its line, with no bar before it. */
 function structureErrors(view, read) {
   const errors = []
   for (const r of read.rows) {
@@ -2592,13 +2609,16 @@ function structureErrors(view, read) {
       else items.forEach((p, i) => {
         if ((ids[i] === '_title') !== (p.kind === 'title')) errors.push(`${page.title} ${side}[${i}]: ${p.kind} where ${ids[i]} belongs`)
         else if (p.kind === 'seat' && !shows(view, page, ids[i], p)) errors.push(`${page.title} ${side}[${i}]: "${p.text}" doesn't show ${ids[i]}`)
+        else if (p.kind === 'seat' && p.bars > 0) errors.push(`${page.title} ${side}[${i}]: a bar between two of ${ids[i]}'s values`)
         else if (p.kind === 'title' && p.icon === !!view.hide_page_icons) errors.push(`${page.title}: title icon ${p.icon} under hide_page_icons ${view.hide_page_icons}`)
       })
       if (kinds.join() !== items.map(() => 'item').join(',bar,')) errors.push(`${page.title} ${side}: parts ${kinds}`)
+      if (items.some((p, i) => i > 0 && p.box.l < items[i - 1].box.l)) errors.push(`${page.title} ${side}: drawn out of its order`)
     }
-    if (r.add && r.last !== 'add') errors.push(`${page.title}: the + isn't the line's last`)
+    if (r.add && (r.last !== 'add' || !r.add.after)) errors.push(`${page.title}: the + isn't the line's last, after a group with no bar between`)
     const before = r.right ?? r.left
     if (r.add && r.add.box.l < before.box.r - 0.5) errors.push(`${page.title}: the + stands before its group's end`)
+    if (r.add && Math.abs(r.add.box.cy - before.box.cy) > 1) errors.push(`${page.title}: the + off its group's line`)
   }
   return errors
 }
@@ -2629,11 +2649,12 @@ function geometryErrors(read, { natural, tableRow, wrap }) {
   return errors
 }
 
-/** The widest window at which `title`'s row has crossed, found by halving between a window narrow enough to cross it and the natural one. */
+/** The widest window at which `title`'s row has crossed, found by halving between a window narrow enough to cross it and the natural one, which it answers when the row has crossed there already. */
 async function thresholdOf(cdp, title, wrap, lo, hi) {
   const rid = ridOf(title)
   const at = async (w) => { await viewport(cdp, w); return (await readList(cdp)).rows.find((r) => r.rid === rid) }
   if (!crossed(wrap)(await at(lo))) return null
+  if (crossed(wrap)(await at(hi))) return hi
   while (hi - lo > 1) {
     const mid = Math.floor((lo + hi) / 2)
     if (crossed(wrap)(await at(mid))) lo = mid
@@ -2642,26 +2663,39 @@ async function thresholdOf(cdp, title, wrap, lo, hi) {
   return lo
 }
 
-/** The Outlines rail on every band that draws one: whether it should (a nested band that isn't the tail), and where it stands against its head's chevron. */
+/** The Outlines rail on every band: whether it should draw (a nested band that isn't the tail and holds a row), where it stands against its head's chevron, its top and bottom against its head and its last drawn member, and how that member ends the band. */
 const RAILS = `[...document.querySelectorAll('.list-view .group-band')].filter((b) => b.getClientRects().length && !b.closest('[inert]')).map((b) => {
   const reveal = b.querySelector(':scope > [data-reveal]')
   const s = reveal && getComputedStyle(reveal, '::before')
-  const chevron = b.querySelector(':scope > .group-band-row .row-chevron')?.getBoundingClientRect()
+  const head = b.querySelector(':scope > .group-band-row')
+  const chevron = head?.querySelector('.row-chevron')?.getBoundingClientRect()
   const z = b.currentCSSZoom ?? 1
   const drawn = !!s && s.content !== 'none' && parseFloat(s.width) > 0 && parseFloat(s.height) > 0
-  const x = drawn ? reveal.getBoundingClientRect().left + (parseFloat(s.left) + parseFloat(s.width) / 2) * z : null
+  const rb = reveal?.getBoundingClientRect()
   const members = !!reveal && [...reveal.querySelectorAll('.data-row')].some((r) => r.getClientRects().length)
-  return { label: b.querySelector(':scope > .group-band-row .group-band-head')?.getAttribute('aria-label') ?? 'tail', nested: !!b.parentElement.closest('.group-band'), tail: b.classList.contains('band-tail'), members, drawn, x, chevron: chevron ? chevron.left + chevron.width / 2 : null }
+  const last = reveal && [...reveal.querySelectorAll('.data-row[data-rid], .group-band-head')].filter((e) => e.getClientRects().length && e.getBoundingClientRect().height > 0).at(-1)
+  const lastBand = last?.closest('.group-band')
+  const ending = !last ? null : last.classList.contains('group-band-head') ? (lastBand.parentElement.closest('.group-band') === b ? 'a closed or empty band' : 'an open band ending on a closed band') : last.closest('.band-tail') ? 'the tail rows' : lastBand === b ? 'a row' : 'an open band ending on a row'
+  return {
+    label: head?.querySelector('.group-band-head')?.getAttribute('aria-label') ?? 'tail', nested: !!b.parentElement.closest('.group-band'), tail: b.classList.contains('band-tail'), members, drawn, ending,
+    x: drawn ? rb.left + (parseFloat(s.left) + parseFloat(s.width) / 2) * z : null, chevron: chevron ? chevron.left + chevron.width / 2 : null,
+    top: drawn ? rb.top + parseFloat(s.top) * z : null, bottom: drawn ? rb.bottom - parseFloat(s.bottom) * z : null,
+    wantTop: head && reveal ? head.getBoundingClientRect().bottom + parseFloat(getComputedStyle(reveal).getPropertyValue('--list-outline-gap')) * z : null,
+    wantBottom: last ? last.getBoundingClientRect().bottom - parseFloat(getComputedStyle(reveal).getPropertyValue('--list-outline-gap')) * z : null,
+  }
 })`
+/** A drawn rail out of place: drawn where it shouldn't be or missing where it should, off its chevron, or not spanning from its head's outline gap to its last member's; the known uncovered ending is left to `note`. */
+const railErrors = (rails, outlines) => rails.filter((b) => b.drawn !== (!!outlines && b.nested && !b.tail && b.members) || (b.drawn && (Math.abs(b.x - b.chevron) > 1.5 || Math.abs(b.top - b.wantTop) > 0.75 || (b.ending !== 'an open band ending on a closed band' && Math.abs(b.bottom - b.wantBottom) > 0.75))))
 
 const NARROW = 620
+const WIDEST = 3000
 /** The configurations a screenshot shows, and at which width: wrapped rows at several depths, values ahead of titles, property bands, and a tile. */
 const CONFIG_SHOTS = { 2: ['g11-wrapped-depths', 'narrow'], 12: ['g11-values-before-titles', 'narrow'], 3: ['g11-property-bands', 'wide'], 9: ['g11-tile', 'wide'] }
 
 async function configurations(cdp, tableRow) {
   for (const [i, cfg] of CONFIGS.entries()) {
     const n = i + 1
-    const [, grouping, pipe, surface, wrap, outlines] = cfg
+    const [, grouping, pipe, surface, wrap, outlines, , scale] = cfg
     const name = configName(n, cfg)
     try {
       const view = configView(n, cfg)
@@ -2681,11 +2715,15 @@ async function configurations(cdp, tableRow) {
         widths[label] = geometryErrors(await readList(cdp), { natural, tableRow, wrap })
         if (CONFIG_SHOTS[n]?.[1] === label) await shot(cdp, CONFIG_SHOTS[n][0])
       }
-      decided('B-12 · C-3 · H-2 · H-3', `${name} — wide and narrow, no row or shell overflows, one-line rows match and stand under Table's, titles hold their floor, values their cap, grips their first line`, Object.values(widths).every((e) => e.length === 0), show(widths))
+      const zoomed = surface === 'tile' || wide.rows.every((r) => near(r.z, scale, 0.01))
+      decided('A-2 · B-12 · C-3 · H-2 · H-3', `${name} — at the view's Scale, wide and narrow, no row or shell overflows, one-line rows match and stand under Table's, titles hold their floor, values their cap, grips their first line`, zoomed && Object.values(widths).every((e) => e.length === 0), show({ zoomed, z: wide.rows[0]?.z, widths }))
       const thresholds = {}
-      for (const title of LONG_ROWS.filter((t) => titles.includes(t))) {
-        const w = await thresholdOf(cdp, title, wrap, NARROW, naturalSize.w)
+      for (const title of [...LONG_ROWS, 'VL Crowded'].filter((t) => titles.includes(t))) {
+        // A row crossed at the window's own width, the crowded row in a tile, is halved toward a window wider than the screen's.
+        let w = await thresholdOf(cdp, title, wrap, NARROW, naturalSize.w)
+        if (w === naturalSize.w) w = await thresholdOf(cdp, title, wrap, naturalSize.w, WIDEST)
         if (w === null) { thresholds[title] = 'never crossed'; continue }
+        if (w === WIDEST) { thresholds[title] = `crossed at ${WIDEST}px`; continue }
         const read = async (vw) => { await viewport(cdp, vw); const all = await readList(cdp); return { all, r: all.rows.find((x) => x.rid === ridOf(title)) } }
         const above = await read(w + 1)
         const below = await read(w)
@@ -2694,15 +2732,28 @@ async function configurations(cdp, tableRow) {
         const errors = [...geometryErrors(above.all, { natural, tableRow, wrap }), ...geometryErrors(below.all, { natural, tableRow, wrap })]
         const wraps = wrap && !!above.r.right
         if (Math.abs(titleAt(above) - floor) > 1.5) errors.push(`above: title ${titleAt(above).toFixed(1)}, floor ${floor.toFixed(1)}`)
-        if (wraps && !(wrapped(below.r) && titleAt(below) > floor + 1.5)) errors.push(`below: wrapped ${wrapped(below.r)}, title ${titleAt(below).toFixed(1)} past its floor ${floor.toFixed(1)}`)
+        const gap = above.r.right && above.r.right.box.l - above.r.left.box.r
+        if (above.r.right && !near(gap, above.all.tokens['--list-view-wrap-gap'] * above.r.z, 1.5)) errors.push(`above: the groups ${gap.toFixed(1)} apart, not the wrap gap`)
+        if (wraps && !(wrapped(below.r) && (titleAt(below) > floor + 1.5 || near(titleAt(below), natural[ridOf(title)], 0.75)))) errors.push(`below: wrapped ${wrapped(below.r)}, title ${titleAt(below).toFixed(1)} past its floor ${floor.toFixed(1)} or at its own width`)
         if (!wraps && !(scrolls(below.r) && Math.abs(titleAt(below) - floor) <= 1.5)) errors.push(`below: scrolls ${scrolls(below.r)}, title ${titleAt(below).toFixed(1)}, floor ${floor.toFixed(1)}`)
         thresholds[title] = { at: w, depth: below.r.depth, wraps, errors }
       }
-      decided('H-1 · H-2', `${name} — each long-titled row, a pixel above its wrap or scroll point, holds one line with its title at its floor, and a pixel below it ${wrap ? 'drops its right group to a second line with its title regaining its room, or, holding no right group, scrolls its left group' : 'scrolls its left group'} with its title at its floor`, Object.keys(thresholds).length > 0 && Object.values(thresholds).every((x) => typeof x === 'object' && x.errors.length === 0), show(thresholds))
+      decided('H-1 · H-2', `${name} — each long-titled row and the crowded row, a pixel above its wrap or scroll point, holds one line with its title at its floor, and a pixel below it ${wrap ? 'drops its right group to a second line with its title regaining its room up to its own width, or, holding no right group, scrolls its left group' : 'scrolls its left group'} with its title at its floor, its groups the wrap gap apart above it`, Object.keys(thresholds).length > 0 && Object.values(thresholds).every((x) => typeof x === 'object' && x.errors.length === 0), show(thresholds))
+      const rails = {}
+      for (const [label, w] of [['wide', null], ['narrow', NARROW]]) {
+        await viewport(cdp, w)
+        rails[label] = await cdp.evaluate(RAILS)
+      }
       await viewport(cdp, null)
-      const rails = await cdp.evaluate(RAILS)
-      const railErrors = rails.filter((b) => b.drawn !== (!!outlines && b.nested && !b.tail && b.members) || (b.drawn && Math.abs(b.x - b.chevron) > 1.5))
-      decided('G-1 · G-2', `${name} — ${outlines ? 'a rail at each nested band\'s chevron from under its head to its last row, and none at the top level, on the tail, or on an empty band' : 'no rail on any band'}`, rails.length > 0 && railErrors.length === 0, show({ rails, railErrors }))
+      const nests = grouping === 'sets' || grouping === 'setsSub'
+      const railsOff = Object.fromEntries(Object.entries(rails).map(([k, r]) => [k, railErrors(r, outlines)]))
+      decided('G-1 · G-2', `${name} — ${outlines ? 'wide and narrow, a rail at each nested band\'s chevron from its head\'s outline gap to its last member\'s, and none at the top level, on the tail, or on an empty band' : 'no rail on any band'}`, rails.wide.length > 0 && (!outlines || !nests || rails.wide.some((b) => b.drawn)) && Object.values(railsOff).every((e) => e.length === 0), show({ railsOff, endings: rails.wide.filter((b) => b.drawn).map((b) => b.ending) }))
+      if (pipe === 'sort') {
+        const listOrder = (await readList(cdp)).rows.map((r) => r.rid)
+        await showOn(cdp, surface, { ...view, id: vid(`g11c${n}table`), name: `VL Config ${n} Table`, type: 'table' })
+        const tableOrder = await cdp.evaluate(`${ROWS}.filter((r) => r.getClientRects().length && !r.closest('[inert], .list-view')).map((r) => r.dataset.rid)`)
+        decided('A-2', `${name} — the sort orders the List's rows band by band as it orders a Table's of the same view`, listOrder.length > 0 && same(listOrder, tableOrder), show({ list: listOrder.map(titleOf11), table: tableOrder.map(titleOf11) }))
+      }
       if (pipe === 'search') await search(cdp, '')
     } catch (e) {
       decided('—', `${name} ran to its end`, false, String(e?.stack ?? e).slice(0, 800))
@@ -2726,8 +2777,9 @@ const listSeat = (view, title, id) => {
 }
 /** The value a standard card draws in the property row its column's label heads. */
 const cardSeat = (title, label) => `[...(${visible(`[...document.querySelectorAll('.cards-view [data-rid="${ridOf(title)}"]')]`)}).querySelectorAll('.card-prop-row')].find((r) => r.querySelector('.card-prop-label')?.textContent.trim() === ${JSON.stringify(label)})?.querySelector('.value-seat')`
-/** The computed weight of the text an element draws. */
+/** The computed weight of the text an element draws, and the theme's emphasized weight. */
 const weightOf = (expr) => `(() => { const e = (${expr}); return e ? getComputedStyle(e).fontWeight : null })()`
+const EMPHASIZED = `getComputedStyle(document.documentElement).getPropertyValue('--weight-emphasized').trim()`
 const cardTitleText = (title) => `[...(${visible(`[...document.querySelectorAll('.cards-view [data-rid="${ridOf(title)}"]')]`)}).querySelectorAll('span')].find((e) => !e.children.length && e.textContent.trim() === ${JSON.stringify(title)})`
 const leafClasses = (expr) => `[...(${expr}).querySelectorAll('*')].filter((e) => !e.children.length && e.textContent.trim() && e.getClientRects().length).map((e) => e.className).join(' | ')`
 
@@ -2742,7 +2794,11 @@ async function contents(cdp) {
   decided('B-1 · B-6', 'a row holding right values only draws its title alone on the left and its values flush right, the + after them', same(itemKinds(right.left), ['title']) && itemKinds(right.right).length === 3 && Math.abs(right.right.box.r - right.lineEnd) <= 1 && right.add.box.l >= right.right.box.r - 0.5, show(right))
   decided('B-1', 'a row holding both draws its title and Stage on the left and its Date and Link flush right', itemKinds(both.left).length === 2 && itemKinds(both.right).length === 2 && Math.abs(both.right.box.r - both.lineEnd) <= 1, show(both))
   const weights = { title: await cdp.evaluate(weightOf(`(${listRow('VL Both')}).querySelector('.cell-title-text')`)), value: await cdp.evaluate(weightOf(`(${listRow('VL Both')}).querySelector('.value-seat')`)) }
-  const natural = Object.fromEntries(read.rows.map((r) => [titleOf11(r.rid), r.left.parts.find((p) => p.kind === 'title').text]))
+  weights.token = await cdp.evaluate(EMPHASIZED)
+  // Each title's own width, read where nothing shares its row.
+  await showOn(cdp, 'collection', { ...V, id: vid('g11contentstitles'), name: 'VL Contents Titles', property_order: ['_title'] })
+  const natural = Object.fromEntries((await readList(cdp)).rows.map((r) => [titleOf11(r.rid), r.left.parts.find((p) => p.kind === 'title').text]))
+  await showOn(cdp, 'collection', V)
   await viewport(cdp, NARROW)
   const narrow = await readList(cdp)
   const titleAt = (t) => rowIn(narrow, t).left.parts.find((p) => p.kind === 'title').text
@@ -2751,11 +2807,15 @@ async function contents(cdp) {
   decided('H-2', 'in the emphasized title weight, a long title at a narrow window stops at exactly the view\'s title minimum of text, and a short one keeps exactly its own width', floorRead.longNatural > floorRead.min && near(floorRead.long, floorRead.min, 0.5) && floorRead.shortNatural < floorRead.min && near(floorRead.short, floorRead.shortNatural, 0.5), show(floorRead))
   await showView(cdp, cardsView(vid('g11weightcards'), 'VL Weight Cards', { ...flatVL, property_order: LIST_ORDER }))
   weights.card = await cdp.evaluate(weightOf(cardTitleText('VL Both')))
-  decided('B-1', 'a List title draws in a card title\'s weight, and its values in another', !!weights.title && weights.title === weights.card && weights.value !== weights.title, show(weights))
+  decided('B-16', 'a List title draws in the emphasized weight a card title draws in, and its values in another', !!weights.title && weights.title === weights.token && weights.title === weights.card && weights.value !== weights.title, show(weights))
   await showOn(cdp, 'collection', V)
   read = await readList(cdp)
   const crowded = rowIn(read, 'VL Crowded')
-  decided('H-2', 'a crowded row past its width with Wrap Rows off keeps one line, its groups scrolling, nothing overflowing', !wrapped(crowded) && (scrolls(crowded) || crowded.right.sw > crowded.right.cw + 1) && crowded.rowSW <= crowded.rowCW + 1, show(crowded))
+  const crowdedTitle = crowded.left.parts.find((p) => p.kind === 'title').text
+  const fades = await cdp.evaluate(`[...(${listRow('VL Crowded')}).querySelectorAll('.list-view-group')].map((g) => parseFloat(getComputedStyle(g).getPropertyValue('--scroll-fade-trail')) || 0)`)
+  const plainFade = await cdp.evaluate(`parseFloat(getComputedStyle((${listRow('VL Both')}).querySelector('.list-view-group')).getPropertyValue('--scroll-fade-trail')) || 0`)
+  decided('H-2', 'a crowded row past its width with Wrap Rows off keeps one line, its left group scrolling under its fade with its title at its floor, nothing overflowing', !wrapped(crowded) && scrolls(crowded) && near(crowdedTitle, Math.min(natural['VL Crowded'], read.tokens['--list-view-title-min'] * crowded.z), 0.75) && fades[0] > 0 && plainFade === 0 && crowded.rowSW <= crowded.rowCW + 1, show({ crowdedTitle, natural: natural['VL Crowded'], fades, plainFade, left: [crowded.left.sw, crowded.left.cw] }))
+  decided('H-2', 'the same crowded row\'s right group shrinks with its left and scrolls too (stated)', crowded.right.sw > crowded.right.cw + 1 && fades[1] > 0, show({ right: [crowded.right.sw, crowded.right.cw], fades }))
   await showOn(cdp, 'collection', { ...V, id: vid('g11contentswrap'), name: 'VL Contents Wrap', wrap_rows: true })
   read = await readList(cdp)
   const crowdedWrap = rowIn(read, 'VL Crowded')
@@ -2777,12 +2837,12 @@ async function contents(cdp) {
   const meterBar = await cdp.evaluate(`(() => { const e = (${listSeat(EVERY, 'VL Full', METER.id)}); return { w: e.getBoundingClientRect().width / (e.currentCSSZoom ?? 1), token: parseFloat(getComputedStyle(e).getPropertyValue('--list-view-bar-width')), bar: !!e.querySelector('.cell-bar') } })()`)
   const linkLooks = await cdp.evaluate(`({ resolved: ${leafClasses(listSeat(EVERY, 'VL Both', SITE.id))}, unresolved: ${leafClasses(listSeat(EVERY, 'VL Crowded', SITE.id))} })`)
   const note = listSeat(EVERY, 'VL Crowded', NOTE.id)
-  const noteRead = `(() => { const e = (${note}); const t = e.querySelector('.cell-text'); return { w: e.getBoundingClientRect().width / (e.currentCSSZoom ?? 1), max: parseFloat(getComputedStyle(e).getPropertyValue('--list-view-value-max')), cut: t.scrollWidth > t.clientWidth + 1, pen: !!e.querySelector('.cell-pen'), boxes: [...(${listRow('VL Crowded')}).querySelectorAll('.value-seat, .list-view-title')].map((x) => { const b = x.getBoundingClientRect(); return [Math.round(b.left * 10) / 10, Math.round(b.width * 10) / 10] }) } })()`
+  const noteRead = `(() => { const e = (${note}); const t = e.querySelector('.cell-text'); return { w: e.getBoundingClientRect().width / (e.currentCSSZoom ?? 1), max: parseFloat(getComputedStyle(e).getPropertyValue('--list-view-value-max')), cut: t.scrollWidth > t.clientWidth + 1, ellipsis: getComputedStyle(t).textOverflow, fade: [...e.querySelectorAll('*')].some((x) => x.contains(t) && getComputedStyle(x).maskImage !== 'none'), pen: !!e.querySelector('.cell-pen'), boxes: [...(${listRow('VL Crowded')}).querySelectorAll('.value-seat, .list-view-title')].map((x) => { const b = x.getBoundingClientRect(); return [Math.round(b.left * 10) / 10, Math.round(b.width * 10) / 10] }) } })()`
   const atRest = await cdp.evaluate(noteRead)
   await hover(cdp, note, 700)
   const hovered = await cdp.evaluate(noteRead)
   await away(cdp)
-  decided('C-3', 'a long Text value stops at the view\'s value maximum, cut under its fade, its first line with the pen beside it', near(atRest.w, atRest.max, 0.5) && atRest.cut && atRest.pen, show(atRest))
+  decided('C-3', 'a long Text value stops at the view\'s value maximum, cut in an ellipsis under its fade, its first line with the pen beside it', near(atRest.w, atRest.max, 0.5) && atRest.cut && atRest.ellipsis === 'ellipsis' && atRest.fade && atRest.pen, show(atRest))
   decided('C-3', 'hovering a Text value grows nothing and moves no neighbor', same(atRest.boxes, hovered.boxes), show({ atRest: atRest.boxes, hovered: hovered.boxes }))
   decided('C-3', 'a Number in its bar look draws a bar the view\'s bar width wide', meterBar.bar && near(meterBar.w, meterBar.token, 0.5), show(meterBar))
   const scrolled = `(() => { const e = (${note}); return { group: e.closest('.list-view-group').scrollLeft, value: [...e.querySelectorAll('*')].find((x) => x.scrollWidth > x.clientWidth + 1)?.scrollLeft ?? 0 } })()`
@@ -2799,6 +2859,30 @@ async function contents(cdp) {
   const pad = await wheel(120, 0)
   decided('H-2 · C-3', 'a mouse wheel over a capped value on a crowded row scrolls neither the value nor its group, where a sideways trackpad scroll moves the group and not the value (stated)', same(mouse, rest) && pad.group > rest.group && pad.value === rest.value, show({ rest, mouse, pad }))
   await shot(cdp, 'g11-crowded-scrolled')
+  // The wheel's two reaches: over a bar of the crowded row's left group it scrolls the group; over the same capped value on a row whose lane fits, the value.
+  await showOn(cdp, 'collection', V)
+  const leftBar = await cdp.evaluate(`(() => { const b = (${listRow('VL Crowded')}).querySelector('.list-view-group > [aria-hidden="true"]').getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2 } })()`)
+  await away(cdp, leftBar)
+  await cdp.send('Input.dispatchMouseEvent', { type: 'mouseWheel', x: leftBar.x, y: leftBar.y, deltaX: 0, deltaY: 120 })
+  await sleep(800)
+  const groupLeft = () => cdp.evaluate(`(${listRow('VL Crowded')}).querySelector('.list-view-group').scrollLeft`)
+  const groupScroll = { inside: await groupLeft() }
+  await away(cdp)
+  await sleep(800)
+  groupScroll.left = await groupLeft()
+  const LANE = listView(vid('g11wheellane'), 'VL Wheel Lane', { ...flatVL, property_order: ['_title', NOTE.id] })
+  await showOn(cdp, 'collection', LANE)
+  const laneNote = listSeat(LANE, 'VL Crowded', NOTE.id)
+  const laneAt = await boxOf(cdp, laneNote)
+  await away(cdp, laneAt)
+  const laneScrolled = `(() => { const e = (${laneNote}); const g = e.closest('.list-view-group'); return { fits: g.scrollWidth <= g.clientWidth + 1, value: [...e.querySelectorAll('*')].find((x) => x.scrollWidth > x.clientWidth + 1)?.scrollLeft ?? null } })()`
+  const laneRest = await cdp.evaluate(laneScrolled)
+  await cdp.send('Input.dispatchMouseEvent', { type: 'mouseWheel', x: laneAt.x, y: laneAt.y, deltaX: 0, deltaY: 120 })
+  await sleep(600)
+  const laneWheeled = await cdp.evaluate(laneScrolled)
+  await away(cdp)
+  decided('H-2', 'a mouse wheel over a bar of a crowded row\'s left group scrolls the group, which stays scrolled while the pointer is inside it, a value now under it included, and returns to its start once the pointer leaves the row', groupScroll.inside > 0 && groupScroll.left === 0, show({ groupScroll }))
+  decided('C-3', 'a mouse wheel over a capped value on a row whose lane fits scrolls the value', laneRest.fits && laneRest.value === 0 && laneWheeled.value > 0, show({ laneRest, laneWheeled }))
 
   await showOn(cdp, 'collection', { ...EVERY, id: vid('g11everyplain'), name: 'VL Every Plain', column_styles: {} })
   const plainMeter = await cdp.evaluate(`(${listSeat(EVERY, 'VL Full', METER.id)})?.textContent.trim()`)
@@ -2846,7 +2930,7 @@ async function pressReads(cdp, at) {
   await sleep(300)
   return read
 }
-const quiet = (r, tab) => r.panes === 0 && !r.field && !r.textPane && !r.menu && !r.dialog && r.tab === tab
+const quiet = (r, tab) => !r.missed && r.panes === 0 && !r.field && !r.textPane && !r.menu && !r.dialog && r.tab === tab
 const LABEL_OF = { ...Object.fromEntries([...DEFS, ...LIST_DEFS].map((d) => [d.id, d.label])), [AREAS.id]: AREAS.label, [TOPICS.id]: TOPICS.label, [PROJECTS.id]: PROJECTS.label, _created_at: 'Creation Time', _modified_at: 'Last Modified' }
 
 async function gestures(cdp) {
@@ -2926,10 +3010,40 @@ async function gestures(cdp) {
   await settles(async () => cdp.evaluate(`document.activeElement?.tagName === 'INPUT' && !!document.activeElement.closest('.cards-view')`), 3000)
   renameWeight.card = await cdp.evaluate(weightOf('document.activeElement'))
   await pressKey(cdp, 'Escape')
-  decided('B-1', 'a List title\'s rename field draws in the weight a card title\'s rename field does', !!renameWeight.list && renameWeight.list === renameWeight.card, show(renameWeight))
+  renameWeight.token = await cdp.evaluate(EMPHASIZED)
+  decided('B-16', 'a List title\'s rename field draws in the emphasized weight a card title\'s rename field does', !!renameWeight.list && renameWeight.list === renameWeight.token && renameWeight.list === renameWeight.card, show(renameWeight))
+
+  // A-4 · a press on a value carried down across the next rows sweeps nothing on a List, where the same press on a Table's cell sweeps its column.
+  const sweep = async (cellOf) => {
+    const a = await boxOf(cdp, cellOf('VL Left'))
+    const b = await boxOf(cdp, cellOf('VL Crowded'))
+    let swept
+    await dragPoints(cdp, a, { x: a.x, y: b.y }, { steps: 10, held: async () => { await sleep(300); swept = await cdp.evaluate(`document.querySelectorAll('.cell-sweep').length`); await pressKey(cdp, 'Escape') }, settle: 500 })
+    await escapeAll(cdp)
+    return swept
+  }
+  const SWEEP = listView(vid('g11sweep'), 'VL Sweep', { ...flatVL, property_order: LIST_ORDER })
+  await showOn(cdp, 'collection', SWEEP)
+  const onList = await sweep((t) => listSeat(SWEEP, t, TAGS.id))
+  await showView(cdp, tableView(vid('g11sweept'), 'VL Sweep Table', { ...flatVL, property_order: LIST_ORDER }))
+  const onTable = await sweep((t) => `(${tableRowOf(t)}).querySelectorAll('.data-cell')[${LIST_ORDER.indexOf(TAGS.id)}]`)
+  decided('A-4', 'a press on a List value carried across the rows below sweeps no cells, where a Table cell\'s sweeps its column', onList === 0 && onTable > 1, show({ onList, onTable }))
 }
 
 // ── Group 11 · values ───────────────────────────────────────────────────────
+
+/** What a press on each type's value opens, by the response a press leaves behind; a checkbox's toggle is read from the page. */
+const PRESS = {
+  select: (r) => !!r.pane?.rows, multiSelect: (r) => !!r.pane?.rows, status: (r) => !!r.pane?.rows, context: (r) => !!r.pane?.rows,
+  dateTime: (r) => !!r.pane?.calendar, number: (r) => r.field, bar: (r) => !!r.pane?.field, text: (r) => r.field || r.textPane,
+  checkbox: (r) => r.toggled === true, link: (r) => r.tab === 'Page B', file: (r) => r.dialog, createdTime: (r) => quiet(r, COLLECTION), lastEditedTime: (r) => quiet(r, COLLECTION),
+}
+/** The rows each type's right-click names, as C-1, C-2, and C-4 do: its Style or Format, its Clear where it can be emptied, and its Remove (a File's reads Remove from View, beside its own Remove File). */
+const MENU = {
+  select: ['Style', 'Clear', 'Remove'], multiSelect: ['Style', 'Clear', 'Remove'], status: ['Style', 'Clear', 'Remove'], context: ['Clear', 'Remove'],
+  dateTime: ['Format', 'Clear', 'Remove'], number: ['Remove'], bar: ['Style', 'Remove'], text: ['Clear', 'Remove'], checkbox: ['Style', 'Remove'],
+  link: ['Format', 'Clear', 'Remove'], file: ['Remove from View'], createdTime: ['Format', 'Remove'], lastEditedTime: ['Format', 'Remove'],
+}
 
 async function values(cdp) {
   const V = listView(vid('g11values'), 'VL Values', { ...flatVL, property_order: EVERY_ORDER })
@@ -2957,8 +3071,22 @@ async function values(cdp) {
   const strip = ({ tab, ...r }) => r
   const clicks = ids.filter((id) => !same(strip(list[id].click), strip(cards[id].click)) || list[id].click.tab !== cards[id].click.tab)
   const menus = ids.filter((id) => !same(list[id].menu, cards[id].menu))
-  decided('C-1 · B-3', 'each type\'s value on a List row answers a press as the same value on a card does, a Created and a Modified value opening nothing', clicks.length === 0 && quiet(list._created_at.click, COLLECTION) && quiet(list._modified_at.click, COLLECTION), show({ clicks, list: Object.fromEntries(ids.map((id) => [LABEL_OF[id], list[id].click])), cards: Object.fromEntries(clicks.map((id) => [LABEL_OF[id], cards[id].click])) }))
-  decided('C-1 · C-4', 'each type\'s value on a List row pops the right-click menu the same value pops on a card, a Link\'s holding its Format', menus.length === 0 && !!list[SITE.id].format?.length, show({ menus, list: Object.fromEntries(ids.map((id) => [LABEL_OF[id], list[id].menu])), format: list[SITE.id].format }))
+  const kindOf = (id) => (id === METER.id ? 'bar' : TYPE_OF[id])
+  const answered = Object.fromEntries(ids.map((id) => [LABEL_OF[id], PRESS[kindOf(id)]({ ...list[id].click, missed: false })]))
+  const named = Object.fromEntries(ids.map((id) => [LABEL_OF[id], MENU[kindOf(id)].every((l) => list[id].menu.includes(l))]))
+  decided('C-1 · B-3', 'each type\'s value on a List row answers a press as the decisions name it, as the same value on a card does: options for a choice or a Context, the calendar for a date, a field for a number or a Text, the toggle for a checkbox, its page for a Link, the file dialog for a File, and nothing for a Created or a Modified', clicks.length === 0 && Object.values(answered).every(Boolean), show({ clicks, answered, list: Object.fromEntries(ids.map((id) => [LABEL_OF[id], list[id].click])) }))
+  decided('C-1 · C-2 · C-4', 'each type\'s value on a List row pops the right-click menu the same value pops on a card, holding its Style or Format where its type has one, its Clear where it can be emptied, and its Remove', menus.length === 0 && Object.values(named).every(Boolean), show({ menus, named, list: Object.fromEntries(ids.map((id) => [LABEL_OF[id], list[id].menu])) }))
+
+  // C-1 · a Select's pane, pressed open on a List value, picks an option into the page.
+  await showOn(cdp, 'collection', V)
+  await pressIn(cdp, listSeat(V, 'VL Full', STAGE.id))
+  await until('VD Stage\'s options', async () => cdp.evaluate(`!!${portalRow('Todo')}`), 3000)
+  await mouseClick(cdp, portalRow('Todo'))
+  const picked = await settles(async () => same([frontOf(listPages.cache.get(ridOf('VL Full')).path)[STAGE.key]].flat(), ['Todo']))
+  await closeAll(cdp)
+  const pickedDrawn = await cdp.evaluate(`(${listSeat(V, 'VL Full', STAGE.id)})?.textContent ?? ''`)
+  await mutate(cdp, { op: 'setProperty', path: listPages.cache.get(ridOf('VL Full')).path, propertyId: STAGE.id, value: { kind: 'select', value: 'opt_vd_done' } })
+  decided('C-1', 'Todo picked from VL Full\'s VD Stage pane writes it to the page and the row draws it', picked && /Todo/.test(pickedDrawn), show({ value: frontOf(listPages.cache.get(ridOf('VL Full')).path)[STAGE.key], pickedDrawn }))
 
   // C-4 · a Link's Format picked on a List row writes this view alone.
   await showOn(cdp, 'collection', V)
@@ -2970,7 +3098,9 @@ async function values(cdp) {
   const look = await settles(async () => !!viewOnDisk(V.id)?.column_styles?.[SITE.id]?.look)
   const others = sidecarOnDisk().views.filter((v) => v.id !== V.id && v.column_styles?.[SITE.id]).map((v) => v.name)
   const definition = JSON.parse(readRel('.nexus/properties.json')).defs[SITE.id]
-  decided('C-4', 'a Link\'s Format picked from a List value\'s right-click writes that view\'s look alone, no other view\'s and not the property\'s own', !!pick && look && others.length === 0 && definition.link_display === undefined, show({ pick, stored: viewOnDisk(V.id)?.column_styles?.[SITE.id], others, definition }))
+  const reread = (await popNative(cdp, await boxOf(cdp, site)) ?? []).find((r) => r.label === 'Format')?.submenu?.find((r) => r.checked)?.label
+  await pickNative([])
+  decided('C-4', 'a Link\'s Format picked from a List value\'s right-click writes that view\'s look alone, the menu checking the pick again, no other view\'s and not the property\'s own', !!pick && look && reread === pick && others.length === 0 && definition.link_display === undefined, show({ pick, reread, stored: viewOnDisk(V.id)?.column_styles?.[SITE.id], others, definition }))
 
   // C-2 · a value's Remove hides its property from the view.
   const due = listSeat(V, 'VL Both', DUE.id)
@@ -2979,8 +3109,8 @@ async function values(cdp) {
   const hidden = await settles(async () => (viewOnDisk(V.id)?.hidden_properties ?? []).includes(DUE.id))
   await sleep(400)
   const after = await readList(cdp)
-  const stillDrawn = after.rows.some((r) => r.right?.parts.some((p) => p.kind === 'seat' && /November 2nd/.test(p.text)))
-  decided('C-2', 'a List value\'s Remove hides its property from the view, every row with it', hidden && !stillDrawn, show({ hidden: viewOnDisk(V.id)?.hidden_properties, stillDrawn }))
+  const drawn = structureErrors(viewOnDisk(V.id), after)
+  decided('C-2', 'a List value\'s Remove hides its property from the view, every row drawn as the view now stores it', hidden && after.rows.length > 0 && drawn.length === 0, show({ hidden: viewOnDisk(V.id)?.hidden_properties, drawn: drawn.slice(0, 6) }))
 }
 
 
@@ -3021,25 +3151,30 @@ async function plus(cdp) {
   await closeAll(cdp)
 
   // B-6 · B-7 · a Multi-Select added from a row with no right values, on the left and on the right, takes two picks with the list open and the same + throughout.
-  const addTwo = async (view, side) => {
+  const addTwo = async (view, side, title = 'VL Bare') => {
     await showOn(cdp, 'collection', view)
-    await hover(cdp, listRow('VL Bare'), 400)
-    await cdp.evaluate(markAdd('VL Bare'))
-    await mouseClick(cdp, `(${listRow('VL Bare')}).querySelector('.list-view-add')`)
+    await hover(cdp, listRow(title), 400)
+    await cdp.evaluate(markAdd(title))
+    await mouseClick(cdp, `(${listRow(title)}).querySelector('.list-view-add')`)
     await until('the Add list', async () => cdp.evaluate(`!!(${addRow(TAGS.label)})`), 3000)
     await mouseClick(cdp, addRow(TAGS.label))
     await until('Tags\' options', async () => cdp.evaluate(`!!(${addRow('One')})`), 3000)
     await mouseClick(cdp, addRow('One'))
-    const first = { value: await settles(async () => same(valueOf('VL Bare', TAGS), ['One'])), open: await paneUp(cdp), same: await cdp.evaluate(sameAdd('VL Bare')) }
+    const first = { value: await settles(async () => same(valueOf(title, TAGS), ['One'])), open: await paneUp(cdp), same: await cdp.evaluate(sameAdd(title)) }
     await mouseClick(cdp, addRow('Three'))
-    const second = { value: await settles(async () => same(valueOf('VL Bare', TAGS), ['One', 'Three'])), open: await paneUp(cdp), same: await cdp.evaluate(sameAdd('VL Bare')) }
-    const row = rowIn(await readList(cdp), 'VL Bare')
-    const drawn = side === 'left' ? itemKinds(row.left).length === 2 && !row.right : itemKinds(row.right).length === 1 && row.add.box.l >= row.right.box.r - 0.5
-    const shown = viewOnDisk(view.id)?.property_order?.at(-1) === TAGS.id
+    const second = { value: await settles(async () => same(valueOf(title, TAGS), ['One', 'Three'])), open: await paneUp(cdp), same: await cdp.evaluate(sameAdd(title)) }
+    const before = rowIn(await readList(cdp), title)
     await closeAll(cdp)
-    await mutate(cdp, { op: 'setProperty', path: listPages.cache.get(ridOf('VL Bare')).path, propertyId: TAGS.id, value: null })
-    await settles(async () => valueOf('VL Bare', TAGS) === undefined)
-    return { first, second, drawn, shown, last: row.last }
+    await away(cdp)
+    const row = rowIn(await readList(cdp), title)
+    const group = row[side]
+    const seats = group?.parts.filter((p) => p.kind !== 'bar') ?? []
+    const added = seats.find((p) => p.kind === 'seat' && /One/.test(p.text) && /Three/.test(p.text))
+    const atEnd = !!added && added.box.r >= Math.max(...seats.map((p) => p.box.r)) - 0.5 && (side === 'left' || near(added.box.r, row.lineEnd, 1))
+    const shown = viewOnDisk(view.id)?.property_order?.at(-1) === TAGS.id
+    await mutate(cdp, { op: 'setProperty', path: listPages.cache.get(ridOf(title)).path, propertyId: TAGS.id, value: null })
+    await settles(async () => valueOf(title, TAGS) === undefined)
+    return { first, second, atEnd, seats: seats.length, shown, last: before.last, after: row.add ? row.add.box.l >= group.box.r - 0.5 : null }
   }
   // A single Select picked from the Add list, on a List row and on a compact card.
   const singlePick = async (view, opener) => {
@@ -3069,7 +3204,12 @@ async function plus(cdp) {
   const ON = (side) => listView(vid(`g11add${side}`), `VL Add ${side}`, { ...flatVL, property_order: ['_title', STAGE.id, DUE.id], column_sides: { [TAGS.id]: side } })
   for (const side of ['left', 'right']) {
     const r = await addTwo(ON(side), side)
-    decided('B-6 · B-7 · C-2 · D-3', `a Multi-Select on the ${side} added from a row with no right values takes two picks, shows on the view at the far end of its side and draws on the ${side}, the list staying open and the + the same element trailing ${side === 'left' ? 'the left group' : 'the new right group'}`, r.first.value && r.first.open && r.first.same && r.second.value && r.second.open && r.second.same && r.drawn && r.shown && r.last === 'add', show(r))
+    decided('B-6 · B-7 · C-2 · D-3', `a Multi-Select on the ${side} added from a row with no right values takes two picks, shows on the view at the far end of its side and draws on the ${side}, the list staying open and the + the same element trailing ${side === 'left' ? 'the left group' : 'the new right group'}`, r.first.value && r.first.open && r.first.same && r.second.value && r.second.open && r.second.same && r.atEnd && r.seats === (side === 'left' ? 2 : 1) && r.shown && r.last === 'add' && r.after, show(r))
+  }
+  // D-3 · on a row already holding values on that side, the new one draws at the side's far end: last on the left, at the row's edge on the right.
+  for (const [side, title] of [['left', 'VL Both'], ['right', 'VL Right']]) {
+    const r = await addTwo(ON(side), side, title)
+    decided('D-3', `a Multi-Select on the ${side} added from ${title}, which holds ${side} values already, draws at the far end of its side${side === 'right' ? ', at the row\'s edge beside the +' : ''}`, r.second.value && r.atEnd && r.seats > 1 && r.shown && r.after, show(r))
   }
   await shot(cdp, 'g11-plus')
 
@@ -3102,12 +3242,26 @@ async function creation(cdp) {
   decided('A-2 · B-12', 'a List row\'s hover ghost stands under it at its indent and height, and its press names a newborn placed after it in its Set', !!lead && lead.after && same(lead.ghost, lead.row) && ghost.first?.field && ghost.landed && ghost.at === `${ROWS_SET}/VL Ghost.md` && order.indexOf(ghost.first?.rid) === order.indexOf(ridOf('VL Both')) + 1, show({ lead, ghost, order }))
   await trashPage(cdp, ghost.at)
 
+  // B-6 · a row's + is the band's +: one look, revealed alike on the hover of what carries it.
+  const ADD_LOOK = (expr) => `(() => { const e = (${expr}); const cs = getComputedStyle(e); const z = e.currentCSSZoom ?? 1; const b = e.getBoundingClientRect(); const g = e.querySelector('svg').getBoundingClientRect(); return { glyph: ${glyphOf('e')}, box: [b.width, b.height, g.width, g.height].map((n) => Math.round(n / z * 10) / 10), color: cs.color, radius: cs.borderRadius, fill: cs.backgroundColor, opacity: cs.opacity } })()`
+  const rowAdd = `(${listRow('VL Both')}).querySelector('.list-view-add')`
+  const bandAdd = `(${head('VL Rows')}).querySelector('${NEW_IN_GROUP}')`
+  await away(cdp)
+  const looks = { rest: [await cdp.evaluate(ADD_LOOK(rowAdd)), await cdp.evaluate(ADD_LOOK(bandAdd))] }
+  await hover(cdp, listRow('VL Both'), 500)
+  looks.rowHover = await cdp.evaluate(ADD_LOOK(rowAdd))
+  await hover(cdp, head('VL Rows'), 500)
+  looks.bandHover = await cdp.evaluate(ADD_LOOK(bandAdd))
+  await away(cdp)
+  decided('B-6 · I-3', 'a row\'s + draws as a Set band\'s +, the same glyph, size, and color, unseen at rest and shown on its carrier\'s hover', looks.rest[0].opacity === '0' && looks.rowHover.opacity === '1' && same(looks.rest[0], looks.rest[1]) && same(looks.rowHover, looks.bandHover), show(looks))
+
   // A-2 · B-8 · a Set band's + creates a page in its Set; a property band's head carries none.
   const band = await birth(cdp, async () => {
     await hover(cdp, head('VL Rows'), 400)
     await mouseClick(cdp, `(${head('VL Rows')}).querySelector('${NEW_IN_GROUP}')`)
   }, 'VL Band')
-  decided('A-2 · B-8', 'a List Set band\'s + names a newborn in its Set', band.first?.field && band.landed && band.at === `${ROWS_SET}/VL Band.md`, show(band))
+  const bandLast = (JSON.parse(readRel(`${ROWS_SET}/_pageset.json`)).page_order ?? []).at(-1)
+  decided('A-2 · B-8', 'a List Set band\'s + names a newborn last in its Set', band.first?.field && band.landed && band.at === `${ROWS_SET}/VL Band.md` && bandLast === band.first?.rid, show({ band, last: bandLast }))
   await trashPage(cdp, band.at)
   const pluses = async () => cdp.evaluate(`${HEADS}.map((h) => [h.getAttribute('aria-label'), !!h.querySelector('${NEW_IN_GROUP}')])`)
   await showOn(cdp, 'collection', listView(vid('g11createstage'), 'VL Create Stage', { property_order: LIST_ORDER, ...byStage }))
@@ -3118,7 +3272,7 @@ async function creation(cdp) {
 
   await showOn(cdp, 'collection', listView(vid('g11createnosub'), 'VL Create No Sub', { property_order: LIST_ORDER, ...byStage, sub_group: { property_id: PHASE.id, order_mode: 'configured' } }))
   const nested = await cdp.evaluate(`[...document.querySelectorAll('.list-view .group-band .group-band')].filter((b) => b.getClientRects().length && !b.closest('[inert]')).length`)
-  decided('A-2', 'a List grouped by a property draws no sub-group under it, a sub-grouping saved beside it included (stated)', nested === 0 && (await headLabels(cdp)).every((h) => ['Todo', 'Doing', 'Done'].includes(h)), show({ nested, heads: await headLabels(cdp) }))
+  decided('A-2', 'a List grouped by a property draws its three option bands and no sub-group under them, a sub-grouping saved beside it included (stated)', nested === 0 && same(await headLabels(cdp), ['Todo', 'Doing', 'Done']), show({ nested, heads: await headLabels(cdp) }))
 
   // A-2 · an empty sub-band draws on a List as on a Table, and the tail row after one stands at Table's indent (stated: it reads as that band's).
   const subHeads = async () => ({ heads: await headLabels(cdp), tail: await cdp.evaluate(`(() => { const r = ${visible(`[...document.querySelectorAll('.data-row[data-rid="${ridOf(`VL Zero ${LONG}`)}"]')]`)}; const c = r?.querySelector('.cell-lead'); return c ? Math.round(c.getBoundingClientRect().left + parseFloat(getComputedStyle(c).paddingLeft)) : null })()`) })
@@ -3145,8 +3299,19 @@ async function creation(cdp) {
   await showView(cdp, cardsView(vid('g11ghostcards'), 'VL Ghost Cards', { set_cards: false }))
   await hover(cdp, card('Page C'), 1500)
   const cardGhost = await cdp.evaluate(weightOf(`[...(document.querySelector('.ghost-card')?.querySelectorAll('span') ?? [])].find((e) => !e.children.length && e.textContent.trim() === 'New Page')`))
-  decided('B-1 · A-2', 'a List\'s hover ghost and standing ghost title New Page in the weight a Cards ghost does', !!cardGhost && ghostWeight === cardGhost && standingWeight === cardGhost, show({ ghostWeight, standingWeight, cardGhost }))
+  const token = await cdp.evaluate(EMPHASIZED)
+  decided('B-16 · A-2', 'a List\'s hover ghost and standing ghost title New Page in the emphasized weight a Cards ghost does', !!cardGhost && ghostWeight === token && ghostWeight === cardGhost && standingWeight === cardGhost, show({ ghostWeight, standingWeight, cardGhost, token }))
   await away(cdp)
+
+  // B-4 · a newborn row's stamps are null until its values load (`viewRow.ts`): it draws none blank in between, then both.
+  await showOn(cdp, 'collection', listView(vid('g11newborn'), 'VL Newborn View', { ...flatVL, property_order: ['_title', '_created_at', '_modified_at'] }))
+  const newborn = mintPageId()
+  await cdp.evaluate(ARM_FRAMES(`[...document.querySelectorAll('.list-view .data-row[data-rid="${newborn}"]')].filter((r) => !r.closest('[inert]')).map((r) => [...r.querySelectorAll('.value-seat')].map((e) => e.textContent.trim()))`))
+  await mutate(cdp, { op: 'createPage', id: newborn, parentPath: ROWS_SET, name: 'VL Newborn', seeds: {} })
+  await sleep(1500)
+  const stamps = await frames(cdp)
+  decided('B-4', 'a newborn row draws no blank stamp while its values load, and then both stamps', stamps.length > 0 && stamps.every((f) => f.every((row) => row.every(Boolean))) && same(stamps.at(-1).map((row) => row.length), [2]), show(stamps))
+  await trashPage(cdp, `${ROWS_SET}/VL Newborn.md`)
 }
 
 // ── Group 11 · a row's drag ─────────────────────────────────────────────────
@@ -3175,6 +3340,9 @@ async function drags(cdp) {
   await dragPoints(cdp, grip, { x: target.x, y: target.top + 3 })
   const within = await settles(async () => before(manualOf(V), 'VL Right', 'VL Left'))
   decided('A-2', 'a List row dragged by its grip above another in its band saves the manual order and draws there', within && before(await drawnTitles(), 'VL Right', 'VL Left'), show({ disk: manualOf(V), drawn: await drawnTitles() }))
+  const LIST_ROWS = `[...document.querySelectorAll('.list-view .data-row[data-rid]')]`
+  const plain = await describes(cdp, LIST_ROWS)
+  decided('A-2', 'a plain List\'s rows each name the drag gesture', plain.length > 0 && plain.every(Boolean), show({ rows: plain.length, described: plain.filter(Boolean).length }))
   await keyMove(cdp, 'VL Both', ['ArrowUp'])
   const keyed = manualOf(V)
   const drawnKeyed = await drawnTitles()
@@ -3189,8 +3357,7 @@ async function drags(cdp) {
     await pressKey(cdp, 'Enter')
     await sleep(1200)
     const p = (await listPages(cdp)).get(ridOf('VL Bare'))
-    const order = manualOf(view)
-    return { path: p.path, rank: order.indexOf('VL Bare') === -1 ? null : order.indexOf('VL Bare') - order.indexOf('VL Right') }
+    return { path: p.path, last: (await bandRows(cdp, 'Sub-Set B'))?.map(titleOf11).at(-1) ?? null }
   }
   const rowsOrder = () => JSON.parse(readRel(`${ROWS_SET}/_pageset.json`)).page_order ?? []
   const topOrder = [ridOf('VL Bare'), ...rowsOrder().filter((id) => id !== ridOf('VL Bare'))]
@@ -3200,11 +3367,11 @@ async function drags(cdp) {
   await putBack(listTop.path)
   const tableTop = await topStep(tableView(vid('g11dragtopt'), 'VL Drag Top Table'), tableRowOf('VL Bare'))
   await putBack(tableTop.path)
-  decided('A-2', 'a List row stepped by keyboard past its band\'s top lands where a Table row does', same(listTop, tableTop), show({ listTop, tableTop }))
+  const above = { path: `${COLLECTION}/Set Beta/Sub-Set B/VL Bare.md`, last: 'VL Bare' }
+  decided('A-2', 'a List row stepped by keyboard past its band\'s top lands last in the band above, Sub-Set B, as a Table row does (stated)', same(listTop, above) && same(tableTop, above), show({ listTop, tableTop }))
   await showOn(cdp, 'collection', V)
 
   // Under a search or two sort keys a List row names no drag gesture, as a Table's (the host's one rule).
-  const LIST_ROWS = `[...document.querySelectorAll('.list-view .data-row[data-rid]')]`
   await search(cdp, 'VL')
   const searched = await describes(cdp, LIST_ROWS)
   await search(cdp, '')
@@ -3239,43 +3406,77 @@ async function drags(cdp) {
   const keyedBand = await settles(async () => same(valueOf('VL Both', STAGE), ['Todo']) || valueOf('VL Both', STAGE) === 'Todo', 3000)
   decided('A-2', 'a List row stepped by keyboard past its band\'s head takes the band above\'s value', keyedBand, show({ doing, value: valueOf('VL Both', STAGE) }))
   await mutate(cdp, { op: 'setProperty', path: listPages.cache.get(ridOf('VL Both')).path, propertyId: STAGE.id, value: { kind: 'select', value: 'opt_vd_doing' } })
+
+  // A-2 · a row's and a band's drag at the view's Scale, a wrapped row's drag, and a row's drag in a View Tile, each landing where it was dropped.
+  const gripOnto = async (title, onto, view) => {
+    await cdp.evaluate(`(${listRow(onto)}).scrollIntoView({ block: 'center' })`)
+    await sleep(300)
+    const g = await listGrip(cdp, title)
+    const t = await boxOf(cdp, listRow(onto))
+    await dragPoints(cdp, g, { x: t.x, y: t.top + 3 })
+    return settles(async () => before(view ? manualOf(view) : tileManual(), title, onto))
+  }
+  const SCALED = listView(vid('g11dragscale'), 'VL Drag Scale', { property_order: LIST_ORDER, view_scale: 1.25 })
+  await showOn(cdp, 'collection', SCALED)
+  const scaledRow = await gripOnto('VL Right', 'VL Left', SCALED)
+  const beta = await boxOf(cdp, head('Set Beta'))
+  const alpha = await boxOf(cdp, head('Set Alpha'))
+  await dragPoints(cdp, { x: beta.x, y: beta.y }, { x: alpha.x, y: alpha.top + 2 })
+  const scaledBand = await settles(async () => before(viewOnDisk(SCALED.id)?.group_order ?? [], IDS.beta, IDS.alpha))
+  const drawnSets = (await headLabels(cdp)).filter((l) => l.startsWith('Set '))
+  decided('A-2', 'at the view\'s Scale of 1.25, a List row dragged by its grip lands above the row it was dropped on, and a Set band dragged by its head lands above Set Alpha, each saved and drawn there', scaledRow && scaledBand && same(drawnSets, ['Set Beta', 'Set Alpha']) && before((await readList(cdp)).rows.map((r) => titleOf11(r.rid)), 'VL Right', 'VL Left') && near((await readList(cdp)).rows[0]?.z, 1.25, 0.01), show({ scaledRow, scaledBand, drawnSets, order: viewOnDisk(SCALED.id)?.group_order }))
+  const WRAPPED = listView(vid('g11dragwrap'), 'VL Drag Wrapped', { property_order: LIST_ORDER, wrap_rows: true })
+  await showOn(cdp, 'collection', WRAPPED)
+  await viewport(cdp, NARROW)
+  const two = `VL Two ${LONG}`
+  const wasWrapped = wrapped(rowIn(await readList(cdp), two))
+  const wrappedRow = await gripOnto(two, 'Alpha 1', WRAPPED)
+  await viewport(cdp, null)
+  decided('A-2', 'a List row wrapped to two lines, dragged by its grip, lands above the row it was dropped on', wasWrapped && wrappedRow, show({ wasWrapped, order: manualOf(WRAPPED) }))
+  await showOn(cdp, 'tile', listView(vid('g11dragtile'), 'VL Drag Tile', { property_order: LIST_ORDER }))
+  const tileRow = await gripOnto('VL Right', 'VL Left')
+  decided('A-2', 'a List row in a View Tile dragged by its grip lands above the row it was dropped on, saved in the tile', tileRow, show(tileManual()))
 }
+/** The manual order the homepage's View Tile stores, by title. */
+const tileManual = () => (JSON.parse(readRel(TILES)).tiles[0]?.views[0]?.config?.manual_order ?? []).map(titleOf11)
 
 
 // ── Group 11 · the property pane ────────────────────────────────────────────
 
-/** List's two-column pane as drawn: each column's heading, width, rows with their eyes, hidden foot, and zone, and the tracks its stylesheet declares for the grid. */
+/** The pane's two-column grid: the nearest element holding both its Left and Right headings, or null with no pane up. */
+const PANE_GRID = `(() => { const leaf = (t) => [...document.querySelectorAll('*')].find((e) => !e.children.length && e.textContent.trim() === t && !e.closest('[role=button], [inert]') && e.getClientRects().length); const L = leaf('Left'), R = leaf('Right'); let g = L?.parentElement; while (g && R && !g.contains(R)) g = g.parentElement; return R ? g : null })()`
+/** List's two-column pane as drawn: each column's heading and width, its rows with their eyes, hidden foot, and zone, each row's width and the width its content takes unbounded, whether its name is cut and how, and whether a row is held. */
 const SIDES_READ = `(() => {
   const layer = document.body
-  const leaf = (t) => [...layer.querySelectorAll('*')].find((e) => !e.children.length && e.textContent.trim() === t && !e.closest('[role=button], [inert]') && e.getClientRects().length)
-  const L = leaf('Left'), R = leaf('Right')
-  if (!L || !R) return { columns: null }
-  let grid = L.parentElement
-  while (grid && !grid.contains(R)) grid = grid.parentElement
+  const grid = ${PANE_GRID}
+  if (!grid) return { columns: null }
   const z = grid.currentCSSZoom ?? 1
   const box = (e) => { const b = e.getBoundingClientRect(); return { t: b.top, b: b.bottom, l: b.left, r: b.right, h: b.height, x: b.left + b.width / 2, y: b.top + b.height / 2 } }
   const eye = (r) => r.querySelector('[aria-label^="Hide "], [aria-label^="Show "]')?.getAttribute('aria-label') ?? null
   const dim = (r) => Math.min(...[r, ...r.querySelectorAll('*')].map((e) => Number(getComputedStyle(e).opacity)))
   const scroller = (() => { let e = grid.parentElement; while (e && e !== layer && !(e.scrollHeight > e.clientHeight + 1 && /auto|scroll/.test(getComputedStyle(e).overflowY))) e = e.parentElement; return e && e !== layer ? e : null })()
-  const declared = [...document.styleSheets].flatMap((sheet) => { try { return [...sheet.cssRules] } catch { return [] } }).find((r) => r.style?.gridTemplateColumns && [...grid.classList].some((c) => r.selectorText === '.' + c))?.style.gridTemplateColumns ?? null
+  const natural = (r) => { const c = r.cloneNode(true); c.style.cssText = 'position: absolute; visibility: hidden; width: max-content; max-width: none; transform: none'; r.parentElement.appendChild(c); const w = c.getBoundingClientRect().width / z; c.remove(); return w }
+  const name = (r) => [...r.querySelectorAll('*')].find((e) => !e.children.length && e.textContent.trim() && !e.closest('button'))
+  const sizes = (r) => { const t = name(r); return { w: r.getBoundingClientRect().width / z, natural: natural(r), cut: !!t && t.scrollWidth > t.clientWidth + 1, ellipsis: t ? getComputedStyle(t).textOverflow : null } }
   return {
-    template: declared,
+    held: !!document.querySelector('[data-drag-source], [aria-roledescription=sortable][aria-pressed=true]'),
+    line: [...document.querySelectorAll('.drop-line')].some((l) => l.getClientRects().length),
     scroll: scroller && { top: scroller.scrollTop, max: scroller.scrollHeight - scroller.clientHeight },
     columns: [...grid.children].map((col) => {
       const list = col.lastElementChild
       const zone = list.firstElementChild
       return {
         heading: col.firstElementChild.textContent.trim(), w: col.getBoundingClientRect().width / z,
-        rows: [...zone.querySelectorAll('[aria-roledescription=sortable]')].map((r) => ({ label: r.textContent.trim(), eye: eye(r), box: box(r) })),
-        hidden: [...list.children].slice(1).map((r) => ({ label: r.textContent.trim(), eye: eye(r), dim: dim(r), box: box(r) })),
+        rows: [...zone.querySelectorAll('[aria-roledescription=sortable]')].map((r) => ({ label: r.textContent.trim(), eye: eye(r), box: box(r), ...sizes(r) })),
+        hidden: [...list.children].slice(1).map((r) => ({ label: r.textContent.trim(), eye: eye(r), dim: dim(r), box: box(r), ...sizes(r) })),
         zone: box(zone), spill: zone.style.getPropertyValue('--drag-spill'),
       }
     }),
   }
 })()`
 const sidesRead = (cdp) => cdp.evaluate(SIDES_READ)
-/** The pane's scrolling body scrolled to its foot. */
-const PANE_TO_FOOT = `(() => { const t = [...document.querySelectorAll('*')].find((e) => !e.children.length && e.textContent.trim() === 'Right' && !e.closest('[role=button], [inert]') && e.getClientRects().length); let e = t; while (e && !(e.scrollHeight > e.clientHeight + 1 && /auto|scroll/.test(getComputedStyle(e).overflowY))) e = e.parentElement; if (e) e.scrollTop = e.scrollHeight; return !!e })()`
+/** The pane's scrolling body scrolled to its foot, or to its head. */
+const PANE_TO = (end) => `(() => { let e = ${PANE_GRID}; while (e && !(e.scrollHeight > e.clientHeight + 1 && /auto|scroll/.test(getComputedStyle(e).overflowY))) e = e.parentElement; if (e) e.scrollTop = ${end === 'foot' ? 'e.scrollHeight' : '0'}; return !!e })()`
 const labelOf = (id) => (id === '_title' ? 'Title' : LABEL_OF[id])
 /** The rows each column should list for a view as stored: Left as its group reads, Right from the row's edge inward (E-3), and each side's hidden foot (E-5). */
 function paneOf(view) {
@@ -3303,6 +3504,39 @@ const shapeErrors = (read, view) => {
   for (const r of [...left.hidden, ...right.hidden]) if (!(r.dim < 1) || !r.eye?.startsWith('Show')) errors.push(`${r.label} at the foot isn't ghosted with its eye off (${r.dim}, ${r.eye})`)
   return errors
 }
+/** E-4's widths: two equal columns as wide as their widest row needs, hidden rows included, every name whole, and past `PANE_CAP`, both at it with the longer names cut in an ellipsis. */
+const PANE_CAP = 180
+const widthErrors = (read) => {
+  const [a, b] = read.columns
+  const rows = [...a.rows, ...a.hidden, ...b.rows, ...b.hidden]
+  const widest = Math.max(...rows.map((x) => x.natural))
+  const rowW = Math.max(...rows.map((x) => x.w))
+  const errors = []
+  if (!near(a.w, b.w, 0.5)) errors.push(`columns ${a.w.toFixed(1)} and ${b.w.toFixed(1)}`)
+  if (rows.some((x) => !near(x.w, rowW, 0.5))) errors.push(`rows ${show(rows.map((x) => x.w.toFixed(1)))} unequal`)
+  if (widest <= rowW + 0.5) {
+    if (!near(widest, rowW, 1)) errors.push(`rows ${rowW.toFixed(1)} wide for a widest name's ${widest.toFixed(1)}`)
+    if (!(a.w < PANE_CAP - 0.5)) errors.push(`columns ${a.w.toFixed(1)} at the cap with every name fitting`)
+    if (rows.some((x) => x.cut)) errors.push(`${rows.filter((x) => x.cut).map((x) => x.label)} cut`)
+  } else {
+    if (!near(a.w, PANE_CAP, 0.5)) errors.push(`columns ${a.w.toFixed(1)} under a name past the cap`)
+    const long = rows.filter((x) => x.natural > rowW + 0.5)
+    if (!long.every((x) => x.cut && x.ellipsis === 'ellipsis')) errors.push(`${show(long.map((x) => [x.label, x.cut, x.ellipsis]))} not cut in an ellipsis`)
+  }
+  return errors
+}
+/** A column's shown rows' tops, where its slot stands, its last shown row's bottom, its first hidden row's top, and whether its zone spills, light enough to read each frame; the held row, drawn wherever the pointer takes it, left out. */
+const COLUMN_EDGE = (i) => `(() => {
+  const col = (${PANE_GRID})?.children[${i}]
+  if (!col) return null
+  const list = col.lastElementChild
+  const zone = list.firstElementChild
+  const rows = [...zone.querySelectorAll('[aria-roledescription=sortable]')].filter((r) => r.getAttribute('aria-pressed') !== 'true' && !r.hasAttribute('data-drag-source'))
+  const hidden = list.children[1]
+  return { tops: rows.map((r) => Math.round(r.getBoundingClientRect().top)), last: Math.max(...rows.map((r) => r.getBoundingClientRect().bottom)), hidden: hidden ? hidden.getBoundingClientRect().top : Infinity, spill: !!zone.style.getPropertyValue('--drag-spill') }
+})()`
+const firstLeftOf = (read) => read.columns[0].rows.find((x) => x.label !== 'Title').label
+const right1Now = (read) => read.columns[1].rows.map((x) => x.label)
 /** A pane row carried to `to`, `held` read before the release. */
 async function paneDrag(cdp, from, to, held) {
   const a = await boxOf(cdp, from)
@@ -3321,12 +3555,14 @@ async function pane(cdp) {
   for (const which of ['settings', 'editor']) {
     await door(cdp, which, which === 'settings' ? 'Visibility' : 'Layout')
     const read = await sidesRead(cdp)
-    const track = Number(/(\d+(?:\.\d+)?)px\)\)$/.exec(read?.template ?? '')?.[1])
-    const errors = read ? shapeErrors(read, stored()) : ['no pane']
-    decided('E-1 · E-2 · E-3 · E-4 · E-5 · E-8', `the ${which === 'settings' ? 'Settings door\'s Visibility' : 'editor door\'s Layout'} opens List's pane: Left and Right side by side at the kit's stated width, Left as the left group reads with Title and no eye, Right from the row's edge inward, each hidden property ghosted at its own column's foot`,
-      errors.length === 0 && /^repeat\(2,/.test(read.template) && track > 0 && read.columns.length === 2 && read.columns.every((c) => near(c.w, track, 0.5)) && read.columns[0].zone.l < read.columns[1].zone.l, show({ errors, template: read?.template, widths: read?.columns?.map((c) => c.w) }))
+    const errors = read.columns ? [...shapeErrors(read, stored()), ...widthErrors(read)] : ['no pane']
+    decided('E-1 · E-2 · E-3 · E-4 · E-5 · E-8', `the ${which === 'settings' ? 'Settings door\'s Visibility' : 'editor door\'s Layout'} opens List's pane: Left and Right side by side, equal and as wide as their widest name, under the cap, Left as the left group reads with Title and no eye, Right from the row's edge inward, each hidden property ghosted at its own column's foot`,
+      errors.length === 0 && read.columns.length === 2 && read.columns[0].zone.l < read.columns[1].zone.l, show({ errors, widths: read.columns?.map((c) => c.w) }))
     if (which === 'settings') await shot(cdp, 'g11-pane')
   }
+  await door(cdp, 'settings', 'Layout')
+  const layoutHolds = (await sidesRead(cdp)).columns
+  decided('E-1', 'Settings\' Layout on a List holds no Left and Right columns', layoutHolds === null, show(layoutHolds))
 
   // Through the Settings door: within a column, across both ways, Title held, the hidden foot inert, a carried row making room.
   await door(cdp, 'settings', 'Visibility')
@@ -3334,20 +3570,43 @@ async function pane(cdp) {
   let r = await sidesRead(cdp)
   const leftRow = (label) => r.columns[0].rows.find((x) => x.label === label).box
   const rightRow = (label) => r.columns[1].rows.find((x) => x.label === label).box
-  await paneDrag(cdp, sideRowEl(TAGS.label), { x: leftRow(STAGE.label).x, y: leftRow(STAGE.label).t + 3 })
+  const withinHeld = await paneDrag(cdp, sideRowEl(TAGS.label), { x: leftRow(STAGE.label).x, y: leftRow(STAGE.label).t + 3 }, () => sidesRead(cdp))
   const within = await settles(async () => before(stored().property_order, TAGS.id, STAGE.id))
   decided('E-7', 'a pane row dragged within its column reorders the view, and the List draws it', within && (await saves()) === 1 && (await drawnAsStored()).length === 0, show({ order: stored().property_order, saves: await saves() }))
+  decided('E-7', 'a pane row held over its column draws no drop line, the pane\'s stated exception', withinHeld?.held === true && withinHeld.line === false, show({ held: withinHeld?.held, line: withinHeld?.line }))
 
   await countSaves()
   r = await sidesRead(cdp)
   const footBefore = r.columns[1].hidden[0]?.box.t
-  const room = await paneDrag(cdp, sideRowEl(STAGE.label), { x: rightRow(NOTE.label).x, y: rightRow(NOTE.label).t + 3 }, async () => (await sidesRead(cdp)).columns[1])
+  const restWidths = r.columns.map((c) => c.w)
+  const roomRead = await paneDrag(cdp, sideRowEl(STAGE.label), { x: rightRow(NOTE.label).x, y: rightRow(NOTE.label).t + 3 }, () => sidesRead(cdp))
+  const room = roomRead?.columns[1]
   const crossed1 = await settles(async () => stored().column_sides?.[STAGE.id] === 'right')
   const right1 = (await sidesRead(cdp)).columns[1].rows.map((x) => x.label)
   const carried = rightRow(NOTE.label).b - rightRow(NOTE.label).t
   decided('E-7 · I-4', 'a pane row dragged from Left into Right lands between the rows it was dropped between, writing its side and place in one save, and the List draws it there', crossed1 && same(right1, [SITE.label, STAGE.label, NOTE.label, DUE.label]) && (await saves()) === 1 && (await drawnAsStored()).length === 0, show({ right1, saves: await saves(), sides: stored().column_sides, order: stored().property_order }))
   const lastZoneRow = room?.rows.at(-1)?.box.b
+  decided('E-4', 'the columns keep their widths while a row is carried from one into the other', !!roomRead?.held && same(roomRead.columns.map((c) => Math.round(c.w * 10)), restWidths.map((w) => Math.round(w * 10))), show({ restWidths, held: roomRead?.columns.map((c) => c.w) }))
   decided('E-10', 'a row carried into the Right column grows its zone by the row, so its hidden foot moves down and nothing draws over it', !!room && parseFloat(room.spill) > 0 && room.hidden[0].box.t - footBefore >= carried - 1 && room.hidden[0].box.t >= room.zone.b - 0.5 && room.hidden[0].box.t >= lastZoneRow - 0.5, show({ footBefore, during: room?.hidden[0]?.box.t, zone: room?.zone, spill: room?.spill, carried }))
+
+  // E-10 · a carry into Right that leaves without a drop, and one Escape cancels: the room closes with the rows gliding back, the last shown row never drawn over the first hidden one.
+  const glides = {}
+  for (const how of ['leave', 'escape']) {
+    await countSaves()
+    r = await sidesRead(cdp)
+    const from = await boxOf(cdp, sideRowEl(firstLeftOf(r)))
+    const into = { x: r.columns[1].zone.x, y: r.columns[1].rows.at(-1).box.t + 3 }
+    await cdp.evaluate(ARM_FRAMES(COLUMN_EDGE(1)))
+    await dragPoints(cdp, from, into, { steps: 16, held: async () => {
+      await sleep(400)
+      if (how === 'escape') return pressKey(cdp, 'Escape')
+      for (let i = 1; i <= 8; i++) { await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: into.x + i * 60, y: into.y + i * 40, button: 'left', buttons: 1 }); await sleep(16) }
+      await sleep(400)
+    }, settle: 1200 })
+    const seen = await frames(cdp)
+    glides[how] = { samples: seen.length, grew: seen.some((e) => e && e.spill), over: seen.filter((e) => e && e.last > e.hidden + 0.5), saves: await saves(), after: (await sidesRead(cdp)).columns[1].rows.map((x) => x.label) }
+  }
+  decided('E-10', 'a row carried into Right and taken out again without a drop, or cancelled by Escape, makes room and closes it, the column\'s last shown row never over its first hidden one, nothing written', Object.values(glides).every((g) => g.samples > 3 && g.grew && g.over.length === 0 && g.saves === 0 && same(g.after, right1Now(r))), show(glides))
 
   await countSaves()
   r = await sidesRead(cdp)
@@ -3359,27 +3618,43 @@ async function pane(cdp) {
   r = await sidesRead(cdp)
   const title = await paneDrag(cdp, sideRowEl('Title'), { x: r.columns[1].zone.x, y: r.columns[1].rows[0].box.t + 3 }, () => sidesRead(cdp))
   await sleep(400)
-  decided('E-8 · E-9', 'Title dragged toward Right stays in Left and writes nothing', !title?.columns[1].rows.some((x) => x.label === 'Title') && (await sidesRead(cdp)).columns[0].rows.some((x) => x.label === 'Title') && (await saves()) === 0 && !stored().column_sides?._title, show({ during: title?.columns[1].rows.map((x) => x.label), saves: await saves() }))
+  decided('E-8 · E-9', 'Title, lifted and carried toward Right, stays in Left and writes nothing', title?.held === true && !title.columns[1].rows.some((x) => x.label === 'Title') && (await sidesRead(cdp)).columns[0].rows.some((x) => x.label === 'Title') && (await saves()) === 0 && !stored().column_sides?._title, show({ held: title?.held, during: title?.columns[1].rows.map((x) => x.label), saves: await saves() }))
+  await countSaves()
+  r = await sidesRead(cdp)
+  const afterTitle = r.columns[0].rows[1]
+  await paneDrag(cdp, sideRowEl('Title'), { x: afterTitle.box.x, y: afterTitle.box.b - 3 })
+  const ahead = Object.keys(LABEL_OF).find((id) => LABEL_OF[id] === afterTitle.label)
+  const titleMoved = await settles(async () => before(stored().property_order, ahead, '_title'))
+  const leads = (await readList(cdp)).rows.filter((x) => x.left.parts[0]?.kind === 'seat').map((x) => titleOf11(x.rid))
+  decided('E-8 · B-11', 'Title dragged below another Left row reorders within Left, so that value draws ahead of the title', titleMoved && (await saves()) === 1 && leads.length > 0 && (await drawnAsStored()).length === 0, show({ ahead: afterTitle.label, order: stored().property_order, leads, saves: await saves() }))
 
   await countSaves()
   const foot = sideRowEl(COUNT.label, { hidden: true })
   const footRead = await paneDrag(cdp, foot, { x: r.columns[1].zone.x, y: r.columns[1].rows[0].box.t + 3 }, () => cdp.evaluate(`!!document.querySelector('[data-drag-source], [aria-roledescription=sortable][aria-pressed=true]')`))
   decided('E-5 · E-7', 'a hidden row at a column\'s foot lifts no drag and writes nothing', footRead === false && (await saves()) === 0, show({ lifted: footRead, saves: await saves() }))
 
-  // E-5 · E-6 · the eye: a hidden property leaves for its foot and returns to its place and side after another moves.
+  // E-5 · E-6 · the eye, on VL Tags stored off its default side: it leaves for its own column's foot and returns to its place and side after another row moves.
+  await must('VL Tags stored Right', ask(cdp, 'views:save', COLLECTION, 'collection', stored(), { column_sides: { [TAGS.id]: 'right' } }))
+  await until('VL Tags in Right', async () => (await sidesRead(cdp)).columns[1].rows.some((x) => x.label === TAGS.label))
+  const shownOrder = stored().property_order
+  const shownAt = (await sidesRead(cdp)).columns[1].rows.map((x) => x.label).indexOf(TAGS.label)
   await countSaves()
   await mouseClick(cdp, ctl(`Hide ${TAGS.label}`))
   await settles(async () => stored().hidden_properties.includes(TAGS.id))
   r = await sidesRead(cdp)
-  const atFoot = r.columns[0].hidden.find((x) => x.label === TAGS.label)
-  const orderHidden = stored().property_order
+  const atFoot = r.columns[1].hidden.find((x) => x.label === TAGS.label)
   await paneDrag(cdp, sideRowEl(DUE.label), { x: rightRow(SITE.label).x, y: r.columns[1].rows[0].box.t + 3 })
-  await settles(async () => stored().property_order.indexOf(DUE.id) !== orderHidden.indexOf(DUE.id))
+  await settles(async () => stored().property_order.indexOf(DUE.id) !== shownOrder.indexOf(DUE.id))
   await mouseClick(cdp, ctl(`Show ${TAGS.label}`))
   await settles(async () => !stored().hidden_properties.includes(TAGS.id))
   const back = stored()
   const unmoved = (o) => o.filter((id) => id !== DUE.id)
-  decided('E-5 · E-6', 'a property hidden by its eye rests ghosted at its own column\'s foot, and shown again after another row moved returns to its place and side', !!atFoot && atFoot.dim < 1 && !same(back.property_order, orderHidden) && same(unmoved(back.property_order), unmoved(orderHidden)) && sideOf(back, TAGS.id) === 'left' && (await sidesRead(cdp)).columns[0].rows.some((x) => x.label === TAGS.label) && (await drawnAsStored()).length === 0, show({ atFoot, hiddenOrder: orderHidden, back: back.property_order }))
+  const backRead = await sidesRead(cdp)
+  const backRight = backRead.columns[1].rows.map((x) => x.label)
+  const neighbors = (labels) => labels.filter((l) => l !== DUE.label)
+  decided('E-5 · E-6', 'a property stored off its default side, hidden by its eye, rests ghosted at its own column\'s foot, and shown again after another row moved returns to its place and side', !!atFoot && atFoot.dim < 1 && !same(back.property_order, shownOrder) && same(unmoved(back.property_order), unmoved(shownOrder)) && back.column_sides?.[TAGS.id] === 'right' && neighbors(backRight).indexOf(TAGS.label) === neighbors(paneOf({ ...back, property_order: shownOrder }).right).indexOf(TAGS.label) && shownAt >= 0 && shapeErrors(backRead, back).length === 0 && (await drawnAsStored()).length === 0, show({ atFoot, shownOrder, back: back.property_order, sides: back.column_sides, backRight }))
+  await must('VL Tags stored Left', ask(cdp, 'views:save', COLLECTION, 'collection', stored(), { column_sides: { [TAGS.id]: 'left' } }))
+  await until('VL Tags in Left', async () => (await sidesRead(cdp)).columns[0].rows.some((x) => x.label === TAGS.label))
 
   // E-7 · the keyboard: Space lifts, an arrow steps, Space drops; Escape cancels and the pane stays.
   await countSaves()
@@ -3435,8 +3710,30 @@ async function pane(cdp) {
   r = await sidesRead(cdp)
   await paneDrag(cdp, sideRowEl(TAGS.label), { x: r.columns[1].zone.x, y: r.columns[1].zone.t + 4 })
   const intoEmpty = await settles(async () => viewOnDisk(EMPTY.id)?.column_sides?.[TAGS.id] === 'right')
-  decided('E-7', 'a pane row dropped into the empty Right column lands there', r.columns[1].rows.length === 0 && intoEmpty && same((await sidesRead(cdp)).columns[1].rows.map((x) => x.label), [TAGS.label]), show({ before: r.columns[1].rows.length, sides: viewOnDisk(EMPTY.id)?.column_sides }))
+  decided('E-4 · E-7', 'the empty Right column stands as wide as Left and takes a pane row dropped into it', r.columns[1].rows.length === 0 && near(r.columns[1].w, r.columns[0].w, 0.5) && intoEmpty && same((await sidesRead(cdp)).columns[1].rows.map((x) => x.label), [TAGS.label]), show({ before: r.columns[1].rows.length, widths: r.columns.map((c) => c.w), sides: viewOnDisk(EMPTY.id)?.column_sides }))
   await closeAll(cdp)
+  // E-4 · a name past the cap: both columns at it, the name cut in an ellipsis that scrolls on hover, the widths holding while that row is carried out of its column.
+  const longLabel = 'VL A Property Named Past the Column Cap'
+  const longId = (await must(`add ${longLabel}`, ask(cdp, 'mutate', { op: 'addProperty', containerPath: COLLECTION, draft: { label: longLabel, type: 'text' } }))).created.propertyId
+  TYPE_OF[longId] = 'text'
+  LABEL_OF[longId] = longLabel
+  const LONGPANE = listView(vid('g11panelong'), 'VL Pane Long', { ...flatVL, property_order: ['_title', STAGE.id, longId] })
+  await showOn(cdp, 'collection', LONGPANE)
+  await door(cdp, 'settings', 'Visibility')
+  r = await sidesRead(cdp)
+  const capped = widthErrors(r)
+  const longName = `[...(${sideRowEl(longLabel)}).querySelectorAll('*')].find((e) => !e.children.length && e.textContent.trim() && !e.closest('button'))`
+  const nameAt = await boxOf(cdp, longName)
+  await away(cdp, nameAt)
+  await cdp.send('Input.dispatchMouseEvent', { type: 'mouseWheel', x: nameAt.x, y: nameAt.y, deltaX: 0, deltaY: 120 })
+  await sleep(500)
+  const nameScroll = await cdp.evaluate(`(() => { let e = ${longName}; while (e && !(e.scrollLeft > 0)) e = e.parentElement; return e ? e.scrollLeft : 0 })()`)
+  const longHeld = await paneDrag(cdp, sideRowEl(longLabel), { x: r.columns[0].zone.x, y: r.columns[0].rows.at(-1).box.b - 2 }, async () => { const h = await sidesRead(cdp); await pressKey(cdp, 'Escape'); return h })
+  decided('E-4', 'a property name past the cap stands both columns at 180px, cut in an ellipsis that scrolls on hover, and the widths hold while its row is carried out of its column', r.columns.every((c) => near(c.w, PANE_CAP, 0.5)) && capped.length === 0 && nameScroll > 0 && !!longHeld?.held && longHeld.columns.every((c) => near(c.w, PANE_CAP, 0.5)), show({ capped, widths: r.columns.map((c) => c.w), nameScroll, held: longHeld?.columns.map((c) => c.w) }))
+  await closeAll(cdp)
+  await must(`delete ${longLabel}`, ask(cdp, 'mutate', { op: 'deleteProperty', propertyId: longId }))
+  delete TYPE_OF[longId]
+  delete LABEL_OF[longId]
   // Ten Text properties more than the pane's 440px holds, assigned for this case alone.
   const fillers = []
   for (let i = 1; i <= 10; i++) {
@@ -3449,7 +3746,7 @@ async function pane(cdp) {
   const TALL = listView(vid('g11panetall'), 'VL Pane Tall', { ...flatVL, property_order: [...EVERY_ORDER, ...fillers] })
   await showOn(cdp, 'collection', TALL)
   await door(cdp, 'settings', 'Visibility')
-  await cdp.evaluate(PANE_TO_FOOT)
+  await cdp.evaluate(PANE_TO('foot'))
   await sleep(400)
   r = await sidesRead(cdp)
   const rightLabels = r.columns[1].rows.map((x) => x.label)
@@ -3457,12 +3754,65 @@ async function pane(cdp) {
   await paneDrag(cdp, sideRowEl(last.label), { x: last.box.x, y: r.columns[1].rows.at(-3).box.t + 3 })
   const scrolledOrder = await settles(async () => (await sidesRead(cdp)).columns[1].rows.map((x) => x.label).indexOf(last.label) === rightLabels.length - 3)
   decided('E-7', 'a pane row dragged in a scrolled column reorders it', !!r.scroll && r.scroll.top > 0 && scrolledOrder && shapeErrors(await sidesRead(cdp), viewOnDisk(TALL.id)).length === 0, show({ scroll: r.scroll, rightLabels, after: (await sidesRead(cdp)).columns[1].rows.map((x) => x.label) }))
+  // E-10 · a still hold of over a second over the column's foot, the carried row's own slot scrolled out of view at its head: the slot stays where it opened.
+  await cdp.evaluate(PANE_TO('head'))
+  await sleep(300)
+  r = await sidesRead(cdp)
+  const lifted = r.columns[1].rows[1].box
+  const move = async (x, y) => { await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y, button: 'left', buttons: 1 }); await sleep(16) }
+  await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: lifted.x, y: lifted.y, button: 'none' })
+  await cdp.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: lifted.x, y: lifted.y, button: 'left', buttons: 1, clickCount: 1 })
+  for (let i = 1; i <= 6; i++) await move(lifted.x, lifted.y + i * 4)
+  await cdp.evaluate(PANE_TO('foot'))
+  await sleep(300)
+  const paneAtFoot = await sidesRead(cdp)
+  const footRow = paneAtFoot.columns[1].rows.at(-3).box
+  for (let i = 1; i <= 10; i++) await move(lifted.x, lifted.y + 24 + ((footRow.y - lifted.y - 24) * i) / 10)
+  await sleep(500)
+  const heldStill = await cdp.evaluate(`!!document.querySelector('[data-drag-source], [aria-roledescription=sortable][aria-pressed=true]')`)
+  await cdp.evaluate(ARM_FRAMES(`(${COLUMN_EDGE(1)})?.tops`))
+  await sleep(1300)
+  const still = await frames(cdp)
+  await pressKey(cdp, 'Escape')
+  await cdp.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: lifted.x, y: footRow.y, button: 'left', buttons: 0, clickCount: 1 })
+  await sleep(800)
+  decided('E-10', 'a row held still for over a second over the column\'s foot, its own slot scrolled out of view, keeps its slot where it opened', heldStill && paneAtFoot.scroll?.top > 0 && still.length === 1, show({ heldStill, scroll: paneAtFoot.scroll, readings: still.length, still: still.slice(0, 3) }))
   await closeAll(cdp)
   for (const id of fillers) {
     await must(`delete ${LABEL_OF[id]}`, ask(cdp, 'mutate', { op: 'deleteProperty', propertyId: id }))
     delete TYPE_OF[id]
     delete LABEL_OF[id]
   }
+
+  // E-10 · a View Tile low on its board opens its settings upward: a row carried into Right grows the column, the pane grows up under the pointer, and the slot opens in the gap the pointer is over, where the row lands.
+  const UP = listView(vid('g11paneup'), 'VL Pane Up', { ...flatVL, property_order: ['_title', STAGE.id, TAGS.id, DUE.id, NOTE.id, SITE.id] })
+  await showTile(cdp, [UP])
+  const filler = { id: `01KZVD${'7'.padStart(20, '0')}`, type: 'view', active: 0, display_title: 'VL Filler Board', views: [{ source_id: tileSource, config: { type: 'table', icon: 'view-table', group: { kind: 'flat' }, property_order: ['_title'], hidden_properties: [] } }] }
+  const board = JSON.parse(readRel(TILES))
+  const low = Math.max(200, (await cdp.evaluate('innerHeight')) - 420)
+  writeFileSync(abs(TILES), JSON.stringify({ ...board, layout: { bands: [{ node: { kind: 'tile', id: filler.id, h: low } }, ...board.layout.bands] }, tiles: [filler, ...board.tiles] }, null, 2))
+  await until('the low tile', async () => cdp.evaluate(`[...document.querySelectorAll('[aria-label="View settings"]')].filter((e) => e.getClientRects().length).length === 2`))
+  await sleep(600)
+  const upButton = `[...document.querySelectorAll('[aria-label="View settings"]')].filter((e) => e.getClientRects().length).at(-1)`
+  await mouseClick(cdp, upButton)
+  await until('the tile\'s settings', async () => cdp.evaluate(`!!${portalRow('Visibility')}`))
+  await click(cdp, portalRow('Visibility'))
+  await until('the tile\'s columns', async () => !!(await sidesRead(cdp)).columns)
+  await sleep(500)
+  r = await sidesRead(cdp)
+  const opensUp = await cdp.evaluate(`(${TOP_LAYER}).firstElementChild.getBoundingClientRect().bottom <= (${upButton}).getBoundingClientRect().top + 1`)
+  const [r0, r1] = r.columns[1].rows
+  const gapAt = { x: r0.box.x, y: r0.box.b - 4 }
+  const carriedLabel = firstLeftOf(r)
+  const slotRead = await paneDrag(cdp, sideRowEl(carriedLabel), gapAt, () => cdp.evaluate(COLUMN_EDGE(1)))
+  const tops = slotRead?.tops ?? []
+  const pitch = r1.box.t - r0.box.t
+  const opened = tops.findIndex((t, i) => i > 0 && t - tops[i - 1] > pitch * 1.5)
+  const pointerIn = opened > 0 && gapAt.y > tops[opened - 1] + pitch - 0.5 && gapAt.y < tops[opened] + 0.5
+  const landed = await settles(async () => (await sidesRead(cdp))?.columns?.[1].rows.map((x) => x.label).indexOf(carriedLabel) === opened)
+  decided('E-10', 'a View Tile low on its board opens its settings upward, and a row carried into Right between two rows opens its slot under the pointer and lands at that slot', opensUp && opened === 1 && pointerIn && landed, show({ opensUp, tops, opened, pointer: gapAt.y, landed: (await sidesRead(cdp))?.columns?.[1].rows.map((x) => x.label) }))
+  await closeAll(cdp)
+  await toCollection(cdp, COLLECTION)
 
   // The editor door: a drag across, the eye, and Escape on a lift leaving the editor open.
   await showOn(cdp, 'collection', V)
@@ -3529,6 +3879,41 @@ async function switches(cdp) {
   const tableLayout = await cdp.evaluate(`!!(${switchEl('Title Icons')})`)
   decided('F-2', 'Table\'s Title Icons stays in Layout and off the view editor\'s root', !tableRoot && tableLayout, show({ tableRoot, tableLayout }))
   await closeAll(cdp)
+
+  // B-5 · a List draws no line between rows and offers no switch for one, where a Table does both.
+  const BORDERS = `[...document.querySelectorAll('${DRIFT.shell} .data-row[data-rid]')].filter((r) => r.getClientRects().length && !r.closest('[inert]')).flatMap((r) => [r, ...r.querySelectorAll('.data-cell')]).reduce((n, e) => { const cs = getComputedStyle(e); return n + ['Top', 'Bottom'].reduce((m, k) => m + (cs['border' + k + 'Style'] === 'none' ? 0 : parseFloat(cs['border' + k + 'Width'])), 0) }, 0)`
+  const SWITCH_LABELS = `[...document.querySelectorAll('[role=switch][aria-label]')].filter((e) => e.getClientRects().length && !e.closest('[inert]')).map((e) => e.getAttribute('aria-label'))`
+  const lines = {}
+  for (const [kind, make] of [['list', listView], ['table', tableView]]) {
+    await showOn(cdp, 'collection', make(vid(`g11lines${kind}`), `VL Lines ${kind}`, { property_order: LIST_ORDER, hide_borders: false }))
+    lines[kind] = { borders: await cdp.evaluate(BORDERS) }
+    await door(cdp, 'settings', 'Layout')
+    lines[kind].switches = await cdp.evaluate(SWITCH_LABELS)
+    await closeAll(cdp)
+  }
+  decided('B-5', 'a List draws no line between its rows, its Hide Borders stored off, and its Layout offers no switch for one, where a Table draws them and offers Hide Borders', lines.list.borders === 0 && !lines.list.switches.includes('Hide Borders') && lines.table.borders > 0 && lines.table.switches.includes('Hide Borders'), show(lines))
+
+  // G-1 · G-2 · each way a nested band ends its rail, wide and with its last row wrapped: a row, an open band ending on a row, a closed band, and the known uncovered ending, an open band ending on a closed one, measured.
+  const deeper = `${DEEP_SET}/VL Deeper`
+  await mutate(cdp, { op: 'createContainer', id: containerId(), parentPath: DEEP_SET, kind: 'set', name: 'VL Deeper' })
+  await mutate(cdp, { op: 'createPage', id: mintPageId(), parentPath: deeper, name: 'VL Deepest', seeds: {} })
+  await showOn(cdp, 'collection', listView(vid('g11railends'), 'VL Rail Ends', { property_order: LIST_ORDER, wrap_rows: true }))
+  await until('VL Deeper\'s band', async () => cdp.evaluate(`!!${head('VL Deeper')}`))
+  const ends = {}
+  for (const [label, w] of [['open', null], ['open, wrapped', NARROW]]) {
+    await viewport(cdp, w)
+    ends[label] = await cdp.evaluate(RAILS)
+  }
+  await viewport(cdp, null)
+  await mouseClick(cdp, chevronOf(head('VL Deeper')))
+  await until('VL Deeper closed', async () => (await expanded(cdp, head('VL Deeper'))) === 'false', 3000)
+  ends.closed = await cdp.evaluate(RAILS)
+  await mouseClick(cdp, chevronOf(head('VL Deeper')))
+  await mutate(cdp, { op: 'delete', path: deeper, kind: 'set' })
+  const seen = [...new Set(Object.values(ends).flat().filter((b) => b.drawn).map((b) => b.ending))]
+  const endErrors = Object.fromEntries(Object.entries(ends).map(([k, r]) => [k, railErrors(r, true)]))
+  decided('G-1 · G-2', 'a nested band\'s rail ends its outline gap above its last member when that is a row, an open band ending on a row, or a closed band, wide and with the last row wrapped', ['a row', 'an open band ending on a row', 'a closed or empty band'].every((e) => seen.includes(e)) && Object.values(endErrors).every((e) => e.length === 0), show({ seen, endErrors }))
+  note('G-1', 'a rail whose band\'s last member is an open band ending on a closed band: its bottom against its last member\'s less the outline gap, in px', ends.closed.filter((b) => b.ending === 'an open band ending on a closed band').map((b) => [b.label, Math.round((b.bottom - b.wantBottom) * 100) / 100]))
 }
 
 const TILE = (label) => visible(`[...document.querySelectorAll('button[aria-label="${label}"]')]`)
@@ -3566,7 +3951,7 @@ async function kinds(cdp) {
     const extra = to === 'list' ? structureErrors(stored, await readList(cdp)) : to === 'table' ? (await headTexts(cdp)).filter((h) => h === NOTE.label) : []
     const rows = to === 'list' ? (await readList(cdp)).rows.filter((r) => !wrapped(r)).map((r) => r.row.h) : []
     const shorter = to !== 'list' || (rows.length > 0 && Math.max(...rows) < Math.min(...tableRows) - 1)
-    decided('A-1 · D-1 · E-6', `the ${which === 'settings' ? 'Settings door\'s' : 'editor door\'s'} ${to} tile switches the view to ${to}, its order, sides, and hidden set kept${to === 'list' ? ', each row drawn by them and shorter than the Table row it replaced' : ''}`, typed && drawsIt && same(kept(stored), original) && extra.length === 0 && shorter, show({ typed, drawsIt, kept: kept(stored), extra, rows: rows.slice(0, 3), tableRows: tableRows.slice(0, 3) }))
+    decided('A-1 · I-4', `the ${which === 'settings' ? 'Settings door\'s' : 'editor door\'s'} ${to} tile switches the view to ${to}, its order, sides, and hidden set kept${to === 'list' ? ', each row drawn by them and shorter than the Table row it replaced' : ''}`, typed && drawsIt && same(kept(stored), original) && extra.length === 0 && shorter, show({ typed, drawsIt, kept: kept(stored), extra, rows: rows.slice(0, 3), tableRows: tableRows.slice(0, 3) }))
     if (to === 'table') tableRows = await cdp.evaluate(`${ROWS}.filter((r) => r.getClientRects().length && !r.closest('[inert]')).map((r) => r.getBoundingClientRect().height)`)
   }
   await countSaves()
@@ -3576,28 +3961,57 @@ async function kinds(cdp) {
   decided('A-3', 'the Gallery tile on a List writes nothing and leaves it a List', (await saves()) === 0 && viewOnDisk(start.id)?.type === 'list', show({ saves: await saves(), type: viewOnDisk(start.id)?.type }))
   await inMain(`(() => { const g = globalThis.__vdGate; if (g) g.rules = g.rules.filter((r) => !r.counts) })()`)
   await closeAll(cdp)
+  await showView(cdp, { ...listView(vid('g11gallery'), 'VL Gallery', flatVL), type: 'gallery' })
+  const drawn = await cdp.evaluate(`Object.fromEntries(Object.entries(${show(DRAWS)}).map(([k, sel]) => [k, !!${visible('[...document.querySelectorAll(sel)]')}]))`)
+  decided('A-3', 'a view saved as a Gallery, which has no renderer, draws as a Table', same(drawn, { list: false, table: true, cards: false }), show(drawn))
+
+  // G-1 · H-1 · a Table view of Sets switched to a List draws with Outlines on and Wrap Rows off.
+  const FRESH = tableView(vid('g11fresh'), 'VL Fresh', { property_order: LIST_ORDER })
+  await showView(cdp, FRESH)
+  await door(cdp, 'settings', 'Layout')
+  await mouseClick(cdp, TILE('List'))
+  await settles(async () => viewOnDisk(FRESH.id)?.type === 'list')
+  await closeAll(cdp)
+  const fresh = { stored: viewOnDisk(FRESH.id), rails: await railsDrawn(cdp), crowded: wrapped(rowIn(await readList(cdp), 'VL Crowded')) }
+  await door(cdp, 'settings', 'Layout')
+  fresh.switches = await cdp.evaluate(`({ outlines: (${switchEl('Outlines')})?.getAttribute('aria-checked'), wrap: (${switchEl('Wrap Rows')})?.getAttribute('aria-checked') })`)
+  await closeAll(cdp)
+  decided('G-1 · H-1', 'a view newly switched to a List draws its rails, Outlines on, and doesn\'t wrap its crowded row, Wrap Rows off', fresh.rails > 0 && !fresh.crowded && fresh.switches.outlines === 'true' && fresh.switches.wrap === 'false' && !fresh.stored.hide_outlines && !fresh.stored.wrap_rows, show(fresh))
+
+  // D-1 · a property's side is its own setting: a Table alignment moves nothing on a List, and a side aligns nothing on a Table.
+  const ALIGNED = listView(vid('g11aligned'), 'VL Aligned', { ...flatVL, column_alignments: { [STAGE.id]: 'right', [DUE.id]: 'left' }, column_sides: { [COUNT.id]: 'left' } })
+  await showOn(cdp, 'collection', ALIGNED)
+  const sides = structureErrors(ALIGNED, await readList(cdp))
+  const ALIGN = (id) => `(() => { const c = (${tableRowOf('VL Crowded')}).querySelectorAll('.data-cell')[${LIST_ORDER.indexOf(id)}]; const cs = getComputedStyle(c); const inner = c.firstElementChild ? getComputedStyle(c.firstElementChild) : cs; return [cs.textAlign, cs.justifyContent, inner.textAlign, inner.justifyContent].join(' ') })()`
+  const aligns = {}
+  for (const [key, extra] of [['sided', {}], ['unsided', { column_sides: {} }]]) {
+    await showView(cdp, { ...ALIGNED, ...extra, id: vid(`g11aligned${key}`), name: `VL Aligned ${key}`, type: 'table' })
+    aligns[key] = { stage: await cdp.evaluate(ALIGN(STAGE.id)), count: await cdp.evaluate(ALIGN(COUNT.id)) }
+  }
+  decided('D-1', 'a List draws each property on its side whatever its Table alignment, and a Table aligns VD Stage right by its alignment and VL Count alike whether or not the List stores it Left', sides.length === 0 && /right|end/.test(aligns.sided.stage) && same(aligns.sided, aligns.unsided), show({ sides, aligns }))
 }
 
 // ── Group 11 · the selection, the spacing between groups, and the banner line ─
 
-/** The selected row of the view parked behind the page it lists, against an unselected one: each one's fill and its lead cell's. */
-const SELECTED = (shell) => `(() => {
-  const host = [...document.querySelectorAll('.detail-host.is-parked')].find((h) => h.querySelector('${shell}') && [...h.querySelectorAll('.detail-title-text')].some((t) => t.textContent.trim() === ${JSON.stringify(COLLECTION)}))
-  const rows = [...(host?.querySelectorAll('${shell} .data-row[data-rid]') ?? [])]
-  const sel = rows.filter((r) => r.classList.contains('selected'))
-  const other = rows.find((r) => !r.classList.contains('selected'))
-  const fill = (e) => e && getComputedStyle(e).backgroundColor
-  return { count: sel.length, rid: sel[0]?.dataset.rid ?? null, fill: fill(sel[0]), lead: fill(sel[0]?.querySelector('.cell-lead')), other: fill(other), width: sel[0] && Math.round(sel[0].getBoundingClientRect().width), rowWidth: other && Math.round(other.getBoundingClientRect().width) }
-})()`
+/** The rows `rids` names marked selected, as the app marks the page it selects; a re-render on hover keeps the mark, a reload drops it. */
+const SELECT = (rids) => `(() => { for (const r of document.querySelectorAll('.data-row[data-rid]')) r.classList.toggle('selected', !r.closest('[inert]') && ${JSON.stringify(rids)}.includes(r.dataset.rid)); return true })()`
+/** A row's own fill and width, and the theme's text-selection color resolved on it. */
+const FILL = (expr) => `(() => { const r = (${expr}); const probe = document.createElement('span'); probe.style.background = 'var(--text-selection)'; r.appendChild(probe); const selection = getComputedStyle(probe).backgroundColor; probe.remove(); return { fill: getComputedStyle(r).backgroundColor, w: Math.round(r.getBoundingClientRect().width * 10) / 10, selection } })()`
 async function closeTab(cdp, title) {
   await hover(cdp, tabEl(title), 300)
   await mouseClick(cdp, `(${tabEl(title)}).querySelector('[aria-label="Close Tab"]')`)
   await until(`${title}'s tab closed`, async () => !(await tabTitles(cdp)).includes(title), 4000)
 }
-/** Every band head and row drawn against what stands above it: the gap from the row or head before it, in the view's own pixels. */
-const GAPS = `(() => {
-  const els = [...document.querySelectorAll('.data-row[data-rid], .group-band-head')].filter((e) => e.getClientRects().length && !e.closest('[inert]') && e.getBoundingClientRect().height > 0)
-  return els.slice(1).map((e, i) => [e.getAttribute('aria-label') ?? e.dataset.rid, Math.round((e.getBoundingClientRect().top - els[i].getBoundingClientRect().bottom) / (e.currentCSSZoom ?? 1) * 100) / 100])
+/** The room that reads between each band head or row and the one above it, and from the last to the view's end: content to content, inside a head's and a row's lead cell's padding, in the view's own pixels. */
+const ROOMS = `(() => {
+  const shell = ${visible(`[...document.querySelectorAll('.table-shell')]`)}
+  const inner = (e) => { const b = e.getBoundingClientRect(), cs = getComputedStyle(e), z = e.currentCSSZoom ?? 1; return { t: b.top + parseFloat(cs.paddingTop) * z, b: b.bottom - parseFloat(cs.paddingBottom) * z, z } }
+  const kind = (e) => (e.classList.contains('group-band-head') ? 'head' : e.closest('.band-tail') ? 'tail' : 'row')
+  const els = [...shell.querySelectorAll('.data-row[data-rid], .group-band-head')].filter((e) => e.getClientRects().length && e.getBoundingClientRect().height > 0)
+  const items = els.map((e) => ({ id: e.getAttribute('aria-label') ?? e.dataset.rid, kind: kind(e), ...inner(kind(e) === 'head' ? e : e.querySelector('.data-cell')) }))
+  const room = (a, b) => Math.round((b - a) / items[0].z * 100) / 100
+  const end = { id: 'end', kind: 'end', t: inner(shell.querySelector('.table-grid')).b }
+  return [...items.slice(1), end].map((e, i) => ({ id: e.id, pair: items[i].kind + '>' + e.kind, room: room(items[i].b, e.t) }))
 })()`
 const SPACINGS = [
   ['Sets, open and nested', {}, []],
@@ -3610,26 +4024,25 @@ const SPACINGS = [
 const LINE = (cls) => `(() => { const e = ${visible(`[...document.querySelectorAll('${cls}')]`)}; if (!e) return null; const b = e.getBoundingClientRect(); return { l: Math.round(b.left * 10) / 10, r: Math.round(b.right * 10) / 10, border: getComputedStyle(e).borderBottomWidth } })()`
 
 async function frame(cdp) {
-  // B-13 · the selected row's whole-row highlight, read on the tab parked behind the page it lists.
-  const selected = {}
-  for (const kind of ['list', 'table']) {
-    const v = (kind === 'list' ? listView : tableView)(vid(`g11select${kind}`), `VL Select ${kind}`, { ...flatVL, property_order: LIST_ORDER })
-    await showOn(cdp, 'collection', v)
-    await listPages(cdp)
-    const titleEl = kind === 'list' ? `(${listRow('VL Both')}).querySelector('.cell-title-text')` : `(${tableRowOf('VL Both')}).querySelector('.cell-title-text')`
-    await mouseClick(cdp, titleEl, { modifiers: META, settle: 300 })
-    await settles(async () => (await activeTab(cdp)) === 'VL Both', 4000)
-    await sleep(500)
-    selected[kind] = { tab: await activeTab(cdp), ...(await cdp.evaluate(SELECTED(kind === 'list' ? '.list-view' : '.table-shell:not(.list-view)'))) }
-    await closeTab(cdp, 'VL Both')
-    await toCollection(cdp, COLLECTION)
+  // B-13 · a List row whose page is the selection draws no highlight, at rest and under the pointer, where a Table row draws the text-selection fill across its width. The rows are marked as the app marks the selection, since nothing in the main pane draws a selected row: a pressed page replaces the view and a Command-press parks it.
+  const fills = {}
+  for (const [kind, make, rowOf] of [['list', listView, listRow], ['table', tableView, tableRowOf]]) {
+    await showOn(cdp, 'collection', make(vid(`g11select${kind}`), `VL Select ${kind}`, { ...flatVL, property_order: LIST_ORDER }))
+    await cdp.evaluate(SELECT([ridOf('VL Both')]))
+    await away(cdp)
+    fills[kind] = { selected: await cdp.evaluate(FILL(rowOf('VL Both'))), other: await cdp.evaluate(FILL(rowOf('VL Left'))) }
+    await hover(cdp, rowOf('VL Both'), 400)
+    fills[kind].selectedHover = await cdp.evaluate(FILL(rowOf('VL Both')))
+    await hover(cdp, rowOf('VL Left'), 400)
+    fills[kind].otherHover = await cdp.evaluate(FILL(rowOf('VL Left')))
+    await away(cdp)
   }
-  const L = selected.list, T = selected.table
-  decided('B-13', 'a List row whose page is the selection highlights whole, in a Table row\'s fill, read on the tab parked behind the page', L.tab === 'VL Both' && L.count === 1 && L.rid === ridOf('VL Both') && !!L.fill && L.fill === T.fill && L.fill !== L.other && L.lead === 'rgba(0, 0, 0, 0)' && L.width === L.rowWidth, show(selected))
+  const { list: L, table: T } = fills
+  decided('B-13', 'a selected List row draws no highlight, its fill an unselected row\'s at rest and under the pointer, where a selected Table row draws the text-selection fill across its width', L.selected.fill === L.other.fill && L.selectedHover.fill === L.otherHover.fill && L.otherHover.fill !== L.other.fill && T.selected.fill === T.selected.selection && T.selected.fill !== T.other.fill && T.selected.w === T.other.w, show(fills))
 
-  // B-15 · the spacing between groups is a Table's, open, closed, and nested.
+  // B-15 · the room that reads between a List's groups is a Table's: from a band's last row to the next heading, between headings, and to the view's end; a heading to its first row stays compact (stated), and the room before the ungrouped tail rows is measured.
   for (const [name, grouping, closed] of SPACINGS) {
-    const gaps = {}
+    const rooms = {}
     for (const kind of ['list', 'table']) {
       const v = (kind === 'list' ? listView : tableView)(vid(`g11gap${kind}${SPACINGS.findIndex((x) => x[0] === name)}`), `VL Gaps ${kind}`, { ...grouping, property_order: LIST_ORDER })
       await showOn(cdp, 'collection', v)
@@ -3638,11 +4051,15 @@ async function frame(cdp) {
         await until(`${label} closed`, async () => (await expanded(cdp, head(label))) === 'false', 3000)
       }
       await sleep(400)
-      gaps[kind] = await cdp.evaluate(GAPS)
+      rooms[kind] = await cdp.evaluate(ROOMS)
       if (kind === 'list' && closed.length === 2) await shot(cdp, 'g11-closed-sets')
     }
-    const off = gaps.list.filter(([label, g], i) => gaps.table[i]?.[0] !== label || Math.abs(gaps.table[i][1] - g) > 0.5)
-    decided('B-15', `the spacing above each band of a List with ${name} equals a Table's`, gaps.list.some(([, g]) => g > 0) && gaps.list.length === gaps.table.length && off.length === 0, show(gaps))
+    const pairs = rooms.list.map((l, i) => ({ ...l, table: rooms.table[i]?.id === l.id ? rooms.table[i].room : null }))
+    const kept = pairs.filter((p) => ['row>head', 'head>head', 'row>end'].includes(p.pair))
+    const off = kept.filter((p) => p.table === null || Math.abs(p.room - p.table) > 0.5)
+    const compact = pairs.filter((p) => p.pair === 'head>row' && !(p.room < p.table))
+    decided('B-15', `a List with ${name} reads a Table's room from a band's last row to the next heading, between headings, and to its end, and a heading's own room to its first row stays under it (stated)`, rooms.list.length === rooms.table.length && kept.some((p) => p.room > 0) && off.length === 0 && compact.length === 0, show({ off, compact, kept }))
+    note('B-15', `${name}: the room before the ungrouped tail rows, List against Table`, pairs.filter((p) => (p.pair.endsWith('>tail') && !p.pair.startsWith('tail')) || p.pair === 'tail>end').map((p) => [p.pair, p.room, p.table]))
   }
 
   // B-14 · the line under a bannerless header is inset over a List as over Cards; under a banner it spans alike over every kind (stated).
@@ -3677,6 +4094,23 @@ async function shared(cdp) {
   await closeAll(cdp)
   const heads = await headTexts(cdp)
   decided('E-6', 'a hidden Table column shown again after another column was dragged past it returns to its own place', same(heads.slice(1), [DONE.label, DUE.label, STAGE.label]), show({ heads, order: viewOnDisk(T.id)?.property_order }))
+
+  // E-6 · the same on Cards, its property reordered through its Visibility pane's list.
+  const CE = cardsView(vid('g11hiddencards'), 'VL Hidden Cards', { property_order: ['_title', STAGE.id, DONE.id, DUE.id] })
+  await showView(cdp, CE)
+  await door(cdp, 'settings', 'Visibility')
+  const lineRow = (label) => `${DROPDOWN_ROWS}.find((r) => r.getClientRects().length && r.textContent.trim() === ${JSON.stringify(label)})`
+  await mouseClick(cdp, ctl(`Hide ${DONE.label}`))
+  await settles(async () => (viewOnDisk(CE.id)?.hidden_properties ?? []).includes(DONE.id))
+  await sleep(400)
+  const dueRow = await boxOf(cdp, lineRow(DUE.label))
+  await dragPoints(cdp, await boxOf(cdp, lineRow(STAGE.label)), { x: dueRow.x, y: dueRow.bottom - 3 })
+  await settles(async () => before(viewOnDisk(CE.id).property_order, DUE.id, STAGE.id))
+  await mouseClick(cdp, ctl(`Show ${DONE.label}`))
+  await settles(async () => !(viewOnDisk(CE.id)?.hidden_properties ?? []).includes(DONE.id))
+  await closeAll(cdp)
+  const cardOrder = await cdp.evaluate(`[...(${card('Page C')}).querySelectorAll('.card-prop-label')].map((e) => e.textContent.trim())`)
+  decided('E-6', 'a hidden Cards property shown again after another was dragged past it in Visibility returns to its own place', !(viewOnDisk(CE.id)?.hidden_properties ?? []).includes(DONE.id) && same(viewOnDisk(CE.id)?.property_order, ['_title', DONE.id, DUE.id, STAGE.id]) && same(cardOrder.filter((l) => [DONE.label, DUE.label, STAGE.label].includes(l)), [DONE.label, DUE.label, STAGE.label].filter((l) => cardOrder.includes(l))), show({ order: viewOnDisk(CE.id)?.property_order, cardOrder }))
 
   // C-4 · a Link's Format on a card and in a Table cell, and none in the Properties panel.
   const formatIn = async (expr) => {
@@ -3717,20 +4151,21 @@ async function shared(cdp) {
   }
   const eight = await lift(8)
   const twenty = await lift(20)
-  decided('I-2', 'a value in the Properties panel pressed and moved 8px lifts nothing, where 20px lifts its row', eight === false && twenty === true, show({ eight, twenty }))
+  reg('11', 'a value in the Properties panel pressed and moved 8px lifts nothing, where 20px lifts its row', eight === false && twenty === true, show({ eight, twenty }))
   if (await cdp.evaluate(`!!document.querySelector('[data-property-row]')`)) await mouseClick(cdp, SETTINGS_BUTTON)
   await toCollection(cdp, COLLECTION)
 
-  // I-3 · a Table Set band's + still creates in its Set; H-3 · a Table row's grip at its row's center, plain and holding a chip.
+  // I-3 · a Table Set band's + still creates in its Set; H-3 · a Table row's grip at its row's center, the List's first line kept out of it.
   await showView(cdp, tableView(vid('g11tableband'), 'VL Table Band'))
   const band = await birth(cdp, async () => {
     await hover(cdp, head('VL Rows'), 400)
     await mouseClick(cdp, `(${head('VL Rows')}).querySelector('${NEW_IN_GROUP}')`)
   }, 'VL Table Band Page')
-  reg('11', 'a Table Set band\'s + still names a newborn in its Set', band.first?.field && band.landed && band.at === `${ROWS_SET}/VL Table Band Page.md`, show(band))
+  const tableBandLast = (JSON.parse(readRel(`${ROWS_SET}/_pageset.json`)).page_order ?? []).at(-1)
+  reg('11', 'a Table Set band\'s + still names a newborn last in its Set', band.first?.field && band.landed && band.at === `${ROWS_SET}/VL Table Band Page.md` && tableBandLast === band.first?.rid, show({ band, last: tableBandLast }))
   await trashPage(cdp, band.at)
-  const grips = await cdp.evaluate(`[${['VL Bare', 'Page B'].map((t) => `(() => { const r = ${tableRowOf(t)}; const g = r.querySelector('.row-grip').getBoundingClientRect(); const b = r.querySelector('.cell-lead').getBoundingClientRect(); return { off: Math.abs((g.top + g.height / 2) - (b.top + b.height / 2)), chip: !!r.querySelector('.cell-chips') } })()`).join(', ')}]`)
-  reg('11', 'a Table row\'s grip sits at its lead cell\'s center, on a plain row and on one holding a chip', grips.every((d) => d.off <= 0.1) && grips.some((d) => d.chip), show(grips))
+  const grip = await cdp.evaluate(`(() => { const r = ${tableRowOf('VL Bare')}; const g = r.querySelector('.row-grip').getBoundingClientRect(); const b = r.querySelector('.cell-lead').getBoundingClientRect(); return { off: Math.abs((g.top + g.height / 2) - (b.top + b.height / 2)), firstLine: getComputedStyle(r).getPropertyValue('--row-first-line') } })()`)
+  reg('11', 'a Table row\'s grip sits at its lead cell\'s center, List\'s first line unset on it', grip.off <= 0.1 && grip.firstLine === '', show(grip))
 
   // The drag spill List's pane reads leaves Cards' and the tab bar's drags as they were.
   // A card carried into another Set's band: once where the band's cards leave room on its last row, and once, at a window narrowed until Set Alpha's three cards fill their row, where they don't.
@@ -3755,17 +4190,31 @@ async function shared(cdp) {
   await viewport(cdp, null)
   const arms = [roomy, full].map((r) => !!r.grid && (r.grid.spill > 0) === (r.grid.cards % r.grid.columns === 0) && r.landed)
   reg('11', 'a card carried into another Set\'s band spills that band a row only when its cards fill their last row, and lands in its Set', arms.every(Boolean) && roomy.grid.spill === 0 && full.grid.spill > 0, show({ roomy, full }))
-  await mouseClick(cdp, `(${card('Page A')}).querySelector('.card-title, [class*="title"]') ?? ${card('Page A')}`, { modifiers: META, settle: 300 })
-  await until('Page A\'s tab', async () => (await tabTitles(cdp)).includes('Page A'), 4000)
-  const tabsBefore = await tabTitles(cdp)
-  const tA = await boxOf(cdp, tabEl('Page A'))
-  const tC = await boxOf(cdp, tabEl(COLLECTION))
-  let tabSpill
-  await dragPoints(cdp, tA, { x: tC.left + 4, y: tC.y }, { steps: 16, held: async () => { await sleep(300); tabSpill = await cdp.evaluate(`[...document.querySelectorAll('*')].some((e) => e.querySelector?.('[role=tab]') && e.style.getPropertyValue('--drag-spill'))`) } })
-  const tabsAfter = await tabTitles(cdp)
-  reg('11', 'a tab dragged before another reorders the tab bar, which takes no spill', tabSpill === false && tabsAfter.indexOf('Page A') < tabsAfter.indexOf(COLLECTION) && tabsBefore.indexOf('Page A') > tabsBefore.indexOf(COLLECTION), show({ tabSpill, tabsBefore, tabsAfter }))
-  await closeTab(cdp, 'Page A')
+  // The tab bar, an x-axis zone, takes no spill when a foreign item is carried onto it: a nav search's result, its tab not yet open.
+  for (const t of (await tabTitles(cdp)).filter((x) => x !== COLLECTION)) await closeTab(cdp, t)
+  await mouseClick(cdp, `[...document.querySelectorAll('[aria-label="New Tab"]')].find((e) => e.getClientRects().length && !e.closest('[inert]'))`)
+  await until('the nav view', async () => cdp.evaluate(`[...document.querySelectorAll('input.nav-view-search')].some((e) => e.getClientRects().length && !e.closest('[inert]'))`))
+  await cdp.evaluate(`[...document.querySelectorAll('input.nav-view-search')].find((e) => e.getClientRects().length && !e.closest('[inert]')).focus()`)
+  await typeText(cdp, 'Page')
+  await until('the search\'s results', async () => cdp.evaluate(`!!${navRow('Page A')}`))
+  await sleep(400)
+  const { carried, before, opened } = await navCarry(cdp)
+  reg('11', 'a nav search\'s result carried onto the tab bar spills no room there, and opens its tab', carried?.held && carried.spill === false && opened, show({ carried, before, after: await tabTitles(cdp) }))
+  for (const t of (await tabTitles(cdp)).filter((x) => x !== COLLECTION)) await closeTab(cdp, t)
   await toCollection(cdp, COLLECTION)
+
+  // H-3 · a Trash row's check at its lead cell's center, and a List band's chevron at its head's center under wrapped rows.
+  await openSettings(cdp, 'Trash')
+  await until('the Trash rows', async () => cdp.evaluate(`!!document.querySelector('.trash-frame .data-row')`))
+  await hover(cdp, `document.querySelector('.trash-frame .data-row')`, 400)
+  const check = await cdp.evaluate(`(() => { const r = document.querySelector('.trash-frame .data-row'); const c = r.querySelector('.row-check').getBoundingClientRect(); const b = r.querySelector('.cell-lead').getBoundingClientRect(); return { off: Math.abs((c.top + c.height / 2) - (b.top + b.height / 2)), h: b.height } })()`)
+  await closeSettings(cdp)
+  await showOn(cdp, 'collection', listView(vid('g11chevron'), 'VL Chevron', { property_order: LIST_ORDER, wrap_rows: true }))
+  await viewport(cdp, NARROW)
+  const chevrons = await cdp.evaluate(`${HEADS}.map((h) => { const c = h.querySelector('${DRIFT.chevron}, .row-chevron').getBoundingClientRect(); const b = h.getBoundingClientRect(); return Math.round(Math.abs((c.top + c.height / 2) - (b.top + b.height / 2)) * 100) / 100 })`)
+  const anyWrapped = (await readList(cdp)).rows.some(wrapped)
+  await viewport(cdp, null)
+  decided('H-3', 'a Trash row\'s check sits at its lead cell\'s center, and every List band\'s chevron at its head\'s center while rows wrap', check.off <= 0.5 && chevrons.length > 0 && chevrons.every((d) => d <= 0.75) && anyWrapped, show({ check, chevrons, anyWrapped }))
 }
 
 async function group11(cdp) {
