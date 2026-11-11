@@ -378,6 +378,7 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
 
   const atHome = (s: Session, x: number, y: number): boolean => {
     const home = s.home
+    // A carried item whose own zone is scrolled or clipped wholly out of view has no home, so it's loose wherever it is.
     if (!home) return s.carried.size === 0
     if (s.axis === 'x') return y >= home.top - BREAKOUT && y <= home.top + home.height + BREAKOUT
     const across = x >= home.left - BREAKOUT && x <= home.left + home.width + BREAKOUT
