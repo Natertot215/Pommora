@@ -183,3 +183,7 @@ have the columns expand to that max width; but not use it when there arent prope
 They should stay equal to each other. 
 No, it shouldn't; it should be scaled accordingly as compact, which it already should be.
 I can't reproduce it, so either force it, or figure out how to implement it where the row gets highlighted in accordance to it's indentation level with 2px border-radius
+
+**Mid-Session, 11-11-2026 (shown the selected row's highlight at each indentation level):**
+
+Nevermind, just remove the selected row highlighting for now

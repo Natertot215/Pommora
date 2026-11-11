@@ -53,7 +53,6 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
 - **B-10 [INFERRED]:** The add control should keep its slot while hidden, so nothing shifts on hover, and should be absent from a row with nothing left to add.
 - **B-11 [CONFIRMED]:** Title should be an item of the left group that can move within it, so a property's values can sit before the title on a row, as a Table column can precede Title. Title always shows.
 - **B-12 [CONFIRMED]:** A List row should be compact, shorter than a Table row.
-- **B-13 [CONFIRMED]:** A List row whose page is the selection should highlight from its own indentation level to the row's end, with a 2px corner radius.
 - **B-14 [CONFIRMED]:** The line under the page header should be inset over a List as it is over Cards, not bled edge to edge as over a Table.
 - **B-15 [CONFIRMED]:** The spacing between a List's groups should be a Table's: an open group keeps extra room between its last row and the next band, and closed groups sit evenly. A List's compact rows shouldn't shrink it: the room from the last row's content to the next band's heading should be a Table's. The room from a band's heading to its first row stays compact.
 - **B-16 [CONFIRMED]:** A List row's title should draw in the emphasized text a card's title uses, so it stands out from the values beside it.
