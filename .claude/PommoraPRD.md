@@ -100,7 +100,7 @@ The main process is the sole filesystem owner; the renderer never touches Node. 
 
 **Foreign data is preserved.** Frontmatter and sidecar keys Pommora doesn't recognize, a key that differs from a property's only in case included, are carried through untouched on every write — and the page writer preserves YAML comments too, so opening a folder that's also an Obsidian vault adds only an `ID` key to a note and leaves the rest of it byte-identical until the user edits it.
 
-**The database is off the read path and holds no content.** Reads are a single filesystem walk; nothing user-created depends on a database being present — not a hard-locked decision, and open to reconsideration. A device-local database carries per-machine chrome — folds, view selection, tabs — so losing it costs a machine its arrangement and never a Nexus its contents. Deletions move to a recoverable in-Nexus trash that mirrors the folder chain the item came from, so the layout itself records where an item lived, and a settings window can display and restore them.
+**The database is off the read path and holds no content.** Reads are a single filesystem walk; nothing user-created depends on a database being present — not a hard-locked decision, and open to reconsideration. A device-local database carries per-machine chrome — folds and tabs — so losing it costs a machine its arrangement and never a Nexus its contents. Deletions move to a recoverable in-Nexus trash that mirrors the folder chain the item came from, so the layout itself records where an item lived, and a settings window can display and restore them.
 
 #### Pages
 
@@ -146,7 +146,7 @@ Property **definitions** live in one nexus-wide registry (`.nexus/properties.jso
 
 #### Views
 
-A view is a saved presentation of a Collection's (or depth-1 Set's) Pages; each container's sidecar holds an ordered list of saved views and the active one. A view records its renderer type, property layout (column order plus a hidden set), and its sort / filter / group config, fed by one pure pipeline: **fetch → filter → group → sort**.
+A view is a saved presentation of a Collection's (or depth-1 Set's) Pages; each container's sidecar holds an ordered list of saved views and the active one. A view records its renderer type, property layout (column order, a hidden set, and each property's side in a List), and its sort / filter / group config, fed by one pure pipeline: **fetch → filter → group → sort**.
 
 The registered view types are **Table**, **Cards**, **List**, **Gallery**, **Calendar**, and **Timeline** — Table, Cards, and List carry renderers; the rest are registered types with none. Views also embed as tiles in block-host surfaces — a **Linked View** referencing a saved view, or a **Custom View** with embed-owned, nexus-wide config. Two capabilities go beyond the baseline: multi-key sort, and recursive AND/OR filter groups.
 
