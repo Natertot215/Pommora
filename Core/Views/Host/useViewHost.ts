@@ -80,7 +80,7 @@ export function useViewHost(source: CollectionNode | SetNode) {
       rows,
     }
   }, [painted, effectiveValues, pageMetadata, view, schema, plan, manualOrder, identity])
-  // Every shown column's style, resolved once per pass; the table, the cards, and the pickers read it.
+  // Every shown column's style, resolved once per pass; the table, the cards, the list, and the pickers read it.
   const styleById = useMemo(
     () => new Map(columns.map((c) => [c.id, styleFor(c, view, forms)])),
     [columns, view, forms],
