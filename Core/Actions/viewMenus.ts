@@ -2,7 +2,7 @@ import { type ActionItem, joinGroups } from './menuModel'
 import type { ViewStyle } from '../Nexus/schemas'
 import { shownLabel } from './toggleLabels'
 import { popMenu } from './menuActions'
-import type { SavedView, ViewPatch } from '../Views/views'
+import type { SavedView, Side, ViewPatch } from '../Views/views'
 import { chooseColor, chooseIcon } from '../Assets/IdentityChoice'
 
 type ViewStyleAction = 'style-dropdown' | 'style-toolbar'
@@ -94,6 +94,10 @@ const itemRows = (ctx: ViewRowMenuContext, glyphs = false): ActionItem<ViewRowAc
 
 export const viewItemMenuItems = (ctx: ViewRowMenuContext): ActionItem<ViewRowAction>[] =>
   joinGroups(itemRows(ctx, true).map((row) => [row]))
+
+export const sideMoveMenuItems = (to: Side): ActionItem<'move'>[] => [
+  { label: to === 'left' ? 'Move to Left' : 'Move to Right', action: 'move' },
+]
 
 function viewRowMenuItems(
   ctx: ViewRowMenuContext,

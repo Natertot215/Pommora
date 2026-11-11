@@ -5,6 +5,7 @@ import {
   embedAreaMenuItems,
   embedTitleMenuItems,
   runViewRowAction,
+  sideMoveMenuItems,
   viewButtonMenuItems,
   viewItemMenuItems,
 } from './viewMenus'
@@ -164,5 +165,12 @@ describe('the view editor’s ⋮ menu', () => {
   it('separates Delete from Duplicate, with nothing before Duplicate', () => {
     const rows = viewItemMenuItems({ deletable: true, duplicable: true })
     expect(rows.map((r) => r.separatorBefore === true)).toEqual([false, true])
+  })
+})
+
+describe('the List pane row’s menu', () => {
+  it('offers the one move to the side named', () => {
+    expect(sideMoveMenuItems('left')).toEqual([{ label: 'Move to Left', action: 'move' }])
+    expect(sideMoveMenuItems('right')).toEqual([{ label: 'Move to Right', action: 'move' }])
   })
 })

@@ -11,6 +11,7 @@ import { SETTINGS_PANE_MAX_HEIGHT } from '@pommora/uix/Menus/frames.css'
 import { menuCompact } from '@pommora/uix/Menus/menu-row.css'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { popMenu } from '../../Actions/menuActions'
+import { sideMoveMenuItems } from '../../Actions/viewMenus'
 import { FILEDATA } from '../../Properties/properties'
 import { useSession } from '../../Session/store'
 import { sideColumn, sideDrop, sideFor } from '../List/listSides'
@@ -21,9 +22,9 @@ import * as s from './sides-frame.css'
 
 const SIDES_FAMILY: Family<string> = { name: 'view-sides' }
 
-const SIDE_COLUMNS: { side: Side; heading: string; other: Side; move: string }[] = [
-  { side: 'left', heading: 'Left', other: 'right', move: 'Move to Right' },
-  { side: 'right', heading: 'Right', other: 'left', move: 'Move to Left' },
+const SIDE_COLUMNS: { side: Side; heading: string; other: Side }[] = [
+  { side: 'left', heading: 'Left', other: 'right' },
+  { side: 'right', heading: 'Right', other: 'left' },
 ]
 
 function SideRow({
@@ -60,13 +61,13 @@ export function SidesFrame({
       maxHeight={SETTINGS_PANE_MAX_HEIGHT}
     >
       <div className={cx(s.columns, menuCompact)}>
-        {SIDE_COLUMNS.map(({ side, heading, other, move }) => {
+        {SIDE_COLUMNS.map(({ side, heading, other }) => {
           const drawn = sideColumn(shown, view, side)
           const drop = (id: string, beforeId: string | null): void =>
             void save(sideDrop(view, shown, side, id, beforeId))
           const menu = (id: string) => async (e: React.MouseEvent) => {
             e.preventDefault()
-            if (await popMenu([{ label: move, action: 'move' }]))
+            if (await popMenu(sideMoveMenuItems(other)))
               void save({ column_sides: { [id]: other } })
           }
           return (
