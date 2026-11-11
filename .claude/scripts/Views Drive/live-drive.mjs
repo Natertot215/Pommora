@@ -538,7 +538,7 @@ async function group3(cdp) {
 // ── Group 4 — The Table and the Second Table ────────────────────────────────
 
 const header = (label) => visible(`[...document.querySelectorAll('${DRIFT.shell} .table-head .col-header')].filter((h) => h.textContent.trim() === ${JSON.stringify(label)})`)
-const headTexts = (cdp) => cdp.evaluate(`[...document.querySelectorAll('${DRIFT.shell} .table-head .col-header')].filter((h) => h.getClientRects().length).map((h) => h.textContent.trim())`)
+const headTexts = (cdp) => cdp.evaluate(`[...document.querySelectorAll('${DRIFT.shell} .table-head .col-header')].filter((h) => h.getClientRects().length && !h.closest('[inert]')).map((h) => h.textContent.trim())`)
 const dataRow = (title) => `document.querySelector('.data-row[data-rid="${PAGES[title]?.id ?? title}"]')`
 
 /** The date column of a bundle table: its heading and every date, each left-aligned in its cell, and the heading's lead over the dates'. */
@@ -1938,6 +1938,7 @@ async function group9(cdp) {
   const pillHeld = (await frames(cdp)).filter((names) => names.length)
   reg(g, 'a tile pill\'s rename shows its new name through its held save', pillHeld.length > 0 && pillHeld.every((names) => same(names, ['VD Pill Held'])) && tileNames()[1] === 'VD Pill Held', show({ pillHeld, names: tileNames() }))
   await shot(cdp, 'g9-end')
+  await trashPage(cdp, LINKS)
 }
 
 // ── Group 10 — One Lock per Row ─────────────────────────────────────────────
@@ -2225,6 +2226,10 @@ async function group10(cdp) {
   await until('the archived page', async () => cdp.evaluate(`!!${bundleRow('.bundle-rows', 'VD Shelved')}`))
   await closeAll(cdp)
   bundles.archive = await describes(cdp, `[...document.querySelectorAll('.bundle-rows .data-row')]`)
+  await openDropdown(cdp, V10.name)
+  await pressIn(cdp, btn(V10.name))
+  await until('the view again', async () => cdp.evaluate(`!${visible(`[...document.querySelectorAll('.bundle-rows')]`)}`))
+  await closeAll(cdp)
   bc(g, 24, 'I-059', 'the Trash\'s and Archive\'s rows name no drag gesture', none(bundles.trash) && none(bundles.archive), show(bundles))
   reg(g, 'Space on a Trash row toggles its check, and the row lifts by neither Space nor drag', binSpace.before !== null && binSpace.after !== binSpace.before && !binSpace.lift.lifted && !binSpace.drag.held, show(binSpace))
 
@@ -3729,7 +3734,8 @@ async function shared(cdp) {
 
   // The drag spill List's pane reads leaves Cards' and the tab bar's drags as they were.
   // A card carried into another Set's band: once where the band's cards leave room on its last row, and once, at a window narrowed until Set Alpha's three cards fill their row, where they don't.
-  const CB = cardsView(vid('g11spill'), 'VL Spill Cards', { set_cards: false })
+  // List's pages are filtered out, so each band holds the seed's few cards and every card stays in the window as it narrows.
+  const CB = cardsView(vid('g11spill'), 'VL Spill Cards', { set_cards: false, filter: { match: 'all', rules: [{ property_id: '_title', op: 'does_not_contain', value: 'VL' }] } })
   await showView(cdp, CB)
   const GRID = (title) => `(() => { const g = (${card(title)}).closest('.cards-grid'); return { cards: g.querySelectorAll('[data-rid]').length, columns: getComputedStyle(g).gridTemplateColumns.split(' ').length, spill: parseFloat(getComputedStyle(g).getPropertyValue('--drag-spill')) || 0 } })()`
   const carry = async (from, onto, lands) => {
