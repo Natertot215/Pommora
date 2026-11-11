@@ -103,29 +103,26 @@
 /* A nested band's rail: from under its head to its last member, at its chevron; a member that ends on a row or the ghost carries the band end's room below it, and a closed or empty band, or an open one ending on such, doesn't. */
 .list-view .table-grid.outlined .group-band .group-band:not(.band-tail) > [data-reveal] {
   position: relative;
-}
-.list-view .table-grid.outlined .group-band .group-band:not(.band-tail) > [data-reveal]::before {
-  content: "";
-  position: absolute;
-  top: var(--list-outline-gap);
-  bottom: calc(var(--list-outline-gap) + var(--list-band-end));
-  left: calc(var(--band-indent) - var(--rail-inset) / 2 - var(--list-outline-width) / 2);
-  width: var(--list-outline-width);
-  border-radius: var(--list-outline-radius);
-  background: var(--list-outline-color);
-}
-.list-view
-  .table-grid.outlined
-  .group-band
-  .group-band:not(.band-tail)
-  > [data-reveal]:has(
-    > * > :last-child > .group-band-row:is([data-collapsed], [data-empty]),
-    > *
-      > :last-child
-      > [data-reveal]
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: var(--list-outline-gap);
+    bottom: calc(var(--list-outline-gap) + var(--list-band-end));
+    left: calc(var(--band-indent) - var(--rail-inset) / 2 - var(--list-outline-width) / 2);
+    width: var(--list-outline-width);
+    border-radius: var(--list-outline-radius);
+    background: var(--list-outline-color);
+  }
+  &:has(
+      > * > :last-child > .group-band-row:is([data-collapsed], [data-empty]),
       > *
-      > :last-child
-      > .group-band-row:is([data-collapsed], [data-empty])
-  )::before {
-  bottom: var(--list-outline-gap);
+        > :last-child
+        > [data-reveal]
+        > *
+        > :last-child
+        > .group-band-row:is([data-collapsed], [data-empty])
+    )::before {
+    bottom: var(--list-outline-gap);
+  }
 }
