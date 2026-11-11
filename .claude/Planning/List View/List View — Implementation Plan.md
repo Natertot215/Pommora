@@ -277,7 +277,7 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
 - [x] `[Compaction checkpoint: c/pre-compaction; on the re-prompt, reread §Constraints and c/plan-execution before Phase 7 opens]`
 - [x] **Phase 7** — The Views Drive
   - [x] Task 7-1 · Group 11 — List
-  - [ ] Review Checkpoint
+  - [x] Review Checkpoint
 - [x] **Phase 8** — Documentation
   - [x] Task 8-1 · `ViewTypesPM.md`
   - [x] Task 8-2 · `PommoraDND.md`, `PropertiesPM.md`, `PommoraUIX.md`, `PommoraPRD.md`, and `FrameworkPM.md`
@@ -2822,7 +2822,7 @@ List's record registers its renderer, its property pane, and its three switches 
 
 **THE STANDARD:** The work is finished when a later review of it finds nothing to correct. Not just doing the chores — doing the laundry, folding it, picking up what fell out of the hamper, emptying the lint trap, leaving no trace that anything went wrong. Nothing is carried as a concern, nothing is deferred where the fix is known, and nothing is declared that wasn't watched happen. Where something genuinely couldn't get there, the report names which and why, and everything else is still finished. Ambiguity encountered during execution was taken at its simplest reading and recorded; it didn't stop the run.
 
-- [ ] Phase Review: Phase 2 (with Phase 1) · Phase 3 · Phase 4 · Phase 5 · Phase 6 · Phase 7 · Phase 8
+- [x] Phase Review: Phase 2 (with Phase 1) · Phase 3 · Phase 4 · Phase 5 · Phase 6 · Phase 7 · Phase 8
 - [ ] **Simplification lens** — one `opus-xhigh` agent reads `<BASELINE>..HEAD` whole for what can be removed, folded, or hoisted now that every phase has landed: a rule List's sheet restates, a prop a shared piece takes for one caller, a helper used once, a branch on a kind. Its findings are applied before any adversarial read.
 - [ ] **Adversarial lens** — two `opus-xhigh` agents over `<BASELINE>..HEAD`, one reading inward (each behavior against its tests and the decisions) and one outward (cohesion with the rest of Core, Desktop, and UIX; anything that reads as an odd one out; a regression on Table, Cards, the panel, Archive, or a tile). The orchestrator verifies each finding against the code before applying it.
 - [ ] **Neutral verification** — one `fable-high` agent, given only the BASELINE head, HEAD, and the intention under *§Constraints · Neutral Gate*, with no plan, log, or document, answers whether the result holds to every principle it states and what it would correct.
