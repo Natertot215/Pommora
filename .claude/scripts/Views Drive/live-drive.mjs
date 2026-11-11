@@ -3753,9 +3753,10 @@ async function pane(cdp) {
   await showOn(cdp, 'collection', EMPTY)
   await door(cdp, 'settings', 'Visibility')
   r = await sidesRead(cdp)
-  await paneDrag(cdp, sideRowEl(TAGS.label), { x: r.columns[1].zone.x, y: r.columns[1].zone.t + 4 })
+  const emptySlot = await paneDrag(cdp, sideRowEl(TAGS.label), { x: r.columns[1].zone.x, y: r.columns[1].zone.t + 4 }, () => cdp.evaluate(`document.querySelector('.drop-slot')?.getBoundingClientRect().height ?? null`))
+  const rowHeight = r.columns[0].rows.find((x) => x.label === TAGS.label)?.box.h
   const intoEmpty = await settles(async () => viewOnDisk(EMPTY.id)?.column_sides?.[TAGS.id] === 'right')
-  decided('E-4 · E-7', 'the empty Right column stands as wide as Left and takes a pane row dropped into it', r.columns[1].rows.length === 0 && near(r.columns[1].w, r.columns[0].w, 0.5) && intoEmpty && same((await sidesRead(cdp)).columns[1].rows.map((x) => x.label), [TAGS.label]), show({ before: r.columns[1].rows.length, widths: r.columns.map((c) => c.w), sides: viewOnDisk(EMPTY.id)?.column_sides }))
+  decided('E-4 · E-7', 'the empty Right column stands as wide as Left, draws the slot of a pane row carried into it one row tall, and takes the row dropped there', r.columns[1].rows.length === 0 && near(r.columns[1].w, r.columns[0].w, 0.5) && near(emptySlot, rowHeight) && intoEmpty && same((await sidesRead(cdp)).columns[1].rows.map((x) => x.label), [TAGS.label]), show({ before: r.columns[1].rows.length, widths: r.columns.map((c) => c.w), emptySlot, rowHeight, sides: viewOnDisk(EMPTY.id)?.column_sides }))
   await closeAll(cdp)
   // E-4 · a name past the cap: both columns at it, the name cut in an ellipsis that scrolls on hover, the widths holding while that row is carried out of its column.
   const longLabel = 'VL A Property Named Past the Column Cap'
