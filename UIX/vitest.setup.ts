@@ -8,7 +8,7 @@ if (typeof Range !== 'undefined' && !Range.prototype.getClientRects) {
   Range.prototype.getBoundingClientRect = () => new DOMRect()
 }
 
-// jsdom has no ResizeObserver; a portalled MenuBase observes its pane, throwing out of a layout effect.
+// jsdom has no ResizeObserver, which the kit's panes, glass, and scrollbars, and a drag's spill, construct as they mount or run.
 if (typeof globalThis !== 'undefined' && !('ResizeObserver' in globalThis)) {
   ;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = class {
     observe(): void {}

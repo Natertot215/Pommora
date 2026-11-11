@@ -456,9 +456,6 @@ describe('the drag engine across zones', () => {
       observe(el: Element): void {
         this.targets.add(el)
       }
-      unobserve(el: Element): void {
-        this.targets.delete(el)
-      }
       disconnect(): void {
         this.targets.clear()
         Sizes.live.delete(this)

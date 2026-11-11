@@ -422,13 +422,13 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
 
   // ── Painting ──
 
-  // A spill resizes its zone and the frames holding it, which moves what follows and what a pane re-places on that; their size changes re-measure, through an observer made at a drag's first spill so it reports after the pane's own.
-  const spill = (box: HTMLElement, height: number): void => {
+  // Observing a spilling zone and the frames holding it re-measures as each spill begins and on every size change after; made at a drag's first spill, the observer reports after a pane's own re-placing one, which exists first.
+  const spill = (box: HTMLElement, height: number, frames: readonly Element[] = []): void => {
     window.clearTimeout(spilled.get(box))
     if (height > 0) {
       if (!spilled.has(box)) {
         resized ??= new ResizeObserver(remeasure)
-        for (const el of [box, ...clipChain(box)]) resized.observe(el, { box: 'border-box' })
+        for (const el of [box, ...frames]) resized.observe(el, { box: 'border-box' })
       }
       box.style.setProperty('--drag-spill', px(height))
       spilled.set(box, 0)
@@ -460,7 +460,7 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
     const size = sizeIn(s, zoneId, layout)
     if (!own && spec.axis !== 'x' && entry.box) {
       if (to < 0) unspill(entry.box)
-      else spill(entry.box, spillOf(layout, spec.axis, size) / layout.zoom)
+      else spill(entry.box, spillOf(layout, spec.axis, size) / layout.zoom, clips.get(zoneId))
     }
     const count = layout.ids.length - (own ? 1 : 0)
     const lo = from < 0 ? to : to < 0 ? from : Math.min(from, to)
