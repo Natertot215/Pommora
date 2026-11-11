@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import fixture from '../Testing/fixtures/collection-with-status.json'
 import {
+  applyViewPatch,
   granularityOf,
   mergeViewEdit,
   savedView,
@@ -153,6 +154,36 @@ describe('column styles on write', () => {
 
   it('drops the map once no column holds a style', () => {
     expect(mergeViewEdit(null, view({ a: {} }))).not.toHaveProperty('column_styles')
+  })
+})
+
+describe('column sides', () => {
+  const view = (column_sides: Record<string, unknown>) =>
+    savedView.parse({
+      id: 'view_s',
+      name: 'S',
+      type: 'list',
+      property_order: [],
+      hidden_properties: [],
+      column_sides,
+    })
+
+  it('folds a patch entry by entry', () => {
+    expect(
+      applyViewPatch(view({ a: 'right' }), { column_sides: { b: 'left' } }).column_sides,
+    ).toEqual({
+      a: 'right',
+      b: 'left',
+    })
+  })
+
+  it('keeps a stored entry this build does not read beside an edit', () => {
+    const raw = { ...view({}), column_sides: { a: 'right', b: 'center' } }
+    expect(mergeViewEdit(raw, view({ a: 'left' })).column_sides).toEqual({ a: 'left', b: 'center' })
+  })
+
+  it('reads only the sides it knows', () => {
+    expect(view({ a: 'center', b: 'right' }).column_sides).toEqual({ b: 'right' })
   })
 })
 
