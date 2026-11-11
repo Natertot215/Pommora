@@ -9,7 +9,7 @@ export const TABLE_KIND: ViewKindRecord = {
   nests: true,
   layout: {
     leaf: 'visibility',
-    switches: [
+    leafSwitches: [
       { icon: 'columns-3-cog', label: 'Column Icons', key: 'hide_column_icons', invert: true },
       { icon: 'view-table', label: 'Hide Borders', key: 'hide_borders' },
       TITLE_ICONS,

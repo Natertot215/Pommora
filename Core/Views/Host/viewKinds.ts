@@ -13,8 +13,8 @@ export interface ViewKindRecord {
   nests: boolean
   layout: {
     leaf: 'visibility' | 'switches'
-    switches: ViewSwitch[]
-    rows?: (view: SavedView, write: ViewWriter) => MenuRow[]
+    leafSwitches?: ViewSwitch[]
+    footing?: (view: SavedView, write: ViewWriter) => MenuRow[]
   }
 }
 

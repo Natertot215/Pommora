@@ -309,7 +309,7 @@ describe('ViewFrame — the panes the editor reaches', () => {
     })
     await press('Layout')
     expect(document.querySelector('[aria-label="Always Shown"]') !== null).toBe(list)
-    for (const { label } of presentedKind(type).layout.switches)
+    for (const { label } of presentedKind(type).layout.leafSwitches!)
       expect(document.querySelector(`[aria-label="${label}"]`)).not.toBeNull()
   })
 

@@ -67,7 +67,7 @@ const open = async (entry: string, shown?: SavedView): Promise<void> => {
   await act(async () => (row as HTMLElement).click())
 }
 const has = (label: string): boolean => host.querySelector(`[aria-label="${label}"]`) !== null
-const switches = presentedKind(view.type).layout.switches.map((s) => s.label)
+const switches = presentedKind(view.type).layout.leafSwitches!.map((s) => s.label)
 
 describe('SettingsFrame — the panes Settings reaches', () => {
   it('lists Properties and every view pane, Visibility and Layout apart', async () => {

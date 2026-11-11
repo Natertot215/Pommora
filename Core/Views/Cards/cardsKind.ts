@@ -25,13 +25,13 @@ export const CARDS_KIND: ViewKindRecord = {
   nests: false,
   layout: {
     leaf: 'switches',
-    switches: [
+    leafSwitches: [
       { icon: 'map', label: 'Hide Location', key: 'hide_location' },
       { icon: 'wrap-text', label: 'Wrap Titles', key: 'wrap_titles' },
       TITLE_ICONS,
       { icon: 'folder-closed', label: 'Set Cards', key: 'set_cards' },
     ],
-    rows: (view, write) => [
+    footing: (view, write) => [
       pickerRow(
         'image',
         'Card Image',

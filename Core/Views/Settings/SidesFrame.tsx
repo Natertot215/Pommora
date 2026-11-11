@@ -46,10 +46,9 @@ function SideRow({
 }
 
 export function SidesFrame({
-  footer,
   current = 'Visibility',
   ...pane
-}: VisibilityPaneProps): React.JSX.Element {
+}: Omit<VisibilityPaneProps, 'footer'>): React.JSX.Element {
   const tree = useSession((st) => st.tree)
   const { view, back, save } = pane
   const { shown, hidden, label, row } = visibilityPane(pane, tree)
@@ -57,7 +56,6 @@ export function SidesFrame({
   return (
     <MenuScrollFrame
       header={<MenuTopRow {...back} current={current} />}
-      footer={footer}
       maxHeight={SETTINGS_PANE_MAX_HEIGHT}
     >
       <div className={cx(s.columns, menuCompact)}>
@@ -74,6 +72,7 @@ export function SidesFrame({
             <div key={side} className={s.column}>
               <MenuRowView row={{ kind: 'heading', label: heading }} />
               <div className={s.list}>
+                {/* The one settings pane that displaces: a row carried to the other column makes room there, never drawn over the hidden rows at its foot. */}
                 <SortableZone
                   className={s.zone}
                   items={drawn.map((c) => c.id)}

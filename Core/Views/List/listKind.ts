@@ -15,7 +15,6 @@ export const LIST_KIND: ViewKindRecord = {
   nests: true,
   layout: {
     leaf: 'visibility',
-    switches: [],
-    rows: (view, write) => switchRows(SWITCHES, view, write),
+    footing: (view, write) => switchRows(SWITCHES, view, write),
   },
 }

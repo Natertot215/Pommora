@@ -34,18 +34,18 @@ export function typeGrid(view: SavedView, save: ViewWriter): React.JSX.Element {
 }
 
 export function kindSwitches(view: SavedView, save: ViewWriter): React.JSX.Element | null {
-  const { switches } = presentedKind(view.type).layout
-  return switches.length > 0 ? (
-    <MenuIndex sections={[{ rows: switchRows(switches, view, save) }]} />
+  const { leafSwitches } = presentedKind(view.type).layout
+  return leafSwitches ? (
+    <MenuIndex sections={[{ rows: switchRows(leafSwitches, view, save) }]} />
   ) : null
 }
 
 export function kindRows(view: SavedView, save: ViewWriter): React.JSX.Element | null {
-  const rows = presentedKind(view.type).layout.rows
-  return rows ? (
+  const { footing } = presentedKind(view.type).layout
+  return footing ? (
     <>
       <MenuSeparator flush />
-      <MenuIndex sections={[{ rows: rows(view, save) }]} />
+      <MenuIndex sections={[{ rows: footing(view, save) }]} />
     </>
   ) : null
 }
