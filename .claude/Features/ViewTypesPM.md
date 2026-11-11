@@ -158,7 +158,7 @@ The chassis tokens — the floor, gaps, thumb height and share, and preview zoom
 
 ### List
 
-The List renderer (`Core/Views/List/`) draws each Page as one row without columns: its title and its property values side by side, in a left group that holds the title and a right group at the row's edge. Its rows are a Table's drawn compact and without lines between them, with the title in a card's emphasized text and the Table's grip, indentation, nesting, creation, and row drag.
+The List renderer (`Core/Views/List/`) draws each Page as one row without columns: its title and its property values side by side, in a left group that holds the title and a right group at the row's edge. Its rows are a Table's drawn compact and without lines between them, with the title in a card's emphasized text and the Table's grip, indentation, nesting, creation, and row drag. A row draws no fill while its page is the selection, where a Table's row does.
 
 Each property sits on a side, set per view over a default for its type: option properties and Contexts on the left, everything else on the right. A thin bar separates the title and each property's values from their neighbors, and a property a page holds no value for is left off its row, as on Compact cards, except a Checkbox, whose unchecked box is its toggle. Only the title opens the page. A hover **+** after the row's last group opens the row's **Add** list, and a value's **Remove** hides its property from the view, as on a card.
 
