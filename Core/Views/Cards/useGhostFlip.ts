@@ -1,9 +1,9 @@
 import { type RefObject, useLayoutEffect, useRef, useState } from 'react'
 import { DEFAULT_FEEL } from '@pommora/uix/Animations/feel'
 
-type Seat = { frame: Element | null; x: number; y: number }
+type Spot = { frame: Element | null; x: number; y: number }
 
-const seatOf = (el: Element, frame: Element | null): Seat => {
+const spotOf = (el: Element, frame: Element | null): Spot => {
   const r = el.getBoundingClientRect()
   const f = frame?.getBoundingClientRect()
   return { frame, x: r.left - (f?.left ?? 0), y: r.top - (f?.top ?? 0) }
@@ -14,11 +14,11 @@ const gridOf = (root: HTMLElement, id: string | null): Element | null =>
     ? null
     : (root.querySelector(`[data-rid="${CSS.escape(id)}"]`)?.closest('.cards-grid') ?? null)
 
-function seats(root: HTMLElement, from: string | null, to: string | null): Map<Element, Seat> {
-  const m = new Map<Element, Seat>()
+function spots(root: HTMLElement, from: string | null, to: string | null): Map<Element, Spot> {
+  const m = new Map<Element, Spot>()
   for (const grid of new Set([gridOf(root, from), gridOf(root, to)]))
-    for (const el of grid?.querySelectorAll('.card-displace') ?? []) m.set(el, seatOf(el, grid))
-  for (const band of root.querySelectorAll('.group-band')) m.set(band, seatOf(band, null))
+    for (const el of grid?.querySelectorAll('.card-displace') ?? []) m.set(el, spotOf(el, grid))
+  for (const band of root.querySelectorAll('.group-band')) m.set(band, spotOf(band, null))
   return m
 }
 
@@ -28,11 +28,11 @@ export function useGhostFlip(
   zoom: number,
 ): string | null {
   const [shown, setShown] = useState<string | null>(null)
-  const before = useRef<Map<Element, Seat> | null>(null)
+  const before = useRef<Map<Element, Spot> | null>(null)
   useLayoutEffect(() => {
     if (liveId === shown) return
     const root = rootRef.current
-    before.current = root && liveId !== null ? seats(root, shown, liveId) : null
+    before.current = root && liveId !== null ? spots(root, shown, liveId) : null
     setShown(liveId)
   }, [liveId, shown])
   useLayoutEffect(() => {
@@ -42,7 +42,7 @@ export function useGhostFlip(
     const z = zoom || 1
     for (const [el, was] of prev) {
       if (!el.isConnected) continue
-      const now = seatOf(el, was.frame)
+      const now = spotOf(el, was.frame)
       const dx = (was.x - now.x) / z
       const dy = (was.y - now.y) / z
       if (dx !== 0 || dy !== 0)
