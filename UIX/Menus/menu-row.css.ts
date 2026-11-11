@@ -44,6 +44,7 @@ export const rowShell = style({
 })
 
 globalStyle(`${FOCUSED_ROW_WRAPPER}:has(${rowShell})`, { outline: 'none' })
+// A line row without a menu row is itself the washed row; a sortable item without one keeps its own focus look.
 globalStyle(`[data-line-row]:focus-visible:not(:has(${rowShell}))`, rowFocus)
 
 export const ROW_LEAD = 'var(--row-pad-lead, var(--row-pad-x))'

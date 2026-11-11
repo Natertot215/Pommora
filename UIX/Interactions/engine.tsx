@@ -422,7 +422,7 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
 
   // ── Painting ──
 
-  // A spilling zone and the frames holding it are observed so a spill re-measures when it begins and whenever one resizes; made at a drag's first spill, the observer is younger than the pane's own re-placing one, so it reports after it and reads the pane where it lands.
+  // The observer re-measures as each spill begins and on every resize after; made at a drag's first spill, it is younger than the pane's own re-placing one, so it reports after it and measures the pane where it lands.
   const spill = (box: HTMLElement, height: number, frames: readonly Element[] = []): void => {
     window.clearTimeout(spilled.get(box))
     if (height > 0) {

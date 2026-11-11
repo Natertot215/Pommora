@@ -91,7 +91,7 @@ export function GroupBand({
   bands: BandView
   indent?: string
   fill?: boolean
-  /** Band state like collapsed and empty: whether the band's last drawn line is a row, which a List's rail reads. */
+  /** Whether the band's last drawn line is a row, which a List's rail reads. */
   endsOnRow?: boolean
   children: ReactNode
 }): React.JSX.Element {
