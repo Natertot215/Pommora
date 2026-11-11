@@ -115,12 +115,13 @@ settings panes through both doors, under Native Menus and Hide Empty Groups. Gro
 plan's, crosses List's configurations pairwise, the view's Scale among them, and reads each over every
 row at the window's width, a narrow one, and each long-titled and crowded row's wrap point, holding its
 rails, sorts, spacing, and alignment against a Table's, beside every gesture that reaches a List and the
-regressions of the pieces it shares; it prints a measurement no decision rules on as a `NOTE` line. `MATRIX.md` beside it holds the dimensions, what it prunes and
-why, and each case's decision. A behavior change is owned by its phase and a regression crossing by
-phase 0, so with `--landed <n>`, the last phase in the build, an item a later phase owns prints `AWAIT`
-(or `AHEAD` when it already holds) and leaves the exit code alone; `--landed 0` is the baseline, where
-every behavior change reads `AWAIT`. A round trip a case reads inside is held open by wrapping the
-host's `mutate` and `views:save` handlers in the main process, and selectors that changed between
+regressions of the pieces it shares; it prints a measurement no decision rules on as a `NOTE` line.
+`MATRIX.md` beside it holds the dimensions, what it prunes and why, and each case's decision. A
+behavior change is owned by its phase and a regression crossing by phase 0, so with `--landed <n>`,
+the last phase in the build, an item a later phase owns prints `AWAIT` (or `AHEAD` when it already
+holds) and leaves the exit code alone; `--landed 0` is the baseline, where every behavior change reads
+`AWAIT`. A round trip a case reads inside is held open by wrapping the host's `mutate`,
+`views:save`, and `tiles:save` handlers in the main process, and selectors that changed between
 phases sit in one table keyed by `--landed`. It takes the groups to run as arguments — `node
 live-drive.mjs 2 6 --landed 6`, or `11 --landed 11` — seeds three properties, their values, and its own
 views in `~/Test`'s `Collection A` (group 11 seeds List's own beside them), on debug port 9423, and
