@@ -37,7 +37,6 @@ const column = (id: string): ResolvedColumn => resolveColumn(id, schema, ['ctx_a
 
 describe('sideFor', () => {
   it.each([
-    ['Title', FILEDATA.title.id, 'left'],
     ['a Context', 'ctx_a', 'left'],
     ['a Status', 's_st', 'left'],
     ['a Select', 's_sel', 'left'],

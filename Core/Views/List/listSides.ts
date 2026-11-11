@@ -3,8 +3,7 @@ import type { ColumnType, ResolvedColumn } from '../../Properties/properties'
 import { placeInShown } from '../Pipeline/columns'
 import type { SavedView, Side, ViewPatch } from '../views'
 
-const DEFAULT_SIDE: Record<ColumnType, Side> = {
-  title: 'left',
+const DEFAULT_SIDE: Record<Exclude<ColumnType, 'title'>, Side> = {
   context: 'left',
   status: 'left',
   select: 'left',
@@ -20,7 +19,7 @@ const DEFAULT_SIDE: Record<ColumnType, Side> = {
 }
 
 export const sideFor = (column: ResolvedColumn, view: SavedView): Side =>
-  column.type === 'title' ? 'left' : (view.column_sides?.[column.id] ?? DEFAULT_SIDE[column.type])
+  column.kind === 'title' ? 'left' : (view.column_sides?.[column.id] ?? DEFAULT_SIDE[column.type])
 
 /** A side's column of the property pane, top to bottom: Left as its group reads, Right from the row's edge inward. */
 export function sideColumn(

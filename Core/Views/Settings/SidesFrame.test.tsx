@@ -82,6 +82,21 @@ describe('SidesFrame — the columns', () => {
     ).toEqual(['Left', 'Right'])
   })
 
+  it('draws the footer it’s given', async () => {
+    await act(async () => {
+      root.render(
+        <SidesFrame
+          schema={schema}
+          view={view}
+          back={{ label: 'Settings', onBack: () => {} }}
+          save={save}
+          footer={<span>Footing</span>}
+        />,
+      )
+    })
+    expect(labelIn(document.body, 'Footing')).toBeDefined()
+  })
+
   it('lists Title among Left’s rows with no eye', () => {
     const [left] = columns()
     expect(labelIn(left, 'Title')).toBeDefined()

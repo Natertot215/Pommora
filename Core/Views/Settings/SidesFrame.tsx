@@ -12,7 +12,6 @@ import { menuCompact } from '@pommora/uix/Menus/menu-row.css'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { popMenu } from '../../Actions/menuActions'
 import { sideMoveMenuItems } from '../../Actions/viewMenus'
-import { FILEDATA } from '../../Properties/properties'
 import { useSession } from '../../Session/store'
 import { sideColumn, sideDrop, sideFor } from '../List/listSides'
 import type { Side } from '../views'
@@ -46,9 +45,10 @@ function SideRow({
 }
 
 export function SidesFrame({
+  footer,
   current = 'Visibility',
   ...pane
-}: Omit<VisibilityPaneProps, 'footer'>): React.JSX.Element {
+}: VisibilityPaneProps): React.JSX.Element {
   const tree = useSession((st) => st.tree)
   const { view, back, save } = pane
   const { shown, hidden, label, row } = visibilityPane(pane, tree)
@@ -56,6 +56,7 @@ export function SidesFrame({
   return (
     <MenuScrollFrame
       header={<MenuTopRow {...back} current={current} />}
+      footer={footer}
       maxHeight={SETTINGS_PANE_MAX_HEIGHT}
     >
       <div className={cx(s.columns, menuCompact)}>
@@ -72,14 +73,18 @@ export function SidesFrame({
             <div key={side} className={s.column}>
               <MenuRowView row={{ kind: 'heading', label: heading }} />
               <div className={s.list}>
-                {/* The one settings pane that displaces: a row carried to the other column makes room there, never drawn over the hidden rows at its foot. */}
+                {/* The one settings pane that displaces: a row carried to the other column makes room there, never drawn over the hidden rows at its foot, which stand outside the zone, so the eye alone hides and shows a property here. */}
                 <SortableZone
                   className={s.zone}
                   items={drawn.map((c) => c.id)}
                   axis="y"
                   family={SIDES_FAMILY}
                   label={label}
-                  carry={[carries(SIDES_FAMILY, (id) => (id === FILEDATA.title.id ? null : id))]}
+                  carry={[
+                    carries(SIDES_FAMILY, (id) =>
+                      drawn.find((c) => c.id === id)?.kind === 'title' ? null : id,
+                    ),
+                  ]}
                   onMove={drop}
                   receive={drop}
                   closesGap

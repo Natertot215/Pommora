@@ -36,9 +36,9 @@ export function resolveColumn(
   schema: PropertyDefinition[],
   contextIds: readonly string[],
 ): ResolvedColumn | undefined {
-  if (id === TITLE.id) return TITLE
-  const stamp = FILEDATA_BY_ID.get(id)?.type
-  if (stamp) return { id, kind: 'stamp', type: stamp }
+  const filedata = FILEDATA_BY_ID.get(id)?.type
+  if (filedata === 'title') return TITLE
+  if (filedata) return { id, kind: 'stamp', type: filedata }
   if (contextIds.includes(id)) return contextColumn(id)
   const def = schema.find((d) => d.id === id)
   return def && propertyColumn(def)
