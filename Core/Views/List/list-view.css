@@ -98,7 +98,7 @@
   padding-bottom: var(--list-band-end);
 }
 
-/* A nested band's rail: from under its head to its last member, at its chevron. */
+/* A nested band's rail: from under its head to its last member, at its chevron; a member that ends on a row carries the band end's room below it, and one that ends on a head or the tail rows doesn't. */
 .list-view .table-grid.outlined .group-band .group-band:not(.band-tail) > [data-reveal] {
   position: relative;
 }
@@ -106,7 +106,7 @@
   content: "";
   position: absolute;
   top: var(--list-outline-gap);
-  bottom: var(--list-outline-gap);
+  bottom: calc(var(--list-outline-gap) + var(--list-band-end));
   left: calc(var(--band-indent) - var(--rail-inset) / 2 - var(--list-outline-width) / 2);
   width: var(--list-outline-width);
   border-radius: var(--list-outline-radius);
@@ -116,6 +116,9 @@
   .table-grid.outlined
   .group-band
   .group-band:not(.band-tail)
-  > [data-reveal]:has(> * > .data-row:last-child)::before {
-  bottom: calc(var(--list-outline-gap) + var(--list-band-end));
+  > [data-reveal]:has(
+    > * > .band-tail:last-child,
+    > * > :last-child > .group-band-row:is([data-collapsed], [data-empty])
+  )::before {
+  bottom: var(--list-outline-gap);
 }
