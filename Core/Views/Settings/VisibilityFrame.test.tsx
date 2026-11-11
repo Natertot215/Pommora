@@ -124,7 +124,6 @@ describe('VisibilityFrame — the eyes', () => {
     await mount()
     expect(row('Title').querySelector('button')).toBeNull()
     expect(eye('Hide Alpha').classList.contains(revealDim)).toBe(true)
-    expect(row('Alpha').getAttribute('data-reveal-host')).toBe('')
     expect(eye('Show Gamma').classList.contains(revealDim)).toBe(false)
   })
 })

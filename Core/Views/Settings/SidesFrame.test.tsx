@@ -92,11 +92,6 @@ describe('SidesFrame — the columns', () => {
     const eye = (label: string): Element => document.querySelector(`button[aria-label="${label}"]`)!
     expect(eye('Hide Stage').classList.contains(revealDim)).toBe(true)
     expect(eye('Show Count').classList.contains(revealDim)).toBe(false)
-    expect(
-      labelIn(columns()[0], 'Stage')
-        .closest('[aria-roledescription=sortable]')!
-        .getAttribute('data-reveal-host'),
-    ).toBe('')
   })
 
   it('sets a hidden property ghosted at its own column’s foot, the unplaced stamps at Right’s', () => {

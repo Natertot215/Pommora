@@ -58,7 +58,7 @@ export function VisibilityFrame({
   const { shown, hidden, label, icon, row } = visibilityPane(pane, tree)
   const shownIds = shown.map((c) => c.id)
   const line = (c: ResolvedColumn): React.JSX.Element => (
-    <LineRow key={c.id} id={c.id} data-reveal-host="">
+    <LineRow key={c.id} id={c.id}>
       <MenuRowView row={row(c)} />
     </LineRow>
   )
