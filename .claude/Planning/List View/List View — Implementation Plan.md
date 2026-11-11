@@ -47,7 +47,7 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
 | 4 | +40 / −26 | +42 / −27 | +501 / −378 |
 | 5 | +46 / −30 | +77 / −52 | +578 / −430 |
 | 6 | +590 / −111 | +598 / −93 | +1,174 / −521 |
-| 7 | — (the drive, under `.claude`) | | |
+| 7 | — (the drive, under `.claude`) | — (group 11: 218 of 218; groups 2 to 10: 215 of 215) | +1,174 / −521 |
 | 8 | — (documents) | | |
 | Final Verification | — | | |
 
@@ -218,6 +218,10 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
 
 > Take it through the full testing of every single possible configuration matrix of behavior and interacrion
 
+**Mid-Session, 11-10-2026 (on the title's weight):**
+
+> lets also have lists have titles using emphasied text like card titles do so their titles are more pronounced
+
 #### Process Overview
 
 - [x] `[Before Phase 1: record the BASELINE head, the three gates, and, at that head, the Views Drive's tally for groups 2 to 10 and the Properties, Text Property, Option Picker, and Archive Drives' tallies]`
@@ -248,9 +252,9 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
   - [x] Task 6-3 · The record, and the tile goes live
   - [x] Review Checkpoint
 - [x] `[Stop: Nathan reads List in the app and tunes --list-view-value-max, --list-view-title-min, --list-view-wrap-gap, --list-view-bar-width, the row's padding (--cell-padding-y), and the bar's height. The orchestrator writes each value he settles on into list-view.css, or segment.css.ts for the bar, runs the gates and npm run build, commits inside Phase 6, and re-measures Phase 6's ledger row. His word confirms the design for I-7's follow-ups]`
-- [ ] `[Compaction checkpoint: c/pre-compaction; on the re-prompt, reread §Constraints and c/plan-execution before Phase 7 opens]`
-- [ ] **Phase 7** — The Views Drive
-  - [ ] Task 7-1 · Group 11 — List
+- [x] `[Compaction checkpoint: c/pre-compaction; on the re-prompt, reread §Constraints and c/plan-execution before Phase 7 opens]`
+- [x] **Phase 7** — The Views Drive
+  - [x] Task 7-1 · Group 11 — List
   - [ ] Review Checkpoint
 - [ ] **Phase 8** — Documentation
   - [ ] Task 8-1 · `ViewTypesPM.md`
@@ -2648,9 +2652,9 @@ List's record registers its renderer, its property pane, and its three switches 
 
 **VERIFY**
 
-- [ ] `node ".claude/scripts/Views Drive/live-drive.mjs" 11 --landed 11` passes every case, and groups `2` to `10` pass at `--landed 11` as they did at the baseline.
-- [ ] `~/Test` is restored by the drive and no process it started remains.
-- [ ] Run the gates (the drive changes no production code; the gates confirm nothing else moved).
+- [x] `node ".claude/scripts/Views Drive/live-drive.mjs" 11 --landed 11` passes every case, and groups `2` to `10` pass at `--landed 11` as they did at the baseline.
+- [x] `~/Test` is restored by the drive and no process it started remains.
+- [x] Run the gates (the drive changes no production code; the gates confirm nothing else moved).
 
 #### Review Checkpoint
 

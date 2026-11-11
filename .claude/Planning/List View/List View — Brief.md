@@ -165,3 +165,7 @@ I also want to see screenshots of wrapped rows at multiple indentation levels, c
 **Mid-Session, 11-10-2026 (on live testing):**
 
 Take it through the full testing of every single possible configuration matrix of behavior and interacrion
+
+**Mid-Session, 11-10-2026 (on the title's weight):**
+
+lets also have lists have titles using emphasied text like card titles do so their titles are more pronounced

@@ -56,6 +56,7 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
 - **B-13 [CONFIRMED]:** A List row whose page is the selection should highlight as a whole row, as a Table row does.
 - **B-14 [CONFIRMED]:** The line under the page header should be inset over a List as it is over Cards, not bled edge to edge as over a Table.
 - **B-15 [CONFIRMED]:** The spacing between a List's groups should be a Table's: an open group keeps extra room between its last row and the next band, and closed groups sit evenly. A List's compact rows shouldn't shrink it.
+- **B-16 [CONFIRMED]:** A List row's title should draw in the emphasized text a card's title uses, so it stands out from the values beside it.
 
 #### C — Values
 
