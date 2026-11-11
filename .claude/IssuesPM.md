@@ -4,7 +4,7 @@
 
 | Total | Critical | High | Moderate | Low | Minimal |
 |-------|----------|------|----------|-----|---------|
-| 75 | 0 | 3 | 12 | 39 | 21 |
+| 73 | 0 | 3 | 12 | 39 | 19 |
 
 #### A1 • Sync & Devices
 
@@ -96,9 +96,7 @@
 | [I-054](#I-054 • No row in a property's settings says whether it sets the property everywhere or only the current view.) | No row in a property's settings says whether it sets the property everywhere or only the current view. | Minimal | Small (TBD) | Drift | `4f63cba01` | **Created:** 10-21-2026<br>**Updated:** 11-11-2026 |
 | [I-071](#I-071 • A value at a labeled row's end is ruled twice.) | A value at a labeled row's end is ruled twice. | Minimal | Mini (TBD) | Drift | `b1146b1bc` | **Created:** 11-11-2026<br>**Updated:** 11-11-2026 |
 | [I-072](#I-072 • A card's value row restates a chip's height by hand.) | A card's value row restates a chip's height by hand. | Minimal | Mini (TBD) | Shortcut | `b1146b1bc` | **Created:** 11-11-2026<br>**Updated:** 11-11-2026 |
-| [I-073](#I-073 • A List view's property pane passes a no-op `release` to switch on gap-closing.) | A List view's property pane passes a no-op `release` to switch on gap-closing. | Minimal | Small (TBD) | Shortcut | `b1146b1bc` | **Created:** 11-11-2026<br>**Updated:** 11-11-2026 |
-| [I-074](#I-074 • A nested List band's rail ends a few pixels off at depth.) | A nested List band's rail ends a few pixels off at depth. | Minimal | Small (TBD) | Shortcut | `b1146b1bc` | **Created:** 11-11-2026<br>**Updated:** 11-11-2026 |
-| [I-075](#I-075 • A hover-scrolled lane can stay scrolled after the pointer has left.) | A hover-scrolled lane can stay scrolled after the pointer has left. | Minimal | Mini (TBD) | Shortcut | `b1146b1bc` | **Created:** 11-11-2026<br>**Updated:** 11-11-2026 |
+| [I-073](#I-073 • A hover-scrolled lane can stay scrolled after the pointer has left.) | A hover-scrolled lane can stay scrolled after the pointer has left. | Minimal | Mini (TBD) | Shortcut | `b1146b1bc` | **Created:** 11-11-2026<br>**Updated:** 11-11-2026 |
 
 #### A6 • Tiles & Embeds
 
@@ -1126,35 +1124,7 @@ Confirm the two are equivalent and state the rule once, where both surfaces read
 
 Publish the standard chip height beside `--label-height-roomy` in the kit and read it for `--card-row-h`.
 
-#### I-073 • A List view's property pane passes a no-op `release` to switch on gap-closing.
-
-| Concern | Scale | Origin | Base | Date |
-|---------|-------|--------|------|------|
-| Minimal | Small (TBD) | Shortcut | `b1146b1bc` | **Created:** 11-11-2026<br>**Updated:** 11-11-2026 |
-
-**Description**
-
-The List view's property pane passes `release={() => {}}` to its `SortableZone`s because the drag engine reads the callback's presence as "the source gives the item up, so its gap closes," while everywhere else `release` removes the item from its source (the tab bar's close). The receiving column's one save already moves the row, so the callback has nothing to do.[^73]
-
-**Solution** [Proposed]
-
-The engine reads a declared trait for gap-closing rather than a callback's presence, and the no-op goes.
-
-#### I-074 • A nested List band's rail ends a few pixels off at depth.
-
-| Concern | Scale | Origin | Base | Date |
-|---------|-------|--------|------|------|
-| Minimal | Small (TBD) | Shortcut | `b1146b1bc` | **Created:** 11-11-2026<br>**Updated:** 11-11-2026 |
-
-**Description**
-
-The List view's rail rules place a nested band's rail end by what its last member is, spelled out two levels deep with child-combinator `:has()`. A band whose run ends open band, open band, closed band, three levels down, draws its rail ending about 4px early. Band depth is unbounded, since the group plan recurses through a Set's Sets.[^74]
-
-**Solution** [Proposed]
-
-The walk that lays rows in bands hands each band whether its run ends on a row, so one rule covers any depth.
-
-#### I-075 • A hover-scrolled lane can stay scrolled after the pointer has left.
+#### I-073 • A hover-scrolled lane can stay scrolled after the pointer has left.
 
 | Concern | Scale | Origin | Base | Date |
 |---------|-------|--------|------|------|
@@ -1162,7 +1132,7 @@ The walk that lays rows in bands hands each band whether its run ends on a row, 
 
 **Description**
 
-`hold()` slides back the lanes the pointer leaves, and keeps a lane that holds the focused field or an open layer's trigger. When that field blurs or that layer closes with the pointer elsewhere, nothing re-runs the check, so the lane stays scrolled until it is next hovered and left.[^75]
+`hold()` slides back the lanes the pointer leaves, and keeps a lane that holds the focused field or an open layer's trigger. When that field blurs or that layer closes with the pointer elsewhere, nothing re-runs the check, so the lane stays scrolled until it is next hovered and left.[^73]
 
 **Solution** [Proposed]
 
@@ -1332,6 +1302,4 @@ In `MatrixCanvas`, keep a small map of active pointer ids on the host; while two
 [^70]: **I-070:** `Core/Views/Table/TableView.tsx:~232-272` (`DataRow`'s cell), `Core/Properties/Cells/SeatedValue.tsx`, `Core/Views/Cards/CardsView.tsx`, `Core/Views/List/ListView.tsx`, `Core/Properties/PropertyPanel.tsx`
 [^71]: **I-071:** `Core/Properties/property-panel.css.ts:~46-52` (`value`, the `:has(> value)` rule), `Core/Views/Cards/cards-view.css:~117-122` (`.card-prop-row > .card-value`)
 [^72]: **I-072:** `Core/Views/Cards/cards-view.css:5,31` (`--card-row-h`), `UIX/Labels/label-base.css.ts:14-28` (`SIZE`, the published `--label-height-roomy`), `Core/Views/List/list-view.css:8` (`--row-first-line`)
-[^73]: **I-073:** `Core/Views/Settings/SidesFrame.tsx:~85-87` (`release`), `UIX/Interactions/engine.tsx:~497` (`overIn`), `UIX/Interactions/engine.tsx:~100` (`release`'s declaration), `UIX/Interactions/engine.tsx:~954` (the drop's `source?.release?.`), `Core/Navigation/TabBar.tsx:~188` (`closeTab`)
-[^74]: **I-074:** `Core/Views/List/list-view.css:~103-128` (the nested band's rail), `Core/Views/Rows/RowFrame.tsx:~20-90` (`BandRows`, `walk`), `Core/Views/Pipeline/group.ts:~140-161` (`band`)
-[^75]: **I-075:** `UIX/Interactions/OverScroll.tsx:~37-48` (`hold`), `UIX/Interactions/dismissalStack.ts` (`holdsOpenTrigger`)
+[^73]: **I-073:** `UIX/Interactions/OverScroll.tsx:~37-48` (`hold`), `UIX/Interactions/dismissalStack.ts` (`holdsOpenTrigger`)
