@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { duration, easeBase, ms, prefersReducedMotion } from '../Animations/motion'
 import { clamp } from '../Utilities/clamp'
 import { cx } from '../Utilities/cx'
+import { holdsOpenTrigger } from './dismissalStack'
 import './over-scroll.css'
 
 export const overScrollLabel = 'scroll-fade-x over-scroll-cap'
@@ -35,10 +36,10 @@ let held: HTMLElement | null = null
 /** The blocking wheel listener exists only while a label is hovered, so no other scroll waits on it. */
 function hold(cap: HTMLElement | null): void {
   if (cap === held) return
-  // Each lane the pointer left slides back; a lane holding the focused field keeps its caret in view.
+  // Each lane the pointer left slides back; a lane holding the focused field or an open layer's trigger keeps its place.
   let lane = held
   while (lane && !lane.contains(cap)) {
-    if (!lane.contains(document.activeElement)) slideScrollBack(lane)
+    if (!lane.contains(document.activeElement) && !holdsOpenTrigger(lane)) slideScrollBack(lane)
     lane = lane.parentElement?.closest<HTMLElement>('.over-scroll-cap') ?? null
   }
   if (cap && !held) document.addEventListener('wheel', wheelCap, WHEEL)

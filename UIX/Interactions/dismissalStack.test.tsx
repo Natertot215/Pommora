@@ -3,7 +3,13 @@ import { act, useRef } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { InputField } from '../Fields/InputField'
-import { type DismissalHandle, pushDismissal, SHIELD_ATTR, useDismissal } from './dismissalStack'
+import {
+  type DismissalHandle,
+  holdsOpenTrigger,
+  pushDismissal,
+  SHIELD_ATTR,
+  useDismissal,
+} from './dismissalStack'
 
 let host: HTMLDivElement
 let root: Root
@@ -319,5 +325,16 @@ describe('the stack', () => {
     expect(handles[1].shields()).toBe(false)
     handles[0].release()
     expect(handles[1].shields()).toBe(true)
+  })
+
+  it('answers whether an open layer’s trigger sits inside an element, an exiting one not counting', () => {
+    const lane = layer()
+    const trigger = lane.appendChild(document.createElement('span'))
+    expect(holdsOpenTrigger(lane)).toBe(false)
+    stack(['a'], [], { a: layer() }, { a: trigger })
+    expect(holdsOpenTrigger(lane)).toBe(true)
+    expect(holdsOpenTrigger(layer())).toBe(false)
+    handles[0].setClosing(true)
+    expect(holdsOpenTrigger(lane)).toBe(false)
   })
 })

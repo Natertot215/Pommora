@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
+import { pushDismissal } from './dismissalStack'
 import './OverScroll'
 
 beforeAll(() => {
@@ -94,6 +95,34 @@ describe('OverScroll', () => {
     hover(document.querySelector('p') as HTMLElement)
     vi.advanceTimersByTime(500)
     expect(two.scrollLeft).toBe(0)
+    expect(lane.scrollLeft).toBe(0)
+  })
+
+  it('keeps a lane scrolled while it holds an open layer’s trigger, and slides it back once that layer is closing or gone', () => {
+    vi.useFakeTimers()
+    const leaveAfterScroll = (): HTMLElement => {
+      document.body.innerHTML = `<div class="scroll-fade-x over-scroll-cap"><b>·</b></div><p>elsewhere</p>`
+      const lane = document.querySelector<HTMLElement>('.over-scroll-cap') as HTMLElement
+      hover(document.querySelector('b') as HTMLElement)
+      lane.scrollLeft = 120
+      return lane
+    }
+    const leave = (): void => {
+      hover(document.querySelector('p') as HTMLElement)
+      vi.advanceTimersByTime(500)
+    }
+    let lane = leaveAfterScroll()
+    const trigger = document.querySelector('b') as HTMLElement
+    const open = pushDismissal({ layer: () => null, trigger: () => trigger })
+    leave()
+    expect(lane.scrollLeft).toBe(120)
+    open.setClosing(true)
+    hover(lane)
+    leave()
+    expect(lane.scrollLeft).toBe(0)
+    open.release()
+    lane = leaveAfterScroll()
+    leave()
     expect(lane.scrollLeft).toBe(0)
   })
 })
