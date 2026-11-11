@@ -49,7 +49,8 @@ function hold(cap: HTMLElement | null): void {
   release()
 }
 
-const onFocusOut = (e: FocusEvent): void => release(e.relatedTarget as Element | null)
+/** Caught in capture as `blur`, since a field that closes on its own blur is gone before its `focusout` bubbles. */
+const onBlur = (e: FocusEvent): void => release(e.relatedTarget as Element | null)
 
 // A lane the pointer left slides back, unless it holds the focused field or an open layer's trigger: then it keeps its place until that ends, sliding back if the pointer is elsewhere.
 function release(focused: Element | null = document.activeElement): void {
@@ -60,10 +61,10 @@ function release(focused: Element | null = document.activeElement): void {
   }
   if (kept.size > 0 && !unlisten) {
     const off = subscribeDismissals(() => release())
-    document.addEventListener('focusout', onFocusOut)
+    document.addEventListener('blur', onBlur, true)
     unlisten = () => {
       off()
-      document.removeEventListener('focusout', onFocusOut)
+      document.removeEventListener('blur', onBlur, true)
     }
   } else if (kept.size === 0 && unlisten) {
     unlisten()

@@ -157,10 +157,10 @@ describe('OverScroll', () => {
     leave()
     field.blur()
     vi.advanceTimersByTime(500)
-    const focusouts = (spy: typeof added): number =>
-      spy.mock.calls.filter(([type]) => type === 'focusout').length
-    expect(focusouts(added)).toBe(1)
-    expect(focusouts(removed)).toBe(1)
+    const blurs = (spy: typeof added): number =>
+      spy.mock.calls.filter(([type]) => type === 'blur').length
+    expect(blurs(added)).toBe(1)
+    expect(blurs(removed)).toBe(1)
     lane.scrollLeft = 120
     pushDismissal({ layer: () => null, trigger: () => null }).release()
     vi.advanceTimersByTime(500)
