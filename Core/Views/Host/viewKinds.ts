@@ -12,8 +12,11 @@ export interface ViewKindRecord {
   Visibility: (p: VisibilityPaneProps) => React.JSX.Element
   nests: boolean
   layout: {
+    /** The view editor's Layout pane body: the kind's Visibility pane, or its switches alone. */
     leaf: 'visibility' | 'switches'
+    /** Settings' Layout body switches, and in the view editor that Visibility pane's footer or the leaf itself. */
     leafSwitches?: ViewSwitch[]
+    /** The rows pinned under the view editor's root and under Settings' Layout pane. */
     footing?: (view: SavedView, write: ViewWriter) => MenuRow[]
   }
 }
