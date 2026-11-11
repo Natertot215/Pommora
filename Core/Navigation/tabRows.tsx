@@ -113,7 +113,7 @@ export function TabStripZone({
       family={TAB_FAMILY}
       axis="x"
       opens
-      leaves
+      closesGap
       carry={[
         carries(TAB_FAMILY, (id) => {
           const target = targetOf(id)

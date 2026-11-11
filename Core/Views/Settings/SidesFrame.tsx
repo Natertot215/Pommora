@@ -88,7 +88,7 @@ export function SidesFrame({
                   carry={[carries(SIDES_FAMILY, (id) => (id === FILEDATA.title.id ? null : id))]}
                   onMove={drop}
                   receive={drop}
-                  leaves
+                  closesGap
                 >
                   <DropSlot foreignOnly />
                   {drawn.map((c) => (
