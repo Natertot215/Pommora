@@ -3,7 +3,7 @@ import { DEFAULT_FEEL } from '@pommora/uix/Animations/feel'
 
 type Seat = { frame: Element | null; x: number; y: number }
 
-const slotOf = (el: Element, frame: Element | null): Seat => {
+const seatOf = (el: Element, frame: Element | null): Seat => {
   const r = el.getBoundingClientRect()
   const f = frame?.getBoundingClientRect()
   return { frame, x: r.left - (f?.left ?? 0), y: r.top - (f?.top ?? 0) }
@@ -17,8 +17,8 @@ const gridOf = (root: HTMLElement, id: string | null): Element | null =>
 function seats(root: HTMLElement, from: string | null, to: string | null): Map<Element, Seat> {
   const m = new Map<Element, Seat>()
   for (const grid of new Set([gridOf(root, from), gridOf(root, to)]))
-    for (const el of grid?.querySelectorAll('.card-displace') ?? []) m.set(el, slotOf(el, grid))
-  for (const band of root.querySelectorAll('.group-band')) m.set(band, slotOf(band, null))
+    for (const el of grid?.querySelectorAll('.card-displace') ?? []) m.set(el, seatOf(el, grid))
+  for (const band of root.querySelectorAll('.group-band')) m.set(band, seatOf(band, null))
   return m
 }
 
@@ -42,7 +42,7 @@ export function useGhostFlip(
     const z = zoom || 1
     for (const [el, was] of prev) {
       if (!el.isConnected) continue
-      const now = slotOf(el, was.frame)
+      const now = seatOf(el, was.frame)
       const dx = (was.x - now.x) / z
       const dy = (was.y - now.y) / z
       if (dx !== 0 || dy !== 0)
