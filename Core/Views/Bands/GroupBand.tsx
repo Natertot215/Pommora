@@ -84,12 +84,14 @@ export function GroupBand({
   bands,
   indent,
   fill = false,
+  endsOnRow = false,
   children,
 }: {
   node: BandNode | undefined
   bands: BandView
   indent?: string
   fill?: boolean
+  endsOnRow?: boolean
   children: ReactNode
 }): React.JSX.Element {
   if (node === undefined || node.kind === 'tail')
@@ -101,7 +103,7 @@ export function GroupBand({
       </div>
     )
   return (
-    <HeadedBand node={node} bands={bands} indent={indent} fill={fill}>
+    <HeadedBand node={node} bands={bands} indent={indent} fill={fill} endsOnRow={endsOnRow}>
       {children}
     </HeadedBand>
   )
@@ -112,12 +114,14 @@ function HeadedBand({
   bands,
   indent,
   fill,
+  endsOnRow,
   children,
 }: {
   node: SetBand | BucketBand
   bands: BandView
   indent: string | undefined
   fill: boolean
+  endsOnRow: boolean
   children: ReactNode
 }): React.JSX.Element {
   const open = bands.isOpen(node.key)
@@ -138,6 +142,7 @@ function HeadedBand({
       ref={box}
       className={cx('group-band', node.kind === 'bucket' && node.parentKey !== null && 'sub-band')}
       style={indent ? ({ '--band-indent': indent } as React.CSSProperties) : undefined}
+      data-ends-on-row={endsOnRow ? '' : undefined}
     >
       <div
         ref={springRow}

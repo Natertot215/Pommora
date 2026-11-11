@@ -2418,6 +2418,19 @@ const listView = (id, name, extra = {}) => ({ id, name, type: 'list', property_o
 const ROWS_SET = `${COLLECTION}/Set Beta/VL Rows`
 const SUB_A = `${COLLECTION}/Set Beta/Sub-Set A`
 const DEEP_SET = `${SUB_A}/VL Deep`
+/** Sets made inside VL Deep for a case, each inside the last and holding one row, so Set Beta's bands nest five deep. */
+const DEPTHS = ['VL Depth Three', 'VL Depth Four', 'VL Depth Five']
+const deepRow = (name) => `${name} Row`
+/** Makes the DEPTHS chain, answering what deletes it. */
+async function deepChain(cdp) {
+  let parentPath = DEEP_SET
+  for (const name of DEPTHS) {
+    await mutate(cdp, { op: 'createContainer', id: containerId(), parentPath, kind: 'set', name })
+    parentPath = `${parentPath}/${name}`
+    await mutate(cdp, { op: 'createPage', id: mintPageId(), parentPath, name: deepRow(name), seeds: {} })
+  }
+  return () => mutate(cdp, { op: 'delete', path: `${DEEP_SET}/${DEPTHS[0]}`, kind: 'set' })
+}
 const LONG = 'A Long Title Past the Floor'
 /** The pages List's cases read: a row of each content kind in VL Rows, and a long-titled row at each indentation depth. */
 const LIST_PAGES = [
@@ -2698,7 +2711,7 @@ async function thresholdOf(cdp, title, wrap, lo, hi) {
   return lo
 }
 
-/** The Outlines rail on every band: whether it should draw (a nested band that isn't the tail and holds a row), its color and width against the outline tokens, where it stands against its head's chevron, its top and bottom against its head and its last drawn member, and how that member ends the band. */
+/** The Outlines rail on every band: whether it should draw (a nested band that isn't the tail and holds a row), its color and width against the outline tokens, where it stands against its head's chevron, its top and bottom against its head and its last drawn member, how that member ends the band, and how many bands down it sits. */
 const RAILS = `[...document.querySelectorAll('.list-view .group-band')].filter((b) => b.getClientRects().length && !b.closest('[inert]')).map((b) => {
   const reveal = b.querySelector(':scope > [data-reveal]')
   const s = reveal && getComputedStyle(reveal, '::before')
@@ -2710,10 +2723,12 @@ const RAILS = `[...document.querySelectorAll('.list-view .group-band')].filter((
   const members = !!reveal && [...reveal.querySelectorAll('.data-row')].some((r) => r.getClientRects().length)
   const last = reveal && [...reveal.querySelectorAll('.data-row, .group-band-head')].filter((e) => e.getClientRects().length && e.getBoundingClientRect().height > 0).at(-1)
   const lastBand = last?.closest('.group-band')
+  let levels = 0
+  for (let e = lastBand; e && e !== b; e = e.parentElement.closest('.group-band')) levels++
   const token = reveal && (() => { const p = document.createElement('span'); p.style.background = 'var(--list-outline-color)'; reveal.appendChild(p); const c = getComputedStyle(p).backgroundColor; p.remove(); return { color: c, width: parseFloat(getComputedStyle(reveal).getPropertyValue('--list-outline-width')) } })()
   const ending = !last ? null : last.classList.contains('group-band-head') ? (lastBand.parentElement.closest('.group-band') === b ? 'a closed or empty band' : 'an open band ending on a closed band') : last.classList.contains('ghost-row') ? 'the ghost' : lastBand === b ? 'a row' : 'an open band ending on a row'
   return {
-    label: head?.querySelector('.group-band-head')?.getAttribute('aria-label') ?? 'tail', nested: !!b.parentElement.closest('.group-band'), tail: b.classList.contains('band-tail'), members, drawn, ending,
+    label: head?.querySelector('.group-band-head')?.getAttribute('aria-label') ?? 'tail', nested: !!b.parentElement.closest('.group-band'), tail: b.classList.contains('band-tail'), members, drawn, ending, levels,
     look: drawn && s.backgroundColor === token.color && Math.abs(parseFloat(s.width) - token.width) < 0.01,
     x: drawn ? rb.left + (parseFloat(s.left) + parseFloat(s.width) / 2) * z : null, chevron: chevron ? chevron.left + chevron.width / 2 : null,
     top: drawn ? rb.top + parseFloat(s.top) * z : null, bottom: drawn ? rb.bottom - parseFloat(s.bottom) * z : null,
@@ -3922,12 +3937,10 @@ async function switches(cdp) {
   }
   decided('B-5 · G-1 · H-1', 'a List draws no line between its rows, its Hide Borders stored off, and its Layout offers no switch for one but Outlines and Wrap Rows, where a Table draws them and offers Hide Borders and neither of List\'s', lines.list.borders === 0 && !lines.list.switches.includes('Hide Borders') && ['Outlines', 'Wrap Rows'].every((l) => lines.list.switches.includes(l) && !lines.table.switches.includes(l)) && lines.table.borders > 0 && lines.table.switches.includes('Hide Borders'), show(lines))
 
-  // G-1 · G-2 · each way a nested band ends its rail, wide and with its last row wrapped: a row, an open band ending on a row, the hover ghost, a closed band, and an open band ending on a closed one.
-  const deeper = `${DEEP_SET}/VL Deeper`
-  await mutate(cdp, { op: 'createContainer', id: containerId(), parentPath: DEEP_SET, kind: 'set', name: 'VL Deeper' })
-  await mutate(cdp, { op: 'createPage', id: mintPageId(), parentPath: deeper, name: 'VL Deepest', seeds: {} })
+  // G-1 · G-2 · each way a nested band ends its rail, at every depth of Sets nested five deep, wide and with its last row wrapped: a row, an open band ending on a row, the hover ghost, a closed band, and an open band ending on a closed one.
+  const drop = await deepChain(cdp)
   await showOn(cdp, 'collection', listView(vid('g11railends'), 'VL Rail Ends', { property_order: LIST_ORDER, wrap_rows: true }))
-  await until('VL Deeper\'s band', async () => cdp.evaluate(`!!${head('VL Deeper')}`))
+  await until('the deepest band', async () => cdp.evaluate(`!!${head(DEPTHS.at(-1))}`))
   await listPages(cdp)
   const ends = {}
   for (const [label, w] of [['open', null], ['open, wrapped', NARROW]]) {
@@ -3935,18 +3948,23 @@ async function switches(cdp) {
     ends[label] = await cdp.evaluate(RAILS)
   }
   await viewport(cdp, null)
-  await hover(cdp, listRow('VL Deepest'), 1600)
+  await hover(cdp, listRow(deepRow(DEPTHS.at(-1))), 1600)
   ends.ghost = await cdp.evaluate(RAILS)
   await away(cdp)
   await sleep(900)
-  await mouseClick(cdp, chevronOf(head('VL Deeper')))
-  await until('VL Deeper closed', async () => (await expanded(cdp, head('VL Deeper'))) === 'false', 3000)
-  ends.closed = await cdp.evaluate(RAILS)
-  await mouseClick(cdp, chevronOf(head('VL Deeper')))
-  await mutate(cdp, { op: 'delete', path: deeper, kind: 'set' })
-  const seen = [...new Set(Object.values(ends).flat().filter((b) => b.drawn).map((b) => b.ending))]
+  for (const name of [...DEPTHS].reverse()) {
+    await mouseClick(cdp, chevronOf(head(name)))
+    await until(`${name} closed`, async () => (await expanded(cdp, head(name))) === 'false', 3000)
+    ends[`${name} closed`] = await cdp.evaluate(RAILS)
+    await mouseClick(cdp, chevronOf(head(name)))
+    await until(`${name} open`, async () => (await expanded(cdp, head(name))) === 'true', 3000)
+  }
+  await drop()
+  const drawn = Object.values(ends).flat().filter((b) => b.drawn)
+  const seen = [...new Set(drawn.map((b) => b.ending))]
+  const deepest = Object.fromEntries(seen.map((e) => [e, Math.max(...drawn.filter((b) => b.ending === e).map((b) => b.levels))]))
   const endErrors = Object.fromEntries(Object.entries(ends).map(([k, r]) => [k, railErrors(r, true)]))
-  decided('G-1 · G-2', 'a nested band\'s rail ends its outline gap above its last member when that is a row, an open band ending on a row, the hover ghost, a closed band, or an open band ending on a closed one, wide and with the last row wrapped', ['a row', 'an open band ending on a row', 'the ghost', 'a closed or empty band', 'an open band ending on a closed band'].every((e) => seen.includes(e)) && Object.values(endErrors).every((e) => e.length === 0), show({ seen, endErrors }))
+  decided('G-1 · G-2', 'a nested band\'s rail ends its outline gap above its last member when that is a row, an open band ending on a row, the hover ghost, a closed band, or an open band ending on a closed one, through as many open bands as Sets nested five deep hold, wide and with the last row wrapped', ['a row', 'an open band ending on a row', 'the ghost', 'a closed or empty band', 'an open band ending on a closed band'].every((e) => seen.includes(e)) && ['an open band ending on a row', 'the ghost', 'an open band ending on a closed band'].every((e) => deepest[e] >= 4) && Object.values(endErrors).every((e) => e.length === 0), show({ deepest, endErrors }))
 }
 
 const TILE = (label) => visible(`[...document.querySelectorAll('button[aria-label="${label}"]')]`)
@@ -4043,7 +4061,9 @@ const ROOMS = `(() => {
   return [...items.slice(1), end].map((e, i) => ({ id: e.id, pair: items[i].kind + '>' + e.kind, room: room(items[i].b, e.t) }))
 })()`
 const SPACINGS = [
-  ['Sets, open and nested', {}, []],
+  ['Sets, open and nested five deep', {}, []],
+  ['Sets nested five deep, the deepest closed', {}, [DEPTHS.at(-1)]],
+  ['Sets nested five deep, the third level closed', {}, [DEPTHS[0]]],
   ['Sets, every band closed', {}, ['Set Alpha', 'Set Beta']],
   ['a nested band closed', {}, ['Sub-Set A']],
   ['property bands, open', byStage, []],
@@ -4055,7 +4075,9 @@ const SPACINGS = [
 const LINE = (cls) => `(() => { const e = ${visible(`[...document.querySelectorAll('${cls}')]`)}; if (!e) return null; const b = e.getBoundingClientRect(); return { l: Math.round(b.left * 10) / 10, r: Math.round(b.right * 10) / 10, border: getComputedStyle(e).borderBottomWidth } })()`
 
 async function frame(cdp) {
-  // B-15 · the room that reads between a List's groups is a Table's: from a band's last row or the tail's to the next heading, between headings, and to the view's end; a heading to its first row stays compact (stated), and the room before the ungrouped tail rows is measured.
+  // B-15 · the room that reads between a List's groups is a Table's, with Sets nested five deep: from a band's last row or the tail's to the next heading, between headings, and to the view's end; a heading to its first row stays compact (stated), and the room before the ungrouped tail rows is measured.
+  const drop = await deepChain(cdp)
+  await listPages(cdp)
   for (const [name, grouping, closed] of SPACINGS) {
     const rooms = {}
     for (const kind of ['list', 'table']) {
@@ -4077,12 +4099,13 @@ async function frame(cdp) {
     decided('B-15', `a List with ${name} reads a Table's room from a band's last row or the tail's to the next heading, between headings, and to its end, and a heading's own room to its first row stays under it (stated)`, rooms.list.length === rooms.table.length && kept.some((p) => p.room > 0) && off.length === 0 && compact.length === 0, show({ off, compact, kept }))
     note('B-15', `${name}: the room before and between the ungrouped tail rows, List against Table`, pairs.filter((p) => p.pair.endsWith('>tail')).map((p) => [p.pair, p.room, p.table]))
   }
-  // B-15 · the hover ghost under a band's last row, before a nested band and before a sibling: the heading below moves by the ghost's height and stands a Table's room below the ghost.
+  // B-15 · the hover ghost under a band's last row, before a nested band, before a sibling, and five bands deep before a sibling of its fourth enclosing band: the heading below moves by the ghost's height and stands a Table's room below the ghost.
   const ghosts = {}
   for (const [kind, make, rowOf] of [['list', listView, listRow], ['table', tableView, tableRowOf]]) {
     await showOn(cdp, 'collection', make(vid(`g11ghostgap${kind}`), `VL Ghost Gap ${kind}`, { property_order: LIST_ORDER }))
-    for (const [title, next] of [[`VL One ${LONG}`, 'Sub-Set A'], ['Beta 1', 'VL Rows']]) {
+    for (const [title, next] of [[`VL One ${LONG}`, 'Sub-Set A'], ['Beta 1', 'VL Rows'], [deepRow(DEPTHS.at(-1)), 'Sub-Set B']]) {
       const top = () => cdp.evaluate(`(${head(next)}).getBoundingClientRect().top`)
+      await cdp.evaluate(`(${rowOf(title)}).scrollIntoView({ block: 'center' })`)
       await away(cdp)
       await sleep(700)
       const rest = await top()
@@ -4096,7 +4119,8 @@ async function frame(cdp) {
     }
   }
   const ghostOff = Object.entries(ghosts).filter(([k, g]) => !g.ghost || !near(g.moved, g.ghost, 0.5) || !near(g.back, 0, 0.5) || (k.startsWith('list') && !near(g.room, ghosts[k.replace('list', 'table')].room, 0.5)))
-  decided('B-15', 'with the hover ghost up under a band\'s last row, before a nested band and before a sibling, the heading below moves by exactly the ghost\'s height and back, and stands a Table\'s room below the ghost', ghostOff.length === 0, show(ghosts))
+  await drop()
+  decided('B-15', 'with the hover ghost up under a band\'s last row, before a nested band, before a sibling, and five bands deep, the heading below moves by exactly the ghost\'s height and back, and stands a Table\'s room below the ghost', ghostOff.length === 0 && Object.keys(ghosts).length === 6, show(ghosts))
 
   // B-14 · the line under a bannerless header is inset over a List as over Cards; under a banner it spans alike over every kind (stated).
   const lines = { bannerless: {}, banner: {} }

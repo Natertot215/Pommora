@@ -380,3 +380,73 @@ describe('a List row', () => {
     expect(right('p1')?.children[2]).toBe(due)
   })
 })
+
+describe('a List band', () => {
+  it('marks every band whose run ends on a row, at any depth, through open bands and none closed or empty', async () => {
+    const page = (id: string, path: string) => ({
+      kind: 'page',
+      id,
+      title: id,
+      path: `${path}/${id}.md`,
+    })
+    const set = (id: string, path: string, pages: string[], sets: unknown[] = []) => ({
+      kind: 'set',
+      id,
+      title: id,
+      path: `${path}/${id}`,
+      pages: pages.map((p) => page(p, `${path}/${id}`)),
+      sets,
+    })
+    const nested = {
+      ...source(listView({ group: { kind: 'structural' }, collapsed_groups: ['A3'] })),
+      pages: [],
+      sets: [
+        set(
+          'A0',
+          'Col',
+          ['a0'],
+          [
+            set(
+              'A1',
+              'Col/A0',
+              ['a1'],
+              [set('A2', 'Col/A0/A1', ['a2'], [set('A3', 'Col/A0/A1/A2', ['a3'])])],
+            ),
+          ],
+        ),
+        set(
+          'B0',
+          'Col',
+          [],
+          [
+            set(
+              'B1',
+              'Col/B0',
+              [],
+              [set('B2', 'Col/B0/B1', [], [set('B3', 'Col/B0/B1/B2', ['b3'])])],
+            ),
+          ],
+        ),
+        set('C0', 'Col', ['c0'], [set('C1', 'Col/C0', [])]),
+      ],
+    } as unknown as CollectionNode
+    await renderView(root, nested)
+    const ends = (title: string): boolean =>
+      host
+        .querySelector(`[aria-label="${title}"]`)!
+        .closest('.group-band')!
+        .hasAttribute('data-ends-on-row')
+    expect(['A0', 'A1', 'A2', 'A3', 'B0', 'B1', 'B2', 'B3', 'C0', 'C1'].map(ends)).toEqual([
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+    ])
+  })
+})

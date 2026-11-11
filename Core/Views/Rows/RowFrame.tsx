@@ -55,6 +55,10 @@ export function BandRows({
     </Reveal>
   )
   let renderedAnyRow = false
+  const endsOnRow = (g: ResolvedGroup): boolean => {
+    const last = g.children?.at(-1)
+    return disclosure.isOpen(g.key) && (last ? endsOnRow(last) : g.items.length > 0)
+  }
   const walk = (g: ResolvedGroup, depth: number, visible: boolean): React.JSX.Element => {
     const itemsVisible = visible && disclosure.isOpen(g.key)
     const padLeft = memberIndent(g.kind, depth)
@@ -76,6 +80,7 @@ export function BandRows({
         bands={interactions.bandView}
         indent={rowIndent(depth)}
         fill={fill}
+        endsOnRow={endsOnRow(g)}
       >
         {members}
       </GroupBand>
