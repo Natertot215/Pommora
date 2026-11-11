@@ -29,11 +29,15 @@ import { sideFor } from './listSides'
 import '../Rows/table-shell.css'
 import './list-view.css'
 
+const drawnOf = (row: ViewRow, columns: ResolvedColumn[]): ResolvedColumn[] =>
+  drawnColumns(row, columns, true)
+const TITLE = cx('list-view-title', text.body.emphasized)
+
 export function ListView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const { view, columns, ctx, styleById, dragDisabled } = host
   const interactions = useViewInteractions(host, {
     ghost: { graceMs: 0 },
-    seat: { anchor: seatOf, drawn: (row) => drawnColumns(row, columns, true) },
+    seat: { anchor: seatOf, drawn: (row) => drawnOf(row, columns) },
     newPages: 'pair',
     item: {},
   })
@@ -61,7 +65,7 @@ export function ListView({ host }: { host: ViewHostApi }): React.JSX.Element {
             ghost={(padLeft) => (
               <RowLead className="ghost-worn" indent={padLeft}>
                 <div className="list-view-group">
-                  <span className={cx('list-view-title', text.body.emphasized)}>
+                  <span className={TITLE}>
                     <GhostTitle hideIcon={hideIcon} />
                   </span>
                 </div>
@@ -125,16 +129,11 @@ const ListPageRow = memo(function ListPageRow({
   dragDisabled: boolean
 }): React.JSX.Element {
   const pageMenu = rowMenu(api, row)
-  const drawn = drawnColumns(row, columns, true)
+  const drawn = drawnOf(row, columns)
   const item = (c: ResolvedColumn): React.JSX.Element =>
     c.kind === 'title' ? (
       // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: the row has the keys, and Enter opens it
-      <span
-        key={c.id}
-        className={cx('list-view-title', text.body.emphasized)}
-        data-title={row.title}
-        onClick={rowOpen(api, row)}
-      >
+      <span key={c.id} className={TITLE} data-title={row.title} onClick={rowOpen(api, row)}>
         <PageTitle row={row} naming={naming} hideIcon={hideIcon} api={api} />
       </span>
     ) : (

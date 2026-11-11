@@ -86,7 +86,7 @@ export function addColumns(item: ItemColumns, row: ViewRow, drawn: ResolvedColum
   return { contexts: listed(item.contexts), properties: listed(item.properties) }
 }
 
-/** Whether an item's Add list would hold anything, by count: it draws fewer columns than its Contexts and properties number. */
+/** Whether an item's Add list would hold anything, by count, since a memoized row can't afford building the list each render: it draws fewer columns than its Contexts and properties number. */
 export const addable = (
   drawn: ResolvedColumn[],
   schema: PropertyDefinition[],

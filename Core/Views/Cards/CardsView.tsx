@@ -82,6 +82,9 @@ type ValueApi = Pick<
 const previewKeyOf = (row: ViewRow, banner: CardBanner): string | undefined =>
   banner === 'preview' ? navKey({ kind: 'page', id: row.id }) : undefined
 
+const drawnOf = (row: ViewRow, columns: ResolvedColumn[], view: SavedView): ResolvedColumn[] =>
+  drawnColumns(row, columns, isCompact(view))
+
 const CARDS_GHOST_GRACE_MS = 200 // KNOB
 
 const NOOP = (): void => {}
@@ -136,7 +139,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     seat: {
       anchor: seatOf,
       centered: true,
-      drawn: (row) => drawnColumns(row, columns, isCompact(view)),
+      drawn: (row) => drawnOf(row, columns, view),
     },
     newPages: 'single',
     item: { banner: setBannerRequest },
@@ -585,7 +588,7 @@ const CardFace = memo(function CardFace({
   /** The column whose inline field is open on this card. */
   editing: string | null
 }): React.JSX.Element {
-  const shown = useMemo(() => drawnColumns(row, columns, isCompact(view)), [columns, row, view])
+  const shown = useMemo(() => drawnOf(row, columns, view), [columns, row, view])
   const titleIcon = !viewOption(view, 'hide_page_icons') && (
     <EntityIcon kind="page" icon={row.icon} className="card-title-icon" />
   )

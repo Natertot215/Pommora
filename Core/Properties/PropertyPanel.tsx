@@ -277,18 +277,18 @@ export function PropertyPanel({
         <div className={panelHost === 'dropdown' ? s.pageRows : cx(s.panelRows, 'scroll-fade')}>
           {GROUPS.map(({ key, label, add }) => {
             const rows = shown[key]
-            const addable = unshown(key).length > 0
-            const standing = addable && rows.length === 0
+            const hasUnshown = unshown(key).length > 0
+            const standing = hasUnshown && rows.length === 0
             const opened = addKey === key
             const rowOpened = opened && addFromRow
             const addHeld = rowOpened || addSeat?.held === key
             const ghost =
-              addable && !standing && ghostApi.ghost?.anchorId === key ? ghostApi.ghost : null
+              hasUnshown && !standing && ghostApi.ghost?.anchorId === key ? ghostApi.ghost : null
             return (
               <div key={key} data-reveal-host="" {...ghostAnchorProps(ghostApi, key)}>
                 <div className={heading}>
                   <span>{label}</span>
-                  {(addable || opened) && (
+                  {(hasUnshown || opened) && (
                     <AccessoryButton
                       ref={(el) => {
                         addRefs.current[key] = el
