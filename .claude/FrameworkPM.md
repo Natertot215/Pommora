@@ -18,7 +18,7 @@ The near-term structural queue rides `ContextPM.md`'s Pending Focuses rather tha
 
 #### v0.6.0 — The View Renderers
 
-The remaining renderers — **List · Gallery · Calendar · Timeline** — over the shipped filter → group → sort pipeline. Table and Cards carry renderers; these four are registered types with none, and their picker tiles are inert. Each groups differently, and the one Group pane adapts to each.
+The remaining renderers — **Gallery · Calendar · Timeline** — over the shipped filter → group → sort pipeline. These three are registered types with none, and their picker tiles are inert. Each groups differently, and the one Group pane adapts to each.
 
 #### v0.7.0 — Agenda + Calendar
 

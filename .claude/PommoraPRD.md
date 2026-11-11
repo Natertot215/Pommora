@@ -115,7 +115,7 @@ Each Collection decides where its Pages open — the main detail pane, or the fl
 
 #### Page Collections and Sets
 
-A **Page Collection** is the operational container — a top-level folder whose sidecar assigns the nexus-wide properties shared by every Page inside it, plus its saved views, child ordering, and an open-in mode. It has no text editor of its own; it's a pure database surface (table and cards, with more renderers to come).
+A **Page Collection** is the operational container — a top-level folder whose sidecar assigns the nexus-wide properties shared by every Page inside it, plus its saved views, child ordering, and an open-in mode. It has no text editor of its own; it's a pure database surface (table, cards, and list, with more renderers to come).
 
 A Collection nests **Page Sets** to any depth — schema-less sub-folders that inherit the Collection's whole schema. The first level (a "Set") carries its own views and sorting and is selectable; deeper levels ("Sub-Sets") are plain organizing folders. Nesting is unbounded, with no roll-up — discovery, rendering, and navigation recurse on the real folder tree.
 
@@ -146,9 +146,9 @@ Property **definitions** live in one nexus-wide registry (`.nexus/properties.jso
 
 #### Views
 
-A view is a saved presentation of a Collection's (or depth-1 Set's) Pages; each container's sidecar holds an ordered list of saved views; the active view is tracked per-machine so switching it doesn't churn the synced file. A view records its renderer type, property layout (column order plus a hidden set), and its sort / filter / group config, fed by one pure pipeline: **fetch → filter → group → sort**.
+A view is a saved presentation of a Collection's (or depth-1 Set's) Pages; each container's sidecar holds an ordered list of saved views and the active one. A view records its renderer type, property layout (column order plus a hidden set), and its sort / filter / group config, fed by one pure pipeline: **fetch → filter → group → sort**.
 
-The registered view types are **Table**, **Cards**, **List**, **Gallery**, **Calendar**, and **Timeline** — Table and Cards carry renderers; the rest are registered types with none. Views also embed as tiles in block-host surfaces — a **Linked View** referencing a saved view, or a **Custom View** with embed-owned, nexus-wide config. Two capabilities go beyond the baseline: multi-key sort, and recursive AND/OR filter groups.
+The registered view types are **Table**, **Cards**, **List**, **Gallery**, **Calendar**, and **Timeline** — Table, Cards, and List carry renderers; the rest are registered types with none. Views also embed as tiles in block-host surfaces — a **Linked View** referencing a saved view, or a **Custom View** with embed-owned, nexus-wide config. Two capabilities go beyond the baseline: multi-key sort, and recursive AND/OR filter groups.
 
 #### The Local-End Translation Principle
 

@@ -390,7 +390,7 @@ The elements that draw and frame a stored image — `AssetImage`, `ImagePicker`,
 
 ### Table
 
-`UIX/Table/` — `table.css` · `table-tokens.css` · `RowLead` · `rowIndent`. The tabular chrome every table surface uses (TableView, ArchiveView, the Trash): the column-header band with `.col-header` segment bars, row and column hairlines, the column drag and resize strips, `no-borders`, and the lead cell a row indents through.
+`UIX/Table/` — `table.css` · `table-tokens.css` · `RowLead` · `rowIndent`. The tabular chrome every table surface uses (TableView, ListView, ArchiveView, the Trash): the column-header band with `.col-header` segment bars, row and column hairlines, the column drag and resize strips, `no-borders`, and the lead cell a row indents through.
 
 ### Utilities
 
