@@ -439,7 +439,6 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
   /** A zone's rows glide back before its spill goes, so its last row never crosses what follows the zone. */
   const unspill = (box: HTMLElement): void => {
     if (!spilled.has(box)) return
-    window.clearTimeout(spilled.get(box))
     spilled.set(
       box,
       window.setTimeout(() => spill(box, 0), GLIDED),
