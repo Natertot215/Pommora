@@ -6,6 +6,7 @@ import type { CollectionNode } from '../../Nexus/tree'
 import type { PropertyDefinition } from '../../Properties/properties'
 import type { SavedView } from '../views'
 import { firePointer, stubRect } from '@pommora/uix/Utilities/pointerHarness'
+import { revealDim } from '@pommora/uix/Interactions/hover-reveal.css'
 import { useSession } from '../../Session/store'
 import * as group from '../Pipeline/group'
 import { stubDialer } from '../../vitest.setup'
@@ -245,7 +246,7 @@ describe('GroupFrame rows', () => {
     expect(texts()).toContain('Separation')
   })
 
-  it('an option row’s eye toggles its value in hidden_groups (add, then remove)', async () => {
+  it('an option row’s eye reveals from its row while shown and toggles its value in hidden_groups (add, then remove)', async () => {
     const propView = view({
       group: {
         kind: 'property',
@@ -255,12 +256,15 @@ describe('GroupFrame rows', () => {
     })
     await mount(propView)
     const eye = host.querySelector('button[aria-label="Hide Queued"]') as HTMLElement
+    expect(eye.classList.contains(revealDim)).toBe(true)
+    expect(eye.closest('[data-line-row]')!.getAttribute('data-reveal-host')).toBe('')
     await act(async () => {
       eye.click()
     })
     expect(lastSaved().hidden_groups).toEqual(['prop_status/opt_Queued'])
     await mount({ ...propView, hidden_groups: ['prop_status/opt_Queued'] })
     const unhide = host.querySelector('button[aria-label="Show Queued"]') as HTMLElement
+    expect(unhide.classList.contains(revealDim)).toBe(false)
     await act(async () => {
       unhide.click()
     })

@@ -51,19 +51,14 @@ export interface HideControls {
   onToggleHidden: (key: string) => void
 }
 
-export function hideEye(
-  label: string,
-  key: string,
-  hide?: HideControls,
-  reveal = false,
-): React.JSX.Element | null {
+export function hideEye(label: string, key: string, hide?: HideControls): React.JSX.Element | null {
   if (!hide) return null
   const hidden = hide.isHidden(key)
   return (
     <EyeToggle
       hidden={hidden}
       name={label}
-      className={reveal && !hidden ? revealDim : undefined}
+      className={hidden ? undefined : revealDim}
       onToggle={() => hide.onToggleHidden(key)}
     />
   )
@@ -87,6 +82,7 @@ export function HideableRow({
   const eye = hideEye(label, hideKey, hide)
   const row = {
     className: cx(optionRow, className, hide?.isHidden(hideKey) && hiddenRow),
+    'data-reveal-host': '',
     children: (
       <>
         {children}

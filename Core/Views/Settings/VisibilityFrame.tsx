@@ -42,7 +42,7 @@ export function visibilityPane({ view, schema, save }: PaneProps, tree: NexusTre
     trailing:
       c.kind === 'title'
         ? undefined
-        : { kind: 'field', children: hideEye(label(c.id), c.id, hide, true) },
+        : { kind: 'field', children: hideEye(label(c.id), c.id, hide) },
     className: hiddenIds.has(c.id) ? s.hiddenRow : undefined,
   })
   return { shown, hidden, label, icon, row }

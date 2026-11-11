@@ -431,8 +431,7 @@ function LocationHierarchy({
         onClick={disclosable ? toggle : undefined}
         className={cx(setHidden && hiddenRow)}
         tabIndex={-1}
-        // Many folders can show at once, and a full-strength eye on each would crowd the list.
-        trailing={hideEye(s.title, s.id, hide, true)}
+        trailing={hideEye(s.title, s.id, hide)}
         wrap={(row) => (
           <LineRow
             id={s.id}
