@@ -195,3 +195,7 @@ No highlights for lists
 **After the Final Report, 11-11-2026 (shown the neutral reviewer's "no" and its eleven corrections):**
 
 Fix the neutral review issues
+
+**After the Final Report, 11-11-2026 (asked whether Title's greyed-out eye in the Visibility pane is the final design):**
+
+Remove the titke visibility marker; have the eye be hover-revealed for all, while hidden always keeps the crosses out eye

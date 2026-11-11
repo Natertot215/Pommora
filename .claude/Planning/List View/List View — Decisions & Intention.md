@@ -81,7 +81,8 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
 - **E-5 [CONFIRMED]:** A hidden property should move to the foot of its own column, ghosted with its eye off, and should return to its remembered position and side when shown again.
 - **E-6 [CONFIRMED]:** A hidden property's remembered position should survive a reorder of the other properties, in every view kind.
 - **E-7 [CONFIRMED]:** A property should drag within its column and across to the other with no drag-kit work beyond E-10's, both columns reordering by displacement, the form in which the kit trades items between two zones today, as cards cross bands. This pane is a stated exception to the drop line every other settings list uses: a property hides by its eye alone, and a right-click row, Move to Left or Move to Right, changes its side without a drag.
-- **E-8 [CONFIRMED]:** Title should be a row of the Left column that reorders within it and carries no working eye.
+- **E-8 [CONFIRMED]:** Title should be a row of the Left column that reorders within it and carries no eye.
+- **E-11 [CONFIRMED]:** In the Visibility pane of every view kind, a shown property's eye should appear only while its row is hovered, and a hidden property's crossed-out eye should always show.
 - **E-9 [INFERRED]:** Title should stay on the left side.
 - **E-10 [CONFIRMED]:** A row carried into a column should make room there as a carried item does in a Table or a Cards view, and should never be drawn over the hidden rows at the column's foot. That a carried item "compresses the view" there is read as making room; the reading is the session's.
 

@@ -248,6 +248,10 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
 
 > Fix the neutral review issues
 
+**After the Final Report, 11-11-2026 (asked whether Title's greyed-out eye in the Visibility pane is the final design):**
+
+> Remove the titke visibility marker; have the eye be hover-revealed for all, while hidden always keeps the crosses out eye
+
 #### Process Overview
 
 - [x] `[Before Phase 1: record the BASELINE head, the three gates, and, at that head, the Views Drive's tally for groups 2 to 10 and the Properties, Text Property, Option Picker, and Archive Drives' tallies]`
