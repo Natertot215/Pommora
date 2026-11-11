@@ -19,6 +19,7 @@ type Live = { entry: DismissalEntry; closing: boolean }
 
 let entries: Live[] = []
 const changed = emitter()
+export const subscribeDismissals = changed.subscribe
 
 let windows: HTMLElement[] = []
 

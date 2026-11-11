@@ -18,6 +18,7 @@ afterEach(() => {
   document.dispatchEvent(new Event('pointerleave'))
   document.body.innerHTML = ''
   vi.useRealTimers()
+  vi.restoreAllMocks()
 })
 
 const label = (): HTMLElement => {
@@ -98,31 +99,71 @@ describe('OverScroll', () => {
     expect(lane.scrollLeft).toBe(0)
   })
 
-  it('keeps a lane scrolled while it holds an open layer’s trigger, and slides it back once that layer is closing or gone', () => {
+  const scrolledLane = (inside: string): HTMLElement => {
     vi.useFakeTimers()
-    const leaveAfterScroll = (): HTMLElement => {
-      document.body.innerHTML = `<div class="scroll-fade-x over-scroll-cap"><b>·</b></div><p>elsewhere</p>`
-      const lane = document.querySelector<HTMLElement>('.over-scroll-cap') as HTMLElement
-      hover(document.querySelector('b') as HTMLElement)
-      lane.scrollLeft = 120
-      return lane
-    }
-    const leave = (): void => {
-      hover(document.querySelector('p') as HTMLElement)
-      vi.advanceTimersByTime(500)
-    }
-    let lane = leaveAfterScroll()
-    const trigger = document.querySelector('b') as HTMLElement
-    const open = pushDismissal({ layer: () => null, trigger: () => trigger })
+    document.body.innerHTML = `<div class="scroll-fade-x over-scroll-cap"><b>·</b>${inside}</div><p>elsewhere</p>`
+    const lane = document.querySelector<HTMLElement>('.over-scroll-cap') as HTMLElement
+    hover(document.querySelector('b') as HTMLElement)
+    lane.scrollLeft = 120
+    return lane
+  }
+  const leave = (): void => {
+    hover(document.querySelector('p') as HTMLElement)
+    vi.advanceTimersByTime(500)
+  }
+
+  it('keeps a lane scrolled while it holds an open layer’s trigger, through its closing, and slides it back once that layer is gone with the pointer elsewhere', () => {
+    const lane = scrolledLane('')
+    const open = pushDismissal({ layer: () => null, trigger: () => document.querySelector('b') })
     leave()
     expect(lane.scrollLeft).toBe(120)
     open.setClosing(true)
-    hover(lane)
-    leave()
-    expect(lane.scrollLeft).toBe(0)
+    vi.advanceTimersByTime(500)
+    expect(lane.scrollLeft).toBe(120)
     open.release()
-    lane = leaveAfterScroll()
+    vi.advanceTimersByTime(500)
+    expect(lane.scrollLeft).toBe(0)
+  })
+
+  it('keeps a lane scrolled when its layer goes with the pointer on it, and slides it back on the later leave', () => {
+    const lane = scrolledLane('')
+    const open = pushDismissal({ layer: () => null, trigger: () => document.querySelector('b') })
+    leave()
+    hover(lane)
+    open.release()
+    vi.advanceTimersByTime(500)
+    expect(lane.scrollLeft).toBe(120)
     leave()
     expect(lane.scrollLeft).toBe(0)
+  })
+
+  it('keeps a lane scrolled while it holds the focused field, and slides it back once focus leaves with the pointer elsewhere', () => {
+    const lane = scrolledLane('<input>')
+    const field = document.querySelector('input') as HTMLInputElement
+    field.focus()
+    leave()
+    expect(lane.scrollLeft).toBe(120)
+    field.blur()
+    vi.advanceTimersByTime(500)
+    expect(lane.scrollLeft).toBe(0)
+  })
+
+  it('listens for a kept lane’s release only while a lane is kept', () => {
+    const added = vi.spyOn(document, 'addEventListener')
+    const removed = vi.spyOn(document, 'removeEventListener')
+    const lane = scrolledLane('<input>')
+    const field = document.querySelector('input') as HTMLInputElement
+    field.focus()
+    leave()
+    field.blur()
+    vi.advanceTimersByTime(500)
+    const focusouts = (spy: typeof added): number =>
+      spy.mock.calls.filter(([type]) => type === 'focusout').length
+    expect(focusouts(added)).toBe(1)
+    expect(focusouts(removed)).toBe(1)
+    lane.scrollLeft = 120
+    pushDismissal({ layer: () => null, trigger: () => null }).release()
+    vi.advanceTimersByTime(500)
+    expect(lane.scrollLeft).toBe(120)
   })
 })

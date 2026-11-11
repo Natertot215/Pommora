@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { duration, easeBase, ms, prefersReducedMotion } from '../Animations/motion'
 import { clamp } from '../Utilities/clamp'
 import { cx } from '../Utilities/cx'
-import { holdsOpenTrigger } from './dismissalStack'
+import { holdsOpenTrigger, subscribeDismissals } from './dismissalStack'
 import './over-scroll.css'
 
 export const overScrollLabel = 'scroll-fade-x over-scroll-cap'
@@ -32,19 +32,43 @@ function capUnder(target: EventTarget | null): HTMLElement | null {
 }
 
 let held: HTMLElement | null = null
+const kept = new Set<HTMLElement>()
+let unlisten: (() => void) | null = null
 
 /** The blocking wheel listener exists only while a label is hovered, so no other scroll waits on it. */
 function hold(cap: HTMLElement | null): void {
   if (cap === held) return
-  // Each lane the pointer left slides back; a lane holding the focused field or an open layer's trigger keeps its place.
-  let lane = held
-  while (lane && !lane.contains(cap)) {
-    if (!lane.contains(document.activeElement) && !holdsOpenTrigger(lane)) slideScrollBack(lane)
-    lane = lane.parentElement?.closest<HTMLElement>('.over-scroll-cap') ?? null
-  }
   if (cap && !held) document.addEventListener('wheel', wheelCap, WHEEL)
   else if (!cap && held) document.removeEventListener('wheel', wheelCap, WHEEL)
+  let lane = held
   held = cap
+  while (lane && !lane.contains(cap)) {
+    kept.add(lane)
+    lane = lane.parentElement?.closest<HTMLElement>('.over-scroll-cap') ?? null
+  }
+  release()
+}
+
+const onFocusOut = (e: FocusEvent): void => release(e.relatedTarget as Element | null)
+
+// A lane the pointer left slides back, unless it holds the focused field or an open layer's trigger: then it keeps its place until that ends, sliding back if the pointer is elsewhere.
+function release(focused: Element | null = document.activeElement): void {
+  for (const lane of kept) {
+    if (lane.isConnected && (lane.contains(focused) || holdsOpenTrigger(lane))) continue
+    kept.delete(lane)
+    if (lane.isConnected && !lane.contains(held)) slideScrollBack(lane)
+  }
+  if (kept.size > 0 && !unlisten) {
+    const off = subscribeDismissals(() => release())
+    document.addEventListener('focusout', onFocusOut)
+    unlisten = () => {
+      off()
+      document.removeEventListener('focusout', onFocusOut)
+    }
+  } else if (kept.size === 0 && unlisten) {
+    unlisten()
+    unlisten = null
+  }
 }
 
 const WHEEL = { capture: true, passive: false }

@@ -78,7 +78,7 @@ The edge fade on a scroller: its hidden edge dissolves into the surface along it
 
 #### II. OverScroll
 
-The capped label: a label truncates at rest, scrolls sideways under the wheel while hovered to reveal its full text, and slides back to its start on `easeBase` when the pointer leaves, yielding to any other scroll of the label mid-slide. `over-scroll-cap` makes the capped box, which carries the inline scroll fade, and a label that can't hover itself takes the hovered state from an ancestor with `over-scroll-host`. The wheel listener exists only while a label is hovered.
+The capped label: a label truncates at rest, scrolls sideways under the wheel while hovered to reveal its full text, and slides back to its start on `easeBase` when the pointer leaves, yielding to any other scroll of the label mid-slide; a label holding the focused field or an open layer's trigger keeps its place until that ends, then slides back if the pointer is elsewhere. `over-scroll-cap` makes the capped box, which carries the inline scroll fade, and a label that can't hover itself takes the hovered state from an ancestor with `over-scroll-host`. The wheel listener exists only while a label is hovered.
 
 **SOURCE:** `UIX/Interactions/OverScroll.tsx` · `UIX/Interactions/over-scroll.css`
 
