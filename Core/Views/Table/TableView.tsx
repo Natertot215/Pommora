@@ -225,7 +225,6 @@ const DataRow = memo(function DataRow({
       api={api}
       lead={lead}
       dragDisabled={dragDisabled}
-      // Table's row marks the selected page; a List row draws no selection fill.
       className={selected ? 'selected' : undefined}
     >
       {columns.map((c, i) => {

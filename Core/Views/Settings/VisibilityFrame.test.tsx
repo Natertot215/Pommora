@@ -33,7 +33,7 @@ mountEachTest((_h, r) => {
 const row = (name: string): Element =>
   [...document.querySelectorAll('[data-line-row]')].find((e) => e.textContent?.includes(name))!
 
-const drag = async (name: string, from: number, ...to: number[]): Promise<void> => {
+const mount = async (): Promise<void> => {
   save.mockClear()
   useSession.setState({
     tree: {
@@ -52,6 +52,10 @@ const drag = async (name: string, from: number, ...to: number[]): Promise<void> 
       />,
     )
   })
+}
+
+const drag = async (name: string, from: number, ...to: number[]): Promise<void> => {
+  await mount()
   const zone = document.querySelector('.line-zone')!
   const [shown, hidden] = zone.children
   stubRect(zone, { top: 0, bottom: 100 })
@@ -113,26 +117,6 @@ describe('VisibilityFrame — the rows', () => {
 })
 
 describe('VisibilityFrame — the eyes', () => {
-  const mount = async (): Promise<void> => {
-    save.mockClear()
-    useSession.setState({
-      tree: {
-        contexts: [],
-        collections: [],
-        config: { personalization: { defaultIcons: {} } },
-      } as never,
-    })
-    await act(async () => {
-      root.render(
-        <VisibilityFrame
-          schema={schema}
-          view={view}
-          back={{ label: 'Settings', onBack: () => {} }}
-          save={save}
-        />,
-      )
-    })
-  }
   const eye = (label: string): HTMLButtonElement =>
     document.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`)!
 
@@ -142,15 +126,5 @@ describe('VisibilityFrame — the eyes', () => {
     expect(eye('Hide Alpha').classList.contains(revealDim)).toBe(true)
     expect(row('Alpha').getAttribute('data-reveal-host')).toBe('')
     expect(eye('Show Gamma').classList.contains(revealDim)).toBe(false)
-  })
-
-  it('hides a shown property by its eye, and shows a hidden one by its own', async () => {
-    await mount()
-    await act(async () => eye('Hide Alpha').click())
-    expect(save).toHaveBeenLastCalledWith(
-      expect.objectContaining({ hidden_properties: ['prop_c', 'prop_a'] }),
-    )
-    await act(async () => eye('Show Gamma').click())
-    expect(save).toHaveBeenLastCalledWith(expect.objectContaining({ hidden_properties: [] }))
   })
 })

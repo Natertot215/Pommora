@@ -167,6 +167,7 @@ const ListPageRow = memo(function ListPageRow({
     />
   )
   return (
+    // A List row draws no selection fill; Table's row marks the selected page.
     <PageRow row={row} api={api} lead={lead} dragDisabled={dragDisabled}>
       <RowLead indent={padLeft} onContextMenu={pageMenu}>
         <RowGrip onMenu={pageMenu} dragDisabled={dragDisabled} />

@@ -31,7 +31,7 @@ import { MenuIndex } from '@pommora/uix/Menus/MenuIndex'
 import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
 import { titleInput } from '@pommora/uix/Menus/menu-row.css'
 import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
-import { kindRows, kindSwitches, typeGrid } from './LayoutFrame'
+import { kindFooting, kindLeafSwitches, typeGrid } from './LayoutFrame'
 import { chevronRows, type PaneProps, VIEW_PANES, ViewPane, type ViewPaneId } from './ViewPane'
 import { presentedKind } from '../Host/viewKinds'
 import { LineRow, LineZone, lineList } from '@pommora/uix/Interactions/drag'
@@ -178,7 +178,7 @@ function ViewEditor({
           }
         />
       }
-      footer={kindRows(view, save)}
+      footer={kindFooting(view, save)}
       maxHeight={s.SETTINGS_PANE_MAX_HEIGHT}
     >
       <InlineEditHeader
@@ -196,7 +196,7 @@ function ViewEditor({
   const toViews: MenuBack = { label: 'Views', onBack: () => setPane(null) }
   const leaf: PaneProps = { view, schema, back: toViews, save }
   const { layout, Visibility } = presentedKind(view.type)
-  const switches = kindSwitches(view, save)
+  const switches = kindLeafSwitches(view, save)
   const detail =
     pane !== 'layout' ? (
       pane && <ViewPane id={pane} source={source} {...leaf} />
