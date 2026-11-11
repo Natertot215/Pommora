@@ -292,7 +292,7 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
   let chromeEl: HTMLDivElement | null = null
   let refocus: Active | null = null
   let disposing = false
-  let resettle = 0
+  let resized: ResizeObserver | null = null
 
   const entryOf = (zoneId: string): ZoneEntry => {
     let entry = zones.get(zoneId)
@@ -421,22 +421,20 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
 
   // ── Painting ──
 
-  // A changed spill moves what follows its zone, and a menu re-places itself on that a frame later, so the re-measure waits a frame past the layout.
+  // A spill resizes its zone and the frames holding it, which moves what follows and what a pane re-places on that; their size changes re-measure, through an observer made at a drag's first spill so it reports after the pane's own.
   const spill = (box: HTMLElement, height: number): void => {
     window.clearTimeout(spilled.get(box))
-    const was = box.style.getPropertyValue('--drag-spill')
     if (height > 0) {
+      if (!spilled.has(box)) {
+        resized ??= new ResizeObserver(remeasure)
+        for (const el of [box, ...clipChain(box)]) resized.observe(el, { box: 'border-box' })
+      }
       box.style.setProperty('--drag-spill', px(height))
       spilled.set(box, 0)
     } else {
       box.style.removeProperty('--drag-spill')
       spilled.delete(box)
     }
-    if (box.style.getPropertyValue('--drag-spill') === was) return
-    cancelAnimationFrame(resettle)
-    resettle = requestAnimationFrame(() => {
-      resettle = requestAnimationFrame(remeasure)
-    })
   }
 
   /** A zone's rows glide back before its spill goes, so its last row never crosses what follows the zone. */
@@ -817,6 +815,8 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
     }
     touched.clear()
     for (const box of spilled.keys()) spill(box, 0)
+    resized?.disconnect()
+    resized = null
     if (s.kind === 'displace') {
       s.el.style.visibility = ''
       s.el.style.pointerEvents = ''

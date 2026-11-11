@@ -446,17 +446,77 @@ describe('the drag engine across zones', () => {
     expect(spillOf('C')).toBe('')
   })
 
-  it('re-reads the zones two frames after a spill moves what follows, so the landing resolves against their new rects', async () => {
-    await dragHold('a1', 100, 358)
-    expect(spillOf('B')).toBe('100.0px')
-    stubRect(host.querySelector('.zone-C') as Element, { top: 500, bottom: 700, right: 200 })
-    await act(async () => {
-      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
+  describe('while a spill resizes what holds it', () => {
+    class Sizes {
+      static live = new Set<Sizes>()
+      readonly targets = new Set<Element>()
+      constructor(readonly report: ResizeObserverCallback) {
+        Sizes.live.add(this)
+      }
+      observe(el: Element): void {
+        this.targets.add(el)
+      }
+      unobserve(el: Element): void {
+        this.targets.delete(el)
+      }
+      disconnect(): void {
+        this.targets.clear()
+        Sizes.live.delete(this)
+      }
+    }
+    const resize = (el: Element): Promise<void> =>
+      act(async () => {
+        for (const o of Sizes.live)
+          if (o.targets.has(el)) o.report([], o as unknown as ResizeObserver)
+      })
+    const zoneEl = (zid: string): Element => host.querySelector(`.zone-${zid}`) as Element
+    beforeEach(() => vi.stubGlobal('ResizeObserver', Sizes))
+    afterEach(() => {
+      vi.unstubAllGlobals()
+      Sizes.live.clear()
     })
-    await move(100, 470)
-    expect(slotEl()).toBeNull()
-    await move(100, 520)
-    expect(slotEl()?.style.top).toBe('500px')
+
+    it('re-reads the zones when the spilled zone resizes, so the landing resolves against what moved', async () => {
+      await dragHold('a1', 100, 358)
+      expect(spillOf('B')).toBe('100.0px')
+      stubRect(zoneEl('C'), { top: 500, bottom: 700, right: 200 })
+      await resize(zoneEl('B'))
+      await move(100, 470)
+      expect(slotEl()).toBeNull()
+      await move(100, 520)
+      expect(slotEl()?.style.top).toBe('500px')
+    })
+
+    it('re-reads the zones when a frame holding the spilled zone resizes, as a pane growing upward moves it', async () => {
+      aside = (
+        <div className="frame" style={{ overflowY: 'hidden' }}>
+          <Zone zid="S" />
+        </div>
+      )
+      await mount()
+      stubRect(host.querySelector('.frame') as Element, { top: 1600, bottom: 1800 })
+      await dragHold('a1', 100, 1650)
+      expect(spillOf('S')).toBe('100.0px')
+      stubRect(host.querySelector('.frame') as Element, { top: 1500, bottom: 1700 })
+      stubRect(zoneEl('S'), { top: 1500, bottom: 1700, right: 200 })
+      stubRect(item('s1'), { top: 1500, bottom: 1600, left: 0, right: 200 })
+      await resize(host.querySelector('.frame') as Element)
+      await move(100, 1540)
+      expect(slotEl()?.style.top).toBe('1500px')
+      await release(100, 1540)
+      await settle()
+      expect(receives.S).toHaveBeenCalledExactlyOnceWith('a1', 's1')
+    })
+
+    it('observes only while a drag spills, and nothing once it ends', async () => {
+      await dragHold('a1', 100, 150)
+      expect(Sizes.live.size).toBe(0)
+      await move(100, 358)
+      expect([...Sizes.live].some((o) => o.targets.has(zoneEl('B')))).toBe(true)
+      await release(100, 358)
+      await settle()
+      expect(Sizes.live.size).toBe(0)
+    })
   })
 
   it('re-reads the landing once the floors of empty zones have grown on lift', async () => {
