@@ -9,6 +9,8 @@ import { duration, easing } from '../Animations/motion'
 
 const c = colorVars.color
 
+const ACCESSORY_WIDTH = '20px'
+
 // KNOB — row height is never declared; it's the ramp's line plus the surface's padding.
 globalStyle(':root', {
   vars: {
@@ -19,6 +21,7 @@ globalStyle(':root', {
     '--row-size': font.scale.body.size,
     '--row-line': font.scale.body.line,
     '--row-value-reach': '75%', // KNOB — how far a trailing value may reach toward its label
+    '--accessory-width': ACCESSORY_WIDTH,
   },
 })
 
@@ -267,7 +270,7 @@ export const footingQuiet = style({ selectors: { '&&&': { color: c.label.tertiar
 
 /** A row's accessory overhangs into the row's padding, so a row carrying one stands as tall as a plain one. */
 export const rowAccessory = style({
-  width: '20px',
+  width: ACCESSORY_WIDTH,
   selectors: {
     [`${rowBox} &`]: {
       marginBlock: 'max(calc(-1 * var(--row-pad-y)), calc((var(--row-line) - var(--btn-h)) / 2))',

@@ -6,7 +6,6 @@
   --list-view-wrap-gap: 14px; /* KNOB — the room between the two groups */
   --list-view-bar-width: 100px; /* KNOB — a bar-look Number's width */
   --row-first-line: var(--label-height-roomy);
-  --list-view-add-width: 20px; /* the hover +'s width */
 }
 .list-view .table-grid {
   --cols: minmax(0, 1fr);
@@ -41,11 +40,10 @@
 }
 /* The + trails the group before it and takes no room on its line, standing in the line's end padding, so it never breaks from that group. */
 .list-view-line:has(> .list-view-add) {
-  padding-inline-end: var(--list-view-add-width);
+  padding-inline-end: var(--accessory-width);
 }
 .list-view-add {
-  flex: none;
-  margin-inline: calc(-1 * var(--list-view-wrap-gap)) calc(-1 * var(--list-view-add-width));
+  margin-inline: calc(-1 * var(--list-view-wrap-gap)) calc(-1 * var(--accessory-width));
 }
 
 /* A title's floor is the smaller of its text and --list-view-title-min: the unseen sizer holds the box to that, and the text, breakable anywhere under a one-line clamp, gives up the rest. */
