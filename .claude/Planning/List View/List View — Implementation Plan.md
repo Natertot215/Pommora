@@ -244,6 +244,10 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
 
 > No highlights for lists
 
+**After the Final Report, 11-11-2026 (shown the neutral reviewer's "no" and its eleven corrections):**
+
+> Fix the neutral review issues
+
 #### Process Overview
 
 - [x] `[Before Phase 1: record the BASELINE head, the three gates, and, at that head, the Views Drive's tally for groups 2 to 10 and the Properties, Text Property, Option Picker, and Archive Drives' tallies]`

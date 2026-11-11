@@ -191,3 +191,7 @@ Nevermind, just remove the selected row highlighting for now
 **Mid-Session, 11-11-2026 (told the removal left a selected List row with a Table row's full-width highlight):**
 
 No highlights for lists
+
+**After the Final Report, 11-11-2026 (shown the neutral reviewer's "no" and its eleven corrections):**
+
+Fix the neutral review issues
