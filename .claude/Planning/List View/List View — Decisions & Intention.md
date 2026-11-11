@@ -53,9 +53,9 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
 - **B-10 [INFERRED]:** The add control should keep its slot while hidden, so nothing shifts on hover, and should be absent from a row with nothing left to add.
 - **B-11 [CONFIRMED]:** Title should be an item of the left group that can move within it, so a property's values can sit before the title on a row, as a Table column can precede Title. Title always shows.
 - **B-12 [CONFIRMED]:** A List row should be compact, shorter than a Table row.
-- **B-13 [CONFIRMED]:** A List row whose page is the selection should highlight as a whole row, as a Table row does.
+- **B-13 [CONFIRMED]:** A List row whose page is the selection should highlight from its own indentation level to the row's end, with a 2px corner radius.
 - **B-14 [CONFIRMED]:** The line under the page header should be inset over a List as it is over Cards, not bled edge to edge as over a Table.
-- **B-15 [CONFIRMED]:** The spacing between a List's groups should be a Table's: an open group keeps extra room between its last row and the next band, and closed groups sit evenly. A List's compact rows shouldn't shrink it.
+- **B-15 [CONFIRMED]:** The spacing between a List's groups should be a Table's: an open group keeps extra room between its last row and the next band, and closed groups sit evenly. A List's compact rows shouldn't shrink it: the room from the last row's content to the next band's heading should be a Table's. The room from a band's heading to its first row stays compact.
 - **B-16 [CONFIRMED]:** A List row's title should draw in the emphasized text a card's title uses, so it stands out from the values beside it.
 
 #### C — Values
@@ -77,7 +77,7 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
 - **E-1 [CONFIRMED]:** List's property pane should be two columns, Left and Right, side by side with Left on the left, opened from SettingsFrame's Visibility row. SettingsFrame's Layout should stay the type grid and the kind's switches, as for every kind.
 - **E-2 [INFERRED]:** ViewFrame's Layout row should open the same two-column pane, as Table's opens its property list.
 - **E-3 [CONFIRMED]:** The Left column should read top to bottom as the left group reads left to right, Title among its rows. The Right column should read from the row's edge inward: its top is the value farthest from the title.
-- **E-4 [CONFIRMED]:** Each column should be a `fill-quaternary` list under the standard menu heading, in compact row padding, capped at 180px before a property's name ends in an ellipsis and scrolls on hover. The pane's heading row keeps its existing shape, the back label at the left and the pane's name at the right.
+- **E-4 [CONFIRMED]:** Each column should be a `fill-quaternary` list under the standard menu heading, in compact row padding, as wide as its property names need, equal to the other column, and capped at 180px before a property's name ends in an ellipsis and scrolls on hover. The pane's heading row keeps its existing shape, the back label at the left and the pane's name at the right.
 - **E-5 [CONFIRMED]:** A hidden property should move to the foot of its own column, ghosted with its eye off, and should return to its remembered position and side when shown again.
 - **E-6 [CONFIRMED]:** A hidden property's remembered position should survive a reorder of the other properties, in every view kind.
 - **E-7 [CONFIRMED]:** A property should drag within its column and across to the other with no drag-kit work beyond E-10's, both columns reordering by displacement, the form in which the kit trades items between two zones today, as cards cross bands. This pane is a stated exception to the drop line every other settings list uses: a property hides by its eye alone, and a right-click row, Move to Left or Move to Right, changes its side without a drag.

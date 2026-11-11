@@ -169,3 +169,17 @@ Take it through the full testing of every single possible configuration matrix o
 **Mid-Session, 11-10-2026 (on the title's weight):**
 
 lets also have lists have titles using emphasied text like card titles do so their titles are more pronounced
+
+**Mid-Session, 11-10-2026 (told that a List row's content sits 4px nearer the next group's heading than a Table's):**
+
+thats what i was talking about earlier
+
+**Mid-Session, 11-10-2026 (on the pane's columns sizing to their names):**
+
+have the columns expand to that max width; but not use it when there arent properties that require it
+
+**Mid-Session, 11-10-2026 (answering three questions in order: whether the pane's two columns stay equal; whether the room from a group's heading to its first row should match a Table's; where the selected row's highlight shows):**
+
+They should stay equal to each other. 
+No, it shouldn't; it should be scaled accordingly as compact, which it already should be.
+I can't reproduce it, so either force it, or figure out how to implement it where the row gets highlighted in accordance to it's indentation level with 2px border-radius

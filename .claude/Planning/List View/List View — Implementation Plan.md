@@ -46,9 +46,9 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
 | 3 | +145 / −120 | +146 / −131 | +459 / −351 |
 | 4 | +40 / −26 | +42 / −27 | +501 / −378 |
 | 5 | +46 / −30 | +77 / −52 | +578 / −430 |
-| 6 | +590 / −111 | +598 / −93 | +1,174 / −521 |
-| 7 | — (the drive, under `.claude`) | — (group 11: 218 of 218; groups 2 to 10: 215 of 215) | +1,174 / −521 |
-| 8 | — (documents) | | |
+| 6 | +590 / −111 | +663 / −109 (with the owner's additions after the Stop) | +1,239 / −537 |
+| 7 | — (the drive, under `.claude`) | — | +1,239 / −537 |
+| 8 | — (documents) | — | — |
 | Final Verification | — | | |
 
 #### Concepts
@@ -222,6 +222,20 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
 
 > lets also have lists have titles using emphasied text like card titles do so their titles are more pronounced
 
+**Mid-Session, 11-10-2026 (told that a List row's content sits 4px nearer the next group's heading than a Table's):**
+
+> thats what i was talking about earlier
+
+**Mid-Session, 11-10-2026 (on the pane's columns sizing to their names):**
+
+> have the columns expand to that max width; but not use it when there arent properties that require it
+
+**Mid-Session, 11-10-2026 (answering three questions in order: whether the pane's two columns stay equal; whether the room from a group's heading to its first row should match a Table's; where the selected row's highlight shows):**
+
+> They should stay equal to each other. 
+> No, it shouldn't; it should be scaled accordingly as compact, which it already should be.
+> I can't reproduce it, so either force it, or figure out how to implement it where the row gets highlighted in accordance to it's indentation level with 2px border-radius
+
 #### Process Overview
 
 - [x] `[Before Phase 1: record the BASELINE head, the three gates, and, at that head, the Views Drive's tally for groups 2 to 10 and the Properties, Text Property, Option Picker, and Archive Drives' tallies]`
@@ -256,10 +270,10 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
 - [x] **Phase 7** — The Views Drive
   - [x] Task 7-1 · Group 11 — List
   - [ ] Review Checkpoint
-- [ ] **Phase 8** — Documentation
-  - [ ] Task 8-1 · `ViewTypesPM.md`
-  - [ ] Task 8-2 · `PommoraDND.md`, `PropertiesPM.md`, `PommoraUIX.md`, `PommoraPRD.md`, and `FrameworkPM.md`
-  - [ ] Review Checkpoint
+- [x] **Phase 8** — Documentation
+  - [x] Task 8-1 · `ViewTypesPM.md`
+  - [x] Task 8-2 · `PommoraDND.md`, `PropertiesPM.md`, `PommoraUIX.md`, `PommoraPRD.md`, and `FrameworkPM.md`
+  - [x] Review Checkpoint
 - [ ] `[Stop: the final verification's report, per §Final Verification]`
 
 ---
@@ -2732,9 +2746,9 @@ List's record registers its renderer, its property pane, and its three switches 
 
 **VERIFY**
 
-- [ ] `git grep -nE "both renderers|Neither renderer|the other four|owns the shell" -- .claude/Features/ViewTypesPM.md` finds nothing.
-- [ ] *§List* is four paragraphs and names no function, class, CSS token, or per-type table.
-- [ ] Outside *§List*, the edits' words removed are within ten of their words added (`git diff --word-diff` over the file, *§List*'s hunk set aside).
+- [x] `git grep -nE "both renderers|Neither renderer|the other four|owns the shell" -- .claude/Features/ViewTypesPM.md` finds nothing.
+- [x] *§List* is four paragraphs and names no function, class, CSS token, or per-type table.
+- [x] Outside *§List*, the edits' words removed are within ten of their words added (`git diff --word-diff` over the file, *§List*'s hunk set aside).
 
 #### Task 8-2 · `PommoraDND.md`, `PropertiesPM.md`, `PommoraUIX.md`, `PommoraPRD.md`, and `FrameworkPM.md`
 
@@ -2777,13 +2791,13 @@ List's record registers its renderer, its property pane, and its three switches 
 
 **VERIFY**
 
-- [ ] `git grep -n "Table and Cards carry renderers" -- .claude` finds nothing outside `Planning/` and `sessions/`.
-- [ ] `node .claude/scripts/check-atlas.mjs` exits 0.
-- [ ] `view-delta` shows the phase: documents only.
+- [x] `git grep -n "Table and Cards carry renderers" -- .claude` finds nothing outside `Planning/` and `sessions/`.
+- [x] `node .claude/scripts/check-atlas.mjs` exits 0.
+- [x] `view-delta` shows the phase: documents only.
 
 #### Review Checkpoint
 
-- [ ] Two review agents, `code-simplification` and `adversarial-review`, read outward over `.claude/Features`, `.claude/PommoraPRD.md`, `.claude/FrameworkPM.md`, and *§Reconciliation*: every quoted sentence reads as replaced, no document still says List has no renderer or that Visibility is one list for every kind, *§List* reads at the Archive section's level, and no sentence a decision keeps was rewritten.
+- [x] Two review agents, `code-simplification` and `adversarial-review`, read outward over `.claude/Features`, `.claude/PommoraPRD.md`, `.claude/FrameworkPM.md`, and *§Reconciliation*: every quoted sentence reads as replaced, no document still says List has no renderer or that Visibility is one list for every kind, *§List* reads at the Archive section's level, and no sentence a decision keeps was rewritten.
 
 ---
 
