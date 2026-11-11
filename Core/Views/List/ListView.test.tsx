@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import type { Root } from 'react-dom/client'
 import { inlineSegment } from '@pommora/uix/Elements/segment.css'
+import { text } from '@pommora/uix/Theme'
 import { ok } from '../../Contract/result'
 import { ID_KEY } from '../../Nexus/identityMark'
 import type { CollectionNode } from '../../Nexus/tree'
@@ -146,6 +147,14 @@ describe('a List row', () => {
     await renderView(root, source(listView({ column_sides: { prop_stage: 'right' } })))
     expect(items(left('p1'))).toEqual(['title'])
     expect(items(right('p1'))[0]).toBe('Early')
+  })
+
+  it('sets its title in the emphasized body text a card title wears, and its values in the grid’s own', async () => {
+    await renderView(root, source())
+    const emphasized = (e: Element): boolean =>
+      e.classList.contains(text.body.emphasized.split(' ').at(-1)!)
+    expect(emphasized(rowOf('p1').querySelector('.list-view-title')!)).toBe(true)
+    expect([...rowOf('p1').querySelectorAll('.value-inline')].some(emphasized)).toBe(false)
   })
 
   it('leaves a blank value off and draws an unchecked Checkbox', async () => {

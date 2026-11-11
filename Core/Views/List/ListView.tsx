@@ -60,7 +60,7 @@ export function ListView({ host }: { host: ViewHostApi }): React.JSX.Element {
             fill
             ghost={(padLeft) => (
               <RowLead className="ghost-worn" indent={padLeft}>
-                <div className="list-view-group">
+                <div className={cx('list-view-group', text.body.emphasized)}>
                   <GhostTitle hideIcon={hideIcon} />
                 </div>
               </RowLead>
@@ -129,7 +129,7 @@ const ListPageRow = memo(function ListPageRow({
       // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: the row has the keys, and Enter opens it
       <span
         key={c.id}
-        className="list-view-title"
+        className={cx('list-view-title', text.body.emphasized)}
         data-title={row.title}
         onClick={rowOpen(api, row)}
       >
