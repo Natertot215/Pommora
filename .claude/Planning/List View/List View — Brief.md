@@ -187,3 +187,7 @@ I can't reproduce it, so either force it, or figure out how to implement it wher
 **Mid-Session, 11-11-2026 (shown the selected row's highlight at each indentation level):**
 
 Nevermind, just remove the selected row highlighting for now
+
+**Mid-Session, 11-11-2026 (told the removal left a selected List row with a Table row's full-width highlight):**
+
+No highlights for lists

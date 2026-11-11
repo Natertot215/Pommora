@@ -240,6 +240,10 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
 
 > Nevermind, just remove the selected row highlighting for now
 
+**Mid-Session, 11-11-2026 (told the removal left a selected List row with a Table row's full-width highlight):**
+
+> No highlights for lists
+
 #### Process Overview
 
 - [x] `[Before Phase 1: record the BASELINE head, the three gates, and, at that head, the Views Drive's tally for groups 2 to 10 and the Properties, Text Property, Option Picker, and Archive Drives' tallies]`
