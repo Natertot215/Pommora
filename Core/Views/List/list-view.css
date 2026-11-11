@@ -13,13 +13,6 @@
   --cell-padding-y: 2px; /* KNOB — a row's top and bottom room, under Table's; stated below `.table`, so the band rhythm keeps Table's */
   --list-band-end: calc(var(--band-clearance) - var(--cell-padding-y)); /* Table's extra row room */
 }
-/* A List row draws no selected fill, so a selected one reads as any other row. */
-.list-view .data-row.selected {
-  background-color: transparent;
-}
-.list-view .data-row.selected:hover {
-  background-color: var(--state-hover);
-}
 
 .list-view-line {
   display: flex;

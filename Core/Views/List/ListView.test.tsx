@@ -181,6 +181,12 @@ describe('a List row', () => {
     expect(emphasisOf(ghost.querySelector('.list-view-group')!)).toBeNull()
   })
 
+  it('carries no selected class when its page is the selection', async () => {
+    useSession.setState({ selection: { kind: 'page', id: 'p1', path: 'Col/One.md' } as never })
+    await renderView(root, source())
+    expect(rowOf('p1').classList.contains('selected')).toBe(false)
+  })
+
   it('leaves a blank value off and draws an unchecked Checkbox', async () => {
     await renderView(root, source())
     expect(rowOf('p1').querySelectorAll('.value-inline')).toHaveLength(3)

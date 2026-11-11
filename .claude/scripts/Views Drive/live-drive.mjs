@@ -4023,12 +4023,8 @@ async function kinds(cdp) {
   decided('D-1', 'a List draws each property on its side whatever its Table alignment, and a Table aligns VD Stage right by its alignment and VL Count alike whether or not the List stores it Left', sides.length === 0 && /right|end/.test(aligns.sided.stage) && same(aligns.sided, aligns.unsided), show({ sides, aligns }))
 }
 
-// ── Group 11 · the selection, the spacing between groups, and the banner line ─
+// ── Group 11 · the spacing between groups and the banner line ─────────────────
 
-/** The rows `rids` names marked selected, as the app marks the page it selects; a re-render on hover keeps the mark, a reload drops it. */
-const SELECT = (rids) => `(() => { for (const r of document.querySelectorAll('.data-row[data-rid]')) r.classList.toggle('selected', !r.closest('[inert]') && ${JSON.stringify(rids)}.includes(r.dataset.rid)); return true })()`
-/** A row's own fill and width, and the theme's text-selection color resolved on it. */
-const FILL = (expr) => `(() => { const r = (${expr}); const probe = document.createElement('span'); probe.style.background = 'var(--text-selection)'; r.appendChild(probe); const selection = getComputedStyle(probe).backgroundColor; probe.remove(); return { fill: getComputedStyle(r).backgroundColor, w: Math.round(r.getBoundingClientRect().width * 10) / 10, selection } })()`
 async function closeTab(cdp, title) {
   await hover(cdp, tabEl(title), 300)
   await mouseClick(cdp, `(${tabEl(title)}).querySelector('[aria-label="Close Tab"]')`)
@@ -4058,22 +4054,6 @@ const SPACINGS = [
 const LINE = (cls) => `(() => { const e = ${visible(`[...document.querySelectorAll('${cls}')]`)}; if (!e) return null; const b = e.getBoundingClientRect(); return { l: Math.round(b.left * 10) / 10, r: Math.round(b.right * 10) / 10, border: getComputedStyle(e).borderBottomWidth } })()`
 
 async function frame(cdp) {
-  // B-13 · a List row whose page is the selection draws no highlight, at rest and under the pointer, where a Table row draws the text-selection fill across its width. The rows are marked as the app marks the selection, since nothing in the main pane draws a selected row: a pressed page replaces the view and a Command-press parks it.
-  const fills = {}
-  for (const [kind, make, rowOf] of [['list', listView, listRow], ['table', tableView, tableRowOf]]) {
-    await showOn(cdp, 'collection', make(vid(`g11select${kind}`), `VL Select ${kind}`, { ...flatVL, property_order: LIST_ORDER }))
-    await cdp.evaluate(SELECT([ridOf('VL Both')]))
-    await away(cdp)
-    fills[kind] = { selected: await cdp.evaluate(FILL(rowOf('VL Both'))), other: await cdp.evaluate(FILL(rowOf('VL Left'))) }
-    await hover(cdp, rowOf('VL Both'), 400)
-    fills[kind].selectedHover = await cdp.evaluate(FILL(rowOf('VL Both')))
-    await hover(cdp, rowOf('VL Left'), 400)
-    fills[kind].otherHover = await cdp.evaluate(FILL(rowOf('VL Left')))
-    await away(cdp)
-  }
-  const { list: L, table: T } = fills
-  decided('B-13', 'a selected List row draws no highlight, its fill an unselected row\'s at rest and under the pointer, where a selected Table row draws the text-selection fill across its width', L.selected.fill === L.other.fill && L.selectedHover.fill === L.otherHover.fill && L.otherHover.fill !== L.other.fill && T.selected.fill === T.selected.selection && T.selected.fill !== T.other.fill && T.selected.w === T.other.w, show(fills))
-
   // B-15 · the room that reads between a List's groups is a Table's: from a band's last row or the tail's to the next heading, between headings, and to the view's end; a heading to its first row stays compact (stated), and the room before the ungrouped tail rows is measured.
   for (const [name, grouping, closed] of SPACINGS) {
     const rooms = {}

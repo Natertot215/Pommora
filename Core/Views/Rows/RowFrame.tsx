@@ -9,7 +9,6 @@ import { rowIndent } from '@pommora/uix/Table/rowIndent'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { EntityIcon } from '../../Assets/EntityIcon'
 import { RenamableName } from '../../Interface/RenamableTitle'
-import { isSelected, useSession } from '../../Session/store'
 import { GroupBand } from '../Bands/GroupBand'
 import { memberDepth, memberIndent } from '../Bands/bandModel'
 import type { ViewHostApi } from '../Host/useViewHost'
@@ -106,15 +105,16 @@ export function PageRow({
   api,
   lead,
   dragDisabled,
+  className,
   children,
 }: {
   row: ViewRow
   api: ItemApi
   lead: boolean
   dragDisabled: boolean
+  className?: string
   children: ReactNode
 }): React.JSX.Element {
-  const selected = useSession(isSelected('page', row.id))
   return (
     <LineRow
       id={row.id}
@@ -123,7 +123,7 @@ export function PageRow({
       data-rid={row.id}
       data-view-lead="row"
       data-reveal-host=""
-      className={cx('data-row', selected && 'selected', lead && 'row-lead')}
+      className={cx('data-row', className, lead && 'row-lead')}
       {...rowHover(row, api.hover)}
     >
       {children}

@@ -582,6 +582,12 @@ describe('open actions + row-click narrowing', () => {
     )
   })
 
+  it('a row whose page is the selection carries the selected class', async () => {
+    useSession.setState({ selection: { kind: 'page', id: 'p1', path: 'Col/Page One.md' } as never })
+    await mountTable(sourceWith())
+    expect(host.querySelector('[data-rid="p1"]')?.classList.contains('selected')).toBe(true)
+  })
+
   it('link cell click opens externally through the sanctioned IPC, not navigation', async () => {
     await mountTable(sourceWith())
     const link = host.querySelector<HTMLElement>('.cell-link')

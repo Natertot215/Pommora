@@ -7,6 +7,7 @@ import { ValueSeat } from '../../Properties/Pickers/ValueSeat'
 import type { ViewHostApi } from '../Host/useViewHost'
 import { type ItemApi, useViewInteractions } from '../Host/useViewInteractions'
 import type { ValueContext } from '../../Properties/valueContext'
+import { isSelected, useSession } from '../../Session/store'
 import { Cell } from '../../Properties/Cells/Cell'
 import { RowLead } from '@pommora/uix/Table/RowLead'
 import { columnIcon, columnLabel } from '../../Properties/columnDisplay'
@@ -215,10 +216,17 @@ const DataRow = memo(function DataRow({
   sweepCol: string | null
   lead: boolean
 }): React.JSX.Element {
+  const selected = useSession(isSelected('page', row.id))
   const pageMenu = rowMenu(api, row)
   const open = rowOpen(api, row)
   return (
-    <PageRow row={row} api={api} lead={lead} dragDisabled={dragDisabled}>
+    <PageRow
+      row={row}
+      api={api}
+      lead={lead}
+      dragDisabled={dragDisabled}
+      className={selected ? 'selected' : undefined}
+    >
       {columns.map((c, i) => {
         const style: React.CSSProperties = {
           transform: gapShift(dragShift, i),
