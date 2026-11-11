@@ -5,13 +5,19 @@ import { frameZone } from '@pommora/uix/Menus/frames.css'
 // KNOBS — the two columns
 const PANE = { width: 180, gap: 8, radius: 8 }
 
+/* Two equal tracks as wide as the wider column's rows need, so a row carried across keeps its width; a column stands no wider than `PANE.width`. */
 export const columns = style({
   display: 'grid',
-  gridTemplateColumns: `repeat(2, minmax(0, ${PANE.width}px))`,
+  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
   gap: `${PANE.gap}px`,
 })
 
-export const column = style({ display: 'flex', flexDirection: 'column', minWidth: 0 })
+export const column = style({
+  display: 'flex',
+  flexDirection: 'column',
+  minWidth: 0,
+  maxWidth: `${PANE.width}px`,
+})
 
 export const list = style([
   frameZone,
