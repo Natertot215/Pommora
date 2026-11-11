@@ -1,16 +1,16 @@
 ## List View — Implementation Plan
 
 **DATE:** 11-09-2026
-**STATUS:** Ratified 11-10-2026
+**STATUS:** Executed 11-11-2026; the neutral gate answered no, and *§Deviations* awaits the owner's word
 **SOURCE:** *List View — Decisions & Intention* (ratified 11-09-2026; it holds wherever another document disagrees), *List View — Brief* (Nathan's words, verbatim), *List View — Investigation* and *List View — Scout Findings* (the code at `4b18149ac`, re-read first-hand for every task below), *List View — Fresh-Eyes Read*, *List View — Live Checks* (the checks of 11-09-2026 the plan builds on), and *List View — Plan Reviews* (the three review waves).
 
 **BASELINE** (filled after ratification; the end logged in the final report)
 
 | Head | Tests | Start | End |
 |------|-------|-------|-----|
-| `b43de2c4a` | 9,269 passed, 2 skipped (546 files) | 11-10-2026 | |
+| `b43de2c4a` | 9,269 passed, 2 skipped (546 files) | 11-10-2026 | 11-11-2026 · code at `b1146b1bc` · 9,350 passed, 2 skipped (548 files) |
 
-The drives at that head: Views `--landed 10`, groups 2 to 10, 215 of 215 held (12, 38, 11, 18, 21, 25, 22, 28, 40); Properties, groups 1 to 19, 209 of 209; Text Property, 127 of 127; Option Picker, 58 of 58; Archive, 159 of 159. Typecheck and lint ran clean.
+The drives at that head: Views `--landed 10`, groups 2 to 10, 215 of 215 held (12, 38, 11, 18, 21, 25, 22, 28, 40); Properties, groups 1 to 19, 209 of 209; Text Property, 127 of 127; Option Picker, 58 of 58; Archive, 159 of 159. Typecheck and lint ran clean. At the end: Views `--landed 11`, groups 2 to 11, 473 of 473 (group 11 holds 258); Properties 209 of 209; Text Property 127 of 127; Option Picker 58 of 58; Archive 159 of 159.
 
 ### Context
 
@@ -282,7 +282,7 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
   - [x] Task 8-1 · `ViewTypesPM.md`
   - [x] Task 8-2 · `PommoraDND.md`, `PropertiesPM.md`, `PommoraUIX.md`, `PommoraPRD.md`, and `FrameworkPM.md`
   - [x] Review Checkpoint
-- [ ] `[Stop: the final verification's report, per §Final Verification]`
+- [x] `[Stop: the final verification's report, per §Final Verification]`
 
 ---
 
@@ -2826,9 +2826,9 @@ List's record registers its renderer, its property pane, and its three switches 
 - [x] **Simplification lens** — one `opus-xhigh` agent reads `<BASELINE>..HEAD` whole for what can be removed, folded, or hoisted now that every phase has landed: a rule List's sheet restates, a prop a shared piece takes for one caller, a helper used once, a branch on a kind. Its findings are applied before any adversarial read.
 - [x] **Adversarial lens** — two `opus-xhigh` agents over `<BASELINE>..HEAD`, one reading inward (each behavior against its tests and the decisions) and one outward (cohesion with the rest of Core, Desktop, and UIX; anything that reads as an odd one out; a regression on Table, Cards, the panel, Archive, or a tile). The orchestrator verifies each finding against the code before applying it.
 - [x] **Neutral verification** — one `fable-high` agent, given only the BASELINE head, HEAD, and the intention under *§Constraints · Neutral Gate*, with no plan, log, or document, answers whether the result holds to every principle it states and what it would correct.
-- [ ] **Own pass** — Task 6-3's live checks once more end to end as Nathan would use them, the Views Drive at `--landed 11` over every group, the Properties, Text Property, Option Picker, and Archive Drives against their baseline tallies (they exercise a card's value, the panel's value and **+**, and the Archive's shell and check by gesture), the gates from a clean state, baseline counts, the diff read once, and *§Completion Criteria* ticked.
-- [ ] **Reconciliation** — *§Reconciliation* walked; *§Deviations* ruled on; STATUS and BASELINE's End filled.
-- [ ] **Report** — in `closeout-review`'s closeout format, with the range presented through `/view-delta`, the per-phase and total delta, every deviation, and the neutral reviewer's answer verbatim.
+- [x] **Own pass** — Task 6-3's live checks once more end to end as Nathan would use them, the Views Drive at `--landed 11` over every group, the Properties, Text Property, Option Picker, and Archive Drives against their baseline tallies (they exercise a card's value, the panel's value and **+**, and the Archive's shell and check by gesture), the gates from a clean state, baseline counts, the diff read once, and *§Completion Criteria* ticked.
+- [x] **Reconciliation** — *§Reconciliation* walked; *§Deviations* ruled on; STATUS and BASELINE's End filled.
+- [x] **Report** — in `closeout-review`'s closeout format, with the range presented through `/view-delta`, the per-phase and total delta, every deviation, and the neutral reviewer's answer verbatim.
 
 #### Reconciliation
 
