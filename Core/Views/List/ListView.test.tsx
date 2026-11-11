@@ -111,6 +111,8 @@ const groups = (id: string): HTMLElement[] => [
 const left = (id: string): HTMLElement => groups(id)[0]
 const right = (id: string): HTMLElement | null =>
   rowOf(id).querySelector<HTMLElement>('.list-view-right')
+const emphasisOf = (el: Element): Element | null =>
+  el.closest(`.${text.body.emphasized.split(' ').at(-1)}`)
 const isSegment = (el: Element): boolean => el.classList.contains(inlineSegment.split(' ').at(-1)!)
 const plus = (scope: Element): HTMLElement | null =>
   scope.querySelector<HTMLElement>('[aria-label="Add Property"]')
@@ -149,12 +151,34 @@ describe('a List row', () => {
     expect(items(right('p1'))[0]).toBe('Early')
   })
 
-  it('sets its title in the emphasized body text a card title wears, and its values in the grid’s own', async () => {
+  it('sets its title and its rename field in the emphasized body text a card title wears, and no value inherits it', async () => {
     await renderView(root, source())
-    const emphasized = (e: Element): boolean =>
-      e.classList.contains(text.body.emphasized.split(' ').at(-1)!)
-    expect(emphasized(rowOf('p1').querySelector('.list-view-title')!)).toBe(true)
-    expect([...rowOf('p1').querySelectorAll('.value-inline')].some(emphasized)).toBe(false)
+    const title = rowOf('p1').querySelector('.list-view-title')!
+    const cells = [...rowOf('p1').querySelectorAll('.value-inline')]
+    expect(emphasisOf(title)).toBe(title)
+    expect(cells).toHaveLength(3)
+    expect(cells.map(emphasisOf)).toEqual([null, null, null])
+    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+      'view:loadValues': async () => valuesOf(P1),
+      menu: vi.fn(async () => ok('title:rename')),
+    })
+    await act(async () => {
+      rowOf('p1')
+        .querySelector('.cell-lead')!
+        .dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
+    })
+    const input = title.querySelector('input')!
+    expect(input.value).toBe('One')
+    expect(emphasisOf(input)).toBe(title)
+  })
+
+  it('titles its standing ghost New Page in the title’s emphasized box', async () => {
+    await renderView(root, { ...source(), pages: [] } as CollectionNode)
+    const ghost = host.querySelector('.list-view .ghost-row')!
+    const title = ghost.querySelector('.list-view-title')!
+    expect(title.textContent).toBe('New Page')
+    expect(emphasisOf(title)).toBe(title)
+    expect(emphasisOf(ghost.querySelector('.list-view-group')!)).toBeNull()
   })
 
   it('leaves a blank value off and draws an unchecked Checkbox', async () => {

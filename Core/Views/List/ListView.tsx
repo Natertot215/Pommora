@@ -60,8 +60,10 @@ export function ListView({ host }: { host: ViewHostApi }): React.JSX.Element {
             fill
             ghost={(padLeft) => (
               <RowLead className="ghost-worn" indent={padLeft}>
-                <div className={cx('list-view-group', text.body.emphasized)}>
-                  <GhostTitle hideIcon={hideIcon} />
+                <div className="list-view-group">
+                  <span className={cx('list-view-title', text.body.emphasized)}>
+                    <GhostTitle hideIcon={hideIcon} />
+                  </span>
                 </div>
               </RowLead>
             )}
