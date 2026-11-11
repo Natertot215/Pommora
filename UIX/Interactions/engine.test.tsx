@@ -435,6 +435,30 @@ describe('the drag engine across zones', () => {
     expect(spillOf('B')).toBe('')
   })
 
+  it('clears the spill of the zone a drop lands in at once, while a zone left earlier holds its spill until the glide ends', async () => {
+    await dragHold('a1', 100, 450)
+    await move(100, 358)
+    await release(100, 358)
+    expect(receives.B).toHaveBeenCalledOnce()
+    expect(spillOf('B')).toBe('')
+    expect(spillOf('C')).toBe('100.0px')
+    await settle()
+    expect(spillOf('C')).toBe('')
+  })
+
+  it('re-reads the zones two frames after a spill moves what follows, so the landing resolves against their new rects', async () => {
+    await dragHold('a1', 100, 358)
+    expect(spillOf('B')).toBe('100.0px')
+    stubRect(host.querySelector('.zone-C') as Element, { top: 500, bottom: 700, right: 200 })
+    await act(async () => {
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
+    })
+    await move(100, 470)
+    expect(slotEl()).toBeNull()
+    await move(100, 520)
+    expect(slotEl()?.style.top).toBe('500px')
+  })
+
   it('re-reads the landing once the floors of empty zones have grown on lift', async () => {
     const grown = (): number =>
       parseFloat(
@@ -467,6 +491,21 @@ describe('the drag engine across zones', () => {
   it('lands at index 0 in an empty zone', async () => {
     await dropAt('a1', 100, 450)
     expect(receives.C).toHaveBeenCalledExactlyOnceWith('a1', null)
+  })
+
+  it("sizes the slot in an empty foreign column to the item's height, and in an empty foreign row to the row's", async () => {
+    extra = { C: { axis: 'y' } }
+    await mount()
+    await dragHold('a1', 100, 450)
+    expect(slotEl()?.style.height).toBe('100px')
+    expect(spillOf('C')).toBe('100.0px')
+    await act(async () => pressEscape())
+    await settle()
+    extra = { C: { axis: 'x' } }
+    await mount()
+    await dragHold('a1', 100, 450)
+    expect(slotEl()?.style.height).toBe('200px')
+    expect(spillOf('C')).toBe('')
   })
 
   it('snaps back and commits nothing when the landing is refused', async () => {

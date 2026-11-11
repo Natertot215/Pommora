@@ -334,7 +334,8 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
     const zoneBounds = bounds.get(zoneId)
     return {
       width: Math.min(s.rect.width, zoneBounds?.width ?? Infinity),
-      height: displaceOf(zoneId)?.axis ? (zoneBounds?.height ?? s.rect.height) : s.rect.height,
+      height:
+        displaceOf(zoneId)?.axis === 'x' ? (zoneBounds?.height ?? s.rect.height) : s.rect.height,
     }
   }
 
