@@ -24,6 +24,7 @@ export type Frozen = {
 const along = (b: Box, axis: Axis): number => (axis === 'x' ? b.left : b.top)
 const centre = (b: Box, axis: Axis): number => (axis === 'x' ? b.cx : b.cy)
 const extent = (s: Size, axis: Axis): number => (axis === 'x' ? s.width : s.height)
+const roomOf = (f: Frozen, axis: Axis, s: Size): number => extent(s, axis) + f.gap
 
 function pitchOf(rects: Box[], gap: number, fallback: number): number {
   let best = Infinity
@@ -141,14 +142,16 @@ export function placeItem(
   const opens = over >= 0 && k >= over
   if (!axis) return cellAt(f, opens ? k + 1 : k)
   const r = f.rects[i]
-  const out = a >= 0 && i > a ? extent(f.rects[a], axis) + f.gap : 0
-  const inn = opens ? extent(size, axis) + f.gap : 0
+  const out = a >= 0 && i > a ? roomOf(f, axis, f.rects[a]) : 0
+  const inn = opens ? roomOf(f, axis, size) : 0
   return axis === 'x' ? { x: r.left - out + inn, y: r.top } : { x: r.left, y: r.top - out + inn }
 }
 
-export function spillOf(f: Frozen, count: number, height: number): number {
+/** How far a zone grows with one more item of `size`: on a line, the room the item opens; in a grid, the row it spills into. */
+export function spillOf(f: Frozen, axis: Axis | undefined, size: Size): number {
+  if (axis) return roomOf(f, axis, size)
   const last = f.rects[f.rects.length - 1]
-  const end = cellAt(f, count - 1).y + (last?.height ?? height)
+  const end = cellAt(f, f.rects.length).y + size.height
   return Math.max(0, end - (last ? last.top + last.height : 0))
 }
 

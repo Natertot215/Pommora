@@ -63,6 +63,7 @@ beforeEach(async () => {
       </SidebarDnd>,
     )
   })
+  stubRect(host.querySelector('.line-zone') as Element, { top: 0, bottom: 48, right: 200 })
   for (const [i, id] of ['p1', 'p2'].entries()) {
     const el = host.querySelector(`[data-row="${id}"]`)
     if (el) stubRect(el, { top: i * 24, bottom: i * 24 + 24 })
@@ -271,6 +272,7 @@ describe('sidebar drag — the stored Set placement', () => {
         </SidebarDnd>,
       )
     })
+    stubRect(host.querySelector('.line-zone') as Element, { top: 0, bottom: 72, right: 200 })
     for (const [i, id] of ['p1', 'p2', 's2'].entries())
       stubRect(row(id), { top: i * 24, bottom: i * 24 + 24 })
     // Grazing the sibling Set's top quarter: below the pages, so P1 joins the end of its group.

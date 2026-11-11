@@ -270,6 +270,8 @@ afterEach(() => {
 
 const item = (id: string): HTMLElement => host.querySelector(`[data-id="${id}"]`) as HTMLElement
 const slotEl = (): HTMLElement | null => document.querySelector('.drop-slot')
+const spillOf = (zid: string): string =>
+  (host.querySelector(`.zone-${zid}`) as HTMLElement).style.getPropertyValue('--drag-spill')
 
 const move = (x: number, y: number): Promise<void> =>
   act(async () => {
@@ -363,15 +365,16 @@ describe('the drag engine across zones', () => {
     expect(floorOf('C')).toBe('')
   })
 
-  it('grows a foreign grid by the row its preview spills into, only while it is the landing', async () => {
-    const spillOf = (zid: string): string =>
-      (host.querySelector(`.zone-${zid}`) as HTMLElement).style.getPropertyValue('--drag-spill')
+  it('grows a foreign grid by the row its preview spills into while it is the landing, and keeps it until its rows glide back', async () => {
     await dragHold('a1', 100, 150)
     expect(BOARD_ZONES.map(spillOf).every((v) => v === '')).toBe(true)
     await move(100, 358)
     expect(spillOf('B')).toBe('100.0px')
     expect(spillOf('A')).toBe('')
     await move(100, 450)
+    expect(spillOf('B')).toBe('100.0px')
+    expect(spillOf('C')).toBe('100.0px')
+    await settle()
     expect(spillOf('B')).toBe('')
     expect(spillOf('C')).toBe('100.0px')
     await release(100, 450)
@@ -379,23 +382,57 @@ describe('the drag engine across zones', () => {
     expect(spillOf('C')).toBe('')
   })
 
+  it("keeps a foreign column's spill through the glide after the carried item leaves it, then clears it before the drop", async () => {
+    extra = { B: { axis: 'y' } }
+    await mount()
+    await dragHold('a1', 100, 358)
+    expect(spillOf('B')).toBe('100.0px')
+    await move(100, 150)
+    expect(spillOf('B')).toBe('100.0px')
+    await settle()
+    expect(spillOf('B')).toBe('')
+    await release(100, 150)
+    await settle()
+    expect(spillOf('B')).toBe('')
+  })
+
+  it('spills nothing into a foreign zone on the x axis', async () => {
+    await dragHold('a1', 500, 1050)
+    expect(slotEl()).not.toBeNull()
+    expect(spillOf('X')).toBe('')
+    await release(500, 1050)
+    await settle()
+    expect(receives.X).toHaveBeenCalledOnce()
+    expect(spillOf('X')).toBe('')
+  })
+
+  it("holds every spill through a cancel's glide and clears them all once it settles", async () => {
+    await dragHold('a1', 100, 358)
+    await move(100, 450)
+    expect(spillOf('B')).toBe('100.0px')
+    expect(spillOf('C')).toBe('100.0px')
+    await act(async () => pressEscape())
+    expect(spillOf('B')).toBe('100.0px')
+    expect(spillOf('C')).toBe('100.0px')
+    await settle()
+    expect(BOARD_ZONES.map(spillOf).every((v) => v === '')).toBe(true)
+  })
+
   it('grows a foreign column by one row pitch while it is the landing, until the drop or a cancel', async () => {
     extra = { B: { axis: 'y' } }
     await mount()
-    const spillOf = (): string =>
-      (host.querySelector('.zone-B') as HTMLElement).style.getPropertyValue('--drag-spill')
     await dragHold('a1', 100, 150)
-    expect(spillOf()).toBe('')
+    expect(spillOf('B')).toBe('')
     await move(100, 358)
-    expect(spillOf()).toBe('100.0px')
+    expect(spillOf('B')).toBe('100.0px')
     await release(100, 358)
     await settle()
-    expect(spillOf()).toBe('')
+    expect(spillOf('B')).toBe('')
     await dragHold('a1', 100, 358)
-    expect(spillOf()).toBe('100.0px')
+    expect(spillOf('B')).toBe('100.0px')
     await act(async () => pressEscape())
     await settle()
-    expect(spillOf()).toBe('')
+    expect(spillOf('B')).toBe('')
   })
 
   it('re-reads the landing once the floors of empty zones have grown on lift', async () => {
@@ -1333,6 +1370,48 @@ describe('the engine seams', () => {
     await release(100, 1620)
     await settle()
     expect(receives.S).toHaveBeenCalledExactlyOnceWith('a1', 's1')
+  })
+
+  describe('with the source zone scrolled out of its clip mid-drag', () => {
+    const scrollAway = async (): Promise<void> => {
+      stubRect(host.querySelector('.scroller') as Element, { top: 3000, bottom: 3100 })
+      await act(async () => {
+        host.querySelector('.scroller')?.dispatchEvent(new Event('scroll'))
+      })
+    }
+    beforeEach(async () => {
+      aside = (
+        <div className="scroller" style={{ overflowY: 'auto' }}>
+          <Zone zid="S" />
+        </div>
+      )
+      await mount()
+      stubRect(host.querySelector('.scroller') as Element, { top: 1600, bottom: 1700 })
+    })
+
+    it('still routes the carried item to a foreign landing', async () => {
+      await dragHold('s1', 100, 1640)
+      await scrollAway()
+      await move(100, 358)
+      expect(slotEl()).not.toBeNull()
+      await release(100, 358)
+      await settle()
+      expect(receives.B).toHaveBeenCalledExactlyOnceWith('s1', null)
+    })
+
+    it('lands nowhere over empty space or a zone of another family, and returns the item', async () => {
+      await dragHold('s1', 100, 1640)
+      await scrollAway()
+      await move(600, 1500)
+      expect(slotEl()).toBeNull()
+      await move(100, 1250)
+      expect(slotEl()).toBeNull()
+      await release(100, 1250)
+      await settle()
+      expect(onMove).not.toHaveBeenCalled()
+      expect(Object.values(receives).every((spy) => spy.mock.calls.length === 0)).toBe(true)
+      expect(spoken().at(-1)).toBe('s1 returned to its place.')
+    })
   })
 
   it('holds a foreign grid zone while the pointer rides its tail slot below the box', async () => {

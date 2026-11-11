@@ -216,6 +216,7 @@ const rowsOf = (zoneId: string): string => `[data-line-row="${zoneId}"]`
 const stopOf = (spec: ZoneShared): number => (spec.disabled ? -1 : 0)
 const IMMOVABLE = 'data-line-immovable'
 const GLIDE = `transform ${DEFAULT_FEEL.duration}ms ${DEFAULT_FEEL.easing}`
+const GLIDED = DEFAULT_FEEL.duration + settleSlack.long
 const translate = (x: number, y: number): string => `translate3d(${px(x)}, ${px(y)}, 0)`
 
 const keyOf = (spec: AnyLine, slot: unknown): unknown => (spec.slotKey ? spec.slotKey(slot) : slot)
@@ -280,7 +281,7 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
   const overs = new Map<string, number>()
   const touched = new Set<HTMLElement>()
   const floored = new Set<HTMLElement>()
-  const spilled = new Set<HTMLElement>()
+  const spilled = new Map<HTMLElement, number>()
   const active = channel<Active | null>(null)
   const slotBox = channel<SlotBox | null>(null)
   const loose = channel<ReadonlyMap<Family<unknown>, unknown> | null>(null)
@@ -290,6 +291,7 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
   let chromeEl: HTMLDivElement | null = null
   let refocus: Active | null = null
   let disposing = false
+  let resettle = 0
 
   const entryOf = (zoneId: string): ZoneEntry => {
     let entry = zones.get(zoneId)
@@ -375,7 +377,7 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
 
   const atHome = (s: Session, x: number, y: number): boolean => {
     const home = s.home
-    if (!home) return true
+    if (!home) return s.carried.size === 0
     if (s.axis === 'x') return y >= home.top - BREAKOUT && y <= home.top + home.height + BREAKOUT
     const across = x >= home.left - BREAKOUT && x <= home.left + home.width + BREAKOUT
     if (s.axis === 'y') return across
@@ -416,14 +418,32 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
 
   // ── Painting ──
 
+  // A changed spill moves what follows its zone, and a menu re-places itself on that a frame later, so the re-measure waits a frame past the layout.
   const spill = (box: HTMLElement, height: number): void => {
+    window.clearTimeout(spilled.get(box))
+    const was = box.style.getPropertyValue('--drag-spill')
     if (height > 0) {
       box.style.setProperty('--drag-spill', px(height))
-      spilled.add(box)
+      spilled.set(box, 0)
     } else {
       box.style.removeProperty('--drag-spill')
       spilled.delete(box)
     }
+    if (box.style.getPropertyValue('--drag-spill') === was) return
+    cancelAnimationFrame(resettle)
+    resettle = requestAnimationFrame(() => {
+      resettle = requestAnimationFrame(remeasure)
+    })
+  }
+
+  /** A zone's rows glide back before its spill goes, so its last row never crosses what follows the zone. */
+  const unspill = (box: HTMLElement): void => {
+    if (!spilled.has(box)) return
+    window.clearTimeout(spilled.get(box))
+    spilled.set(
+      box,
+      window.setTimeout(() => spill(box, 0), GLIDED),
+    )
   }
 
   const paintZone = (s: Session, zoneId: string, to: number): void => {
@@ -436,14 +456,14 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
     const from = overs.get(zoneId) ?? lifted
     if (from === to) return
     overs.set(zoneId, to)
+    const size = sizeIn(s, zoneId, layout)
     if (!own && spec.axis !== 'x' && entry.box) {
-      const grown = spillOf(layout, layout.ids.length + 1, s.rect.height)
-      spill(entry.box, to < 0 ? 0 : grown / layout.zoom)
+      if (to < 0) unspill(entry.box)
+      else spill(entry.box, spillOf(layout, spec.axis, size) / layout.zoom)
     }
     const count = layout.ids.length - (own ? 1 : 0)
     const lo = from < 0 ? to : to < 0 ? from : Math.min(from, to)
     const hi = from < 0 || to < 0 ? count : Math.max(from, to)
-    const size = sizeIn(s, zoneId, layout)
     for (let at = lo; at < hi; at++) {
       const i = own && at >= lifted ? at + 1 : at
       const el = entry.els.get(layout.ids[i])
@@ -761,7 +781,7 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
 
   // ── Drop, land, glide, end ──
 
-  const unwind = (s: Session): void => {
+  const unwind = (s: Session, landed = false): void => {
     s.release()
     endDragDisclose()
     for (const el of touched) {
@@ -775,8 +795,9 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
     }
     for (const box of floored) box.style.removeProperty('--drag-floor')
     floored.clear()
-    for (const box of spilled) box.style.removeProperty('--drag-spill')
-    spilled.clear()
+    for (const timer of spilled.values()) window.clearTimeout(timer)
+    const into = landed && s.landing ? zones.get(s.landing.zone)?.box : null
+    if (into) spill(into, 0)
     for (const held of [frozen, bounds, clips, cuts, overs]) held.clear()
     if (s.landing?.kind === 'line') paintLine(s.landing.zone, null)
     active.set(null)
@@ -793,6 +814,7 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
       el.style.visibility = ''
     }
     touched.clear()
+    for (const box of spilled.keys()) spill(box, 0)
     if (s.kind === 'displace') {
       s.el.style.visibility = ''
       s.el.style.pointerEvents = ''
@@ -844,7 +866,7 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
     }
     pending = settled
     el.addEventListener('transitionend', onEnd)
-    timer = window.setTimeout(settled, DEFAULT_FEEL.duration + settleSlack.long)
+    timer = window.setTimeout(settled, GLIDED)
   }
 
   const land = (
@@ -862,12 +884,17 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
     }
     let said = word
     const run = (): void => {
+      let landed = commit !== null
       try {
-        if (commit?.() === false) said = 'return'
+        if (commit?.() === false) {
+          said = 'return'
+          landed = false
+        }
       } catch (err) {
+        landed = false
         console.error(err)
       }
-      unwind(s)
+      unwind(s, landed)
       if (!animates) end(s)
     }
     if (s.via === 'keyboard') {
