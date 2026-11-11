@@ -77,4 +77,23 @@ describe('OverScroll', () => {
     vi.advanceTimersByTime(500)
     expect(cap.scrollLeft).toBe(settled)
   })
+
+  it('keeps a lane scrolled while the pointer moves onto caps inside it, and slides back each one it leaves', () => {
+    vi.useFakeTimers()
+    document.body.innerHTML = `<div class="scroll-fade-x over-scroll-cap"><b>·</b><span class="over-scroll-cap">one</span><span class="over-scroll-cap">two</span></div><p>elsewhere</p>`
+    const [lane, one, two] = document.querySelectorAll<HTMLElement>('.over-scroll-cap')
+    hover(document.querySelector('b') as HTMLElement)
+    lane.scrollLeft = 120
+    hover(one)
+    one.scrollLeft = 50
+    hover(two)
+    vi.advanceTimersByTime(500)
+    expect(lane.scrollLeft).toBe(120)
+    expect(one.scrollLeft).toBe(0)
+    two.scrollLeft = 50
+    hover(document.querySelector('p') as HTMLElement)
+    vi.advanceTimersByTime(500)
+    expect(two.scrollLeft).toBe(0)
+    expect(lane.scrollLeft).toBe(0)
+  })
 })
