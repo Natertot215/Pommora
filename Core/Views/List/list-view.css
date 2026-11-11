@@ -11,6 +11,7 @@
 .list-view .table-grid {
   --cols: minmax(0, 1fr);
   --cell-padding-y: 2px; /* KNOB — a row's top and bottom room, under Table's; stated below `.table`, so the band rhythm keeps Table's */
+  --list-band-end: calc(var(--band-clearance) - var(--cell-padding-y)); /* Table's extra row room */
 }
 
 .list-view-line {
@@ -92,6 +93,11 @@
   --pen-room: var(--pen-span);
 }
 
+/* An open band's last row stands as far above what follows as a Table row does. */
+.list-view .group-band:not(.band-tail) > [data-reveal] > :has(> .data-row:last-child) {
+  padding-bottom: var(--list-band-end);
+}
+
 /* A nested band's rail: from under its head to its last member, at its chevron. */
 .list-view .table-grid.outlined .group-band .group-band:not(.band-tail) > [data-reveal] {
   position: relative;
@@ -105,4 +111,11 @@
   width: var(--list-outline-width);
   border-radius: var(--list-outline-radius);
   background: var(--list-outline-color);
+}
+.list-view
+  .table-grid.outlined
+  .group-band
+  .group-band:not(.band-tail)
+  > [data-reveal]:has(> * > .data-row:last-child)::before {
+  bottom: calc(var(--list-outline-gap) + var(--list-band-end));
 }
