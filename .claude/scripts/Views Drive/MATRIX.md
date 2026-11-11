@@ -1,6 +1,6 @@
 ## Views Drive — Matrix
 
-The drive's cases, derived from the *Views Cleanup — Implementation Plan*'s *§Behavior Changes* and written against each phase's landed change. Groups 2 to 10 follow the plan phase of their number. A group holds every behavior change its phase lands, crossed with each surface, input, and setting that reaches it, beside the interactions its refactor rewired on those surfaces, so a regression shows. Each case names its decision: `BC<n> <id>` is the numbered behavior change and its decision, owned by the group's phase, so it reads `AWAIT` at a head before that phase and must hold from it on; `R P<n>` is a regression crossing of phase `n`'s rewiring, owned by phase 0, so it holds at every head, the baseline included. `F<n> <tag>` is a behavior a fold lands at phase `n`'s checkpoint or, for `F10`, in the Final Verification after it, owned by phase `n` like a behavior change. `T<task> <tag>` is a visible change a task lands that *§Behavior Changes* doesn't number, recorded under the plan's *§Deviations* and owned by the task's phase. Every case prints as `g<group> [P<owner> <decision>] <name>`, so a run reads against the tables below line for line. Groups 2 to 10 are built.
+The drive's cases, derived from the *Views Cleanup — Implementation Plan*'s *§Behavior Changes* and written against each phase's landed change; group 11 is the *List View — Implementation Plan*'s, derived from *List View — Decisions & Intention*. Groups 2 to 10 follow the plan phase of their number. A group holds every behavior change its phase lands, crossed with each surface, input, and setting that reaches it, beside the interactions its refactor rewired on those surfaces, so a regression shows. Each case names its decision: `BC<n> <id>` is the numbered behavior change and its decision, owned by the group's phase, so it reads `AWAIT` at a head before that phase and must hold from it on; `R P<n>` is a regression crossing of phase `n`'s rewiring, owned by phase 0, so it holds at every head, the baseline included. `F<n> <tag>` is a behavior a fold lands at phase `n`'s checkpoint or, for `F10`, in the Final Verification after it, owned by phase `n` like a behavior change. `T<task> <tag>` is a visible change a task lands that *§Behavior Changes* doesn't number, recorded under the plan's *§Deviations* and owned by the task's phase. Group 11 tags a case by the List decision it proves, owned by `--landed 11`, which stands for the List View plan landed, and its regressions of the pieces that plan shared as `R P11`. Every case prints as `g<group> [P<owner> <decision>] <name>`, so a run reads against the tables below line for line. Groups 2 to 11 are built.
 
 #### Dimensions
 
@@ -48,7 +48,7 @@ The drive's cases, derived from the *Views Cleanup — Implementation Plan*'s *�
 - **A locked Matrix label carried onto a tab strip (R P10):** the label refuses its snapshot and keeps its carry as a nav search's result does, which group 10 carries; its BC24 read is kept.
 - **The pointer half of a movable row's lift for Table rows, Set and property bands, the Grouping pane's Set list, the dropdown's rows, and a tile's pills (R P10):** groups 4, 6, 7, and 8 drag each; group 10 drags cards, Cards bands, the sidebar, and the Grouping pane's option list, which no other group does.
 - **The Sort pane's option list (R P10):** it mounts the same `OptionOrderList` the Grouping pane's option rows cross.
-- **A selected row's look (R P10, the fold's shared selection read):** the ring draws only on a row whose page is the app's selection, and a selected page replaces the view in its tab, so the drive found no surface drawing it; the fold's `activeCell` collapse and `RowApi` rename draw nothing either.
+- **A selected row's look (R P10, the fold's shared selection read):** the highlight draws only on a row whose page is the app's selection, and a plainly pressed page replaces the view in its tab; group 11's B-13 case reads it on a view's tab parked behind the page a Command-press opened. The fold's `activeCell` collapse and `RowApi` rename draw nothing.
 - **The alias list under a typed filter (BC24):** drafting and renaming cross the same zone-wide freeze; the filter is reached only through the editor's alias slot, which the Alias Drive holds.
 
 #### Group 2 — The Views Root and the Live View
@@ -328,3 +328,175 @@ Before Phase 10 every immovable row already refused its lift: `lineList`'s `lock
 | a locked Matrix's node label names no drag gesture | Matrix, `display.locked` · Page A's node hovered | the anchor carries the row handle and no description | BC24 I-059 |
 
 **The fold's rows:** Phase 10's checkpoint fold gives displace items the per-item flag in place of `DisplaceSpec.fixed`, so Set cards under a search, cards under two sorts, the nav gallery's search results, and a tile's lone pill stop naming and taking a lift into a session that can't move; and an ungrouped Cards view draws its band list only around bands. The alias list keeps its zone-wide freeze, since Tab never reaches the list while a field inside it is open, so its case is BC24's disabled-zone half. Each reads FAIL at `37a08d0cb` and AWAIT at `daf7bb55f` bar the last, which reads AHEAD there, since Phase 10's own commit gave the searching list the empty Tab stop the fold takes away, where the Phase 9 zone was disabled under a search. Its `hide?: HideControls`, `listZone`'s one indent source, and the shared selection read preserve behavior, so the hide eyes and the drop lines are regressions. The stop row landed with the Final Verification's folds, which hand a line list its Tab stop back however its focused item leaves, so it reads FAIL at every head before them.
+
+#### Group 11 — List
+
+Derived from *List View — Decisions & Intention*, each case naming the decisions it proves; the regressions are the pieces the List work shared with Table, Cards, and the Properties panel. Group 11 seeds what it reads inside its own run, after the drive's three properties: seven more on Collection A (VL Tags, a Multi-Select; VL Phase, a Status; VL Count, a plain Number; VL Meter, a percent Number in its bar look; VL Note, a Text; VL Site, a Link; VL Doc, a File), values for `~/Test`'s Areas, Topics, and Projects Contexts, a VL Rows Set inside Set Beta holding a row of each content kind (VL Bare, VL Left, VL Right, VL Both, VL Crowded, VL Full), a long-titled row at each indentation depth (the Collection's root, Set Beta, Sub-Set A, and a VL Deep Set inside it), and a List view on the empty Collection B. Every expectation is read, not assumed: what a row should draw comes from its page's front matter on disk and the tree's Context values; a width, a floor, a cap, or a gap from the view's computed tokens or another drawn box; a List's heights and spacings against a Table's of the same Collection.
+
+##### Dimensions
+
+| Dimension | Values | Crossed Where |
+| --- | --- | --- |
+| **Grouping** | None; Sets, with Sub-Sets and a deeper VL Deep; a property (VD Stage); Sets sub-grouped by VD Stage; open, closed, and empty bands | The configurations; the spacing, empty-band, and creation cases. A property grouping takes no sub-group: `groupPlan` answers a property plan with no `sub` (`Core/Views/Pipeline/group.ts:213-215`), so that pair doesn't exist, and a case states it |
+| **Switches** | Wrap Rows, Outlines, and Title Icons, each on and off; through the view editor's root and Settings' Layout footing | Stored by every configuration; written each way through each door by the switch cases |
+| **Sides and Order** | Each type's default; VD Stage moved Right and VD Due Left; VD Stage and VL Tags ahead of Title; every property Left; every property Right; three hidden; Title stored Right | The configurations; the pane cases |
+| **A Row's Contents** | Title alone; left values only; right values only; both; crowded past the row; a long title; a value of every type, its blank, Number plain and in its bar look, a Checkbox each way, a Link resolving and not, the two stamps | The contents cases; every configuration's structure read, over every row drawn |
+| **Width and Depth** | The window's own width; a pixel above and below each long-titled row's wrap or scroll point; a 620px window; rows at depth 0 to 3 | Every configuration, over every row at each width |
+| **Surface** | Collection A's main pane, Set Beta's own view, a View Tile on the homepage; with and without a banner | The configurations; the banner-line cases |
+| **Pipeline** | None, a filter, a sort, a search | The configurations; a search and two sort keys against a row's drag |
+| **Inputs** | Press, Command-press, right-click on a native menu, pointer drag, keyboard (Space, the arrows, Enter, Escape), hover, the mouse wheel | The interaction cases, each by every input that reaches it |
+
+##### The Configurations
+
+Sides × grouping × pipeline × surface × Wrap Rows × Outlines × Title Icons is 1,344 views. The 28 below cover every pair of two dimensions' values, which 7 sides × 4 groupings make the least that can; a tile takes no search, since the search lives in the detail header a tile doesn't draw. Each runs the same four reads over every row it draws, so the crossings are data the cases iterate.
+
+| # | Sides | Grouping | Pipeline | Surface | Wrap Rows | Outlines | Title Icons |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | defaults | none | none | tile | off | off | off |
+| 2 | defaults | Sets | search | Collection | on | on | on |
+| 3 | defaults | property | filter | Collection | on | off | on |
+| 4 | defaults | Sets sub-grouped | sort | Set | off | on | off |
+| 5 | moved | none | sort | Collection | off | on | on |
+| 6 | moved | Sets | filter | Collection | on | off | off |
+| 7 | moved | property | search | Set | off | off | on |
+| 8 | moved | Sets sub-grouped | none | tile | on | on | off |
+| 9 | ahead of Title | none | none | tile | on | on | on |
+| 10 | ahead of Title | Sets | search | Set | off | off | off |
+| 11 | ahead of Title | property | filter | Set | on | on | on |
+| 12 | ahead of Title | Sets sub-grouped | sort | Collection | on | off | off |
+| 13 | all Left | none | filter | Collection | on | on | off |
+| 14 | all Left | Sets | sort | tile | on | off | on |
+| 15 | all Left | property | none | Set | off | off | on |
+| 16 | all Left | Sets sub-grouped | search | Collection | off | off | off |
+| 17 | all Right | none | search | Set | on | off | on |
+| 18 | all Right | Sets | filter | tile | on | off | on |
+| 19 | all Right | property | sort | Collection | off | on | off |
+| 20 | all Right | Sets sub-grouped | none | Collection | on | off | on |
+| 21 | hidden | none | search | Set | off | on | off |
+| 22 | hidden | Sets | none | Collection | on | on | off |
+| 23 | hidden | property | sort | tile | off | on | off |
+| 24 | hidden | Sets sub-grouped | filter | tile | off | off | on |
+| 25 | Title stored Right | none | sort | Set | on | off | on |
+| 26 | Title stored Right | Sets | filter | tile | off | on | off |
+| 27 | Title stored Right | property | none | tile | on | on | on |
+| 28 | Title stored Right | Sets sub-grouped | search | Collection | off | off | off |
+
+| Case, for each configuration | Surface · Input | Expected | Decision |
+| --- | --- | --- | --- |
+| each row draws its title and values on their sides in order, barred, with its + last | the configuration at the window's width | every row's left and right groups hold exactly the columns its page holds a value for, or a checkbox's blank, on each column's stored or default side in `property_order`, Title on the left wherever stored; each value shows what its page holds; a bar between each two items and none at a group's ends; the title's icon as Title Icons says; the + the line's last child, after its group; a filter or search leaves only VL rows, and a sort orders an ungrouped list | B-1 · B-2 · B-4 · B-9 · B-11 · D-2 · E-9 · F-1 |
+| wide and narrow, no row or shell overflows, one-line rows match and stand under Table's, titles hold their floor, values their cap, grips their first line | the window's own width, then 620px | no row or shell scrolls sideways; every one-line row one height, under a plain Table row of Collection A; each title at least the smaller of its own width and `--list-view-title-min`; each value at most `--list-view-value-max`; each grip's center on its left group's; a wrapped right group flush to the line's end and one row pitch under the first line, an unwrapped one `--list-view-wrap-gap` off the left group | B-12 · C-3 · H-2 · H-3 |
+| each long-titled row, a pixel above its wrap or scroll point, holds one line with its title at its floor, and a pixel below it drops its right group to a second line with its title regaining its room, or, with Wrap Rows off or no right group, scrolls its left group with its title at its floor | the window halved down to the widest at which each long-titled row has crossed, then read there and a pixel wider | above: one line, the title at its floor; below, with Wrap Rows on and a right group: that group on a second line and the title past its floor again; otherwise the left group scrolling with the title at its floor, since a row with nothing on the right has nothing to wrap (`list-view.css`, `.wraps .list-view-line:has(> .list-view-right)`); every other row's reads hold at both widths, at each depth the configuration draws | H-1 · H-2 |
+| a rail at each nested band's chevron from under its head to its last row, and none at the top level, on the tail, or on an empty band; or no rail with Outlines off | the window's own width | each band's `::before` rail drawn exactly where it should be, its center on its head's chevron | G-1 · G-2 |
+
+##### Pruned
+
+- **A value's press and right-click crossed with its side, a wrapped line, or a surface:** a value is one `SeatedValue` whose click and menu go to the seat (`Core/Views/List/ListView.tsx`, `item`), wherever the row lays it; its crossing is its type, against the same value on a card.
+- **A value's press against a Table cell or the panel:** Table's cells mount a value their own way and stay frozen (I-7), and a card mounts the same `SeatedValue`, so the card is the twin each value is held against; the panel's Format case reads the panel.
+- **The pane's gestures through the editor door beyond its shape, a crossing, the eye, and Escape:** both doors draw the kind's `Visibility` (`Core/Views/Settings/ViewPane.tsx:70-71`, `ViewFrame.tsx:198-204`), so a gesture inside it is the pane's own; what differs by door is the container, which the shape and Escape cases read.
+- **A switch's drawing crossed with grouping and surface beyond the configurations:** every configuration stores the three switches and reads what they draw; the switch cases cross the write through each door.
+- **The + on a wrapped row:** every configuration's structure read holds the + last on its line, after its group, over wrapped rows.
+- **A row's drag on a wrapped row or in a tile:** a row drags through the frame's `LineRow` (`Core/Views/Rows/RowFrame.tsx`, `PageRow`), whose height and surface never enter the drop.
+- **The rename and the title's press crossed with the title's place or Title Icons beyond icon and text:** the title is the frame's one `PageTitle`, pressed through its own span's `rowOpen` (`ListView.tsx`), wherever it sits.
+- **A stamp's blank:** a page always has a created and a modified time (`Core/Properties/fieldValue.ts`, `stampValue` of the row's own times), so none can draw blank.
+- **C-5's Date maximum:** the cap is one rule over every value (`.list-view .value-inline`), and no date reaches it.
+- **E-4's fill and heading:** the pane draws the kit's own heading (`MenuRowView` of `kind: 'heading'`) over `fill.quaternary` (`sides-frame.css.ts`), with no List rule of its own to compare; its width is read.
+- **I-5's empty switch list drawing no separator:** `SettingsFrame.test.tsx` · "a list view's Layout is the type grid over its three switches in the footing, with no section between" pins it.
+- **The selection in a tile or a Set's view:** the highlight is `PageRow`'s (`RowFrame.tsx`) on every surface; B-13 reads it on Collection A.
+- **Native Menus off and Hide Empty Groups:** a List opens no list of its own through the menu door, which group 3 crosses with the setting, and empty bands are the pipeline's, which group 6 crosses; the empty-band case reads them with the setting off.
+
+##### Stated Behavior
+
+These hold as written and are asserted as they are: a property grouping takes no sub-group; an empty sub-band followed by the ungrouped tail's row reads as if that row belongs to it, in Table too; a property band's head carries no **+** in Table or List; the engine steps no row across the pane's columns by keyboard, and the Move rows carry a side; a mouse wheel over a capped value on a crowded row scrolls neither it nor its group, since a cap whose lane overflows leaves the wheel alone (`UIX/Interactions/OverScroll.tsx`, `wheelCap`), where a sideways trackpad scroll moves the group; Move to Left and Move to Right write the side alone, so the property lands where its stored order puts it; a line under a banner is the banner's own and spans alike over every kind. A row stepped by keyboard past its band's top is asserted to land where a Table row does, not at a stated place.
+
+##### Cases
+
+A row naming both doors, each switch each way, each kind's tile, or each grouping is a template, as each configuration's are: it prints once per door, switch and way, tile, or grouping it names.
+
+| Case | Surface · Input | Expected | Decision |
+| --- | --- | --- | --- |
+| a row holding nothing the view shows draws its title alone, its + after the title | List, VD Done hidden · VL Bare | one item, the title; no right group; the + last, past the title | B-4 · B-7 |
+| a row holding left values only draws no right group, its + after its last left value | the same · VL Left | four left items, no right group, the + past the left group | B-7 |
+| a row holding right values only draws its title alone on the left and its values flush right, the + after them | the same · VL Right | the title alone; three right values ending at the line's end; the + past them | B-1 · B-6 |
+| a row holding both draws its title and Stage on the left and its Date and Link flush right | the same · VL Both | two left items, two right ending at the line's end | B-1 |
+| in the emphasized title weight, a long title at a narrow window stops at exactly the view's title minimum of text, and a short one keeps exactly its own width | the same at 620px · VL One's long title and VL Both | the long title's text `--list-view-title-min` wide, the short one's its width at the window's own | H-2 |
+| a List title draws in a card title's weight, and its values in another | List and standard Cards · VL Both | the List title's computed weight a card title's; a value's different | B-1 |
+| a crowded row past its width with Wrap Rows off keeps one line, its groups scrolling, nothing overflowing | the same · VL Crowded | one line; a group's content wider than its box; the row no wider | H-2 |
+| a crowded row past its width with Wrap Rows on drops its right group to a second line | the same, Wrap Rows on | the right group under the left; the row no wider | H-2 |
+| a row holding a value of every type draws each, on its type's side, showing what its page holds | every column and both stamps shown · VL Full | fifteen values, each on its default side, each showing its value | B-1 · C-1 · D-2 |
+| a row holding no value draws no blank of any type but its unchecked checkbox and the two stamps | the same · VL Bare | the title alone on the left; the unchecked checkbox and two stamps on the right | B-4 |
+| a checked and an unchecked checkbox each draw in their state | the same | VL Right's and VL Crowded's checked, VL Both's not | B-4 |
+| a long Text value stops at the view's value maximum, cut under its fade, its first line with the pen beside it | the same · VL Crowded's VL Note | its width `--list-view-value-max`; its line cut; the pen drawn | C-3 |
+| hovering a Text value grows nothing and moves no neighbor | the same · hover | every item's box on the row unchanged | C-3 |
+| a Number in its bar look draws a bar the view's bar width wide | the same · VL Full's VL Meter | a bar `--list-view-bar-width` wide | C-3 |
+| a mouse wheel over a capped value on a crowded row scrolls neither the value nor its group, where a sideways trackpad scroll moves the group and not the value (stated) | the same · the pointer on VL Crowded's VL Note, a vertical wheel turn, then a sideways one | neither scroll moves on the wheel; the group's moves on the sideways turn and the value's doesn't | H-2 · C-3 |
+| the same Number in its plain look draws its digits | the view with no look stored | `30%` | C-1 |
+| each type's value draws the text its Table cell draws | the same columns in a Table · VL Full | each value's text equals its cell's | C-1 |
+| a Link that resolves and one that doesn't each draw as their Table cells draw them, and differently from each other | VL Both's and VL Crowded's VL Site | each value's drawn classes equal its cell's, and the two differ | C-1 |
+| a List title's press opens its page, on its text and on its icon, and with Title Icons off | List · press | the page's tab is active each time | B-3 |
+| a List title's press in a View Tile opens its page | a List tile · press | the page's tab is active | B-3 |
+| a press on a Created value opens nothing | List · press | no pane, field, menu, dialog, or tab | B-3 |
+| a press on a List row's empty stretch opens nothing, on its one line and on a wrapped row's second | List · press between the groups; at 620px, left of a wrapped right group | nothing opens either time | B-3 |
+| a right-click on a List row's empty stretch, on one line and on a wrapped second, pops the page menu a Table title pops | List and Table · right-click, native | the three menus' rows equal, Rename among them | B-3 · A-2 |
+| the page menu's Rename from a List row renames its page | List · right-click, Rename, typed | the page takes the name and the row draws it | B-3 · A-2 |
+| a List title's rename field draws in the weight a card title's rename field does | List and standard Cards · right-click, Rename | equal computed weights | B-1 |
+| each type's value on a List row answers a press as the same value on a card does, a Created and a Modified value opening nothing | List and standard Cards · press on each of fifteen values | the same picker, calendar, field, toggle, followed link, or file dialog per type; nothing for the stamps | C-1 · B-3 |
+| each type's value on a List row pops the right-click menu the same value pops on a card, a Link's holding its Format | the same · right-click, native | equal rows per type; Format on the Link | C-1 · C-4 |
+| a Link's Format picked from a List value's right-click writes that view's look alone, no other view's and not the property's own | List · right-click, Format | the view's `column_styles` takes the look; no other view's does, and the definition's `link_display` stays unset | C-4 |
+| a List value's Remove hides its property from the view, every row with it | List · right-click, Remove | `hidden_properties` takes VD Due; no row draws it | C-2 |
+| a row's + is unseen at rest in a slot it keeps, and shows on hover with nothing on the row moving | List · hover | opacity 0 at rest and 1 on hover; the row's boxes unchanged | B-6 · B-10 |
+| a row's + opens the Add list of what the row doesn't draw, and stays shown while the list is open | the same · press, the pointer moved to another row | VL Tags offered and VL Phase not; the + shown and held | B-6 |
+| a Multi-Select on the left added from a row with no right values takes two picks, shows on the view at the far end of its side and draws on the left, the list staying open and the + the same element trailing the left group | VL Bare · +, VL Tags, One, Three | both picks written with the list open; `property_order` ends in VL Tags; the same + element, last | B-6 · B-7 · C-2 · D-3 |
+| a Multi-Select on the right added from a row with no right values takes two picks, shows on the view at the far end of its side and draws on the right, the list staying open and the + the same element trailing the new right group | the same with VL Tags stored Right | the same, a right group born under the + without remounting it | B-6 · B-7 · C-2 · D-3 |
+| a single Select picked from a List row's Add list writes it and closes the list, as the same pick on a card does | VL Bare's + and its compact card's Add list · VD Stage, Todo | the value written each time, and the list closed after the pick on both, since a single Select takes one pick | B-6 · C-1 |
+| a row drawing every property and Context draws no +, where the others keep theirs | every property and Context shown · VL Full | no + on VL Full; one on every other row | B-10 |
+| a List row's hover ghost stands under it at its indent and height, and its press names a newborn placed after it in its Set | List, Sets · hover, press, typed | the ghost's lead and height the row's; the newborn after VL Both in `page_order` | A-2 · B-12 |
+| a List Set band's + names a newborn in its Set | the same · hover, press | `VL Rows/VL Band.md` | A-2 · B-8 |
+| a property band's head carries no + on a List, as on a Table (stated) | List and Table by VD Stage | no head holds one, alike | A-2 |
+| a List grouped by a property draws no sub-group under it, a sub-grouping saved beside it included (stated) | by VD Stage with a VL Phase sub-group stored | no nested band | A-2 |
+| a sub-grouped List draws its empty Done bands, and its tail row after one, where a Table does | List and Table, Sets by VD Stage | equal head lists with Done; the tail row's lead equal | A-2 |
+| an empty Collection's List stands a ghost row with no hover, whose press names a newborn in the Collection | Collection B · press | the ghost drawn; `Collection B/VL Standing Page.md` | A-2 |
+| a List's hover ghost and standing ghost title New Page in the weight a Cards ghost does | the two List ghosts and a card's hover ghost | equal computed weights | B-1 · A-2 |
+| a List row dragged by its grip above another in its band saves the manual order and draws there | List, Sets · grip drag | `manual_order` and the drawn order put VL Right above VL Left | A-2 |
+| a List row lifts by Space, steps by ArrowUp, and drops by Enter, saving the manual order | the same · keyboard | VL Both above VL Left | A-2 |
+| a List row stepped by keyboard past its band's top lands where a Table row does | List and Table · Space, ArrowUp, Enter on VL Bare | the same path and rank | A-2 |
+| a searching List and one sorted by two keys name no drag gesture on their rows, as a Table's | List · search, then two sort keys | no row described | A-2 |
+| a List row dragged into a deeper Set's rows moves its page there and draws it at that Set's indent | the same · Page A onto Alpha 2 | `Sub-Set A/Page A.md`, at Alpha 2's indent | A-2 |
+| a List row dragged across property bands takes the band's value | List by VD Stage · grip drag | VL Both reads Todo | A-2 |
+| a List row stepped by keyboard past its band's head takes the band above's value | the same · Space, ArrowUp past Doing's head, Enter | VL Both reads Todo | A-2 |
+| the Settings door's Visibility opens List's pane, and so does the editor door's Layout | both doors | two columns headed Left and Right, each as wide as the track its stylesheet rule declares; Left as the group reads, Title without an eye; Right reversed; each hidden property ghosted at its column's foot with its eye off | E-1 · E-2 · E-3 · E-4 · E-5 · E-8 |
+| a pane row dragged within its column reorders the view, and the List draws it | Settings door · pointer drag | one save; the drawn rows match the stored view | E-7 |
+| a pane row dragged from Left into Right lands between the rows it was dropped between, writing its side and place in one save, and the List draws it there | the same | Right reads VL Site, VD Stage, VL Note, VD Due; one save | E-7 · I-4 |
+| a row carried into the Right column grows its zone by the row, so its hidden foot moves down and nothing draws over it | the same, read while held | the zone's `--drag-spill` set; the foot a row lower and below every zone row | E-10 |
+| a pane row dragged from Right into Left takes the left side where it was dropped, in one save | the same | VL Note last on Left | E-7 |
+| Title dragged toward Right stays in Left and writes nothing | the same | no save | E-8 · E-9 |
+| a hidden row at a column's foot lifts no drag and writes nothing | the same | no lift, no save | E-5 · E-7 |
+| a property hidden by its eye rests ghosted at its own column's foot, and shown again after another row moved returns to its place and side | the same · eye, a drag, eye | `property_order` equal but for the moved id | E-5 · E-6 |
+| a pane row lifts by Space, steps down by an arrow, and drops by Space, saving the order | the same · keyboard | one save, the row a slot down | E-7 |
+| Escape on a lifted pane row through the Settings door cancels it and leaves the pane open | the same · Space, ArrowDown, Escape | no save; the back bar stands | E-7 |
+| a keyboard lift steps no row across the pane's columns; the Move rows carry a side (stated) | the same · Space, ArrowRight, Space | the row stays on Left | E-7 |
+| a pane row's right-click offers Move to the other side and writes the side alone, the property landing where its stored order puts it (stated); Title's offers none | the same · right-click, native | `column_sides` takes the side, `property_order` unchanged | E-7 |
+| a hidden row's Move to Left takes it to the other column's foot | the same | VL Doc at Left's foot | E-5 · E-7 |
+| a pane row dropped into the empty Right column lands there | Settings door, nothing on the right | Right lists VL Tags | E-7 |
+| a pane row dragged in a scrolled column reorders it | Settings door, every column and ten Text properties assigned for the case shown, the pane scrolled to its foot | the pane scrolled; the row two slots up | E-7 |
+| through the editor door, a pane row dragged from Right into Left lands there in one save | editor door · pointer drag | one save, on the left | E-2 · E-7 |
+| through the editor door, the eye hides a property to its foot and shows it again | editor door · eye twice | to the foot and back | E-2 · E-5 |
+| Escape on a lifted pane row through the editor door cancels it and leaves the editor open | editor door · Space, ArrowUp, Escape | no save; the back bar stands | E-2 · E-7 |
+| List's Title Icons, Outlines, and Wrap Rows sit at the view editor's root, before Layout is pressed, and in the footing of Settings' Layout | both doors | three switches each | F-1 · F-2 · I-5 |
+| through each door, each switch switched off and on writes its key and the List draws it or stops | both doors × three switches × each way | the key written; the title icons, rails, or a wrapped VL Crowded follow | F-1 · F-2 · G-1 · H-1 |
+| Table's Title Icons stays in Layout and off the view editor's root | Table · both doors | in Layout only | F-2 |
+| a property dragged ahead of Title in a Table view draws ahead of the title once the view is a List | Table heading drag, then the List tile | VD Stage first in `property_order`; VL Both's left group a value, then the title | B-11 |
+| each door's type tile switches the view between Table, List, and Cards, its order, sides, and hidden set kept, a List's rows drawn by them and shorter than the Table rows they replaced | Settings door List, Table; editor door List, Cards; Settings door List | the type written, its renderer drawn, the three fields unchanged | A-1 · D-1 · E-6 |
+| the Gallery tile on a List writes nothing and leaves it a List | Settings door | no save | A-3 |
+| a List row whose page is the selection highlights whole, in a Table row's fill, read on the tab parked behind the page | List and Table · Command-press the title | one selected row, VL Both's, filled as Table's, unlike its neighbors, its lead cell clear, the row's full width | B-13 |
+| the spacing above each band of a List equals a Table's: Sets open and nested, every Set closed, a nested band closed, property bands open and closed, Sets sub-grouped | List and Table, six groupings | every gap above a head or row equal within half a pixel | B-15 |
+| the line under a bannerless header over a List is inset as over Cards, not bled as over a Table | Set Beta's own view in each kind | List's line equals Cards' and not Table's | B-14 |
+| the line under a banner spans alike over a List, Cards, and a Table (stated) | Collection A in each kind | equal | B-14 |
+| a hidden Table column shown again after another column was dragged past it returns to its own place | Table · heading Hide, heading drag, Visibility eye | headings Title, VD Done, VD Due, VD Stage | E-6 |
+| a Link value's right-click offers its view's Format on a card and in a Table cell, and none in the Properties panel | Cards, Table, the panel · right-click, native | Format, Format, none | C-4 |
+| a value in the Properties panel pressed and moved 8px lifts nothing, where 20px lifts its row | the panel · pointer drag | no drag source, then one | I-2 |
+| a Table Set band's + still names a newborn in its Set | Table · hover, press | `VL Rows/VL Table Band Page.md` | R P11 |
+| a Table row's grip sits at its lead cell's center, on a plain row and on one holding a chip | Table | each within a tenth of a pixel of its lead cell's center, the box the grip's rule centers in (`UIX/Table/table.css`, `.row-grip`) | R P11 |
+| a card carried into another Set's band spills that band a row only when its cards fill their last row, and lands in its Set | Cards, Set bands · Page C onto Beta 1's band, which leaves room; Beta 1 onto Set Alpha's at a window narrowed until its three cards fill their row | no `--drag-spill` on the first, one on the second; each card in its new Set, the band a kind that doesn't nest gathers | R P11 |
+| a tab dragged before another reorders the tab bar, which takes no spill | the tab bar · drag | no `--drag-spill` while held; Page A's tab ahead of Collection A's | R P11 |
+
+**Counts:** 112 configuration cases (28 configurations × 4), 18 for a row's contents, 7 for its gestures, 4 for its values, 6 for the +, 7 for creation, 7 for a row's drag, 19 for the pane, 15 for the switches, 7 for the kind, 9 for the selection, the spacing between groups, and the banner line, and 7 for the shared pieces — 218 in all, 214 owned by `--landed 11` and 4 regressions.

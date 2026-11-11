@@ -111,16 +111,19 @@ behavior-changing checkpoint of the *Views Cleanup* plan, one group per plan pha
 crosses the behavior changes its phase lands with every surface, input, and setting that reaches them,
 beside the gestures its refactor rewired on those surfaces — the Table, Cards, Set, property, and
 sub-grouped bands, the Trash and Archive table, the toolbar's view button and dropdown, and the
-settings panes through both doors, under Native Menus and Hide Empty Groups. `MATRIX.md` beside it
-holds the dimensions, what it prunes and why, and each case's decision. A behavior change is owned by
-its phase and a regression crossing by phase 0, so with `--landed <n>`, the last phase in the build,
-an item a later phase owns prints `AWAIT` (or `AHEAD` when it already holds) and leaves the exit code
-alone; `--landed 0` is the baseline, where every behavior change reads `AWAIT`. A round trip a case
-reads inside is held open by wrapping the host's `mutate` and `views:save` handlers in the main
-process, and selectors that changed between phases sit in one table keyed by `--landed`. It takes the
-groups to run as arguments — `node live-drive.mjs 2 6 --landed 6` — seeds three properties, their
-values, and its own views in `~/Test`'s `Collection A`, on debug port 9423, and exits non-zero on any
-failed check a landed phase owns.
+settings panes through both doors, under Native Menus and Hide Empty Groups. Group 11, the *List View*
+plan's, crosses List's configurations pairwise and reads each over every row at the window's width, a
+narrow one, and each long-titled row's wrap point, beside every gesture that reaches a List and the
+regressions of the pieces it shares. `MATRIX.md` beside it holds the dimensions, what it prunes and
+why, and each case's decision. A behavior change is owned by its phase and a regression crossing by
+phase 0, so with `--landed <n>`, the last phase in the build, an item a later phase owns prints `AWAIT`
+(or `AHEAD` when it already holds) and leaves the exit code alone; `--landed 0` is the baseline, where
+every behavior change reads `AWAIT`. A round trip a case reads inside is held open by wrapping the
+host's `mutate` and `views:save` handlers in the main process, and selectors that changed between
+phases sit in one table keyed by `--landed`. It takes the groups to run as arguments — `node
+live-drive.mjs 2 6 --landed 6`, or `11 --landed 11` — seeds three properties, their values, and its own
+views in `~/Test`'s `Collection A` (group 11 seeds List's own beside them), on debug port 9423, and
+exits non-zero on any failed check a landed phase owns.
 
 The drives share `drive-harness.mjs`, which builds the app, backs up `~/Test`, launches the build
 with its own userData and the drive's debug port, writes a screenshot of each state to
