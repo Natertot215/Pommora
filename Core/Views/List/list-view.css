@@ -100,9 +100,12 @@
   --pen-room: var(--pen-span);
 }
 
-/* An open band's last row stands as far above what follows as a Table row does. */
+/* A band's last row, its own before a nested band's heading included, stands as far above what follows as a Table row does. */
 .list-view .group-band:not(.band-tail) > [data-reveal] > :has(> .data-row:last-child) {
   padding-bottom: var(--list-band-end);
+}
+.list-view .data-row:has(+ .group-band) {
+  margin-bottom: var(--list-band-end);
 }
 
 /* A nested band's rail: from under its head to its last member, at its chevron; a member that ends on a row carries the band end's room below it, and one that ends on a head or the tail rows doesn't. */
