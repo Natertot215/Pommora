@@ -254,9 +254,12 @@ describe('SortFrame rows', () => {
     expect(lastSaved().sort).toEqual([{ property_id: 'prop_status', direction: 'ascending' }])
   })
 
-  it('a status primary shows the example order; Reversed flips the run', async () => {
+  it('a status primary shows the example order, its eyeless rows no reveal hosts; Reversed flips the run', async () => {
     await mount(view({ sort: [{ property_id: 'prop_status', direction: 'ascending' }] }))
     expect(texts()).toContain('Open')
+    const rows = [...document.querySelectorAll('[data-line-row]')]
+    expect(rows.length).toBeGreaterThan(0)
+    expect(rows.filter((r) => r.hasAttribute('data-reveal-host'))).toEqual([])
     expect(texts()).toMatch(/Queued.*Shipped/)
     await mount(view({ sort: [{ property_id: 'prop_status', direction: 'descending' }] }))
     expect(texts()).toMatch(/Shipped.*Queued/)

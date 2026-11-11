@@ -82,7 +82,7 @@ export function HideableRow({
   const eye = hideEye(label, hideKey, hide)
   const row = {
     className: cx(optionRow, className, hide?.isHidden(hideKey) && hiddenRow),
-    'data-reveal-host': '',
+    'data-reveal-host': eye ? '' : undefined,
     children: (
       <>
         {children}
