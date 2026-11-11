@@ -321,6 +321,37 @@ describe('a List row', () => {
     expect(document.querySelector('[data-picker-portal] [data-k]')).not.toBeNull()
   })
 
+  it('keeps a hidden Date hidden when its calendar picks and un-picks a day inside one debounce', async () => {
+    await renderView(root, source(listView({ property_order: ['_title', 'prop_stage'] })))
+    await act(async () => plus(rowOf('p2'))!.click())
+    await settle(30)
+    await act(async () => {
+      ;[...document.querySelectorAll<HTMLElement>('[data-picker-portal] [role="button"]')]
+        .find((e) => e.textContent?.includes('Due'))!
+        .click()
+    })
+    await settle(30)
+    const day = (): HTMLElement =>
+      document.querySelectorAll<HTMLElement>('[data-picker-portal] [data-k]')[10]
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] })
+    try {
+      await act(async () => day().click())
+      await act(async () => day().click())
+      await act(async () => {
+        vi.advanceTimersByTime(200)
+      })
+    } finally {
+      vi.useRealTimers()
+    }
+    await settle(30)
+    expect(saveSpy).not.toHaveBeenCalledWith(
+      'Col',
+      'collection',
+      expect.anything(),
+      expect.objectContaining({ property_order: expect.arrayContaining(['prop_due']) }),
+    )
+  })
+
   it('outlines its grid unless hide_outlines, and wraps it under wrap_rows', async () => {
     const grid = (): Element => host.querySelector('.list-view .table-grid')!
     await renderView(root, source())
