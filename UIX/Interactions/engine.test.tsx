@@ -933,12 +933,34 @@ describe('the drag engine across a family', () => {
     await settle()
   })
 
-  it('closes the source gap while the landing is foreign when the source releases', async () => {
+  it('closes the source gap while the landing is foreign when an item leaves its source, which releases it at the drop', async () => {
+    const releaseA = vi.fn()
+    extra = { A: { leaves: true, release: releaseA } }
+    await mount()
+    await dragHold('a1', 100, 210)
+    expect(item('a2').style.transform).toBe('translate3d(0.0px, -100.0px, 0)')
+    await release(100, 210)
+    await settle()
+    expect(receives.B).toHaveBeenCalledExactlyOnceWith('a1', 'b1')
+    expect(releaseA).toHaveBeenCalledExactlyOnceWith('a1')
+  })
+
+  it('closes the source gap when an item leaves a source that owes no release, the receiving zone writing the move', async () => {
+    extra = { A: { leaves: true } }
+    await mount()
+    await dragHold('a1', 100, 210)
+    expect(item('a2').style.transform).toBe('translate3d(0.0px, -100.0px, 0)')
+    await release(100, 210)
+    await settle()
+    expect(receives.B).toHaveBeenCalledExactlyOnceWith('a1', 'b1')
+  })
+
+  it('holds the source gap for a source that releases without declaring the item leaves', async () => {
     const releaseA = vi.fn()
     extra = { A: { release: releaseA } }
     await mount()
     await dragHold('a1', 100, 210)
-    expect(item('a2').style.transform).toBe('translate3d(0.0px, -100.0px, 0)')
+    expect(item('a2').style.transform).toBe('')
     await release(100, 210)
     await settle()
     expect(releaseA).toHaveBeenCalledExactlyOnceWith('a1')

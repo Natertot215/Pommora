@@ -82,8 +82,7 @@ export function SidesFrame({
                   carry={[carries(SIDES_FAMILY, (id) => (id === FILEDATA.title.id ? null : id))]}
                   onMove={drop}
                   receive={drop}
-                  // A zone that releases closes its lifted row's gap while the row is over the other column; the side and the order land in `receive`'s one write.
-                  release={() => {}}
+                  leaves
                 >
                   <DropSlot foreignOnly />
                   {drawn.map((c) => (

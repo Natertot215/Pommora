@@ -97,6 +97,7 @@ export type DisplaceSpec<T = unknown> = ZoneShared & {
   opens?: boolean
   onMove?: (id: string, beforeId: string | null) => unknown
   receive?(item: T, beforeId: string | null): void
+  leaves?: boolean
   release?: (id: string) => void
   resolveIndex?: (index: number, id: string) => number | null
   renderOverlay?: (id: string, rect: Box) => ReactNode
@@ -495,7 +496,7 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
   const overIn = (s: Session, zoneId: string, landing: Landing | null): number => {
     if (landing?.kind === 'displace' && landing.zone === zoneId) return landing.index
     if (zoneId !== s.zone) return -1
-    return landing !== null && displaceOf(s.zone)?.release ? -1 : s.index
+    return landing !== null && displaceOf(s.zone)?.leaves ? -1 : s.index
   }
 
   const repaint = (s: Session, prev: Landing | null, next: Landing | null): void => {
