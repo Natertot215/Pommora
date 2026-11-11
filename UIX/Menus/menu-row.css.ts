@@ -4,7 +4,7 @@ import { font, text } from '../Theme/typography.css'
 import { tintAt } from '../Theme/colors'
 import { ROW_RING } from '../Fields/fieldRing'
 import { field, fillInput } from '../Fields/fields.css'
-import { REVEAL_FADE, revealTarget } from '../Interactions/hover-reveal.css'
+import { FOCUSED_ROW_WRAPPER, REVEAL_FADE, revealTarget } from '../Interactions/hover-reveal.css'
 import { duration, easing } from '../Animations/motion'
 
 const c = colorVars.color
@@ -39,11 +39,11 @@ export const rowShell = style({
   cursor: 'default',
   selectors: {
     '&:hover': { backgroundColor: c.state.hover },
-    '&:focus-visible, [data-line-row]:focus-visible &': rowFocus,
+    [`&:focus-visible, ${FOCUSED_ROW_WRAPPER} &`]: rowFocus,
   },
 })
 
-globalStyle('[data-line-row]:focus-visible', { outline: 'none' })
+globalStyle(`${FOCUSED_ROW_WRAPPER}:has(${rowShell})`, { outline: 'none' })
 globalStyle(`[data-line-row]:focus-visible:not(:has(${rowShell}))`, rowFocus)
 
 export const ROW_LEAD = 'var(--row-pad-lead, var(--row-pad-x))'
