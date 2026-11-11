@@ -164,7 +164,7 @@ Each property sits on a side, set per view over a default for its type: option p
 
 A long value stops at a maximum width and scrolls on hover. On a crowded row the title shortens first, down to a minimum, and past that both groups give up room together, each fading and scrolling on hover; with **Wrap Rows** on, the right group drops to a second line instead. **Outlines** draws a rail beside the rows of each nested band.
 
-A List view's Visibility pane, which its Layout also opens, shows the two sides as two equal columns, **Left** and **Right**, as wide as their property names need up to a cap. Left reads as the left group does, with Title among its rows, and Right reads from the row's edge inward. A property drags within its column or across to the other, which makes room for it; a right-click moves it to the other side; and its eye hides it to the foot of its column, from where it returns to its place when shown.
+A List view's Visibility pane shows the two sides as two equal columns, **Left** and **Right**, as wide as their property names need up to a cap. Left reads as the left group does, with Title among its rows, and Right reads from the row's edge inward. A property drags within its column or across to the other, which makes room for it; a right-click moves it to the other side; and its eye hides it to the foot of its column, from where it returns to its place when shown.
 
 ### Gallery · Calendar · Timeline
 
