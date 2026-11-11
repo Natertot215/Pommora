@@ -4,7 +4,7 @@
 
 | Total | Critical | High | Moderate | Low | Minimal |
 |-------|----------|------|----------|-----|---------|
-| 68 | 0 | 3 | 12 | 37 | 16 |
+| 75 | 0 | 3 | 12 | 39 | 21 |
 
 #### A1 • Sync & Devices
 
@@ -90,8 +90,15 @@
 | [I-025](#I-025 • Buttons never show keyboard focus.) | Buttons never show keyboard focus. | Moderate | Mini (=🟢+4=) | Drift | `f6511401d` | **Created:** 09-23-2026<br>**Updated:** 10-03-2026 |
 | [I-056](#I-056 • Telling a single click from a double-click on one element is done separately on each surface, in five different ways, with the double-click window written as a number in one place only.) | Telling a single click from a double-click on one element is done separately on each surface, in five different ways, with the double-click window written as a number in one place only. | Low | Medium (=🟢≈ +25=) | Parallel Build | `cbacb7ecb` | **Created:** 10-23-2026<br>**Updated:** 10-26-2026 |
 | [I-058](#I-058 • A bundle row's menu opens only by pointer, so the Trash's Restore and Delete have no keyboard path.) | A bundle row's menu opens only by pointer, so the Trash's Restore and Delete have no keyboard path. | Low | Small (TBD) | Shortcut | `1028ed405` | **Created:** 10-26-2026<br>**Updated:** 10-26-2026 |
+| [I-069](#I-069 • Archive's and Trash's rows draw a second copy of the row frame.) | Archive's and Trash's rows draw a second copy of the row frame. | Low | Small (TBD) | Parallel Build | `b1146b1bc` | **Created:** 11-11-2026<br>**Updated:** 11-11-2026 |
+| [I-070](#I-070 • Table's cells mount a property value a third way.) | Table's cells mount a property value a third way. | Low | Small (TBD) | Parallel Build | `b1146b1bc` | **Created:** 11-11-2026<br>**Updated:** 11-11-2026 |
 | [I-045](#I-045 • A row's caption in a pane that sizes to its content stays on one line and widens the pane, so the format rows carry none.) | A row's caption in a pane that sizes to its content stays on one line and widens the pane, so the format rows carry none. | Minimal | Mini (TBD) | Drift | `54e93e491` | **Created:** 10-18-2026<br>**Updated:** 10-25-2026 |
-| [I-054](#I-054 • No row in a property's settings says whether it sets the property everywhere or only the current view.) | No row in a property's settings says whether it sets the property everywhere or only the current view. | Minimal | Small (TBD) | Drift | `4f63cba01` | **Created:** 10-21-2026<br>**Updated:** 10-31-2026 |
+| [I-054](#I-054 • No row in a property's settings says whether it sets the property everywhere or only the current view.) | No row in a property's settings says whether it sets the property everywhere or only the current view. | Minimal | Small (TBD) | Drift | `4f63cba01` | **Created:** 10-21-2026<br>**Updated:** 11-11-2026 |
+| [I-071](#I-071 • A value at a labeled row's end is ruled twice.) | A value at a labeled row's end is ruled twice. | Minimal | Mini (TBD) | Drift | `b1146b1bc` | **Created:** 11-11-2026<br>**Updated:** 11-11-2026 |
+| [I-072](#I-072 • A card's value row restates a chip's height by hand.) | A card's value row restates a chip's height by hand. | Minimal | Mini (TBD) | Shortcut | `b1146b1bc` | **Created:** 11-11-2026<br>**Updated:** 11-11-2026 |
+| [I-073](#I-073 • A List view's property pane passes a no-op `release` to switch on gap-closing.) | A List view's property pane passes a no-op `release` to switch on gap-closing. | Minimal | Small (TBD) | Shortcut | `b1146b1bc` | **Created:** 11-11-2026<br>**Updated:** 11-11-2026 |
+| [I-074](#I-074 • A nested List band's rail ends a few pixels off at depth.) | A nested List band's rail ends a few pixels off at depth. | Minimal | Small (TBD) | Shortcut | `b1146b1bc` | **Created:** 11-11-2026<br>**Updated:** 11-11-2026 |
+| [I-075](#I-075 • A hover-scrolled lane can stay scrolled after the pointer has left.) | A hover-scrolled lane can stay scrolled after the pointer has left. | Minimal | Mini (TBD) | Shortcut | `b1146b1bc` | **Created:** 11-11-2026<br>**Updated:** 11-11-2026 |
 
 #### A6 • Tiles & Embeds
 
@@ -1035,6 +1042,34 @@ The Trash's and the Archive's table rows take the line list's keyboard, Tab, the
 
 A line row answers the platform's menu key by raising its own context menu at the row, in the kit, so every line list gains it at once.
 
+#### I-069 • Archive's and Trash's rows draw a second copy of the row frame.
+
+| Concern | Scale | Origin | Base | Date |
+|---------|-------|--------|------|------|
+| Low | Small (TBD) | Parallel Build | `b1146b1bc` | **Created:** 11-11-2026<br>**Updated:** 11-11-2026 |
+
+**Description**
+
+`BundleRowView`, the Archive's and Trash's row, composes `LineRow`, `RowLead`, a selection check, and its title markup by hand, with its row height held as the constant `ROW_H`, where Table's and List's rows compose the shared row frame in `RowFrame.tsx` (`PageRow`, `PageTitle`, `GhostTitle`, `RowGrip`). The row's chrome (the row's tree role, its focus and context-menu wiring, the lead cell's indent, the title with its icon and chevron) is therefore drawn twice, and a change to the frame reaches Table and List without reaching the bundle rows.[^69]
+
+**Solution** [Proposed]
+
+Fold `BundleRowView` onto `PageRow` and `PageTitle`, so the bundle rows and the view rows share one frame and `ROW_H` leaves.
+
+#### I-070 • Table's cells mount a property value a third way.
+
+| Concern | Scale | Origin | Base | Date |
+|---------|-------|--------|------|------|
+| Low | Small (TBD) | Parallel Build | `b1146b1bc` | **Created:** 11-11-2026<br>**Updated:** 11-11-2026 |
+
+**Description**
+
+`DataRow`'s cell wires `onClick`, `onContextMenu`, the editor, and `Cell` itself beside the cell sweep's `onPointerDown`, where Cards, List, and the Properties panel each mount one `SeatedValue`. A change to how a value is seated, opened, or edited reaches those three surfaces and misses Table's cells.[^70]
+
+**Solution** [Proposed]
+
+Fold the cell onto `SeatedValue`.
+
 #### I-045 • A row's caption in a pane that sizes to its content stays on one line and widens the pane, so the format rows carry none.
 
 | Concern | Scale | Origin | Base | Date |
@@ -1053,15 +1088,85 @@ One rule for where a caption wraps in a pane that sizes to its content, set once
 
 | Concern | Scale | Origin | Base | Date |
 |---------|-------|--------|------|------|
-| Minimal | Small (TBD) | Drift | `4f63cba01` | **Created:** 10-21-2026<br>**Updated:** 10-31-2026 |
+| Minimal | Small (TBD) | Drift | `4f63cba01` | **Created:** 10-21-2026<br>**Updated:** 11-11-2026 |
 
 **Description**
 
-A property's settings pane mixes settings that change the property across the Nexus with settings that change only the current view, and nothing in a row's wording tells the two apart. The Number editor's Format, Currency, Separators, Decimals, and Fraction write the property, while its Style writes the view; the Checkbox editor's Color writes the property and its Style the view; the Link editor's rows all write the property; and the Date & Time editor's Date Format, Day Format, and Time Format write the view. "Format" in the Link and Number editors is the property-wide setting (`link_display`, `number_family`), while the column menu's "Format" submenu for a Link lists the view's own link format.[^54]
+A property's settings pane mixes settings that change the property across the Nexus with settings that change only the current view, and nothing in a row's wording tells the two apart. The Number editor's Format, Currency, Separators, Decimals, and Fraction write the property, while its Style writes the view; the Checkbox editor's Color writes the property and its Style the view; the Link editor's rows all write the property; and the Date & Time editor's Date Format, Day Format, and Time Format write the view. "Format" in the Link and Number editors is the property-wide setting (`link_display`, `number_family`), while the column menu's "Format" submenu for a Link lists the view's own link format. The same ambiguity runs through a Link value's right-click menu: its Format sets the current view's look for that property (the value path's `styleBranch`, with `style:look:link-*` actions), while an editor link's Format in the same menu model rewrites the link's own text (`FORMAT_ROW`, with `format:link-*` actions). `LinkAction`, the Markdown editor's link vocabulary, also carries actions only a value's menu can produce (`cell:clear`, `cell:hide`, and the `style:*` actions).[^54]
 
 **Solution** [Deferred]
 
 How a row says which layer it sets, and how each type's settings are laid out, wait for a design pass by the owner. Until then, work on Properties moves only a setting that's genuinely misplaced or genuinely confusing, and leaves the rows' wording as it reads.
+
+#### I-071 • A value at a labeled row's end is ruled twice.
+
+| Concern | Scale | Origin | Base | Date |
+|---------|-------|--------|------|------|
+| Minimal | Mini (TBD) | Drift | `b1146b1bc` | **Created:** 11-11-2026<br>**Updated:** 11-11-2026 |
+
+**Description**
+
+The Properties panel's value rule and a Standard card's both grow the value into the room its label leaves at the row's end, up to the row's reach, so a label that fits is never shrunk by a long value. The panel states it as `flex: 1000 1 0` on the label's container, and the card as `flex: 1 1 0` on the value with `max-width: var(--row-value-reach)`, its comment saying the value sits at the row's end "as the panel's does." Whether the two produce the same layout in every case hasn't been established.[^71]
+
+**Solution** [TBD]
+
+Confirm the two are equivalent and state the rule once, where both surfaces read it.
+
+#### I-072 • A card's value row restates a chip's height by hand.
+
+| Concern | Scale | Origin | Base | Date |
+|---------|-------|--------|------|------|
+| Minimal | Mini (TBD) | Shortcut | `b1146b1bc` | **Created:** 11-11-2026<br>**Updated:** 11-11-2026 |
+
+**Description**
+
+`--card-row-h: 20px` is a hand-typed copy of the kit's standard chip height (`SIZE.height`, 20px), and the compact card's 16px is a second typed figure beside it. List's row reads the kit's published `--label-height-roomy` instead. The kit publishes only the roomy height as a custom property, so a card has no token to read for the standard one.[^72]
+
+**Solution** [Proposed]
+
+Publish the standard chip height beside `--label-height-roomy` in the kit and read it for `--card-row-h`.
+
+#### I-073 • A List view's property pane passes a no-op `release` to switch on gap-closing.
+
+| Concern | Scale | Origin | Base | Date |
+|---------|-------|--------|------|------|
+| Minimal | Small (TBD) | Shortcut | `b1146b1bc` | **Created:** 11-11-2026<br>**Updated:** 11-11-2026 |
+
+**Description**
+
+The List view's property pane passes `release={() => {}}` to its `SortableZone`s because the drag engine reads the callback's presence as "the source gives the item up, so its gap closes," while everywhere else `release` removes the item from its source (the tab bar's close). The receiving column's one save already moves the row, so the callback has nothing to do.[^73]
+
+**Solution** [Proposed]
+
+The engine reads a declared trait for gap-closing rather than a callback's presence, and the no-op goes.
+
+#### I-074 • A nested List band's rail ends a few pixels off at depth.
+
+| Concern | Scale | Origin | Base | Date |
+|---------|-------|--------|------|------|
+| Minimal | Small (TBD) | Shortcut | `b1146b1bc` | **Created:** 11-11-2026<br>**Updated:** 11-11-2026 |
+
+**Description**
+
+The List view's rail rules place a nested band's rail end by what its last member is, spelled out two levels deep with child-combinator `:has()`. A band whose run ends open band, open band, closed band, three levels down, draws its rail ending about 4px early. Band depth is unbounded, since the group plan recurses through a Set's Sets.[^74]
+
+**Solution** [Proposed]
+
+The walk that lays rows in bands hands each band whether its run ends on a row, so one rule covers any depth.
+
+#### I-075 • A hover-scrolled lane can stay scrolled after the pointer has left.
+
+| Concern | Scale | Origin | Base | Date |
+|---------|-------|--------|------|------|
+| Minimal | Mini (TBD) | Shortcut | `b1146b1bc` | **Created:** 11-11-2026<br>**Updated:** 11-11-2026 |
+
+**Description**
+
+`hold()` slides back the lanes the pointer leaves, and keeps a lane that holds the focused field or an open layer's trigger. When that field blurs or that layer closes with the pointer elsewhere, nothing re-runs the check, so the lane stays scrolled until it is next hovered and left.[^75]
+
+**Solution** [Proposed]
+
+Re-run the release when the focus or the layer that held the lane goes.
 
 ### A6 • Tiles & Embeds
 
@@ -1208,7 +1313,7 @@ In `MatrixCanvas`, keep a small map of active pointer ids on the host; while two
 [^51]: **I-051:** `Core/Bundles/placement.ts:~41-116` (`resolveRecord`), `Core/Bundles/placement.ts:~159-183` (`freeOnDisk`), `Core/Paths/names.ts:~56-79` (`freeName`, `createDisambiguated`)
 [^52]: **I-052:** `Core/Nexus/fileEvents.ts:532-548` (`applySettings`, `oweRescope`), `Core/Nexus/settle.ts:209-213` (`reseed`), `Core/Settings/settings.ts:107-139` (`carrySetAside`), `Core/Nexus/folderEntity.ts:53-71` (`liftSetAside`), `.claude/Features/DesktopPM.md:22`
 [^53]: **I-053:** `Desktop/FileWatch/watcher.ts:31` (`SETTLE_MS`), `Desktop/FileWatch/watcher.ts:94` (`awaitWriteFinish`)
-[^54]: **I-054:** `Core/Properties/Schema/typeRows.tsx:~261` (`rowsFor`), `Core/Properties/Schema/typeRows.tsx:~91-151` (`numberRows`), `Core/Properties/Schema/typeRows.tsx:~154-179` (`dateRows`), `Core/Properties/Schema/typeRows.tsx:~181-201` (`linkRows`), `Core/Properties/Schema/typeRows.tsx:~203-219` (`checkboxRows`), `Core/Properties/Schema/PropertyFrame.tsx:~208-218` (`configure` writes the property and `saveColumnStyle` the view), `Core/Properties/typeDisplay.ts:~12,~30` (`styleLabel`, the column menu's "Format")
+[^54]: **I-054:** `Core/Properties/Schema/typeRows.tsx:~261` (`rowsFor`), `Core/Properties/Schema/typeRows.tsx:~91-151` (`numberRows`), `Core/Properties/Schema/typeRows.tsx:~154-179` (`dateRows`), `Core/Properties/Schema/typeRows.tsx:~181-201` (`linkRows`), `Core/Properties/Schema/typeRows.tsx:~203-219` (`checkboxRows`), `Core/Properties/Schema/PropertyFrame.tsx:~208-218` (`configure` writes the property and `saveColumnStyle` the view), `Core/Properties/typeDisplay.ts:~12,~30` (`styleLabel`, the column menu's "Format"), `Core/Actions/connectionMenu.ts:~35-55,~62-68,~104` (`CELL_ACTIONS`, `LinkAction`, `FORMAT_ROW`, the value path's `styleBranch`)
 [^55]: **I-055:** `Core/Properties/unassignProperty.ts:66-90` (`stashAndStrip`, the stash written on Remove), `Core/Properties/propertyStash.ts:12-38,72-82` (`stashedBlock`, `patchStashBlock`, `sweepStashes`), `Core/Properties/assignment.ts:26-83` (`refillStash`, the stash read and spent on re-adding), `Core/Settings/personalization.ts:42,189-190,261-263` (`HISTORY_DAYS`, `historyDays`, `archiveHistoryDays`, `SETTING_BOUNDS`), `Core/Settings/settings.ts:82-92` (`readFileHistoryConfig`), `Core/Pages/fileHistory.ts:195-206` (`sweepFileHistory`), `Core/Settings/frames.ts:676-690` (the History section's rows)
 [^56]: **I-056:** `Core/MarkdownPM/Autocomplete/AliasList.tsx:~25-26,~60-65,~84,~145-155` (`PICK_DELAY_MS`, `pick`, `unpick`, the row's `onClick`), `Core/MarkdownPM/Autocomplete/aliasPicker.test.tsx:~29-30` (`PICK_WAIT`), `UIX/Pickers/CalendarPicker.tsx:~487-500`, `Core/MarkdownPM/Embeds/embedWidget.tsx:~652-654` (`embedClickSeat`), `Core/MarkdownPM/Gestures/pointerPath.ts:~50,~82-85`, `Core/MarkdownPM/decorations.ts:~713-722` (`pressMargin`), `Core/MarkdownPM/Tables/cellStatic.tsx:~631-635`, `Core/Navigation/TabItem.tsx:~65,~90-92,~114` (`pressedActive`), `Core/Interface/Header/DetailTitleHeader.tsx:~96-108,~129-133` (`openSearch`), `Core/Views/Bands/GroupBand.tsx:~134-135,~172-188,~239` (`outsideRename`, the glyph's handlers), `Core/Interface/RenamableTitle.tsx:~17,~26-27,~55` (`doubleClick`), `UIX/Fields/RenamableLabel.tsx:~52-58`, `Core/Navigation/TabBar.tsx:~137-149` (`onBarDoubleClick`), `Core/Bundles/browser.ts:227-237` (`rowClick`).
 [^57]: **I-057:** `Core/Session/nexusSlice.ts:251-294` (`mutate`, the cleanup's discarded reply at `:259` and the notice's Try Again at `:264`), `Core/Session/nexusSlice.ts:295` (`finishOwed`), `Core/Nexus/owed.ts:63` (`OWED`), `Core/Nexus/owed.ts:264-291` (`runNoted`'s landing check), `Core/Nexus/finishOwed.ts:62-70` (`add`, the let-go files), `Core/Nexus/finishOwed.ts:72-93` (`finishOwed`), `Core/Contexts/contextWrite.ts:129-181` (`createContextGroup`, `createSpace`), `Core/Bundles/restore.ts:67` (the Context and Space restore), `Core/Properties/registryProperty.ts:122`, `Core/Properties/optionOps.ts:99`, `Core/Interface/Confirm/confirmations.ts:107-157` (`runBundled`, its `quiet: true` call at `:127`), `.claude/Planning/Disclosable Bundles/Disclosable Bundles — Plan.md`
@@ -1223,3 +1328,10 @@ In `MatrixCanvas`, keep a small map of active pointer ids on the host; while two
 [^66]: **I-066:** `Core/MarkdownPM/Engine/Tables/regions.ts:28-31,51` (`MAY_OPEN`, `opensBlock`, `endsBody`, `tableRegions`), `Core/MarkdownPM/Engine/parser.ts:19-37` (`parse`'s fence mask)
 [^67]: **I-067:** `.claude/scripts/List Types Drive/live-drive.mjs`, `.claude/scripts/Text Property Drive/live-drive.mjs` (group 4), `.claude/scripts/Path Links Drive/live-drive.mjs` (group 9), `.claude/scripts/Alias Drive/live-drive.mjs` (group 3), `.claude/scripts/editor-parity/` (`launch.sh`, `cdp.mjs`, `fixtures.mjs`, `run.mjs`, `compare.mjs`), `.claude/scripts/drive-harness.mjs` (`launch`, `restore`), `.claude/scripts/README.md`.
 [^68]: **I-068:** `Core/MarkdownPM/Input/markdownInput.ts:~328-352` (`contractions`, `wordAt`), `Core/MarkdownPM/Input/format.ts:116-173` (`toggleInline`), `Core/MarkdownPM/Input/format.ts:89-109` (`underSelection`)
+[^69]: **I-069:** `Core/Bundles/BundleTable.tsx:~237-319` (`BundleRowView`), `Core/Bundles/BundleTable.tsx:~107` (`ROW_H`), `Core/Views/Rows/RowFrame.tsx:~103-190` (`PageRow`, `RowGrip`, `PageTitle`), `Core/Views/Rows/RowFrame.tsx:~92` (`GhostTitle`)
+[^70]: **I-070:** `Core/Views/Table/TableView.tsx:~232-272` (`DataRow`'s cell), `Core/Properties/Cells/SeatedValue.tsx`, `Core/Views/Cards/CardsView.tsx`, `Core/Views/List/ListView.tsx`, `Core/Properties/PropertyPanel.tsx`
+[^71]: **I-071:** `Core/Properties/property-panel.css.ts:~46-52` (`value`, the `:has(> value)` rule), `Core/Views/Cards/cards-view.css:~117-122` (`.card-prop-row > .card-value`)
+[^72]: **I-072:** `Core/Views/Cards/cards-view.css:5,31` (`--card-row-h`), `UIX/Labels/label-base.css.ts:14-28` (`SIZE`, the published `--label-height-roomy`), `Core/Views/List/list-view.css:8` (`--row-first-line`)
+[^73]: **I-073:** `Core/Views/Settings/SidesFrame.tsx:~85-87` (`release`), `UIX/Interactions/engine.tsx:~497` (`overIn`), `UIX/Interactions/engine.tsx:~100` (`release`'s declaration), `UIX/Interactions/engine.tsx:~954` (the drop's `source?.release?.`), `Core/Navigation/TabBar.tsx:~188` (`closeTab`)
+[^74]: **I-074:** `Core/Views/List/list-view.css:~103-128` (the nested band's rail), `Core/Views/Rows/RowFrame.tsx:~20-90` (`BandRows`, `walk`), `Core/Views/Pipeline/group.ts:~140-161` (`band`)
+[^75]: **I-075:** `UIX/Interactions/OverScroll.tsx:~37-48` (`hold`), `UIX/Interactions/dismissalStack.ts` (`holdsOpenTrigger`)
