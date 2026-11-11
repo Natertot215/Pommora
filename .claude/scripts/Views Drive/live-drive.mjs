@@ -3492,9 +3492,66 @@ async function drags(cdp) {
   const wrappedRow = await gripOnto(two, 'Alpha 1', WRAPPED)
   await viewport(cdp, null)
   decided('A-2', 'a List row wrapped to two lines, dragged by its grip, lands above the row it was dropped on', wasWrapped && wrappedRow, show({ wasWrapped, order: manualOf(WRAPPED) }))
+
+  // A-2 · a Set band dragged by its head at the view's own Scale lands above its sibling.
+  const PLAIN = listView(vid('g11dragband'), 'VL Drag Band', { property_order: LIST_ORDER })
+  await showOn(cdp, 'collection', PLAIN)
+  const betaHead = await boxOf(cdp, head('Set Beta'))
+  const alphaHead = await boxOf(cdp, head('Set Alpha'))
+  await dragPoints(cdp, { x: betaHead.x, y: betaHead.y }, { x: alphaHead.x, y: alphaHead.top + 2 })
+  const plainBand = await settles(async () => before(viewOnDisk(PLAIN.id)?.group_order ?? [], IDS.beta, IDS.alpha))
+  const plainSets = (await headLabels(cdp)).filter((l) => l.startsWith('Set '))
+  decided('A-2', 'a List\'s Set band dragged by its head above Set Alpha saves the group order and draws there', plainBand && same(plainSets, ['Set Beta', 'Set Alpha']), show({ order: viewOnDisk(PLAIN.id)?.group_order, plainSets }))
+
+  // A-2 · a row dropped on a Set's head lands in that Set: an open Set, a collapsed one that springs open under the held row, and an empty one.
+  const pageB = () => listPages.cache.get(PAGES['Page B'].id)?.path
+  const inBand = (title, label) => cdp.evaluate(`(() => { const r = ${listRow(title)}; const h = ${head(label)}; return !!r && !!h && r.closest('.group-band') === h.closest('.group-band') })()`)
+  const ontoHead = async (label, held) => {
+    const to = await boxOf(cdp, head(label))
+    await gripDrag(cdp, listRow('Page B'), { x: to.x, y: to.y }, held ? { held } : undefined)
+    const landed = await settles(async () => (await listPages(cdp)).get(PAGES['Page B'].id)?.path?.startsWith(`${COLLECTION}/${label}/Page B`))
+    return { landed, path: pageB(), drawn: await settles(() => inBand('Page B', label), 3000) }
+  }
+  const homeB = async () => {
+    if (pageB() !== PAGES['Page B'].path) await mutate(cdp, { op: 'movePage', path: pageB(), newParentPath: `${COLLECTION}/Set Alpha` })
+    await until('Page B home', async () => (await listPages(cdp)).get(PAGES['Page B'].id)?.path === PAGES['Page B'].path, 5000)
+  }
+  const ROWS_HEADS = listView(vid('g11draghead'), 'VL Drag Head', { property_order: LIST_ORDER })
+  await showOn(cdp, 'collection', ROWS_HEADS)
+  const open = await ontoHead('Set Beta')
+  decided('A-2', 'a List row dropped on an open Set\'s head moves its page into that Set and draws it in that band', open.landed && open.drawn, show(open))
+  await homeB()
+  await showOn(cdp, 'collection', listView(vid('g11dragfold'), 'VL Drag Folded', { property_order: LIST_ORDER, collapsed_groups: [IDS.beta] }))
+  let sprang = null
+  const folded = await ontoHead('Set Beta', async () => {
+    await sleep(1500)
+    sprang = await expanded(cdp, head('Set Beta'))
+  })
+  decided('A-2', 'a List row held over a collapsed Set\'s head springs it open, and dropped there moves its page into that Set', sprang === 'true' && folded.landed && folded.drawn, show({ sprang, ...folded }))
+  await homeB()
+  const hollowId = containerId()
+  await mutate(cdp, { op: 'createContainer', id: hollowId, parentPath: COLLECTION, kind: 'set', name: 'VL Hollow' })
+  await showOn(cdp, 'collection', listView(vid('g11draghollow'), 'VL Drag Hollow', { property_order: LIST_ORDER, collapsed_groups: [IDS.beta] }))
+  await until('VL Hollow\'s head', async () => cdp.evaluate(`!!(${head('VL Hollow')})`))
+  const hollow = await ontoHead('VL Hollow')
+  decided('A-2', 'a List row dropped on an empty Set\'s head moves its page into that Set and draws it in that band', hollow.landed && hollow.drawn, show(hollow))
+  await homeB()
+  await mutate(cdp, { op: 'delete', path: `${COLLECTION}/VL Hollow`, kind: 'set' })
+
   await showOn(cdp, 'tile', listView(vid('g11dragtile'), 'VL Drag Tile', { property_order: LIST_ORDER }))
   const tileRow = await gripOnto('VL Right', 'VL Left')
   decided('A-2', 'a List row in a View Tile dragged by its grip lands above the row it was dropped on, saved in the tile', tileRow, show(tileManual()))
+
+  // A-2 · in a View Tile's List of Sets, a row dragged into another Set's rows moves its page there, at that Set's indent.
+  await cdp.evaluate(`(${listRow('Page B')}).scrollIntoView({ block: 'start' })`)
+  await sleep(300)
+  const pageBRow = await boxOf(cdp, listRow('Page B'))
+  await gripDrag(cdp, listRow('Alpha 1'), { x: pageBRow.x, y: pageBRow.top + 3 })
+  const tileMoved = await settles(async () => (await listPages(cdp)).get(PAGES['Alpha 1'].id)?.path === `${COLLECTION}/Set Alpha/Alpha 1.md`)
+  const tileRead = await readList(cdp)
+  const tileDrawn = before(tileRead.rows.map((r) => titleOf(r.rid)), 'Alpha 1', 'Page B') && rowIn(tileRead, 'Alpha 1')?.depth === rowIn(tileRead, 'Page B')?.depth
+  decided('A-2', 'a List row in a View Tile dragged into another Set\'s rows moves its page there and draws it at that Set\'s indent, above the row it was dropped on', tileMoved && tileDrawn, show({ path: listPages.cache.get(PAGES['Alpha 1'].id)?.path, drawn: tileRead.rows.map((r) => titleOf(r.rid)), depth: rowIn(tileRead, 'Alpha 1')?.depth }))
+  if (tileMoved) await mutate(cdp, { op: 'movePage', path: `${COLLECTION}/Set Alpha/Alpha 1.md`, newParentPath: SUB_A })
 }
 /** The manual order the homepage's View Tile stores, by title. */
 const tileManual = () => (JSON.parse(readRel(TILES)).tiles[0]?.views[0]?.config?.manual_order ?? []).map(titleOf)
@@ -4282,11 +4339,70 @@ async function shared(cdp) {
 /** Every live row's height in the view's own pixels. */
 const rowHeights = (cdp) => cdp.evaluate(`${ROWS}.filter((r) => r.getClientRects().length && !r.closest('[inert]')).map((r) => r.getBoundingClientRect().height / (r.currentCSSZoom ?? 1))`)
 
+// ── The eyes and the pane rows' focus ──
+
+const eyeOf = (row) => `(${row})?.querySelector('button[aria-label^="Hide "], button[aria-label^="Show "]')`
+const eyeOpacity = (cdp, row) => cdp.evaluate(`(() => { const e = ${eyeOf(row)}; return e ? +getComputedStyle(e).opacity : null })()`)
+const keyFocus = async (cdp, row) => { await pressKey(cdp, 'Shift'); await cdp.evaluate(`(${row}).focus()`); await sleep(400) }
+/** A shown row's eye at rest, under its row's hover, on its row's keyboard focus, and lifted by Space; a hidden row's eye at rest. */
+async function eyeReads(cdp, shown, hidden, { lifts = true } = {}) {
+  await away(cdp)
+  const rest = await eyeOpacity(cdp, shown)
+  const hiddenEye = await eyeOpacity(cdp, hidden)
+  await hover(cdp, shown, 500)
+  const hovered = await eyeOpacity(cdp, shown)
+  await away(cdp)
+  await keyFocus(cdp, shown)
+  const focused = await eyeOpacity(cdp, shown)
+  let lifted = null
+  if (lifts) {
+    await pressKey(cdp, ' ')
+    await sleep(400)
+    lifted = await eyeOpacity(cdp, shown)
+    await pressKey(cdp, 'Escape')
+    await sleep(400)
+  }
+  await cdp.evaluate('document.activeElement?.blur()')
+  return { rest, hovered, focused, lifted, hiddenEye }
+}
+const GHOST = (cdp) => cdp.evaluate(`+getComputedStyle(document.documentElement).getPropertyValue('--state-ghost')`)
+const eyesHold = (r, ghost, lifts = true) => r.rest === 0 && Math.abs(r.hovered - ghost) < 0.01 && Math.abs(r.focused - ghost) < 0.01 && (!lifts || r.lifted === 0) && r.hiddenEye === 1
+/** A row wrapper on keyboard focus: its outline, and whether the menu row it holds wears the focus wash. */
+const focusLook = async (cdp, row) => {
+  await keyFocus(cdp, row)
+  const look = await cdp.evaluate(`(() => { const w = (${row}); return { focusVisible: w.matches(':focus-visible'), outline: getComputedStyle(w).outlineStyle, wash: getComputedStyle(w.querySelector('[data-reveal-host]')).backgroundImage } })()`)
+  await cdp.evaluate('document.activeElement?.blur()')
+  return look
+}
+
+async function eyes(cdp) {
+  const ghost = await GHOST(cdp)
+  const T = tableView(vid('g11eyest'), 'VL Eyes Table', { hidden_properties: [DUE.id], group: { kind: 'property', property_id: STAGE.id }, hidden_groups: [`${STAGE.id}/opt_vd_done`] })
+  await showOn(cdp, 'collection', T)
+  await door(cdp, 'settings', 'Visibility')
+  const tableLook = await focusLook(cdp, paneLine(STAGE.label))
+  const tableTitle = await cdp.evaluate(`${eyeOf(paneLine('Title'))} === null`)
+  const table = await eyeReads(cdp, paneLine(STAGE.label), paneLine(DUE.label))
+  decided('E-11 · E-8', 'a Table\'s Visibility eye rests hidden, shows dimmed on its row\'s hover and keyboard focus, hides while its row is lifted, a hidden row\'s eye stands, and Title holds none', eyesHold(table, ghost) && tableTitle, show({ table, tableTitle, ghost }))
+  await door(cdp, 'settings', 'Group')
+  const options = await eyeReads(cdp, paneLine('Todo'), paneLine('Done'), { lifts: false })
+  decided('E-11', 'a Group pane option\'s eye rests hidden, shows dimmed on its row\'s hover and keyboard focus, and a hidden option\'s eye stands', eyesHold(options, ghost, false), show({ options, ghost }))
+
+  const L = listView(vid('g11eyesl'), 'VL Eyes List', { ...flatVL, property_order: ['_title', STAGE.id, NOTE.id] })
+  await showOn(cdp, 'collection', L)
+  await door(cdp, 'settings', 'Visibility')
+  const sidesLook = await focusLook(cdp, sideRowEl(STAGE.label))
+  const sidesTitle = await cdp.evaluate(`${eyeOf(sideRowEl('Title'))} === null`)
+  const sides = await eyeReads(cdp, sideRowEl(STAGE.label), sideRowEl(DUE.label, { hidden: true }))
+  decided('E-11 · E-8', 'a List\'s Sides eye rests hidden, shows dimmed on its row\'s hover and keyboard focus, hides while its row is lifted, a hidden row\'s eye stands, and Title holds none', eyesHold(sides, ghost) && sidesTitle, show({ sides, sidesTitle, ghost }))
+  decided('E-4', 'a Sides row on keyboard focus draws no outline and wears the focus wash, as a Table\'s Visibility row does', sidesLook.focusVisible && sidesLook.outline === 'none' && sidesLook.wash.includes('gradient') && same(sidesLook, tableLook), show({ sidesLook, tableLook }))
+}
+
 async function group11(cdp) {
   await seedList(cdp)
   await toCollection(cdp, COLLECTION)
   // Each section reads on its own, so one that throws fails there and the next runs.
-  for (const [name, run] of Object.entries({ configurations, contents, gestures, values, plus, creation, drags, pane, switches, kinds, frame, shared })) {
+  for (const [name, run] of Object.entries({ configurations, contents, gestures, values, plus, creation, drags, pane, eyes, switches, kinds, frame, shared })) {
     try {
       await run(cdp)
     } catch (e) {
