@@ -100,15 +100,16 @@
   --pen-room: var(--pen-span);
 }
 
-/* A band's last row, its own before a nested band's heading included, stands as far above what follows as a Table row does. */
-.list-view .group-band:not(.band-tail) > [data-reveal] > :has(> .data-row:last-child) {
-  padding-bottom: var(--list-band-end);
-}
-.list-view .data-row:has(+ .group-band) {
+/* The row or hover ghost that ends a run of rows, a band's last, its own before a nested band's heading, and the tail's, stands as far above what follows as a Table row does. */
+.list-view
+:is(.data-row:not(.ghost-row), [data-reveal]:has(> * > .ghost-row)):is(
+  :last-child,
+  :has(+ .group-band)
+) {
   margin-bottom: var(--list-band-end);
 }
 
-/* A nested band's rail: from under its head to its last member, at its chevron; a member that ends on a row carries the band end's room below it, and one that ends on a head or the tail rows doesn't. */
+/* A nested band's rail: from under its head to its last member, at its chevron; a member that ends on a row or the ghost carries the band end's room below it, and a closed or empty band, or an open one ending on such, doesn't. */
 .list-view .table-grid.outlined .group-band .group-band:not(.band-tail) > [data-reveal] {
   position: relative;
 }
@@ -127,8 +128,13 @@
   .group-band
   .group-band:not(.band-tail)
   > [data-reveal]:has(
-    > * > .band-tail:last-child,
-    > * > :last-child > .group-band-row:is([data-collapsed], [data-empty])
+    > * > :last-child > .group-band-row:is([data-collapsed], [data-empty]),
+    > *
+      > :last-child
+      > [data-reveal]
+      > *
+      > :last-child
+      > .group-band-row:is([data-collapsed], [data-empty])
   )::before {
   bottom: var(--list-outline-gap);
 }
