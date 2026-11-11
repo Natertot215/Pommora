@@ -93,6 +93,26 @@
   --pen-room: var(--pen-span);
 }
 
+/* A selected row fills from its own indentation to its end, in place of Table's full-width wash. */
+.list-view .data-row.selected,
+.list-view .data-row.selected:hover {
+  background-color: transparent;
+}
+.list-view .data-row.selected .list-view-line {
+  position: relative;
+  isolation: isolate;
+}
+.list-view .data-row.selected .list-view-line::before {
+  content: "";
+  position: absolute;
+  inset-block: calc(-1 * var(--cell-padding-y));
+  inset-inline: 0 calc(-1 * var(--cell-padding-x));
+  z-index: -1;
+  border-radius: var(--text-selection-radius);
+  background: var(--text-selection);
+  pointer-events: none;
+}
+
 /* An open band's last row stands as far above what follows as a Table row does. */
 .list-view .group-band:not(.band-tail) > [data-reveal] > :has(> .data-row:last-child) {
   padding-bottom: var(--list-band-end);
