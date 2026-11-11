@@ -48,9 +48,8 @@ export function SidesFrame({
   footer,
   current = 'Visibility',
   ...pane
-}: VisibilityPaneProps): React.JSX.Element | null {
+}: VisibilityPaneProps): React.JSX.Element {
   const tree = useSession((st) => st.tree)
-  if (!tree) return null
   const { view, back, save } = pane
   const { shown, hidden, label, row } = visibilityPane(pane, tree)
 

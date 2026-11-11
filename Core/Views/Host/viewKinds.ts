@@ -9,7 +9,7 @@ import { LIST_KIND } from '../List/listKind'
 
 export interface ViewKindRecord {
   Renderer: (p: { host: ViewHostApi }) => React.JSX.Element
-  Visibility: (p: VisibilityPaneProps) => React.JSX.Element | null
+  Visibility: (p: VisibilityPaneProps) => React.JSX.Element
   nests: boolean
   layout: {
     leaf: 'visibility' | 'switches'

@@ -20,7 +20,7 @@ import * as s from '@pommora/uix/Menus/frames.css'
 import type { PaneProps, VisibilityPaneProps } from './ViewPane'
 import { hideEye } from './OptionOrderList'
 
-export function visibilityPane({ view, schema, save }: PaneProps, tree: NexusTree) {
+export function visibilityPane({ view, schema, save }: PaneProps, tree: NexusTree | null) {
   const contextIds = contextIdsOf(tree)
   const contexts = contextsByIdOf(tree)
   const columnOf = (id: string): ResolvedColumn => resolveColumn(id, schema, contextIds)!
@@ -59,10 +59,8 @@ export function VisibilityFrame({
   footer,
   current = 'Visibility',
   ...pane
-}: VisibilityPaneProps): React.JSX.Element | null {
+}: VisibilityPaneProps): React.JSX.Element {
   const tree = useSession((st) => st.tree)
-  if (!tree) return null
-
   const { view, schema, back, save } = pane
   const { shown, hidden, label, icon, row } = visibilityPane(pane, tree)
   const shownIds = shown.map((c) => c.id)
