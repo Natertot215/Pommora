@@ -1,9 +1,10 @@
 import { style } from '@vanilla-extract/css'
 import { vars as colorVars } from '@pommora/uix/Theme/color.css'
 import { frameZone } from '@pommora/uix/Menus/frames.css'
+import { ROW_RADIUS } from '@pommora/uix/Menus/menu-row.css'
 
 // KNOBS — the two columns
-const PANE = { width: 180, gap: 8, radius: 8 }
+const PANE = { width: 180, gap: 8 }
 
 /* Two equal tracks as wide as the wider column's rows need, so a row carried across keeps its width; a column stands no wider than `PANE.width`. */
 export const columns = style({
@@ -21,7 +22,7 @@ export const column = style({
 
 export const list = style([
   frameZone,
-  { borderRadius: `${PANE.radius}px`, background: colorVars.color.fill.quaternary },
+  { borderRadius: `${ROW_RADIUS}px`, background: colorVars.color.fill.quaternary },
 ])
 
 /* The zone fills its column, so the room under a short column's last row is its trailing slot, an empty one stands as tall as the row lifted over it, and one a row is carried into grows by that row, so its hidden foot moves down rather than under it. */

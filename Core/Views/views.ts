@@ -44,7 +44,7 @@ export type CardBanner = (typeof CARD_BANNERS)[number]
 export const COLUMN_ALIGNS = ['left', 'center', 'right'] as const
 export type ColumnAlign = (typeof COLUMN_ALIGNS)[number]
 
-export const SIDES = ['left', 'right'] as const
+const SIDES = ['left', 'right'] as const
 export type Side = (typeof SIDES)[number]
 
 const SORT_DIRECTIONS = ['ascending', 'descending'] as const
