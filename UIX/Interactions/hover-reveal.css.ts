@@ -12,7 +12,7 @@ const HIDDEN = { vars: { '--reveal': '0', '--reveal-hits': 'none' } }
 export const FOCUSED_ROW_WRAPPER =
   ':is([data-line-row], [aria-roledescription="sortable"]):focus-visible'
 /** A row wrapper while lifted, by each engine's own mark. */
-export const LIFTED_ROW_WRAPPER =
+const LIFTED_ROW_WRAPPER =
   ':is([data-line-row][data-drag-source], [aria-roledescription="sortable"][aria-pressed="true"])'
 
 // ── Hosts ──
