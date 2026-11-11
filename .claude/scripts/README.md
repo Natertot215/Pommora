@@ -112,9 +112,10 @@ crosses the behavior changes its phase lands with every surface, input, and sett
 beside the gestures its refactor rewired on those surfaces — the Table, Cards, Set, property, and
 sub-grouped bands, the Trash and Archive table, the toolbar's view button and dropdown, and the
 settings panes through both doors, under Native Menus and Hide Empty Groups. Group 11, the *List View*
-plan's, crosses List's configurations pairwise and reads each over every row at the window's width, a
-narrow one, and each long-titled row's wrap point, beside every gesture that reaches a List and the
-regressions of the pieces it shares. `MATRIX.md` beside it holds the dimensions, what it prunes and
+plan's, crosses List's configurations pairwise, the view's Scale among them, and reads each over every
+row at the window's width, a narrow one, and each long-titled and crowded row's wrap point, holding its
+rails, sorts, spacing, and alignment against a Table's, beside every gesture that reaches a List and the
+regressions of the pieces it shares; it prints a measurement no decision rules on as a `NOTE` line. `MATRIX.md` beside it holds the dimensions, what it prunes and
 why, and each case's decision. A behavior change is owned by its phase and a regression crossing by
 phase 0, so with `--landed <n>`, the last phase in the build, an item a later phase owns prints `AWAIT`
 (or `AHEAD` when it already holds) and leaves the exit code alone; `--landed 0` is the baseline, where
