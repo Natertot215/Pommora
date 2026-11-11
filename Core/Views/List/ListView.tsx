@@ -148,11 +148,9 @@ const ListPageRow = memo(function ListPageRow({
         editor={editing === c.id ? api.editor(row, c) : null}
       />
     )
-  const on = (side: Side): React.JSX.Element[] =>
-    columns
-      .filter((c) => sideFor(c, view) === side && (c.kind === 'title' || drawn.includes(c)))
-      .map(item)
-  const right = on('right')
+  const parts: Record<Side, React.JSX.Element[]> = { left: [], right: [] }
+  for (const c of columns)
+    if (c.kind === 'title' || drawn.includes(c)) parts[sideFor(c, view)].push(item(c))
   const add = addable(drawn, ctx.schema, ctx.contexts) && (
     <AccessoryButton
       icon="plus"
@@ -173,11 +171,11 @@ const ListPageRow = memo(function ListPageRow({
         <RowGrip onMenu={pageMenu} dragDisabled={dragDisabled} />
         <div className="list-view-line">
           <div className={cx('list-view-group', overScrollLabel)}>
-            <Segments parts={on('left')} />
+            <Segments parts={parts.left} />
           </div>
-          {right.length > 0 && (
+          {parts.right.length > 0 && (
             <div className={cx('list-view-group list-view-right', overScrollLabel)}>
-              <Segments parts={right} />
+              <Segments parts={parts.right} />
             </div>
           )}
           {add}
