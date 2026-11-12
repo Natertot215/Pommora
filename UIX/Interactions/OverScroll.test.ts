@@ -3,6 +3,22 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { pushDismissal } from './dismissalStack'
 import './OverScroll'
 
+const subscribers = vi.hoisted(() => ({ live: 0 }))
+vi.mock('./dismissalStack', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./dismissalStack')>()
+  return {
+    ...actual,
+    subscribeDismissals: (fn: () => void) => {
+      const off = actual.subscribeDismissals(fn)
+      subscribers.live++
+      return () => {
+        subscribers.live--
+        off()
+      }
+    },
+  }
+})
+
 beforeAll(() => {
   const proto = HTMLElement.prototype
   Object.defineProperty(proto, 'scrollWidth', {
@@ -118,6 +134,7 @@ describe('OverScroll', () => {
     leave()
     expect(lane.scrollLeft).toBe(120)
     open.setClosing(true)
+    pushDismissal({ layer: () => null }).release()
     vi.advanceTimersByTime(500)
     expect(lane.scrollLeft).toBe(120)
     open.release()
@@ -152,19 +169,20 @@ describe('OverScroll', () => {
   it('listens for a kept lane’s release only while a lane is kept', () => {
     const added = vi.spyOn(document, 'addEventListener')
     const removed = vi.spyOn(document, 'removeEventListener')
-    const lane = scrolledLane('<input>')
-    const field = document.querySelector('input') as HTMLInputElement
-    field.focus()
-    leave()
-    field.blur()
-    vi.advanceTimersByTime(500)
+    const before = subscribers.live
+    for (let episode = 0; episode < 2; episode++) {
+      scrolledLane('<input>')
+      const field = document.querySelector('input') as HTMLInputElement
+      field.focus()
+      leave()
+      expect(subscribers.live).toBe(before + 1)
+      field.blur()
+      vi.advanceTimersByTime(500)
+      expect(subscribers.live).toBe(before)
+    }
     const blurs = (spy: typeof added): number =>
       spy.mock.calls.filter(([type]) => type === 'blur').length
-    expect(blurs(added)).toBe(1)
-    expect(blurs(removed)).toBe(1)
-    lane.scrollLeft = 120
-    pushDismissal({ layer: () => null, trigger: () => null }).release()
-    vi.advanceTimersByTime(500)
-    expect(lane.scrollLeft).toBe(120)
+    expect(blurs(added)).toBe(2)
+    expect(blurs(removed)).toBe(2)
   })
 })

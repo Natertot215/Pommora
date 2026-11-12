@@ -327,7 +327,7 @@ describe('the stack', () => {
     expect(handles[1].shields()).toBe(true)
   })
 
-  it('answers whether an open layer’s trigger sits inside an element, an exiting one not counting', () => {
+  it('answers whether an open layer’s trigger sits inside an element, an exiting one counting until released', () => {
     const lane = layer()
     const trigger = lane.appendChild(document.createElement('span'))
     expect(holdsOpenTrigger(lane)).toBe(false)
@@ -335,6 +335,8 @@ describe('the stack', () => {
     expect(holdsOpenTrigger(lane)).toBe(true)
     expect(holdsOpenTrigger(layer())).toBe(false)
     handles[0].setClosing(true)
+    expect(holdsOpenTrigger(lane)).toBe(true)
+    handles[0].release()
     expect(holdsOpenTrigger(lane)).toBe(false)
   })
 })

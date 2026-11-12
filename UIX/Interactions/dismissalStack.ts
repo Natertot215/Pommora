@@ -39,7 +39,7 @@ export const ownerWindow = (node: Element | null): HTMLElement | null => {
 }
 
 export const holdsOpenTrigger = (el: Element): boolean =>
-  entries.some((e) => !e.closing && el.contains(e.entry.trigger?.() ?? null))
+  entries.some((e) => el.contains(e.entry.trigger?.() ?? null))
 
 const dismissable = (e: Live): boolean => !e.closing && e.entry.dismiss !== undefined
 const holds = (e: Live, target: Node): 'layer' | 'trigger' | null =>
