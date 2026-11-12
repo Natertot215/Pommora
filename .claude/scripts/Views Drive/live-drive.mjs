@@ -2556,7 +2556,7 @@ const LIST_READ = `(() => {
     }
   })
   const cs = shell && getComputedStyle(shell)
-  return { rows, shell: shell && { sw: shell.scrollWidth, cw: shell.clientWidth }, tokens: cs && Object.fromEntries(['--list-view-value-max', '--list-view-title-min', '--list-view-wrap-gap', '--list-view-add-width'].map((k) => [k, parseFloat(cs.getPropertyValue(k))])) }
+  return { rows, shell: shell && { sw: shell.scrollWidth, cw: shell.clientWidth }, tokens: cs && Object.fromEntries(['--list-view-value-max', '--list-view-title-min', '--list-view-wrap-gap'].map((k) => [k, parseFloat(cs.getPropertyValue(k))])) }
 })()`
 const readList = (cdp) => cdp.evaluate(LIST_READ)
 /** A read row's title text width. */
