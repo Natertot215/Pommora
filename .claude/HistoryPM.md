@@ -2,6 +2,7 @@
 
 | Date                    | ID     | Entry                                                |
 | ----------------------- | ------ | ---------------------------------------------------- |
+| 11-10-2026 → 11-12      | PM-157 | List Views                                           |
 | 10-29-2026              | PM-156 | One Landing                                          |
 | 10-28-2026              | PM-155 | App Information Index                                |
 | 10-20-2026              | PM-154 | Collection Archives                                  |
@@ -159,6 +160,18 @@
 | 06-14-2026 → 06-15      | PM-002 | The Headless Data Layer                              |
 | 06-14-2026              | PM-001 | Genesis — The Walking Skeleton                       |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
+
+#### PM-157 || List Views
+**DATE:** 11-10-2026 → 11-12
+
+List became the third view type a saved view draws as, beside Table and Cards: a Table's row without columns, each page on one compact line with its title and property values side by side in a left group and a right group at the row's edge. Each property sits on a side, set per view over a default for its type, and a List's Visibility pane shows the two sides as two equal columns whose rows drag within a column and across to the other, the receiving column making room as a band of cards does. Title Icons, Outlines, and Wrap Rows are its switches: Outlines draws a rail beside each nested group's rows, and Wrap Rows drops the right group to a second line on a crowded row, where the title otherwise shortens to a minimum and both groups scroll on hover. Grouping, sorting, filtering, search, creation, and row drag came with the Table's row; a List's titles draw in a card's emphasized text, its groups keep a Table's spacing, and a row draws no selection fill.
+
+List was built from pieces lifted out of Table, Cards, and the Properties panel rather than copies of them: one row frame Table and List share, one clickable property value that Cards, List, and the panel mount, one statement of the rules for adding, showing, and hiding a property, and one hover plus on rows, group headings, and the panel. A hidden property came to keep its place in every view type when the others are reordered, a Link value's right-click offers its per-view Format everywhere, and each view type declares its own Visibility pane and Layout rows. Table's own cells and the Archive's and Trash's rows stayed on their existing code.
+
+Around it, a drag's landing zone of any shape grows by the carried item, holds that room until its rows glide back, and re-measures as it resizes, and an item whose home scrolled out of view lands where its slot shows. A sideways-scrolled label stays scrolled while the pointer is within it or it holds an open picker or the focused field, and slides back after. Every hide eye, in each view type's Visibility pane and on the Group pane's rows, appears only on its row's hover or keyboard focus, a hidden item keeping its crossed-out eye and Title carrying none. The Views Drive gained a List group of 270 live cases over a pairwise matrix of its configurations.
+
+- **Commits:** `6fb941269^..d5f2970f1`
+- **Delta:** +761 (+1,347 / -586)
 
 #### PM-156 || One Landing
 **DATE:** 10-29-2026
