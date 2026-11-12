@@ -3286,6 +3286,9 @@ async function plus(cdp) {
   const fullRead = await readList(cdp)
   const fullRow = rowIn(fullRead, 'VL Full')
   decided('B-10', 'a row drawing every property and Context draws no +, where the others keep theirs', !fullRow.add && fullRead.rows.filter((r) => r !== fullRow).every((r) => r.add), show({ full: fullRow.add, others: fullRead.rows.filter((r) => !r.add).map((r) => titleOf(r.rid)) }))
+  const ends = fullRead.rows.filter((r) => r.right)
+  const edges = ends.map((r) => r.right.box.r)
+  decided('B-10', 'every row\'s right group ends on one line, a row with no + as one with it', ends.some((r) => r.add) && ends.some((r) => !r.add) && Math.max(...edges) - Math.min(...edges) <= 1, show(ends.map((r) => [titleOf(r.rid), !!r.add, r.right.box.r.toFixed(1)])))
 
   // B-2 · compact cards keep their look: no bar between their values, where the same values on a List are barred.
   const barClass = await cdp.evaluate(`document.querySelector('.list-view .list-view-group > [aria-hidden="true"]')?.className ?? null`)
