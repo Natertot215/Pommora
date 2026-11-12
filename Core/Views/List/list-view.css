@@ -38,12 +38,13 @@
   max-width: 100%;
   margin-left: auto;
 }
-/* The + trails the group before it and takes no room on its line, standing in the line's end padding, so it never breaks from that group. */
+/* The + trails the group before it and takes no room on its line, standing in the line's end padding, so it never breaks from that group; it's drawn a band head's gap past that group, a shift that leaves the line's breaks alone. */
 .list-view-line:has(> .list-view-add) {
   padding-inline-end: var(--accessory-width);
 }
 .list-view-add {
   margin-inline: calc(-1 * var(--list-view-wrap-gap)) calc(-1 * var(--accessory-width));
+  translate: var(--cell-icon-gap);
 }
 
 /* A title's floor is the smaller of its text and --list-view-title-min: the unseen sizer holds the box to that, and the text, breakable anywhere under a one-line clamp, gives up the rest. */
