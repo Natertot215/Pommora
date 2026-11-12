@@ -4,7 +4,7 @@
 
 | Total | Critical | High | Moderate | Low | Minimal |
 |-------|----------|------|----------|-----|---------|
-| 73 | 0 | 3 | 12 | 40 | 18 |
+| 72 | 0 | 3 | 12 | 40 | 17 |
 
 #### A1 • Sync & Devices
 
@@ -95,8 +95,7 @@
 | [I-045](#I-045 • A row's caption in a pane that sizes to its content stays on one line and widens the pane, so the format rows carry none.) | A row's caption in a pane that sizes to its content stays on one line and widens the pane, so the format rows carry none. | Minimal | Mini (TBD) | Drift | `54e93e491` | **Created:** 10-18-2026<br>**Updated:** 10-25-2026 |
 | [I-054](#I-054 • No row in a property's settings says whether it sets the property everywhere or only the current view.) | No row in a property's settings says whether it sets the property everywhere or only the current view. | Minimal | Small (TBD) | Drift | `4f63cba01` | **Created:** 10-21-2026<br>**Updated:** 11-11-2026 |
 | [I-071](#I-071 • A value at a labeled row's end is ruled twice.) | A value at a labeled row's end is ruled twice. | Minimal | Mini (TBD) | Drift | `b1146b1bc` | **Created:** 11-11-2026<br>**Updated:** 11-11-2026 |
-| [I-072](#I-072 • A card's value row restates a chip's height by hand.) | A card's value row restates a chip's height by hand. | Minimal | Mini (TBD) | Shortcut | `b1146b1bc` | **Created:** 11-11-2026<br>**Updated:** 11-11-2026 |
-| [I-073](#I-073 • A group of about 150 rows or more opens and closes without its animation, in a Table and a List alike.) | A group of about 150 rows or more opens and closes without its animation, in a Table and a List alike. | Low | Medium (TBD) | Shortcut | `c40c0647e` | **Created:** 11-11-2026<br>**Updated:** 11-11-2026 |
+| [I-072](#I-072 • A group of about 150 rows or more opens and closes without its animation, in a Table and a List alike.) | A group of about 150 rows or more opens and closes without its animation, in a Table and a List alike. | Low | Medium (TBD) | Shortcut | `c40c0647e` | **Created:** 11-11-2026<br>**Updated:** 11-11-2026 |
 
 #### A6 • Tiles & Embeds
 
@@ -1110,21 +1109,7 @@ The Properties panel's value rule and a Standard card's both grow the value into
 
 Confirm the two are equivalent and state the rule once, where both surfaces read it.
 
-#### I-072 • A card's value row restates a chip's height by hand.
-
-| Concern | Scale | Origin | Base | Date |
-|---------|-------|--------|------|------|
-| Minimal | Mini (TBD) | Shortcut | `b1146b1bc` | **Created:** 11-11-2026<br>**Updated:** 11-11-2026 |
-
-**Description**
-
-`--card-row-h: 20px` is a hand-typed copy of the kit's standard chip height (`SIZE.height`, 20px), and the compact card's 16px is a second typed figure beside it. List's row reads the kit's published `--label-height-roomy` instead. The kit publishes only the roomy height as a custom property, so a card has no token to read for the standard one.[^72]
-
-**Solution** [Proposed]
-
-Publish the standard chip height beside `--label-height-roomy` in the kit and read it for `--card-row-h`.
-
-#### I-073 • A group of about 150 rows or more opens and closes without its animation, in a Table and a List alike.
+#### I-072 • A group of about 150 rows or more opens and closes without its animation, in a Table and a List alike.
 
 | Concern | Scale | Origin | Base | Date |
 |---------|-------|--------|------|------|
@@ -1132,7 +1117,7 @@ Publish the standard chip height beside `--label-height-roomy` in the kit and re
 
 **Description**
 
-A band's rows collapse and expand through `Reveal`, a 0.18s `grid-template-rows` transition that `HeadedBand` mounts around the band's rows. `Reveal` unmounts its children once collapsed, so an expand remounts every row of the band in one task, at about 0.8ms per row (about 95ms at 100 rows, 140ms at 150, and 155-175ms at 200), and a collapse lays out every still-mounted row on each frame of the transition, with frame gaps of 60-95ms at 150-200 rows. Past roughly 100-150 rows the work outlasts the transition, and the band jumps instead of animating. Measured on one Set of 25 to 200 pages holding a Select, a Multi-Select, a Date, a Number, a Checkbox, a Link, a Text, and a Context, both kinds stay smooth to 100 rows; at 150 a Table's collapse and a List's collapse and expand drop below five intermediate frames, and at 200 both kinds do in both directions. A List's cost is 1.0 to 1.2 times a Table's.[^73]
+A band's rows collapse and expand through `Reveal`, a 0.18s `grid-template-rows` transition that `HeadedBand` mounts around the band's rows. `Reveal` unmounts its children once collapsed, so an expand remounts every row of the band in one task, at about 0.8ms per row (about 95ms at 100 rows, 140ms at 150, and 155-175ms at 200), and a collapse lays out every still-mounted row on each frame of the transition, with frame gaps of 60-95ms at 150-200 rows. Past roughly 100-150 rows the work outlasts the transition, and the band jumps instead of animating. Measured on one Set of 25 to 200 pages holding a Select, a Multi-Select, a Date, a Number, a Checkbox, a Link, a Text, and a Context, both kinds stay smooth to 100 rows; at 150 a Table's collapse and a List's collapse and expand drop below five intermediate frames, and at 200 both kinds do in both directions. A List's cost is 1.0 to 1.2 times a Table's.[^72]
 
 **Solution** [Proposed]
 
@@ -1301,5 +1286,4 @@ In `MatrixCanvas`, keep a small map of active pointer ids on the host; while two
 [^69]: **I-069:** `Core/Bundles/BundleTable.tsx:~237-319` (`BundleRowView`), `Core/Bundles/BundleTable.tsx:~107` (`ROW_H`), `Core/Views/Rows/RowFrame.tsx:~103-190` (`PageRow`, `RowGrip`, `PageTitle`), `Core/Views/Rows/RowFrame.tsx:~92` (`GhostTitle`)
 [^70]: **I-070:** `Core/Views/Table/TableView.tsx:~232-272` (`DataRow`'s cell), `Core/Properties/Cells/SeatedValue.tsx`, `Core/Views/Cards/CardsView.tsx`, `Core/Views/List/ListView.tsx`, `Core/Properties/PropertyPanel.tsx`
 [^71]: **I-071:** `Core/Properties/property-panel.css.ts:~46-52` (`value`, the `:has(> value)` rule), `Core/Views/Cards/cards-view.css:~117-122` (`.card-prop-row > .card-value`)
-[^72]: **I-072:** `Core/Views/Cards/cards-view.css:5,31` (`--card-row-h`), `UIX/Labels/label-base.css.ts:14-28` (`SIZE`, the published `--label-height-roomy`), `Core/Views/List/list-view.css:8` (`--row-first-line`)
-[^73]: **I-073:** `UIX/Animations/Reveal.tsx:~14-62` (`Reveal`, its `mounted ? children : null`), `Core/Views/Bands/GroupBand.tsx:~113-213` (`HeadedBand`, its `Reveal`)
+[^72]: **I-072:** `UIX/Animations/Reveal.tsx:~14-62` (`Reveal`, its `mounted ? children : null`), `Core/Views/Bands/GroupBand.tsx:~113-213` (`HeadedBand`, its `Reveal`)
