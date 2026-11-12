@@ -252,6 +252,38 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
 
 > Remove the titke visibility marker; have the eye be hover-revealed for all, while hidden always keeps the crosses out eye
 
+**After the Final Report, 11-11-2026 (on finishing):**
+
+> when were done, please let me know concretely if we're totally good to finish this arc and write the List Views history entry following the r/history-conventions
+
+**After the Final Report, 11-11-2026 (on a second "no", and the hover-revealed eye):**
+
+> If it says no, we fix it, then run the reviews that ensure the fixes adhere to the approach and principles this work follows. Additionally, please look if the row-specific hover reveal unless actively hidden that's used with some other picker (I forget which, but it's used with picking folders) can be shared behavior -- or if I'm remembering wrong lol
+
+**After the Final Report, 11-11-2026 (on how the session ends):**
+
+> Be sure to end this session in a way where im not left confused. Everyhting is explained in-chat and nothing has me guessing or looking at other docs
+
+**After the Final Report, 11-11-2026 (on drag testing; two messages):**
+
+> And have we tested drag-to-reorder across the entire realm of possibilities and within tiles? We should have already, I'm not asking to do it again if we already have
+>
+> I'm talking about pages being dragged to order within the view itself. The row being dragged between folders/groups, like tables.
+
+**After the Final Report, 11-11-2026 (on the review rounds):**
+
+> ensure we're not just manufacturing churn for no reason here.
+
+**After the Final Report, 11-11-2026 (on a group's open and close; two messages):**
+
+> why doesnt the disclosure use the animation?
+>
+> Disclosing groups needs to work identically to how tables do.
+
+**After the Final Report, 11-11-2026 (on the row's hover plus):**
+
+> add 2px padding to the row's hover-plus, or make it farther like how chip-based or folder-level hover-plus has it. It should be the same spacing
+
 #### Process Overview
 
 - [x] `[Before Phase 1: record the BASELINE head, the three gates, and, at that head, the Views Drive's tally for groups 2 to 10 and the Properties, Text Property, Option Picker, and Archive Drives' tallies]`

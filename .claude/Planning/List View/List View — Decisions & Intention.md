@@ -57,6 +57,8 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
 - **B-14 [CONFIRMED]:** The line under the page header should be inset over a List as it is over Cards, not bled edge to edge as over a Table.
 - **B-15 [CONFIRMED]:** The spacing between a List's groups should be a Table's: an open group keeps extra room between its last row and the next band, and closed groups sit evenly. A List's compact rows shouldn't shrink it: the room from the last row's content to the next band's heading should be a Table's. The room from a band's heading to its first row stays compact.
 - **B-16 [CONFIRMED]:** A List row's title should draw in the emphasized text a card's title uses, so it stands out from the values beside it.
+- **B-17 [CONFIRMED]:** A row's hover **+** should stand as far past the item before it as a group heading's **+** does.
+- **B-18 [CONFIRMED]:** A List's group should collapse and expand exactly as a Table's does.
 
 #### C — Values
 
@@ -82,7 +84,7 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
 - **E-6 [CONFIRMED]:** A hidden property's remembered position should survive a reorder of the other properties, in every view kind.
 - **E-7 [CONFIRMED]:** A property should drag within its column and across to the other with no drag-kit work beyond E-10's, both columns reordering by displacement, the form in which the kit trades items between two zones today, as cards cross bands. This pane is a stated exception to the drop line every other settings list uses: a property hides by its eye alone, and a right-click row, Move to Left or Move to Right, changes its side without a drag.
 - **E-8 [CONFIRMED]:** Title should be a row of the Left column that reorders within it and carries no eye.
-- **E-11 [CONFIRMED]:** In the Visibility pane of every view kind, a shown property's eye should appear only while its row is hovered, and a hidden property's crossed-out eye should always show.
+- **E-11 [CONFIRMED]:** Every hide eye, in the Visibility pane of every view kind and on the Group pane's Set and option rows, should appear only while its row is hovered or holds keyboard focus; a hidden item's crossed-out eye should always show.
 - **E-9 [INFERRED]:** Title should stay on the left side.
 - **E-10 [CONFIRMED]:** A row carried into a column should make room there as a carried item does in a Table or a Cards view, and should never be drawn over the hidden rows at the column's foot. That a carried item "compresses the view" there is read as making room; the reading is the session's.
 
