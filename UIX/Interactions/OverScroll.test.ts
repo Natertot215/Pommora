@@ -137,9 +137,10 @@ describe('OverScroll', () => {
     expect(lane.scrollLeft).toBe(0)
   })
 
-  it('keeps a lane scrolled while it holds the focused field, and slides it back once focus leaves with the pointer elsewhere', () => {
+  it('keeps a lane scrolled while it holds the focused field, and slides it back once focus leaves with the pointer elsewhere, a field closing on its own blur included', () => {
     const lane = scrolledLane('<input>')
     const field = document.querySelector('input') as HTMLInputElement
+    field.addEventListener('blur', () => field.remove())
     field.focus()
     leave()
     expect(lane.scrollLeft).toBe(120)
