@@ -49,7 +49,7 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
 | 6 | +590 / −111 | +663 / −109 (with the owner's additions after the Stop) | +1,239 / −537 |
 | 7 | — (the drive, under `.claude`) | — | +1,239 / −537 |
 | 8 | — (documents) | — | — |
-| Final Verification (B-13, the matrix's app fixes, the lens, the adversarial fixes) | — | +88 / −62 | +1,276 / −548 (net +728) |
+| Final Verification and the neutral rounds | — | +209 / −148 | +1,349 / −586 (net +763) |
 
 #### Concepts
 
@@ -283,6 +283,16 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
 **After the Final Report, 11-11-2026 (on the row's hover plus):**
 
 > add 2px padding to the row's hover-plus, or make it farther like how chip-based or folder-level hover-plus has it. It should be the same spacing
+
+**After the Final Report, 11-11-2026 (asked whether a hidden row keeps its crossed-out eye while dragged; and the revealed eye's strength):**
+
+> thats fine
+>
+> slighly dimmed matching group pane folder.
+
+**After the Final Report, 11-11-2026 (shown the + slot on rows with nothing left to add, against keeping it on every row):**
+
+> Go for the simpler rule. SHow me a before and after screenshot so I actually understand. Otherwise, proceed with the full end-to-end completion of ListView and keep me updated with notificaitons. Remember the approach and principels that bind all of this when making any in-flight decisions.
 
 #### Process Overview
 
@@ -2913,7 +2923,7 @@ List's record registers its renderer, its property pane, and its three switches 
 
 **Issues, Raised in *§Final Verification · Reconciliation*, After the Stop That Follows Phase 6 (I-7)**
 
-- Raised 11-11-2026 as I-069 to I-072, with I-073 (the pane's no-op `release`), I-074 (the rail's end at depth), and I-075 (a lane left scrolled), and I-054 extended to the Link value's Format.
+- Raised 11-11-2026 as I-069 to I-072, with I-073 (a group of about 150 rows or more opens and closes without its animation, in a Table and a List alike), and I-054 extended to the Link value's Format.
 - `IssuesPM.md` — "Archive's and Trash's rows draw a second copy of the row frame": `BundleRow` (`Core/Bundles/BundleTable.tsx:262-318`) composes `LineRow`, `RowLead`, a check, and the title markup by hand, with its row height held as a constant; folding it onto `PageRow` and `PageTitle` is the fix.
 - `IssuesPM.md` — "Table's cells mount a value a third way": `DataRow`'s cell (`Core/Views/Table/TableView.tsx`) wires `click`, `menu`, the editor, and `Cell` beside the sweep's `pointerdown`; folding it onto `SeatedValue` is the fix.
 - `IssuesPM.md` — "A value at a labeled row's end is ruled twice": the Properties panel's value rule (`Core/Properties/property-panel.css.ts`) and a Standard card's (`Core/Views/Cards/cards-view.css`, whose comment says "as the panel's does") both grow the value into the room its label leaves, at the row's end. Raised by Phase 3's review as a candidate; whether the two are equivalent is unproven.
@@ -2952,8 +2962,7 @@ List's record registers its renderer, its property pane, and its three switches 
 
 #### Deviations
 
-- **The drag engine changed past E-10's room.** *§Constraints* freezes it save for the room a landing zone grows by. Five follow-ups landed in `UIX/Interactions/engine.tsx` and `placement.ts`, each from the owner's "fix the pane overlap" or found by its tests: a line zone's spill is the room its displacement opens; a spill is held until its rows glide back; the engine re-measures two frames after a spill changes; `atHome` treats a missing home as home only when nothing is carried, since a carry whose source zone was clipped out of view was routed back to its own zone; and an empty zone off the x axis draws its slot and takes its spill at the item's height. **Ruling:** kept. Each carries a unit test; the re-measure's test passes with one frame, and the Views Drive's upward-opening pane case exercises the second without having been shown to fail on one. The pane's no-op `release`, which *§Open Items · Settled in Planning* names, is raised as I-073.
-- **Three behavior changes outside List beyond the four *§Constraints* names.** (5) In Cards, a band pushed down by a carried card stays down about a third of a second after the card leaves, then moves up. (6) A carried drag whose home zone is scrolled out of view lands where its slot shows. (7) A hover-scrolled lane stays scrolled while the pointer is on anything inside it and slides back once the pointer leaves, and a lane holding an open layer's trigger keeps its place (`UIX/Interactions/OverScroll.tsx`, `dismissalStack.ts`); this reaches a Table cell's chip lane, the filter pane, and the field runs. **Ruling:** kept; each is tested, and the Views, Properties, Text Property, Option Picker, and Archive Drives hold their baseline tallies with them.
-- **The neutral gate answered no.** Given the baseline, HEAD, and the intention alone, the `fable-high` reviewer found the intention delivered and the consolidations real, and "each rule stated once and nothing left over" unmet, with eleven corrections. Nine restate decisions it couldn't read (List's switches at the editor's root, I-5 and F-2; no selection fill on a List row, B-13; the pane on the displace engine, E-7 and E-10; compact rows under a Table's group spacing, B-12 and B-15; `addable` and the drawn flag, declined in review for cost) or the engine changes above; the rest are raised as I-073 and I-074 or left as they stood before this work (the `// PLACEHOLDER` on Title's eye). **Ruling:** *§Completion Criteria*'s Confidence clause and Conformance's "the drag engine … untouched" are unmet as written and are left for the owner's word; nothing was changed to turn the answer.
-- **The Number.** The code delta is +728 (+1,276 / −548) against the estimate's +615. The growth bought the row's + as one element, the review fixes, and the owner's additions after the Stop: the group spacing, the pane's sizing, emphasized titles, and the engine corrections.
-
+- **The drag engine changed past E-10's room.** *§Constraints* freezes it save for the room a landing zone grows by. What landed in `UIX/Interactions/engine.tsx` and `placement.ts`, each from the owner's "fix the pane overlap", his "Fix the neutral review issues", or found by its tests: a line zone's spill is the room its displacement opens; a spill is held until its rows glide back; the engine re-measures through an observer on the spilled zone and the frames holding it; `atHome` treats a missing home as home only when nothing is carried, since a carry whose source zone was clipped out of view was routed back to its own zone; an empty zone off the x axis draws its slot and takes its spill at the item's height; and a zone declares `closesGap` where the engine once read the presence of `release`. **Ruling:** kept; each carries a unit test, and the Views Drive's pane cases exercise them live.
+- **Behavior changes outside List beyond the four *§Constraints* names.** (5) In Cards, a band pushed down by a carried card stays down about a third of a second after the card leaves, then moves up. (6) A carried drag whose home zone is scrolled out of view lands where its slot shows. (7) A hover-scrolled lane stays scrolled while the pointer is on anything inside it, or while it holds the focused field or an open picker's anchor, and slides back once none holds and the pointer has left; this reaches a Table cell's chip lane, the filter pane, and the field runs. (8) Every hide eye, in each kind's Visibility pane and on the Group pane's Set and option rows, appears only on its row's hover or keyboard focus, a hidden item's always shows, and Title carries none (E-8, E-11). (9) A keyboard-focused row in a displace pane takes the same wash a line row does. **Ruling:** kept; each is tested, and the Views, Properties, Text Property, Option Picker, and Archive Drives hold their tallies with them.
+- **The neutral gate took four reads.** Given the baseline, HEAD, and the intention, the first `fable-high` reviewer answered no with eleven corrections, most of them the owner's decisions it couldn't read. On the owner's word they were fixed, and the later reviewers were also given his product decisions as givens: the second answered no with one required correction (a focused row's wash in the two-column pane), the third no with one (a kept lane never released), and the fourth yes, its list of required corrections empty. Each round's fixes were read for simplification and for faults before the next reviewer saw them. **Left as optional and not taken:** `data-ends-on-row` stamped on a Table's bands too, the two `drawnOf` helpers, `seat.commit` beside `seat.host`, and moving `visibilityPane` to its own file, which would be a new placement for the owner to approve.
+- **The Number.** The code delta is +763 (+1,349 / −586) against the estimate's +615. The growth bought the row's + as one element, the review fixes, and the owner's additions after the Stop: the group spacing, the pane's sizing, emphasized titles, the engine corrections, the hide eyes, and the lane's release.

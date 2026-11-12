@@ -50,7 +50,7 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
 - **B-7 [CONFIRMED]:** On a row whose right group is empty, the add control should trail the last item of the left group, which is the title on a row with no other left values.
 - **B-8 [CONFIRMED]:** A band's **+** should keep creating a page and a row's **+** should add a property; both meanings stay, as the Properties panel's **+** already adds a property.
 - **B-9 [CONFIRMED]:** A bar should also sit between the title and each neighbor beside it, and none should sit before the add control.
-- **B-10 [INFERRED]:** The add control should keep its slot while hidden, so nothing shifts on hover, and should be absent from a row with nothing left to add.
+- **B-10 [CONFIRMED]:** The add control's slot should stand on every row, so nothing shifts on hover and every row's values end on one line; the control itself should be absent from a row with nothing left to add.
 - **B-11 [CONFIRMED]:** Title should be an item of the left group that can move within it, so a property's values can sit before the title on a row, as a Table column can precede Title. Title always shows.
 - **B-12 [CONFIRMED]:** A List row should be compact, shorter than a Table row.
 - **B-13 [CONFIRMED]:** A List row whose page is the selection should draw no highlight; a Table row keeps its own.
@@ -84,7 +84,7 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
 - **E-6 [CONFIRMED]:** A hidden property's remembered position should survive a reorder of the other properties, in every view kind.
 - **E-7 [CONFIRMED]:** A property should drag within its column and across to the other with no drag-kit work beyond E-10's, both columns reordering by displacement, the form in which the kit trades items between two zones today, as cards cross bands. This pane is a stated exception to the drop line every other settings list uses: a property hides by its eye alone, and a right-click row, Move to Left or Move to Right, changes its side without a drag.
 - **E-8 [CONFIRMED]:** Title should be a row of the Left column that reorders within it and carries no eye.
-- **E-11 [CONFIRMED]:** Every hide eye, in the Visibility pane of every view kind and on the Group pane's Set and option rows, should appear only while its row is hovered or holds keyboard focus; a hidden item's crossed-out eye should always show.
+- **E-11 [CONFIRMED]:** Every hide eye, in the Visibility pane of every view kind and on the Group pane's Set and option rows, should appear only while its row is hovered or holds keyboard focus; a hidden item's crossed-out eye should always show. A revealed eye should draw dimmed, as the Group pane's Set eyes do, and a hidden row keeps its crossed-out eye while it is dragged.
 - **E-9 [INFERRED]:** Title should stay on the left side.
 - **E-10 [CONFIRMED]:** A row carried into a column should make room there as a carried item does in a Table or a Cards view, and should never be drawn over the hidden rows at the column's foot. That a carried item "compresses the view" there is read as making room; the reading is the session's.
 

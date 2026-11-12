@@ -231,3 +231,13 @@ Disclosing groups needs to work identically to how tables do.
 **After the Final Report, 11-11-2026 (on the row's hover plus):**
 
 add 2px padding to the row's hover-plus, or make it farther like how chip-based or folder-level hover-plus has it. It should be the same spacing
+
+**After the Final Report, 11-11-2026 (asked whether a hidden row keeps its crossed-out eye while dragged; and the revealed eye's strength):**
+
+thats fine
+
+slighly dimmed matching group pane folder.
+
+**After the Final Report, 11-11-2026 (shown the + slot on rows with nothing left to add, against keeping it on every row):**
+
+Go for the simpler rule. SHow me a before and after screenshot so I actually understand. Otherwise, proceed with the full end-to-end completion of ListView and keep me updated with notificaitons. Remember the approach and principels that bind all of this when making any in-flight decisions.
