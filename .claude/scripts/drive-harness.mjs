@@ -207,9 +207,9 @@ export const sel = (css) => `document.querySelector(${JSON.stringify(css)})`
 export const textEl = (scope, text) =>
   `[...document.querySelectorAll(${JSON.stringify(scope)})].find((e) => e.children.length === 0 && e.textContent.trim() === ${JSON.stringify(text)})`
 
-// An element drawn as `display: contents` has no box of its own, so its contents' box stands in.
+// An element drawn as `display: contents` has no box of its own, so its contents' box stands in. Read once a frame has drawn, where the pointer meets it: a row mounted since stands at its placeholder height until then; an occluded window draws no frame, so the wait gives way after 500 ms.
 export const boxOf = (cdp, expr) =>
-  cdp.evaluate(`(() => { const el = (${expr}); if (!el) throw new Error('no element for ' + ${JSON.stringify(expr)}); let b = el.getBoundingClientRect(); if (!b.width && !b.height && el instanceof Node) { const r = document.createRange(); r.selectNodeContents(el); b = r.getBoundingClientRect() } return { x: b.x + b.width / 2, y: b.y + b.height / 2, left: b.left, top: b.top, right: b.right, bottom: b.bottom } })()`)
+  cdp.evaluate(`(async () => { await new Promise((r) => { requestAnimationFrame(() => requestAnimationFrame(r)); setTimeout(r, 500) }); const el = (${expr}); if (!el) throw new Error('no element for ' + ${JSON.stringify(expr)}); let b = el.getBoundingClientRect(); if (!b.width && !b.height && el instanceof Node) { const r = document.createRange(); r.selectNodeContents(el); b = r.getBoundingClientRect() } return { x: b.x + b.width / 2, y: b.y + b.height / 2, left: b.left, top: b.top, right: b.right, bottom: b.bottom } })()`)
 export const overlaps = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom
 
 export async function mouseAt(cdp, { x, y }, { button = 'left', modifiers = 0, settle = 500 } = {}) {
