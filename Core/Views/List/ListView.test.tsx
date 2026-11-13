@@ -257,16 +257,9 @@ describe('a List row', () => {
     expect(selectSpy).not.toHaveBeenCalled()
     expect(document.querySelector('[data-picker-portal]')).toBeNull()
 
-    const title = rowOf('p1').querySelector<HTMLElement>('.cell-title-text')!
-    const hit = document.elementFromPoint
-    document.elementFromPoint = () => title
-    try {
-      await act(async () => {
-        title.click()
-      })
-    } finally {
-      document.elementFromPoint = hit
-    }
+    await act(async () => {
+      rowOf('p1').querySelector<HTMLElement>('.cell-title-text')!.click()
+    })
     expect(selectSpy.mock.calls.at(-1)?.[0]).toEqual({ kind: 'page', id: 'p1', path: 'Col/One.md' })
   })
 

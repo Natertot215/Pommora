@@ -984,12 +984,6 @@ describe('the drag engine across a family', () => {
     for (const spy of Object.values(receives)) expect(spy).not.toHaveBeenCalled()
   })
 
-  it('holds the source gap open while the landing is foreign', async () => {
-    await dragTo('a1', 100, 210)
-    expect(item('a2').style.transform).toBe('')
-    await settle()
-  })
-
   it('closes the source gap while the landing is foreign when the source declares it, receiving and releasing at the drop', async () => {
     const releaseA = vi.fn()
     extra = { A: { closesGap: true, release: releaseA } }

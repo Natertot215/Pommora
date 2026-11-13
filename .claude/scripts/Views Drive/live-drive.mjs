@@ -3411,7 +3411,7 @@ async function drags(cdp) {
   decided('A-2', 'a List row dragged by its grip above another in its band saves the manual order and draws there', within && before(await drawnTitles(), 'VL Right', 'VL Left'), show({ disk: manualOf(V), drawn: await drawnTitles() }))
   const LIST_ROWS = `[...document.querySelectorAll('.list-view .data-row[data-rid]')]`
   const plain = await describes(cdp, LIST_ROWS)
-  decided('A-2', 'a plain List\'s rows each name the drag gesture', plain.length > 0 && plain.every(Boolean), show({ rows: plain.length, described: plain.filter(Boolean).length }))
+  decided('A-2', 'a plain List\'s rows each name the drag gesture', all(plain), show({ rows: plain.length, described: plain.filter(Boolean).length }))
   await keyMove(cdp, 'VL Both', ['ArrowUp'])
   const keyed = manualOf(V)
   const drawnKeyed = await drawnTitles()
@@ -3442,7 +3442,7 @@ async function drags(cdp) {
   await search(cdp, '')
   await showOn(cdp, 'collection', listView(vid('g11dragsorted'), 'VL Drag Sorted', { property_order: LIST_ORDER, sort: [{ property_id: STAGE.id, direction: 'ascending' }, { property_id: '_title', direction: 'ascending' }] }))
   const sortedRows = await describes(cdp, LIST_ROWS)
-  decided('A-2', 'a searching List and one sorted by two keys name no drag gesture on their rows, as a Table\'s', searched.length > 0 && searched.every((d) => !d) && sortedRows.length > 0 && sortedRows.every((d) => !d), show({ searched: searched.length, sortedRows: sortedRows.length, anyDescribed: [...searched, ...sortedRows].some(Boolean) }))
+  decided('A-2', 'a searching List and one sorted by two keys name no drag gesture on their rows, as a Table\'s', none(searched) && none(sortedRows), show({ searched: searched.length, sortedRows: sortedRows.length, anyDescribed: [...searched, ...sortedRows].some(Boolean) }))
   await showOn(cdp, 'collection', V)
 
   // Across indentation levels: Page A from Set Alpha into Sub-Set A.
@@ -3569,7 +3569,7 @@ async function drags(cdp) {
   if (tileMoved) await mutate(cdp, { op: 'movePage', path: `${COLLECTION}/Set Alpha/Alpha 1.md`, newParentPath: SUB_A })
 }
 /** The manual order the homepage's View Tile stores, by title. */
-const tileManual = () => (JSON.parse(readRel(TILES)).tiles[0]?.views[0]?.config?.manual_order ?? []).map(titleOf)
+const tileManual = () => (tileOnDisk()?.views[0]?.config?.manual_order ?? []).map(titleOf)
 
 // ── Group 11 · the property pane ────────────────────────────────────────────
 
