@@ -48,7 +48,7 @@ export const recordsOf = entityMemo([(t) => t.contexts], (tree): readonly Entity
 })
 
 let heldPages: readonly ConnPage[] = []
-/** Recycled against the last list built, so the list and its index hold while no page's id, title, or path changes. */
+/** Recycled against the last list built, so the list and its index hold while the pages keep their order and no page's id, title, or path changes. */
 export const pagesOf = entityMemo([], (tree): readonly ConnPage[] => {
   const pages = recordsOf(tree)
     .filter((r) => r.kind === 'page')

@@ -7,7 +7,7 @@ import type { ConnPage } from '../Connections/pageIndex'
 import type { ViewRow } from '../Views/viewRow'
 import type { HeadingLinkStyle, InPageHeadingResolution } from '../Settings/personalization'
 import { useSession, useSetting } from '../Session/store'
-import { useConnections } from '../Session/pageConnections'
+import { previewConnections } from '../Session/pageConnections'
 
 export interface ValueContext {
   schema: PropertyDefinition[]
@@ -15,7 +15,7 @@ export interface ValueContext {
   contexts: ReadonlyMap<string, ContextIdentity>
   /** Held on the context rather than read per cell, so one subscription serves the whole view instead of one per rendered value. */
   assets: AssetMap
-  /** The page index and headings a value's links draw against, held on the context so a value redraws when either changes. */
+  /** The bundle a value's links draw against and follow through, read at the moment it's needed; a value that draws a link subscribes to it itself. */
   connections: () => ConnectionsApi | undefined
   headingLinkStyle: HeadingLinkStyle
   inPageHeadingResolution: InPageHeadingResolution
@@ -36,8 +36,6 @@ export function useValueContext(
   const assets = useSession((s) => s.assetMap)
   const headingLinkStyle = useSetting('headingLinkStyle')
   const inPageHeadingResolution = useSetting('inPageHeadingResolution')
-  const preview = useConnections('preview')
-  const links = hostConnections ?? preview
   const identity = tree && identityOf(tree)
   return useMemo(
     () =>
@@ -46,10 +44,10 @@ export function useValueContext(
         spaces: identity.spaces,
         contexts: identity.contexts,
         assets,
-        connections: () => links,
+        connections: hostConnections ? () => hostConnections : previewConnections,
         headingLinkStyle,
         inPageHeadingResolution,
       },
-    [identity, schema, assets, links, headingLinkStyle, inPageHeadingResolution],
+    [identity, schema, assets, hostConnections, headingLinkStyle, inPageHeadingResolution],
   )
 }

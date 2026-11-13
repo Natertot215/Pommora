@@ -259,12 +259,15 @@ describe('a chip list', () => {
 
 describe('a text value', () => {
   const page = { id: 'p9', title: 'Target', path: 'X/Target.md' }
-  const connectionsWith = (menu?: ConnectionsApi['menu']) => (): ConnectionsApi | undefined => ({
-    index: buildPageIndex([page]),
-    open: () => {},
-    menu,
-    headingsOf: () => undefined,
-  })
+  const connectionsWith = (menu?: ConnectionsApi['menu']): (() => ConnectionsApi) => {
+    const api: ConnectionsApi = {
+      index: buildPageIndex([page]),
+      open: () => {},
+      menu,
+      headingsOf: () => undefined,
+    }
+    return () => api
+  }
 
   it('renders the value’s first line alone', () => {
     mount(rowWith({ prop_notes: 'first line\nsecond line' }), 'prop_notes', {})

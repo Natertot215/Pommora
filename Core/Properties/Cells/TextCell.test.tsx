@@ -6,6 +6,7 @@ import { makeTree } from '../../Testing/testTree'
 import { useSession } from '../../Session/store'
 import { buildPageIndex } from '../../Connections/pageIndex'
 import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
+import { previewConnections } from '../../Session/pageConnections'
 import { TextCell } from './TextCell'
 import type { ValueContext } from '../valueContext'
 import { glanceHost } from '../../Interface/Glance/glanceAction'
@@ -39,7 +40,9 @@ describe('a Text value draws against the page that holds it', () => {
   const headings = (text: string) => ({
     [holder.path]: { keys: [text.toLowerCase()], texts: [text], outline: [{ text, level: 2 }] },
   })
-  const mount = async (): Promise<HTMLDivElement> => {
+  const mount = async (
+    connections = (): ConnectionsApi | undefined => conn,
+  ): Promise<HTMLDivElement> => {
     useSession.setState({
       tree: makeTree(),
       headings: headings('Setup'),
@@ -49,7 +52,7 @@ describe('a Text value draws against the page that holds it', () => {
     root = createRoot(host)
     await act(async () =>
       root?.render(
-        createElement(TextCell, { text: '[[#Nope]] see §Setup', ctx: ctxOf(() => conn), holder }),
+        createElement(TextCell, { text: '[[#Nope]] see §Setup', ctx: ctxOf(connections), holder }),
       ),
     )
     return host
@@ -72,6 +75,7 @@ describe('a Text value draws against the page that holds it', () => {
 
   it('a § run opens a menu of Open and Copy alone, and glances at the page’s heading', async () => {
     const menu = vi.fn(async () => null)
+    const api = { ...conn, menu }
     const arm = vi.spyOn(glanceHost, 'arm').mockImplementation(() => {})
     useSession.setState({
       tree: makeTree(),
@@ -84,7 +88,7 @@ describe('a Text value draws against the page that holds it', () => {
       root?.render(
         createElement(TextCell, {
           text: 'see §Setup',
-          ctx: ctxOf(() => ({ ...conn, menu })),
+          ctx: ctxOf(() => api),
           holder,
         }),
       ),
@@ -179,6 +183,16 @@ describe('a Text value draws against the page that holds it', () => {
     await rightClick(await mountWith({}))
     expect(menu).toHaveBeenCalledOnce()
     expect(parent).toHaveBeenCalledOnce()
+  })
+
+  it('redraws when its holder’s headings change in the session', async () => {
+    const el = await mount(previewConnections)
+    expect(el.querySelector('.md-section-run')).not.toBeNull()
+    await act(async () => {
+      useSession.setState({ headings: headings('Fresh') })
+    })
+    expect(el.querySelector('.md-section-run')).toBeNull()
+    expect(el.querySelector('.md-connection-heading-missing')?.textContent).toBe('Nope')
   })
 })
 

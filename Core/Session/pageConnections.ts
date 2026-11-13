@@ -43,7 +43,7 @@ function connectionsOf(s: Session, mode: Mode): ConnectionsApi | undefined {
   }
 }
 
-/** The preview bundle as it is now, for a value that colors or follows a link without subscribing to every heading change. */
+/** The preview bundle as it is now, read at the moment it's needed; a value subscribes through it to only what its own links draw against. */
 export const previewConnections = (): ConnectionsApi | undefined =>
   connectionsOf(useSession.getState(), 'preview')
 

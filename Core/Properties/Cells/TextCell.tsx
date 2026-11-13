@@ -9,7 +9,8 @@ import { resolveFollow } from '../../MarkdownPM/Links/linkClicks'
 import { parseListMarker } from '../../MarkdownPM/Engine/detect'
 import { listLineClass } from '../../MarkdownPM/Engine/intents'
 import { type CellPage, linkGestures, renderRestingLine } from '../../MarkdownPM/Tables/cellStatic'
-import { mayNameOwnHeading } from '../../Connections/connections'
+import { mayHoldLink, mayNameHeading, mayNameOwnHeading } from '../../Connections/connections'
+import { useSession } from '../../Session/store'
 import { openWebLink } from '../../Web/openWebLink'
 import type { ValueContext } from '../valueContext'
 
@@ -32,6 +33,13 @@ export function TextCell({
   const lm = parseListMarker(first)
   const { connections, headingLinkStyle } = ctx
   const automatic = ctx.inPageHeadingResolution === 'automatic'
+  // The line subscribes to what it draws against: the index for a link, the headings too for one that may name a heading.
+  const drawsAgainst = mayNameHeading(first)
+    ? connections
+    : mayHoldLink(first)
+      ? () => connections()?.index
+      : undefined
+  useSession(() => drawsAgainst?.())
   const ownPath = holder && mayNameOwnHeading(first) ? holder.path : null
   const headings = ownPath ? connections()?.headingsOf(ownPath) : undefined
   const around: CellPage | undefined = headings && {

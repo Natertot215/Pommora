@@ -19,6 +19,7 @@ import type { ValueContext } from '../valueContext'
 import { dwellTarget, resolveFollow } from '../../MarkdownPM/Links/linkClicks'
 import { openWebLink } from '../../Web/openWebLink'
 import { useLinkTitle } from '../../Web/useLinkTitle'
+import { useSession } from '../../Session/store'
 import type { ConnPage } from '../../Connections/pageIndex'
 import { TextCell } from './TextCell'
 
@@ -39,8 +40,9 @@ export function LinkCell({
   holder?: ConnPage
   ctx: ValueContext
 }): React.JSX.Element | null {
-  const api = ctx.connections()
   const written = readLinkText(raw)
+  useSession(() => written && written.kind !== 'url' && ctx.connections()?.index)
+  const api = ctx.connections()
   const target = resolveLink(written, api?.index, holder)
   const url = target.kind === 'url' ? target.url : raw.trim()
   const display = isLinkDisplay(look) ? look : (def?.link_display ?? DEFAULT_LINK_DISPLAY)

@@ -30,6 +30,27 @@ vi.mock('../../Nexus/ids', async (importOriginal) => ({
   newContentId: () => `p${++mint.n}`,
 }))
 
+const drawnNow = vi.hoisted(() => ({ rows: 0, texts: [] as string[] }))
+vi.mock('../Rows/RowFrame', async (importOriginal) => {
+  const m = await importOriginal<typeof import('../Rows/RowFrame')>()
+  return {
+    ...m,
+    PageTitle: (p: Parameters<typeof m.PageTitle>[0]) => {
+      drawnNow.rows++
+      return m.PageTitle(p)
+    },
+  }
+})
+vi.mock('../../Properties/Cells/TextCell', async (importOriginal) => {
+  const m = await importOriginal<typeof import('../../Properties/Cells/TextCell')>()
+  return {
+    TextCell: (p: Parameters<typeof m.TextCell>[0]) => {
+      drawnNow.texts.push(p.text)
+      return m.TextCell(p)
+    },
+  }
+})
+
 const realMutate = useSession.getState().mutate
 
 const statusDef: PropertyDefinition = {
@@ -295,6 +316,23 @@ const installed = (source: CollectionNode): CollectionNode => {
   return next.collections[0]
 }
 
+const addPageElsewhere = (): void => {
+  const { tree } = useSession.getState()
+  const other = {
+    kind: 'collection',
+    id: 'col2',
+    title: 'Other',
+    path: 'Other',
+    sets: [],
+    pages: [page('q1', 'Q', 'Other/Q.md')],
+    propertyIds: [],
+    views: [],
+  } as unknown as CollectionNode
+  useSession.setState({
+    tree: stabilize({ ...tree!, collections: [...tree!.collections, other] }, tree),
+  })
+}
+
 describe('what a renderer memoizes on', () => {
   const held = (): unknown[] => [
     api?.view,
@@ -327,6 +365,13 @@ describe('what a renderer memoizes on', () => {
     expect(api?.rows[0]).toBe(one)
     expect(api?.rows[1]).not.toBe(two)
     expect(api?.rows[1].title).toBe('Second')
+  })
+
+  it('a page added in another Collection hands the renderers the same context', async () => {
+    await mount(installed(collection()))
+    const ctx = api?.ctx
+    await act(async () => addPageElsewhere())
+    expect(api?.ctx).toBe(ctx)
   })
 })
 
@@ -383,6 +428,50 @@ describe("a row whose value links another page, the row's own data unchanged", (
     expect(drawn('heading-missing')).toBe('Setup')
     await act(async () => useSession.setState({ headings: outline('Setup', 'Col/One.md') }))
     expect(drawn('heading-missing')).toBeUndefined()
+  })
+
+  const linkingValues = async (): Promise<void> => {
+    notes('see [[Two]]')
+    channels['view:loadValues'] = async () => ({
+      ok: true,
+      value: pageValues({
+        p1: { [ID_KEY]: 'p1', Notes: 'see [[Two]]' },
+        p2: { [ID_KEY]: 'p2', Notes: 'see [[One#Setup]]' },
+        p3: { [ID_KEY]: 'p3', Notes: 'plain' },
+      }),
+    })
+    await renderView(
+      root,
+      installed(
+        linking([
+          page('p1', 'One', 'Col/One.md'),
+          page('p2', 'Two', 'Col/Two.md'),
+          page('p3', 'Three', 'Col/Three.md'),
+        ]),
+      ),
+    )
+    expect(drawnNow.texts).toContain('plain')
+  }
+  const redrawnOn = async (change: () => void): Promise<typeof drawnNow> => {
+    drawnNow.rows = 0
+    drawnNow.texts = []
+    await act(async () => change())
+    return { rows: drawnNow.rows, texts: [...drawnNow.texts].sort() }
+  }
+
+  it("redraws, on another page's heading write, only the value that may name a heading", async () => {
+    await linkingValues()
+    expect(
+      await redrawnOn(() => useSession.setState({ headings: outline('X', 'Far.md') })),
+    ).toEqual({ rows: 0, texts: ['see [[One#Setup]]'] })
+  })
+
+  it('redraws, on a page added in another Collection, only the values that hold a link', async () => {
+    await linkingValues()
+    expect(await redrawnOn(addPageElsewhere)).toEqual({
+      rows: 0,
+      texts: ['see [[One#Setup]]', 'see [[Two]]'],
+    })
   })
 })
 

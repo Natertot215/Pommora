@@ -34,7 +34,7 @@ import type { ResolvedColumn } from '../../Properties/properties'
 export type ViewHostApi = NonNullable<ReturnType<typeof useViewHost>>
 
 /** A memo that recycles every part of its value equal to the last one's (`stabilize`), so what's keyed on those parts holds across a recompute that changed nothing in them. */
-function useRecycledMemo<T>(build: () => T, deps: readonly unknown[]): T {
+export function useRecycledMemo<T>(build: () => T, deps: readonly unknown[]): T {
   const held = useRef<T | undefined>(undefined)
   return useMemo(() => (held.current = stabilize(build(), held.current)), deps)
 }

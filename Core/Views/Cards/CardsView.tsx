@@ -34,7 +34,7 @@ import { AssetImage } from '../../Assets/AssetImage'
 import { useBannerMenu } from '../../Interface/Header/useBannerMenu'
 import { navKey, selectTargetOf } from '../../Navigation/navRef'
 import { TAB_FAMILY } from '../../Navigation/tabRows'
-import type { ViewHostApi } from '../Host/useViewHost'
+import { useRecycledMemo, type ViewHostApi } from '../Host/useViewHost'
 import { GHOST_TRAVEL_HOLD_MS } from '@pommora/uix/Interactions/ghostCreate'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { columnLabel } from '../../Properties/columnDisplay'
@@ -49,7 +49,6 @@ import {
 import type { ValueContext } from '../../Properties/valueContext'
 import { NO_TRAIL, type TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { ancestryOf } from '../../Nexus/treeIndex'
-import { stabilize } from '../../Nexus/treeStabilize'
 import { SeatedValue, seatOf } from '../../Properties/Cells/SeatedValue'
 import { ValueSeat } from '../../Properties/Pickers/ValueSeat'
 import { borderedField } from '@pommora/uix/Fields/fields.css'
@@ -189,8 +188,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     else openBannerEditor()
   }, [bannerRequest])
 
-  const trailHeld = useRef<Record<string, TrailSegment[]>>({})
-  const trailBySet = useMemo(() => {
+  const trailBySet = useRecycledMemo(() => {
     const m: Record<string, TrailSegment[]> = {}
     if (!hideLocation)
       for (const { parentSetId } of rowById.values()) {
@@ -198,8 +196,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
         const chain = tree && ancestryOf(tree, { kind: 'set', id: parentSetId })
         if (chain) m[parentSetId] = chain.slice(host.plan.kind === 'sets' ? 2 : 1)
       }
-    trailHeld.current = stabilize(m, trailHeld.current)
-    return trailHeld.current
+    return m
   }, [groups, tree, host.plan.kind, hideLocation])
 
   // ── The ghost's seat and its FLIP ─────────────────────────────────────────
