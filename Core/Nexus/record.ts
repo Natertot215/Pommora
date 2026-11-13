@@ -5,6 +5,7 @@ import { contextDirRel } from '../Paths/nexusPaths'
 import type { HeldKind } from './entities'
 import { entityMemo, type NexusTree, type SetNode } from './tree'
 import { findContainerById } from './treePatch'
+import { stabilize } from './treeStabilize'
 
 export interface EntityRecord {
   id: string
@@ -46,11 +47,15 @@ export const recordsOf = entityMemo([(t) => t.contexts], (tree): readonly Entity
   return records
 })
 
-export const pagesOf = entityMemo([], (tree): readonly ConnPage[] =>
-  recordsOf(tree)
+let heldPages: readonly ConnPage[] = []
+/** Recycled against the last list built, so the list and its index hold while no page's id, title, or path changes. */
+export const pagesOf = entityMemo([], (tree): readonly ConnPage[] => {
+  const pages = recordsOf(tree)
     .filter((r) => r.kind === 'page')
-    .map(({ id, title, path }) => ({ id, title, path })),
-)
+    .map(({ id, title, path }) => ({ id, title, path }))
+  heldPages = stabilize(pages, heldPages)
+  return heldPages
+})
 
 /** The first-listed page per id. */
 export const pagesByIdOf = (tree: NexusTree): ReadonlyMap<string, ConnPage> =>
@@ -67,7 +72,12 @@ export const pathOfId = (tree: NexusTree, id: string): string | undefined =>
 export const pathNow = (tree: NexusTree | null, target: { id: string; path: string }): string =>
   (tree && pathOfId(tree, target.id)) ?? target.path
 
-export const pageIndexOf = entityMemo([], (tree): PageIndex => buildPageIndex(pagesOf(tree)))
+const indexes = new WeakMap<readonly ConnPage[], PageIndex>()
+export const pageIndexOf = (tree: NexusTree): PageIndex => {
+  const pages = pagesOf(tree)
+  if (!indexes.has(pages)) indexes.set(pages, buildPageIndex(pages))
+  return indexes.get(pages)!
+}
 
 export function pageMoves(
   before: ReadonlyMap<string, { path: string }>,

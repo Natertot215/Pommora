@@ -21,6 +21,7 @@ import { mountEachTest, renderView } from '../../Testing/viewHarness'
 import { ViewTileScopeProvider } from '../ViewTileScope'
 import { makeTree } from '../../Testing/testTree'
 import { deltaOf } from '../../Nexus/treeDelta'
+import { stabilize } from '../../Nexus/treeStabilize'
 import type { NexusTree } from '../../Nexus/tree'
 
 const mint = vi.hoisted(() => ({ n: 2 }))
@@ -283,6 +284,105 @@ describe('the persist fold', () => {
     act(() => api?.disclosure.toggle('g1'))
     expect(saveSpy).toHaveBeenCalledOnce()
     expect(lastSavedView().collapsed_groups).toBeUndefined()
+  })
+})
+
+// The tree as the host installs it: recycled against the last one wherever the new content is equal.
+const installed = (source: CollectionNode): CollectionNode => {
+  const { tree } = useSession.getState()
+  const next = stabilize({ ...tree!, collections: [source] }, tree)
+  useSession.setState({ tree: next })
+  return next.collections[0]
+}
+
+describe('what a renderer memoizes on', () => {
+  const held = (): unknown[] => [
+    api?.view,
+    api?.columns,
+    api?.styleById,
+    api?.ctx,
+    ...(api?.rows ?? []),
+  ]
+  const expectHeld = (before: unknown[]): void => {
+    for (const [i, x] of held().entries()) expect(x).toBe(before[i])
+  }
+
+  it('a fold and the stored view that carries it back hand the renderers the same view, columns, styles, context, and rows', async () => {
+    await mount(installed(collection()))
+    const before = held()
+    act(() => api?.disclosure.toggle('g1'))
+    expect(api?.disclosure.isOpen('g1')).toBe(false)
+    expectHeld(before)
+    await mount(installed(collection({ collapsed_groups: ['g1'] })))
+    expect(api?.disclosure.isOpen('g1')).toBe(false)
+    expectHeld(before)
+  })
+
+  it("a page's own change re-identifies its row alone", async () => {
+    await mount(collection())
+    const [one, two] = api?.rows ?? []
+    const renamed = collection()
+    renamed.pages[1] = { ...renamed.pages[1], title: 'Second' }
+    await mount(renamed)
+    expect(api?.rows[0]).toBe(one)
+    expect(api?.rows[1]).not.toBe(two)
+    expect(api?.rows[1].title).toBe('Second')
+  })
+})
+
+describe("a row whose value links another page, the row's own data unchanged", () => {
+  const notesDef: PropertyDefinition = {
+    id: 'prop_notes',
+    label: 'Notes',
+    key: 'Notes',
+    type: 'text',
+  }
+  const linking = (pages = [page('p1', 'One', 'Col/One.md'), page('p2', 'Two', 'Col/Two.md')]) =>
+    ({
+      ...collection({ property_order: ['_title', 'prop_notes'] }),
+      pages,
+      propertyIds: [notesDef.id],
+    }) as unknown as CollectionNode
+  const notes = (text: string): void => {
+    channels['view:loadValues'] = async () => ({
+      ok: true,
+      value: pageValues({ p1: { [ID_KEY]: 'p1', Notes: text } }),
+    })
+    useSession.setState((s) => ({
+      tree: { ...s.tree!, config: { ...s.tree!.config, registry: [notesDef] } },
+    }))
+  }
+  const outline = (text: string, path = 'Col/Two.md') => ({
+    [path]: { keys: [text.toLowerCase()], texts: [text], outline: [{ text, level: 2 }] },
+  })
+  const drawn = (kind: string): string | undefined =>
+    host.querySelector(`.md-connection-${kind}`)?.textContent ?? undefined
+
+  it('draws the link phantom once its page leaves', async () => {
+    notes('see [[Two]]')
+    await renderView(root, installed(linking()))
+    expect(drawn('resolved')).toBe('Two')
+    await renderView(root, installed(linking([page('p1', 'One', 'Col/One.md')])))
+    expect(drawn('resolved')).toBeUndefined()
+    expect(drawn('phantom')).toContain('Two')
+  })
+
+  it("draws a heading link's heading found once its page's outline gains it", async () => {
+    notes('see [[Two#Setup]]')
+    useSession.setState({ headings: outline('Intro') })
+    await renderView(root, installed(linking()))
+    expect(drawn('heading-missing')).toBe('Setup')
+    await act(async () => useSession.setState({ headings: outline('Setup') }))
+    expect(drawn('heading-missing')).toBeUndefined()
+  })
+
+  it("draws its own page's heading found once that page's outline gains it", async () => {
+    notes('see [[#Setup]]')
+    useSession.setState({ headings: outline('Intro', 'Col/One.md') })
+    await renderView(root, installed(linking()))
+    expect(drawn('heading-missing')).toBe('Setup')
+    await act(async () => useSession.setState({ headings: outline('Setup', 'Col/One.md') }))
+    expect(drawn('heading-missing')).toBeUndefined()
   })
 })
 

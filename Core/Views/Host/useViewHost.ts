@@ -13,6 +13,7 @@ import { identityOf } from '../../Contexts/contextIdentity'
 import { useValueContext } from '../../Properties/valueContext'
 import { bandModelOf } from '../Bands/bandModel'
 import { containerSchema } from '../../Nexus/treePatch'
+import { stabilize } from '../../Nexus/treeStabilize'
 import { bucketGroupingOf, groupPlan, pageOrderOf } from '../Pipeline/group'
 import { resolveView } from '../Pipeline/resolveView'
 import { searchGroups, searchKeysOf } from '../Pipeline/search'
@@ -32,6 +33,12 @@ import type { ResolvedColumn } from '../../Properties/properties'
 
 export type ViewHostApi = NonNullable<ReturnType<typeof useViewHost>>
 
+/** A memo that recycles every part of its value equal to the last one's (`stabilize`), so what's keyed on those parts holds across a recompute that changed nothing in them. */
+function useRecycledMemo<T>(build: () => T, deps: readonly unknown[]): T {
+  const held = useRef<T | undefined>(undefined)
+  return useMemo(() => (held.current = stabilize(build(), held.current)), deps)
+}
+
 export function useViewHost(source: CollectionNode | SetNode) {
   const tree = useSession((s) => s.tree)
   const saveView = useSaveView(source)
@@ -44,10 +51,11 @@ export function useViewHost(source: CollectionNode | SetNode) {
   const { effectiveValues, setValueOverride } = useContainerValues(source.path)
 
   const schema = useMemo(() => containerSchema(tree, source), [tree, source])
-  const view = useActiveView(source)
+  const live = useActiveView(source)
+  const collapsed = useMemo(() => new Set(live.collapsed_groups ?? []), [live.collapsed_groups])
+  // A fold draws nothing a row shows, so the renderers read the view without it and a toggle re-renders no row.
+  const view = useRecycledMemo(() => ({ ...live, collapsed_groups: undefined }), [live])
   const { nests } = presentedKind(view.type)
-
-  const collapsed = useMemo(() => new Set(view.collapsed_groups ?? []), [view.collapsed_groups])
 
   const identity = identityOf(tree)
   const { contextIds } = identity
@@ -69,17 +77,15 @@ export function useViewHost(source: CollectionNode | SetNode) {
   const crossBand = !dragDisabled && (canReassign || canRelocate)
 
   const pageMetadata = tree?.config.pageMetadata
-  const {
-    columns,
-    groups: resolvedGroups,
-    rows,
-  } = useMemo(() => {
-    const { rows, setTree } = flattenContainer(painted, effectiveValues, pageMetadata ?? {})
-    return {
-      ...resolveView({ rows, setTree, view, schema, plan, manualOrder, identity }),
-      rows,
-    }
-  }, [painted, effectiveValues, pageMetadata, view, schema, plan, manualOrder, identity])
+  const flat = useRecycledMemo(
+    () => flattenContainer(painted, effectiveValues, pageMetadata ?? {}),
+    [painted, effectiveValues, pageMetadata],
+  )
+  const rows = flat.rows
+  const { columns, groups: resolvedGroups } = useRecycledMemo(
+    () => resolveView({ ...flat, view, schema, plan, manualOrder, identity }),
+    [flat, view, schema, plan, manualOrder, identity],
+  )
   // Every shown column's style, resolved once per pass; the table, the cards, the list, and the pickers read it.
   const styleById = useMemo(
     () => new Map(columns.map((c) => [c.id, styleFor(c, view, forms)])),
@@ -133,7 +139,7 @@ export function useViewHost(source: CollectionNode | SetNode) {
   const endNaming = (): void => setNaming(null)
 
   const persistView = (patch: ViewPatch, opts?: ViewWriteOpts): Promise<Result<{ id: string }>> =>
-    saveView(view, patch, opts)
+    saveView(live, patch, opts)
   const disclosure: Disclosure = {
     isOpen: (key) => searching || !collapsed.has(key),
     toggle: (key) => {

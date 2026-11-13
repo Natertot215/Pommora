@@ -8,6 +8,7 @@ import { useSession } from '../Session/store'
 import { mountEachTest } from '../Testing/viewHarness'
 
 const tree = {
+  collections: [],
   contexts: [
     {
       def: { id: 'ctx_areas', title: 'Areas', singular: 'Area' },

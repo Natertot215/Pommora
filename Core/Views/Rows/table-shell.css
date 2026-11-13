@@ -27,6 +27,13 @@
   --zoom: var(--view-embed-zoom);
 }
 
+/* Off-screen, a band's row skips its style, layout, and paint, standing at a one-line row's height until first drawn; the clip margin keeps its rail slot painted. */
+.table-shell .group-band .data-row {
+  content-visibility: auto;
+  contain-intrinsic-block-size: auto calc(2 * var(--cell-padding-y) + var(--label-height-roomy));
+  overflow-clip-margin: var(--rail-inset);
+}
+
 /* Chrome lives in group-band.css; this scopes the section rhythm (the row) and the sticky pin (the head). */
 .table-shell .group-band-row,
 .table-shell .group-band + .band-tail {

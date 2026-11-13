@@ -17,8 +17,9 @@ function connectionsOf(s: Session, mode: Mode): ConnectionsApi | undefined {
   const inWindow =
     mode === 'window' ||
     (mode === 'preview' && settingOf(personalizationOf(s), 'connectionsOpenInPreview'))
-  // `openTarget` and `openWindowTab` are stable store actions.
-  const read = [tree, inWindow, headings]
+  // `openTarget` and `openWindowTab` are stable store actions, and the index holds while no page changes.
+  const index = tree && pageIndexOf(tree)
+  const read = [index, inWindow, headings]
   const hit = held.get(mode)
   if (hit?.read.every((v, i) => v === read[i])) return hit.value
   const value = build()
@@ -26,8 +27,7 @@ function connectionsOf(s: Session, mode: Mode): ConnectionsApi | undefined {
   return value
 
   function build(): ConnectionsApi | undefined {
-    if (!tree) return undefined
-    const index = pageIndexOf(tree)
+    if (!index) return undefined
     const headingsOf = (path: string): PageHeadings | undefined => headings[path]
     if (mode === 'inert') return { index, open: () => {}, headingsOf }
     return {

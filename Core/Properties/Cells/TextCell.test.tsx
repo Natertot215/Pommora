@@ -33,7 +33,7 @@ describe('a Text value draws against the page that holds it', () => {
   const open = vi.fn()
   const conn: ConnectionsApi = {
     index: buildPageIndex([holder]),
-    headingsOf: () => undefined,
+    headingsOf: (path) => useSession.getState().headings[path],
     open,
   }
   const headings = (text: string) => ({
@@ -179,16 +179,6 @@ describe('a Text value draws against the page that holds it', () => {
     await rightClick(await mountWith({}))
     expect(menu).toHaveBeenCalledOnce()
     expect(parent).toHaveBeenCalledOnce()
-  })
-
-  it('redraws when its holder’s headings change in the session', async () => {
-    const el = await mount()
-    expect(el.querySelector('.md-section-run')).not.toBeNull()
-    await act(async () => {
-      useSession.setState({ headings: headings('Fresh') })
-    })
-    expect(el.querySelector('.md-section-run')).toBeNull()
-    expect(el.querySelector('.md-connection-heading-missing')?.textContent).toBe('Nope')
   })
 })
 

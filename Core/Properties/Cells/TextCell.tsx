@@ -10,7 +10,6 @@ import { parseListMarker } from '../../MarkdownPM/Engine/detect'
 import { listLineClass } from '../../MarkdownPM/Engine/intents'
 import { type CellPage, linkGestures, renderRestingLine } from '../../MarkdownPM/Tables/cellStatic'
 import { mayNameOwnHeading } from '../../Connections/connections'
-import { useSession } from '../../Session/store'
 import { openWebLink } from '../../Web/openWebLink'
 import type { ValueContext } from '../valueContext'
 
@@ -34,7 +33,7 @@ export function TextCell({
   const { connections, headingLinkStyle } = ctx
   const automatic = ctx.inPageHeadingResolution === 'automatic'
   const ownPath = holder && mayNameOwnHeading(first) ? holder.path : null
-  const headings = useSession((s) => (ownPath ? s.headings[ownPath] : undefined))
+  const headings = ownPath ? connections()?.headingsOf(ownPath) : undefined
   const around: CellPage | undefined = headings && {
     ordinalOf: () => null,
     keys: headings.keys,

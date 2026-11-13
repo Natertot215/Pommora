@@ -170,7 +170,7 @@ describe('the alias memory', () => {
     return { mutate, hosts, root }
   }
 
-  it('an edit sends its instruction and resolves taken, and the host rebuilds on the metadata push and hears no other', async () => {
+  it('an edit sends its instruction and resolves taken, and the host hears the metadata push alone while it holds', async () => {
     const { mutate, hosts, root } = await mountHosts(['the notes', 'my draft'])
     const host = hosts[hosts.length - 1]
     expect(host.aliases.list('p1')).toEqual(['the notes', 'my draft'])
@@ -190,7 +190,7 @@ describe('the alias memory', () => {
     expect(heard).not.toHaveBeenCalled()
     await act(async () => useSession.setState({ tree: withAliases(['my draft']) }))
     expect(heard).toHaveBeenCalledTimes(1)
-    expect(hosts[hosts.length - 1]).not.toBe(host)
+    expect(hosts[hosts.length - 1]).toBe(host)
     off()
     act(() => root.unmount())
   })
