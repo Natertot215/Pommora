@@ -2,13 +2,13 @@
 
 **DATE:** 11-09-2026
 **STATUS:** Executed 11-10-2026 to 11-12-2026; the fourth neutral read answered yes
-**SOURCE:** *List View — Decisions & Intention* (ratified 11-09-2026; it holds wherever another document disagrees), *List View — Brief* (Nathan's words, verbatim), *List View — Investigation* and *List View — Scout Findings* (the code at `4b18149ac`, re-read first-hand for every task below), *List View — Fresh-Eyes Read*, *List View — Live Checks* (the checks of 11-09-2026 the plan builds on), and *List View — Plan Reviews* (the three review waves).
+**SOURCE:** *List View — Decisions & Intention* (ratified 11-09-2026; it holds wherever another document disagrees).
 
 **BASELINE** (filled after ratification; the end logged in the final report)
 
 | Head | Tests | Start | End |
 |------|-------|-------|-----|
-| `b43de2c4a` | 9,269 passed, 2 skipped (546 files) | 11-10-2026 | 11-12-2026 · code at `3420a68c6` · 9,358 passed, 2 skipped (548 files) |
+| `b43de2c4a` | 9,269 passed, 2 skipped (546 files) | 11-10-2026 | 11-12-2026 · code at `e6a450f3a` · 9,372 passed, 2 skipped (548 files) |
 
 The drives at that head: Views `--landed 10`, groups 2 to 10, 215 of 215 held (12, 38, 11, 18, 21, 25, 22, 28, 40); Properties, groups 1 to 19, 209 of 209; Text Property, 127 of 127; Option Picker, 58 of 58; Archive, 159 of 159. Typecheck and lint ran clean. At the end: Views `--landed 11`, groups 2 to 11, 485 of 485 (group 11 holds 270) at `3420a68c6`; Properties 209 of 209, Text Property 127 of 127, Option Picker 58 of 58, and Archive 159 of 159 at `899843146`, the code the fourth neutral read, which the Views run then followed by one List sheet change.
 
@@ -50,6 +50,7 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
 | 7 | — (the drive, under `.claude`) | — | +1,239 / −537 |
 | 8 | — (documents) | — | — |
 | Final Verification, the neutral rounds, and the owner's last rulings | — | +209 / −150 | +1,347 / −586 (net +761) |
+| The follow-up fixes and the final review | — | +87 / −64 | +1,405 / −621 (net +784) |
 
 #### Concepts
 
@@ -111,7 +112,7 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
 
 #### Constraints
 
-- **Nathan's Directives:** the block below is Nathan's words, verbatim, from *List View — Brief*. Every handoff this work produces, for compaction, execution, or review, repeats the whole block; a summary isn't a substitute. Its Approach and Principles govern every phase and task, and every agent brief on this plan, for executors and reviewers alike, carries both sections in full.
+- **Nathan's Directives:** the block below is Nathan's words, verbatim. Every handoff this work produces, for compaction, execution, or review, repeats the whole block; a summary isn't a substitute. Its Approach and Principles govern every phase and task, and every agent brief on this plan, for executors and reviewers alike, carries both sections in full.
 - **Gates:** `npm run typecheck`, `npm run test`, and `npm run lint`, from the repo root; each prints its own failures, and lint runs clean. Biome formats every TS, CSS, and JSON write, so an edit failing on whitespace means it reformatted: re-read and retry. "Run the gates" in a task means these three. A phase that changes a `*.css.ts` file or a `createGlobalTheme` contract also runs `npm run build` and reads `✓ built in`.
 - **Frozen:**
   - Every entry of *List View — Decisions & Intention* and its *§Rejections*; a ratified decision changes only on Nathan's word.
@@ -2995,4 +2996,4 @@ List's record registers its renderer, its property pane, and its three switches 
 - **The drag engine changed past E-10's room.** *§Constraints* freezes it save for the room a landing zone grows by. What landed in `UIX/Interactions/engine.tsx` and `placement.ts`, each from the owner's "fix the pane overlap", his "Fix the neutral review issues", or found by its tests: a line zone's spill is the room its displacement opens; a spill is held until its rows glide back; the engine re-measures through an observer on the spilled zone and the frames holding it; `atHome` treats a missing home as home only when nothing is carried, since a carry whose source zone was clipped out of view was routed back to its own zone; an empty zone off the x axis draws its slot and takes its spill at the item's height; and a zone declares `closesGap` where the engine once read the presence of `release`. **Ruling:** kept; each carries a unit test, and the Views Drive's pane cases exercise them live.
 - **Behavior changes outside List beyond the four *§Constraints* names.** (5) In Cards, a band pushed down by a carried card stays down about a third of a second after the card leaves, then moves up. (6) A carried drag whose home zone is scrolled out of view lands where its slot shows. (7) A hover-scrolled lane stays scrolled while the pointer is on anything inside it, or while it holds the focused field or an open picker's anchor, and slides back once none holds and the pointer has left; this reaches a Table cell's chip lane, the filter pane, and the field runs. (8) Every hide eye, in each kind's Visibility pane and on the Group pane's Set and option rows, appears only on its row's hover or keyboard focus, a hidden item's always shows, and Title carries none (E-8, E-11). (9) A keyboard-focused row in a displace pane takes the same wash a line row does. **Ruling:** kept; each is tested, and the Views, Properties, Text Property, Option Picker, and Archive Drives hold their tallies with them.
 - **The neutral gate took four reads.** Given the baseline, HEAD, and the intention, the first `fable-high` reviewer answered no with eleven corrections, most of them the owner's decisions it couldn't read. On the owner's word they were fixed, and the later reviewers were also given his product decisions as givens: the second answered no with one required correction (a focused row's wash in the two-column pane), the third no with one (a kept lane never released), and the fourth yes, its list of required corrections empty. Each round's fixes were read for simplification and for faults before the next reviewer saw them. **Left as optional and not taken:** `data-ends-on-row` stamped on a Table's bands too, the two `drawnOf` helpers, `seat.commit` beside `seat.host`, and moving `visibilityPane` to its own file, which would be a new placement for the owner to approve.
-- **The Number.** The code delta is +761 (+1,347 / −586) against the estimate's +615. The growth bought the row's + as one element, the review fixes, and the owner's additions after the Stop: the group spacing, the pane's sizing, emphasized titles, the engine corrections, the hide eyes, the lane's release, and the row's plus (its gap, and its slot on every row).
+- **The Number.** The code delta is +784 (+1,405 / −621) against the estimate's +615. The growth bought the row's + as one element, the review fixes, the follow-up fixes, and the owner's additions after the Stop: the group spacing, the pane's sizing, emphasized titles, the engine corrections, the hide eyes, the lane's release, and the row's plus (its gap, and its slot on every row).

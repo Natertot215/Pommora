@@ -191,10 +191,6 @@ These are readings of the code from *List View — Investigation*, which the pla
 
 #### Sources
 
-- *List View — Brief* — Nathan's notes, approach, principles, and planning rules, verbatim.
-- *List View — Investigation* — the verified state of the code at `4b18149ac`.
-- *List View — Scout Findings* — the five scouts' cleaned reports.
-- *List View — Fresh-Eyes Read* — a zero-context agent's thirty-six questions on this document.
 - `.claude/Features/ViewTypesPM.md` — how views work today.
 - `Core/Views/Host/viewKinds.ts` · `Core/Views/Table/tableKind.ts` · `Core/Views/Cards/cardsKind.ts` — the kind record and its two entries.
 - `Core/Views/Table/TableView.tsx` · `UIX/Table/` — Table's row.
