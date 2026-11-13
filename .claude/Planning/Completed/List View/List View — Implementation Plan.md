@@ -10,7 +10,7 @@
 |------|-------|-------|-----|
 | `b43de2c4a` | 9,269 passed, 2 skipped (546 files) | 11-10-2026 | 11-12-2026 · code at `e6a450f3a` · 9,372 passed, 2 skipped (548 files) |
 
-The drives at that head: Views `--landed 10`, groups 2 to 10, 215 of 215 held (12, 38, 11, 18, 21, 25, 22, 28, 40); Properties, groups 1 to 19, 209 of 209; Text Property, 127 of 127; Option Picker, 58 of 58; Archive, 159 of 159. Typecheck and lint ran clean. At the end: Views `--landed 11`, groups 2 to 11, 485 of 485 (group 11 holds 270) at `3420a68c6`; Properties 209 of 209, Text Property 127 of 127, Option Picker 58 of 58, and Archive 159 of 159 at `899843146`, the code the fourth neutral read, which the Views run then followed by one List sheet change.
+The drives at that head: Views `--landed 10`, groups 2 to 10, 215 of 215 held (12, 38, 11, 18, 21, 25, 22, 28, 40); Properties, groups 1 to 19, 209 of 209; Text Property, 127 of 127; Option Picker, 58 of 58; Archive, 159 of 159. Typecheck and lint ran clean. At the end: Views `--landed 11`, groups 2 to 11, 485 of 485 (group 11 holds 270) at `3420a68c6`; Properties 209 of 209, Text Property 127 of 127, Option Picker 58 of 58, and Archive 159 of 159 at `899843146`, the code the fourth neutral read, which the Views run then followed by one List sheet change. After the follow-up fixes, at `e6a450f3a`: Properties 209 of 209, List Types 621 of 621, Metadata 261 of 261, Views groups 5 and 11 (18 and 270), Text Property groups 1 and 2 (83 of 83), and the editor parity run against `c17409df3` with no line or pixel differing.
 
 ### Context
 
