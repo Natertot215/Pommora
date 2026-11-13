@@ -1,25 +1,12 @@
 import { nextOrder } from '@pommora/uix/Utilities/moveItem'
-import type { ResolvedColumn } from '../../Properties/properties'
+import { pickKindOf, type ResolvedColumn } from '../../Properties/properties'
 import { placeInShown } from '../Pipeline/columns'
 import type { SavedView, Side, ViewPatch } from '../views'
 
-const DEFAULT_SIDE: Record<Exclude<ResolvedColumn, { kind: 'title' }>['type'], Side> = {
-  context: 'left',
-  status: 'left',
-  select: 'left',
-  multiSelect: 'left',
-  checkbox: 'right',
-  link: 'right',
-  text: 'right',
-  file: 'right',
-  number: 'right',
-  dateTime: 'right',
-  createdTime: 'right',
-  lastEditedTime: 'right',
-}
-
 export const sideFor = (column: ResolvedColumn, view: SavedView): Side =>
-  column.kind === 'title' ? 'left' : (view.column_sides?.[column.id] ?? DEFAULT_SIDE[column.type])
+  column.kind === 'title'
+    ? 'left'
+    : (view.column_sides?.[column.id] ?? (pickKindOf(column.type) ? 'left' : 'right'))
 
 /** A side's column of the property pane, top to bottom: Left as its group reads, Right from the row's edge inward. */
 export function sideColumn(

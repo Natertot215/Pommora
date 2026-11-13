@@ -1,7 +1,7 @@
 /* A List row over the table vocabulary: one lead cell holding a line of two groups. */
 
 .list-view {
-  --list-view-value-max: 200px; /* KNOB — where a property's values end in an ellipsis */
+  --list-view-value-max: 200px; /* KNOB — where a property's value stops */
   --list-view-title-min: 120px; /* KNOB — how short a title's text gets before the row wraps or its left group scrolls */
   --list-view-wrap-gap: 14px; /* KNOB — the room between the two groups */
   --list-view-bar-width: 100px; /* KNOB — a bar-look Number's width */
@@ -10,7 +10,10 @@
 .list-view .table-grid {
   --cols: minmax(0, 1fr);
   --cell-padding-y: 2px; /* KNOB — a row's top and bottom room, under Table's; stated below `.table`, so the band rhythm keeps Table's */
-  --list-band-end: calc(var(--band-clearance) - var(--cell-padding-y)); /* Table's extra row room */
+  --list-view-band-end: calc(
+    var(--band-clearance) -
+    var(--cell-padding-y)
+  ); /* Table's extra row room */
 }
 
 .list-view-line {
@@ -35,7 +38,6 @@
 }
 .list-view-group.list-view-right {
   flex: 0 1 auto;
-  min-width: 0;
   max-width: 100%;
   margin-left: auto;
 }
@@ -75,7 +77,7 @@
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 1;
   overflow: hidden;
-  overflow-wrap: anywhere;
+  line-break: anywhere;
   white-space: normal;
 }
 
@@ -96,7 +98,7 @@
   :last-child,
   :has(+ .group-band)
 ) {
-  margin-bottom: var(--list-band-end);
+  margin-bottom: var(--list-view-band-end);
 }
 
 /* A nested band's rail: from under its head to its last member, at its chevron, stopping above the band end's room where its run ends on a row. */
@@ -114,6 +116,6 @@
     background: var(--list-outline-color);
   }
   [data-ends-on-row] > &::before {
-    bottom: calc(var(--list-outline-gap) + var(--list-band-end));
+    bottom: calc(var(--list-outline-gap) + var(--list-view-band-end));
   }
 }
