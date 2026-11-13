@@ -349,7 +349,7 @@ Derived from *List View — Decisions & Intention*, each case naming the decisio
 
 ##### The Configurations
 
-Sides × grouping × pipeline × surface × Wrap Rows × Outlines × Title Icons × Scale is 2,688 views. The 28 below cover every pair of two dimensions' values, which 7 sides × 4 groupings make the least that can; a tile takes no search, since the search lives in the detail header a tile doesn't draw, and draws at its own size whatever the view's Scale. Each runs the same reads over every row it draws, so the crossings are data the cases iterate.
+Sides × grouping × pipeline × surface × Wrap Rows × Outlines × Title Icons × Scale is 5,376 views. The 28 below cover every pair of two dimensions' values, which 7 sides × 4 groupings make the least that can; a tile takes no search, since the search lives in the detail header a tile doesn't draw, and draws at its own size whatever the view's Scale. Each runs the same reads over every row it draws, so the crossings are data the cases iterate.
 
 | # | Sides | Grouping | Pipeline | Surface | Wrap Rows | Outlines | Title Icons | Scale |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
