@@ -134,10 +134,21 @@ describe('ValueEditor in its one-line mode', () => {
     root = createRoot(container)
     onCommit.mockClear()
     onClose.mockClear()
-    mount('[[Alpha]]')
-    press(view, 'Enter')
+    press(mount('[[Alpha]]'), 'Enter')
     expect(onCommit).not.toHaveBeenCalled()
     expect(onClose).toHaveBeenCalledOnce()
+  })
+
+  it('Return and Escape each blur the field once as they close it, since a removed editor fires no blur', () => {
+    const blurs = vi.fn()
+    document.addEventListener('blur', blurs, true)
+    press(mount('a'), 'Enter')
+    act(() => root.unmount())
+    root = createRoot(container)
+    press(mount('a'), 'Escape')
+    document.removeEventListener('blur', blurs, true)
+    expect(blurs).toHaveBeenCalledTimes(2)
+    expect(onClose).toHaveBeenCalledTimes(2)
   })
 
   it('Return in a shown slot rests past the link first, and the next Return commits', () => {

@@ -1,4 +1,4 @@
-import { memo } from 'react'
+import { memo, useRef } from 'react'
 import { Segments } from '@pommora/uix/Elements/Segments'
 import { LineZone } from '@pommora/uix/Interactions/drag'
 import { overScrollLabel } from '@pommora/uix/Interactions/OverScroll'
@@ -84,7 +84,7 @@ export function ListView({ host }: { host: ViewHostApi }): React.JSX.Element {
                 api={interactions.item}
                 naming={host.naming?.id === row.id ? host.naming : null}
                 editing={open?.mode === 'editor' && open.rowId === row.id ? open.columnId : null}
-                adding={open?.mode === 'add' && open.rowId === row.id}
+                seatAnchor={open?.rowId === row.id ? seat.anchor.current : null}
                 hideIcon={hideIcon}
                 dragDisabled={dragDisabled}
               />
@@ -110,7 +110,7 @@ const ListPageRow = memo(function ListPageRow({
   api,
   naming,
   editing,
-  adding,
+  seatAnchor,
   hideIcon,
   dragDisabled,
 }: {
@@ -124,10 +124,11 @@ const ListPageRow = memo(function ListPageRow({
   api: ItemApi
   naming: ViewHostApi['naming']
   editing: string | null
-  adding: boolean
+  seatAnchor: HTMLElement | null
   hideIcon: boolean
   dragDisabled: boolean
 }): React.JSX.Element {
+  const addRef = useRef<HTMLButtonElement>(null)
   const pageMenu = rowMenu(api, row)
   const drawn = drawnOf(row, columns)
   const item = (c: ResolvedColumn): React.JSX.Element =>
@@ -151,15 +152,18 @@ const ListPageRow = memo(function ListPageRow({
   const parts: Record<Side, React.JSX.Element[]> = { left: [], right: [] }
   for (const c of columns)
     if (c.kind === 'title' || drawn.includes(c)) parts[sideFor(c, view)].push(item(c))
-  const add = addable(drawn, ctx.schema, ctx.contexts) && (
+  // Held, and kept mounted, while what it opened is open, though the value that landed left nothing to add.
+  const held = seatAnchor !== null && seatAnchor === addRef.current
+  const add = (held || addable(drawn, ctx.schema, ctx.contexts)) && (
     <AccessoryButton
+      ref={addRef}
       icon="plus"
       size="body"
       ariaLabel="Add Property"
       className="list-view-add"
       create
       reveal
-      data-reveal-held={adding || undefined}
+      data-reveal-held={held || undefined}
       tabIndex={-1}
       onClick={(e) => api.openAdd(row, e.currentTarget)}
     />

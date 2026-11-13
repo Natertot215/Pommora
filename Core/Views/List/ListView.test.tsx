@@ -321,6 +321,43 @@ describe('a List row', () => {
     expect(document.querySelector('[data-picker-portal] [data-k]')).not.toBeNull()
   })
 
+  it('holds the plus under a typed value’s field it opened', async () => {
+    await renderView(root, source(listView({ property_order: ['_title', 'prop_stage'] })))
+    await act(async () => plus(rowOf('p2'))!.click())
+    await settle(30)
+    await act(async () => {
+      ;[...document.querySelectorAll<HTMLElement>('[data-picker-portal] [role="button"]')]
+        .find((e) => e.textContent?.includes('Count'))!
+        .click()
+    })
+    await settle(30)
+    expect(document.querySelector('[data-picker-portal] input')).not.toBeNull()
+    expect(plus(rowOf('p2'))?.hasAttribute('data-reveal-held')).toBe(true)
+  })
+
+  it('keeps the plus and its pane when the row’s last addable value lands from it', async () => {
+    values = { prop_stage: 'Early', prop_done: false, prop_n: 3 }
+    useSession.setState({ tree: { ...makeTree({ registry: DEFS }), contexts: [] } })
+    await renderView(root, source())
+    const add = plus(rowOf('p1'))!
+    await act(async () => add.click())
+    await settle(30)
+    await act(async () => {
+      ;[...document.querySelectorAll<HTMLElement>('[data-picker-portal] [role="button"]')]
+        .find((e) => e.textContent?.includes('Due'))!
+        .click()
+    })
+    await settle(30)
+    await act(async () => {
+      document.querySelectorAll<HTMLElement>('[data-picker-portal] [data-k]')[10].click()
+    })
+    await settle(200)
+    expect(items(right('p1'))).toEqual(['date', 'check', '3'])
+    expect(plus(rowOf('p1'))).toBe(add)
+    expect(add.hasAttribute('data-reveal-held')).toBe(true)
+    expect(document.querySelector('[data-picker-portal] [data-k]')).not.toBeNull()
+  })
+
   it('keeps a hidden Date hidden when its calendar picks and un-picks a day inside one debounce', async () => {
     await renderView(root, source(listView({ property_order: ['_title', 'prop_stage'] })))
     await act(async () => plus(rowOf('p2'))!.click())

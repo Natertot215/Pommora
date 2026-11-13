@@ -74,7 +74,13 @@ export function ValueEditor({
   }
   const cancel = (): boolean => {
     ended.current = true
+    viewRef.current?.contentDOM.blur()
     onCloseRef.current()
+    return true
+  }
+  // A focused editor removed from the DOM fires no blur, so a keyed ending blurs it, and the blur leaves.
+  const blurOut = (view: EditorView): boolean => {
+    view.contentDOM.blur()
     return true
   }
   const leave = (): boolean => {
@@ -117,7 +123,7 @@ export function ValueEditor({
                 }),
                 EditorView.domEventHandlers({
                   blur: (e) => {
-                    if (viewRef.current && !inCaretPane(e.relatedTarget)) leave()
+                    if (viewRef.current && !ended.current && !inCaretPane(e.relatedTarget)) leave()
                     return false
                   },
                 }),
@@ -127,7 +133,7 @@ export function ValueEditor({
             keymap.of(
               oneLine
                 ? [
-                    { key: 'Enter', run: leave, shift: () => true },
+                    { key: 'Enter', run: blurOut, shift: () => true },
                     { key: 'Mod-Enter', run: () => true },
                     { key: 'Escape', run: cancel },
                   ]
