@@ -294,6 +294,32 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
 
 > Go for the simpler rule. SHow me a before and after screenshot so I actually understand. Otherwise, proceed with the full end-to-end completion of ListView and keep me updated with notificaitons. Remember the approach and principels that bind all of this when making any in-flight decisions.
 
+**After the Close, 11-12-2026 (on the Issues the work raised; four messages):**
+
+> Fix the small style duplicates first if they're unambiguous
+>
+> Yes, remove it
+>
+> Fix 071 and 072
+>
+> Use /closeout-review against each change with our approach and principles breif
+
+**After the Close, 11-12-2026 (on pace, and on the drives run after the closeout's fixes; two messages):**
+
+> weve been going for hours. Hurry the fuck up
+>
+> why are we testing the full drive manually that has nothing to do with our fixes
+
+**After the Close, 11-12-2026 (on a final review of the whole feature; four messages):**
+
+> With this done, I want you to send two fable-high agents into the code to assess the list-implementation against each individual behavior it creates or borrows, and then stress-test that against anything else in the codebase that exits. If it creates it, it does so because it has to and it's clearly written. If it uses something, it uses the correct thing. Both need to be assessed honestly. This is a post-plan cleanup and potential final closout review over the entire feature to do anything we would want before this session is cleared and ListVIew is completed.
+>
+> 4, not two.
+>
+> apply everyhing that I would want. Don't leave anthing remaining that would just need to be uncovered ater
+>
+> again, ensure we look removal-first\
+
 #### Process Overview
 
 - [x] `[Before Phase 1: record the BASELINE head, the three gates, and, at that head, the Views Drive's tally for groups 2 to 10 and the Properties, Text Property, Option Picker, and Archive Drives' tallies]`
