@@ -166,7 +166,7 @@ export function GroupFrame({
         ? plan.group.config.property_id
         : FILEDATA_TARGETS.location.value
   const groupByOptions: PickerOption<string>[] = [
-    ...(nests ? [] : [NONE_OPTION]),
+    ...(nests && plan.kind !== 'none' ? [] : [NONE_OPTION]),
     FILEDATA_TARGETS.location,
     ...propertyOptions,
   ]

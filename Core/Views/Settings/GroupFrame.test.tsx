@@ -341,6 +341,17 @@ describe('GroupFrame rows', () => {
     expect(texts()).not.toContain('Order')
   })
 
+  it('a nesting view carrying Group By None, as one switched from Cards, shows None and lists it', async () => {
+    await mount(view({ group: { kind: 'flat' } }))
+    expect(document.querySelector('button[aria-label="Group By"]')?.textContent).toContain('None')
+    await openPicker('Group By')
+    expect(
+      [...document.querySelectorAll('[role="option"], [role="button"], button')].some(
+        (e) => e.textContent === 'None',
+      ),
+    ).toBe(true)
+  })
+
   it('switching Group By away and back preserves sub_group (view-level survival)', async () => {
     const v = view({
       sub_group: { property_id: 'prop_status', order_mode: 'manual', order: ['opt_Queued'] },
