@@ -320,6 +320,10 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
 >
 > again, ensure we look removal-first\
 
+**After the Close, 11-12-2026 (shown the documents' sentences before and after the final review's edits):**
+
+> that's not error. Dont just add more words to describe when silence isnt contradictory. "moves to either side" is a one-word change, not a full sentence -- use that principles
+
 #### Process Overview
 
 - [x] `[Before Phase 1: record the BASELINE head, the three gates, and, at that head, the Views Drive's tally for groups 2 to 10 and the Properties, Text Property, Option Picker, and Archive Drives' tallies]`
