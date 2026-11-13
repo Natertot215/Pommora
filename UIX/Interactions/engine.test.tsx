@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, type Mock, onTestFinished, vi } from 'vitest'
 import { act, type ReactNode, useState } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import {
@@ -318,6 +318,25 @@ const press = (
     return e
   })
 
+class Sizes {
+  static live = new Set<Sizes>()
+  readonly targets = new Set<Element>()
+  constructor(readonly report: ResizeObserverCallback) {
+    Sizes.live.add(this)
+  }
+  observe(el: Element): void {
+    this.targets.add(el)
+  }
+  disconnect(): void {
+    this.targets.clear()
+    Sizes.live.delete(this)
+  }
+}
+const resize = (el: Element): Promise<void> =>
+  act(async () => {
+    for (const o of Sizes.live) if (o.targets.has(el)) o.report([], o as unknown as ResizeObserver)
+  })
+
 // ── Displacement ────────────────────────────────────────────────────────────
 
 describe('the drag engine across zones', () => {
@@ -447,25 +466,6 @@ describe('the drag engine across zones', () => {
   })
 
   describe('while a spill resizes what holds it', () => {
-    class Sizes {
-      static live = new Set<Sizes>()
-      readonly targets = new Set<Element>()
-      constructor(readonly report: ResizeObserverCallback) {
-        Sizes.live.add(this)
-      }
-      observe(el: Element): void {
-        this.targets.add(el)
-      }
-      disconnect(): void {
-        this.targets.clear()
-        Sizes.live.delete(this)
-      }
-    }
-    const resize = (el: Element): Promise<void> =>
-      act(async () => {
-        for (const o of Sizes.live)
-          if (o.targets.has(el)) o.report([], o as unknown as ResizeObserver)
-      })
     const zoneEl = (zid: string): Element => host.querySelector(`.zone-${zid}`) as Element
     beforeEach(() => vi.stubGlobal('ResizeObserver', Sizes))
     afterEach(() => {
@@ -1161,6 +1161,24 @@ describe('the line zone', () => {
     expect(item('r1').hasAttribute('data-drag-source')).toBe(false)
     expect(document.querySelector('[data-chip]')).toBeNull()
     expect(host.querySelector('.drop-line')).toBeNull()
+  })
+
+  it('re-reads its rows when its zone changes size mid-drag, as a row above first draws at its real height', async () => {
+    vi.stubGlobal('ResizeObserver', Sizes)
+    onTestFinished(() => {
+      vi.unstubAllGlobals()
+      Sizes.live.clear()
+    })
+    await dragHold('r1', 100, 70)
+    expect((host.querySelector('.drop-line') as HTMLElement).style.top).toBe('60px')
+    stubRect(item('r2'), { top: 30, bottom: 50 })
+    stubRect(item('r3'), { top: 50, bottom: 80 })
+    stubRect(lineHost(), { top: 0, bottom: 80 })
+    await resize(lineHost())
+    await move(100, 70)
+    expect((host.querySelector('.drop-line') as HTMLElement).style.top).toBe('80px')
+    await release(100, 70)
+    expect(commit).toHaveBeenCalledExactlyOnceWith('r1', 'end')
   })
 
   it('builds the chip from the glyph and the label when no custom chip is given', async () => {

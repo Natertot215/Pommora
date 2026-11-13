@@ -422,7 +422,7 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
 
   // ── Painting ──
 
-  // The observer re-measures as each spill begins and on every resize after; made at a drag's first spill, it is younger than the pane's own re-placing one, so it reports after it and measures the pane where it lands.
+  // The observer re-measures as each spill begins and on every resize after, and a line's rows whenever its zone changes size, as a row first drawn at its real height moves every row below it; made at a drag's first spill or a line's lift, it is younger than the pane's own re-placing one, so it reports after it and measures the pane where it lands.
   const spill = (box: HTMLElement, height: number, frames: readonly Element[] = []): void => {
     window.clearTimeout(spilled.get(box))
     if (height > 0) {
@@ -721,6 +721,8 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
       const own = s.line.geometry.rows.find((row) => row.id === id)
       if (own) s.cursor = { x: (own.left + own.right) / 2, y: own.mid }
       el.setAttribute(SOURCE, '')
+      resized ??= new ResizeObserver(remeasure)
+      resized.observe(entry.box!, { box: 'border-box' })
     }
     session = s
     for (const other of zones.keys()) floor(s, other)
