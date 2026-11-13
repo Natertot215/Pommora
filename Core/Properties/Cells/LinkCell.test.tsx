@@ -23,6 +23,7 @@ afterEach(() => {
   if (r) act(() => r.unmount())
   host?.remove()
   vi.restoreAllMocks()
+  live = conn
 })
 
 const alpha = { id: 'a', title: 'Alpha', path: 'Notes/Alpha.md' }
@@ -38,6 +39,8 @@ const conn: ConnectionsApi = {
   headingsOf: () => undefined,
   open,
 }
+
+let live = conn
 
 const def = { id: 'prop_l', label: 'Site', key: 'Site', type: 'link', link_color: 'blue' } as const
 const bubbled = vi.fn()
@@ -61,7 +64,7 @@ const mount = async (
           raw,
           def,
           ctx: {
-            connections: () => conn,
+            connections: () => live,
             headingLinkStyle: 'page-heading',
             inPageHeadingResolution: 'automatic',
           } as unknown as ValueContext,
@@ -126,6 +129,17 @@ describe('a Link value naming a page draws and follows as every link does', () =
 })
 
 describe('a Link value holding an address or plain text keeps the property’s own look', () => {
+  it('an address-shaped markdown link redraws as the page it names once that page exists', async () => {
+    const el = await mount('[x](notes.io)')
+    expect(el.querySelector('.md-connection-resolved')).toBeNull()
+    live = {
+      ...conn,
+      index: buildPageIndex([alpha, { id: 'n', title: 'notes.io', path: 'notes.io.md' }]),
+    }
+    await act(async () => useSession.setState({ tree: makeTree() }))
+    expect(el.querySelector('.md-connection-resolved')?.textContent).toBe('x')
+  })
+
   it('an address draws in the property color, arms the glance on pointer over, and a click closes a glance it is not inside', async () => {
     const arm = vi.spyOn(glanceHost, 'arm').mockImplementation(() => {})
     const close = vi.spyOn(glanceHost, 'close').mockImplementation(() => {})

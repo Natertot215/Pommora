@@ -162,6 +162,15 @@ describe('the connections projections', () => {
     expect(nodesByIdOf(t).get('p2')?.path).toBe('Notes/Ideas/Beta.md')
   })
 
+  it('the page list and its index hold across a new collections array over the same pages', () => {
+    const t = makeTree()
+    const pages = pagesOf(t)
+    const index = pageIndexOf(t)
+    const next: NexusTree = { ...t, collections: [...t.collections] }
+    expect(pagesOf(next)).toBe(pages)
+    expect(pageIndexOf(next)).toBe(index)
+  })
+
   it('pageIndexOf resolves and autocompletes over the projected pages', () => {
     const idx = pageIndexOf(makeTree())
     expect(idx.resolve('Alpha')).toMatchObject({ status: 'resolved' })

@@ -41,7 +41,7 @@ export function LinkCell({
   ctx: ValueContext
 }): React.JSX.Element | null {
   const written = readLinkText(raw)
-  useSession(() => written && written.kind !== 'url' && ctx.connections()?.index)
+  useSession(() => namedPage(written) && ctx.connections()?.index)
   const api = ctx.connections()
   const target = resolveLink(written, api?.index, holder)
   const url = target.kind === 'url' ? target.url : raw.trim()
