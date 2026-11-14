@@ -97,7 +97,7 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
 
 - **G-1 [CONFIRMED]:** Outlines should be a List-only per-view switch named **Outlines**, on for a new List view, drawn from the outline tokens the menus' and the editor's rails already read. Leaving Table without them is a design choice; nothing in the code rules them out there.
 - **G-2 [CONFIRMED]:** Outlines should draw at every band level, the top level's included.
-- **G-3 [CONFIRMED]:** A Group pane switch named **Colored Outlines** should draw a Select or Status band's outline in the solid its option's chip is mixed from, and show only where a List outlines such a grouping.
+- **G-3 [CONFIRMED]:** A Group pane switch named **Colored Outlines** should draw a Select or Status band's outline in its option's chip border, and show only where a List outlines such a grouping.
 
 #### H — Wrapping
 

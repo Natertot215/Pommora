@@ -9,7 +9,7 @@ import { DisclosureChevron } from '@pommora/uix/Elements/DisclosureChevron'
 import type { Disclosure } from '@pommora/uix/Menus/DisclosureRow'
 import { Icon } from '@pommora/uix/Symbols'
 import { text } from '@pommora/uix/Theme'
-import { chipBase, colorNameFor } from '@pommora/uix/Theme/ramp'
+import { chipPaint, colorNameFor } from '@pommora/uix/Theme/ramp'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { EntityIcon } from '../../Assets/EntityIcon'
 import { showEntityMenu } from '../../Interface/Menus/entityMenuActions'
@@ -215,10 +215,10 @@ function HeadedBand({
   )
 }
 
-/** An option band's color, its chip's solid, which a List's rail reads; none for a Set or a date. */
+/** An option band's color, its chip's border, which a List's rail reads; none for a Set or a date. */
 const bandColor = (node: SetBand | BucketBand): string | undefined =>
   node.kind === 'bucket' && node.face.kind === 'option'
-    ? chipBase(colorNameFor(node.face.option.color))
+    ? chipPaint(colorNameFor(node.face.option.color)).border
     : undefined
 
 const bandIcon = (node: SetBand | BucketBand): ReactNode =>

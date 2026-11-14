@@ -4100,7 +4100,7 @@ async function kinds(cdp) {
   await closeAll(cdp)
   decided('G-1 · H-1', 'a view newly switched to a List draws its rails, Outlines on, and doesn\'t wrap its crowded row, Wrap Rows off', fresh.rails > 0 && !fresh.crowded && fresh.switches.outlines === 'true' && fresh.switches.wrap === 'false' && !fresh.stored.hide_outlines && !fresh.stored.wrap_rows, show(fresh))
 
-  // G-3 · Colored Outlines draws an option band's rail in its chip's solid, at the top level and under a Set, and a Set's rail in the outline token.
+  // G-3 · Colored Outlines draws an option band's rail in its chip's border, at the top level and under a Set, and a Set's rail in the outline token.
   const RAIL_COLORS = `[...document.querySelectorAll('.list-view .group-band:not(.band-tail)')].filter((b) => b.getClientRects().length).map((b) => { const reveal = b.querySelector(':scope > [data-reveal]'); const paint = (v) => { const p = document.createElement('span'); p.style.background = v; reveal.appendChild(p); const c = getComputedStyle(p).backgroundColor; p.remove(); return c }; return { option: !!b.style.getPropertyValue('--band-color'), rail: getComputedStyle(reveal, '::before').backgroundColor, band: paint('var(--band-color)'), token: paint('var(--list-outline-color)') } })`
   const colored = {}
   for (const [label, grouping, on] of [['property', byStage, true], ['sub-group', subGrouped, true], ['off', byStage, false]]) {
@@ -4109,7 +4109,7 @@ async function kinds(cdp) {
     colored[label] = await cdp.evaluate(RAIL_COLORS)
   }
   const railsIn = (bands, on) => bands.some((b) => b.option) && bands.every((b) => b.rail === (on && b.option ? b.band : b.token) && (!b.option || b.band !== b.token))
-  decided('G-3', 'with Colored Outlines on, each option band\'s rail draws in its chip\'s solid at the top level and under a Set, a Set\'s rail keeps the outline token, and with it off every rail does', railsIn(colored.property, true) && railsIn(colored['sub-group'], true) && colored['sub-group'].some((b) => !b.option) && railsIn(colored.off, false), show(colored))
+  decided('G-3', 'with Colored Outlines on, each option band\'s rail draws in its chip\'s border at the top level and under a Set, a Set\'s rail keeps the outline token, and with it off every rail does', railsIn(colored.property, true) && railsIn(colored['sub-group'], true) && colored['sub-group'].some((b) => !b.option) && railsIn(colored.off, false), show(colored))
 
   // D-1 · a property's side is its own setting: a Table alignment moves nothing on a List, and a side aligns nothing on a Table.
   const ALIGNED = listView(vid('g11aligned'), 'VL Aligned', { ...flatVL, column_alignments: { [STAGE.id]: 'right', [DUE.id]: 'left' }, column_sides: { [COUNT.id]: 'left' } })

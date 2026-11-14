@@ -4,7 +4,7 @@ import { act } from 'react'
 import type { Root } from 'react-dom/client'
 import { inlineSegment } from '@pommora/uix/Elements/segment.css'
 import { text } from '@pommora/uix/Theme'
-import { chipBase } from '@pommora/uix/Theme/ramp'
+import { chipPaint } from '@pommora/uix/Theme/ramp'
 import { ok } from '../../Contract/result'
 import { ID_KEY } from '../../Nexus/identityMark'
 import type { CollectionNode } from '../../Nexus/tree'
@@ -397,7 +397,7 @@ describe('a List row', () => {
     expect(worn()).toEqual([false, true, true])
   })
 
-  it('an option band holds its chip’s solid for its rail, grey-4 for no color, and a date band holds none', async () => {
+  it('an option band holds its chip’s border for its rail, the default chip’s for no color, and a date band holds none', async () => {
     const [early, late] = stageDef.select_options!
     const colored = { ...stageDef, select_options: [{ ...early, color: 'red' }, late] }
     useSession.setState({ tree: makeTree({ registry: [colored, dueDef, doneDef, countDef] }) })
@@ -410,7 +410,10 @@ describe('a List row', () => {
         b.style.getPropertyValue('--band-color'),
       )
     }
-    expect(await colors('prop_stage')).toEqual([chipBase('red-3'), chipBase('default')])
+    expect(await colors('prop_stage')).toEqual([
+      chipPaint('red-3').border,
+      chipPaint('default').border,
+    ])
     expect(await colors('prop_due')).toEqual([''])
   })
 

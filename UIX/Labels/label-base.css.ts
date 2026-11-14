@@ -7,7 +7,7 @@ import {
   mixAt,
   tintAt,
 } from '../Theme/colors'
-import { cellColor, cellPaint, chipBase } from '../Theme/ramp'
+import { cellColor, chipPaint } from '../Theme/ramp'
 import { vars as colorVars } from '../Theme/color.css'
 import { text } from '../Theme/typography.css'
 
@@ -62,37 +62,38 @@ const FILL = tintAt(BASE, 'primary')
 /** `--melt-ground` must be STATED — unset, the blurred twin inherits the text color and stacks a crisp duplicate. */
 export const tinted = style({
   background: FILL,
-  borderColor: tintAt(BASE, 'secondary'),
   color: mixAt(BASE, 'quaternary', colorVars.color.label.primary),
   vars: { '--melt-ground': FILL, '--label-accent': BASE },
 })
 
 /** `accent` is the raw color where it differs from the base — the greyscale row darkens before it tints. */
-type Paint = { base: string; outline?: string; accent?: string }
-const variant = ({ base, outline, accent }: Paint): ComplexStyleRule => [
-  tinted,
-  {
-    vars: {
-      '--label-base': base,
-      ...(accent && accent !== base ? { '--label-accent': accent } : {}),
+function variant(name: ColorName, accent?: string): ComplexStyleRule {
+  const { base, border } = chipPaint(name)
+  return [
+    tinted,
+    {
+      borderColor: border,
+      vars: {
+        '--label-base': base,
+        ...(accent && accent !== base ? { '--label-accent': accent } : {}),
+      },
     },
-    ...(outline ? { borderColor: outline } : {}),
-  },
-]
+  ]
+}
 
 // Generated, so an added family can't leave a label behind.
 const cellVariants = Object.fromEntries(
   RAMP_FAMILIES.flatMap((family) =>
     RAMP_STEPS.map((step) => {
       const key = `${family}-${step}` as CellKey
-      return [key, variant({ ...cellPaint(key), accent: cellColor(key) })]
+      return [key, variant(key, cellColor(key))]
     }),
   ),
 ) as Record<CellKey, ComplexStyleRule>
 
 export const labelColor = styleVariants({
   ...cellVariants,
-  default: variant({ base: chipBase('default') }),
+  default: variant('default'),
 } satisfies Record<ColorName, ComplexStyleRule>)
 
 // The doubled selectors are what lets a modifier hold over whatever the tint says.

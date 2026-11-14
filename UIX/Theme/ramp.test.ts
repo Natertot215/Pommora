@@ -14,7 +14,7 @@ import {
   cellColor,
   cellPaint,
   cellRing,
-  chipBase,
+  chipPaint,
   colorNameFor,
   solidColorCss,
 } from './ramp'
@@ -104,11 +104,24 @@ describe('cellPaint', () => {
   })
 })
 
-describe('chipBase', () => {
-  it('is a cell’s painted base, the darkened one on the brightest greys, and grey-4 for no color', () => {
-    expect(chipBase('red-6')).toBe(cellColor('red-6'))
-    expect(chipBase('grey-7')).toBe(cellPaint('grey-7').base)
-    expect(chipBase('default')).toBe(cellColor('grey-4'))
+describe('chipPaint', () => {
+  it('borders a chromatic cell in its solid at tint-secondary', () => {
+    expect(chipPaint('red-6')).toEqual({
+      base: cellColor('red-6'),
+      border: tintAt(cellColor('red-6'), 'secondary'),
+    })
+  })
+
+  it('borders a grey cell in its borrowed outline, over its darkened base', () => {
+    const { base, outline } = cellPaint('grey-7')
+    expect(chipPaint('grey-7')).toEqual({ base, border: outline })
+  })
+
+  it('paints no color as grey-4 without the grey row’s outline', () => {
+    expect(chipPaint('default')).toEqual({
+      base: cellColor('grey-4'),
+      border: tintAt(cellColor('grey-4'), 'secondary'),
+    })
   })
 })
 
