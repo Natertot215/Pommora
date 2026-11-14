@@ -76,7 +76,8 @@ import { buttonClass, segmentDivider } from '@pommora/uix/Buttons/Button'
 import { DONE_MS } from '@pommora/uix/Animations/motion'
 import { setFace } from '@pommora/uix/Animations/Swap'
 import * as swap from '@pommora/uix/Animations/swap.css'
-import { BULLET, bulletClass } from '@pommora/uix/Elements/Bullet'
+import { BULLET } from '@pommora/uix/Elements/Bullet'
+import { bullet } from '@pommora/uix/Elements/bullet.css'
 import * as trail from '@pommora/uix/Elements/nav-trail.css'
 import { svgFrame } from '@pommora/uix/Symbols/svgFrame'
 import { cx } from '@pommora/uix/Utilities/cx'
@@ -158,7 +159,7 @@ class BulletWidget extends GlyphWidget {
   }
   toDOM(): HTMLElement {
     const el = document.createElement('span')
-    el.className = `${bulletClass} md-list-bullet md-control ${GLYPH_CLASS}`
+    el.className = `${bullet} md-list-bullet md-control ${GLYPH_CLASS}`
     el.textContent = BULLET
     return el
   }

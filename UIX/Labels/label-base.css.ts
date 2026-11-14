@@ -7,7 +7,7 @@ import {
   mixAt,
   tintAt,
 } from '../Theme/colors'
-import { cellColor, chipPaint } from '../Theme/ramp'
+import { cellColor, chipBorder, chipPaint } from '../Theme/ramp'
 import { vars as colorVars } from '../Theme/color.css'
 import { text } from '../Theme/typography.css'
 
@@ -62,6 +62,7 @@ const FILL = tintAt(BASE, 'primary')
 /** `--melt-ground` must be STATED — unset, the blurred twin inherits the text color and stacks a crisp duplicate. */
 export const tinted = style({
   background: FILL,
+  borderColor: chipBorder(BASE),
   color: mixAt(BASE, 'quaternary', colorVars.color.label.primary),
   vars: { '--melt-ground': FILL, '--label-accent': BASE },
 })

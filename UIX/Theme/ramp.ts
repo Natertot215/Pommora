@@ -128,17 +128,17 @@ export const cellPaint = (key: CellKey): { base: string; outline?: string } => {
   }
 }
 
-/** The cell a color name paints in when it names none. */
-const DEFAULT_CELL: CellKey = 'grey-4'
+/** The border a chip's solid draws where it borrows none. */
+export const chipBorder = (base: string): string => tintAt(base, 'secondary')
 
-/** A chip's solid and its border in a color: the grey row's borrowed outline, else the solid at tint-secondary. No color paints the default cell, without the grey row's outline. */
+/** A chip's solid and its border in a color: the grey row's borrowed outline, else its own. No color paints the default cell, without the grey row's outline. */
 export function chipPaint(name: ColorName): { base: string; border: string } {
   const { base, outline }: ReturnType<typeof cellPaint> =
-    name === 'default' ? { base: cellColor(DEFAULT_CELL) } : cellPaint(name)
-  return { base, border: outline ?? tintAt(base, 'secondary') }
+    name === 'default' ? { base: c.solid.greyDefault } : cellPaint(name)
+  return { base, border: outline ?? chipBorder(base) }
 }
 
-/** A checkbox or switch painted in a stored color, through the chip's recipe so a greyscale row keeps its darkness offset and borrowed outline; none for no color, which inherits the Nexus's. */
+/** A checkbox or switch painted in a stored color, through its cell's paint so a greyscale row keeps its darkness offset and borrowed outline; none for no color, which inherits the Nexus's. */
 export function checkboxPaint(
   color: string | undefined,
 ): { '--checkbox-base': string; '--checkbox-outline': string } | undefined {
@@ -162,7 +162,7 @@ export function colorNameFor(color: string | undefined): ColorName {
 export function solidColorCss(color: string | undefined): string {
   if (!color) return 'var(--link)'
   const key = colorNameFor(color)
-  return cellColor(key === 'default' ? DEFAULT_CELL : key)
+  return key === 'default' ? c.solid.greyDefault : cellColor(key)
 }
 
 /** `fallback` resolves to no cell, so the picker rings nothing and the accent's own cell stays assignable. */

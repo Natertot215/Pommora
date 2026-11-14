@@ -58,8 +58,8 @@ export function Reveal({
         else settleClosed()
       }}
     >
-      {/* group-band.css addresses this wrapper as `[data-reveal] > *`; its depth is a contract. */}
-      <div style={{ overflow: settled ? 'visible' : 'hidden', minHeight: 0 }}>
+      {/* group-band.css addresses this wrapper as `[data-reveal] > *`; its depth is a contract. It clips the block axis alone, so what hangs off a row's side shows through the animation. */}
+      <div style={{ overflowY: settled ? 'visible' : 'clip', minHeight: 0 }}>
         {mounted ? children : null}
       </div>
     </div>

@@ -123,3 +123,10 @@
     bottom: calc(var(--list-outline-gap) + var(--list-view-band-end));
   }
 }
+
+/* A root row's marker stands in its grip's slot, so it gives way to the grip a hover shows. */
+@media (hover: hover) {
+  .list-view .table-grid > .band-tail .row-grip + .row-marker {
+    opacity: calc(1 - var(--reveal, 0));
+  }
+}

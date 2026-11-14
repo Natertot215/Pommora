@@ -3957,8 +3957,8 @@ async function pane(cdp) {
 // ── Group 11 · the switches and the kind ────────────────────────────────────
 
 const switchEl = (label) => visible(`[...document.querySelectorAll('[role=switch][aria-label="${label}"]')]`)
-/** Every drawn page row's marker: its glyph, how far it hangs off its row's first item against the icon gap, and its and the grip's opacity; `root` for a row outside every band. */
-const MARKS = `[...document.querySelectorAll('.list-view .data-row[data-rid]')].filter((r) => r.getClientRects().length && !r.closest('[inert]')).map((r) => { const m = r.querySelector('.row-marker'); return { root: !!r.closest('.table-grid > .band-tail'), text: m?.textContent ?? null, gap: m ? r.querySelector('.list-view-group').getBoundingClientRect().left - m.getBoundingClientRect().right : null, want: parseFloat(getComputedStyle(r).getPropertyValue('--cell-icon-gap')), marker: m ? getComputedStyle(m).opacity : null, grip: getComputedStyle(r.querySelector('.row-grip')).opacity } })`
+/** Every drawn page row's marker: its glyph, how far it hangs off its row's first item against the icon gap, how far its center stands off that item's line, and its and the grip's opacity; `root` for a row outside every band. */
+const MARKS = `[...document.querySelectorAll('.list-view .data-row[data-rid]')].filter((r) => r.getClientRects().length && !r.closest('[inert]')).map((r) => { const m = r.querySelector('.row-marker'); const mb = m?.getBoundingClientRect(), gb = r.querySelector('.list-view-group').getBoundingClientRect(); return { root: !!r.closest('.table-grid > .band-tail'), text: m?.textContent ?? null, gap: m ? gb.left - mb.right : null, off: m ? mb.top + mb.height / 2 - gb.top - gb.height / 2 : null, want: parseFloat(getComputedStyle(r).getPropertyValue('--cell-icon-gap')), marker: m ? getComputedStyle(m).opacity : null, grip: getComputedStyle(r.querySelector('.row-grip')).opacity } })`
 const railsDrawn = async (cdp) => (await cdp.evaluate(RAILS)).filter((b) => b.drawn).length
 /** List's switches: the key each writes, the value it writes switched on, and what the List draws for it. */
 const LIST_SWITCHES = [
@@ -4124,9 +4124,14 @@ async function kinds(cdp) {
     await cdp.evaluate(`(${row})?.scrollIntoView({ block: 'center' })`)
     await hover(cdp, row, 500)
     marks[root ? 'root' : 'banded'] = (await cdp.evaluate(MARKS))[at]
+    if (root) {
+      const GHOST = `document.querySelector('.list-view .ghost-row .row-marker')`
+      await settles(async () => cdp.evaluate(`!!${GHOST}`))
+      marks.ghost = await cdp.evaluate(`(() => { const m = ${GHOST}; return m ? { text: m.textContent, marker: getComputedStyle(m).opacity, lead: getComputedStyle(m.closest('.cell-lead')).opacity } : null })()`)
+    }
   }
   await away(cdp)
-  decided('F-3', 'with Markers on, every page row hangs a bullet the icon gap left of its first item; a root row\'s gives way to its grip on hover, and a banded row\'s stays beside it', marks.rest.every((m) => m.text === '•' && near(m.gap, m.want, 0.75) && m.marker === '1') && marks.root?.marker === '0' && marks.root?.grip === '1' && marks.banded?.marker === '1' && marks.banded?.grip === '1', show(marks))
+  decided('F-3', 'with Markers on, every page row hangs a bullet the icon gap left of its first item, on its line; a root row\'s gives way to its grip on hover, where the ghost under it keeps its own, ghosted with its row; and a banded row\'s stays beside its grip', marks.rest.every((m) => m.text === '•' && near(m.gap, m.want, 0.75) && near(m.off, 0, 0.75) && m.marker === '1') && marks.root?.marker === '0' && marks.root?.grip === '1' && marks.ghost?.text === '•' && marks.ghost.marker === '1' && Number(marks.ghost.lead) < 1 && marks.banded?.marker === '1' && marks.banded?.grip === '1', show(marks))
 
   // D-1 · a property's side is its own setting: a Table alignment moves nothing on a List, and a side aligns nothing on a Table.
   const ALIGNED = listView(vid('g11aligned'), 'VL Aligned', { ...flatVL, column_alignments: { [STAGE.id]: 'right', [DUE.id]: 'left' }, column_sides: { [COUNT.id]: 'left' } })

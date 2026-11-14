@@ -33,8 +33,14 @@ import './list-view.css'
 const drawnOf = (row: ViewRow, columns: ResolvedColumn[]): ResolvedColumn[] =>
   drawnColumns(row, columns, true)
 const TITLE = cx('list-view-title', text.body.emphasized)
-const rowMarker = (marker: Marker): React.ReactNode =>
-  marker === 'bullet' && <Bullet className="row-marker" aria-hidden="true" />
+function rowMarker(marker: Marker): React.JSX.Element | null {
+  switch (marker) {
+    case 'none':
+      return null
+    case 'bullet':
+      return <Bullet className="row-marker" aria-hidden="true" />
+  }
+}
 
 export function ListView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const { view, columns, ctx, styleById, dragDisabled } = host

@@ -3,7 +3,6 @@ import { cx } from '../Utilities/cx'
 import { bullet } from './bullet.css'
 
 export const BULLET = '•'
-export const bulletClass = bullet
 
 export function Bullet({ className, ...rest }: HTMLAttributes<HTMLSpanElement>): React.JSX.Element {
   return (
