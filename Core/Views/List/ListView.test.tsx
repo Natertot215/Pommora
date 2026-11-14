@@ -397,19 +397,21 @@ describe('a List row', () => {
     expect(worn()).toEqual([false, true, true])
   })
 
-  it('an option band holds its chip’s solid for its rail, and the tail holds none', async () => {
-    await renderView(
-      root,
-      source(
-        listView({
-          group: { kind: 'property', property_id: 'prop_stage', order_mode: 'configured' },
-        }),
-      ),
-    )
-    const color = (band: string): string =>
-      host.querySelector<HTMLElement>(band)!.style.getPropertyValue('--band-color')
-    expect(color('.group-band:not(.band-tail)')).toBe(chipBase('default'))
-    expect(color('.band-tail')).toBe('')
+  it('an option band holds its chip’s solid for its rail, grey-4 for no color, and a date band holds none', async () => {
+    const [early, late] = stageDef.select_options!
+    const colored = { ...stageDef, select_options: [{ ...early, color: 'red' }, late] }
+    useSession.setState({ tree: makeTree({ registry: [colored, dueDef, doneDef, countDef] }) })
+    const colors = async (property_id: string): Promise<string[]> => {
+      await renderView(
+        root,
+        source(listView({ group: { kind: 'property', property_id, order_mode: 'configured' } })),
+      )
+      return [...host.querySelectorAll<HTMLElement>('.group-band:not(.band-tail)')].map((b) =>
+        b.style.getPropertyValue('--band-color'),
+      )
+    }
+    expect(await colors('prop_stage')).toEqual([chipBase('red-3'), chipBase('default')])
+    expect(await colors('prop_due')).toEqual([''])
   })
 
   it('keeps a later value’s node in place when a value appears ahead of it', async () => {
