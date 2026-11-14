@@ -170,8 +170,8 @@ List was built from pieces lifted out of Table, Cards, and the Properties panel 
 
 Around it, a drag's landing zone came to grow by the carried item in lists as it did in grids, held that room until its rows glided back, and re-measured as it resized, and an item whose home had scrolled out of view landed where its slot showed. A sideways-scrolled label stayed scrolled while the pointer was within it or it held an open picker or the focused field, and slid back after. Every hide eye, in each view type's Visibility pane and on the Group pane's rows, came to appear only on its row's hover or keyboard focus, a hidden item keeping its crossed-out eye and Title carrying none. The Views Drive gained a List group of 271 live cases over a pairwise matrix of its configurations.
 
-- **Commits:** `6fb941269^..d5f2970f1` • `700c420f1^..c37ba4436`
-- **Delta:** +800 (+1,407 / -607)
+- **Commits:** `6fb941269^..d5f2970f1` • `700c420f1^..a25a72a7d`
+- **Delta:** +804 (+1,423 / -619)
 
 #### PM-156 || One Landing
 **DATE:** 10-29-2026
