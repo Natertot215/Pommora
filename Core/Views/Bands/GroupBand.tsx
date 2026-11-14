@@ -9,6 +9,7 @@ import { DisclosureChevron } from '@pommora/uix/Elements/DisclosureChevron'
 import type { Disclosure } from '@pommora/uix/Menus/DisclosureRow'
 import { Icon } from '@pommora/uix/Symbols'
 import { text } from '@pommora/uix/Theme'
+import { chipBase, colorNameFor } from '@pommora/uix/Theme/ramp'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { EntityIcon } from '../../Assets/EntityIcon'
 import { showEntityMenu } from '../../Interface/Menus/entityMenuActions'
@@ -142,7 +143,7 @@ function HeadedBand({
     <div
       ref={box}
       className={cx('group-band', node.kind === 'bucket' && node.parentKey !== null && 'sub-band')}
-      style={indent ? ({ '--band-indent': indent } as React.CSSProperties) : undefined}
+      style={{ '--band-indent': indent, '--band-color': bandColor(node) } as React.CSSProperties}
       data-ends-on-row={endsOnRow ? '' : undefined}
     >
       <div
@@ -213,6 +214,12 @@ function HeadedBand({
     </div>
   )
 }
+
+/** An option band's color, its chip's solid, which a List's rail reads; none for a Set or a date. */
+const bandColor = (node: SetBand | BucketBand): string | undefined =>
+  node.kind === 'bucket' && node.face.kind === 'option'
+    ? chipBase(colorNameFor(node.face.option.color))
+    : undefined
 
 const bandIcon = (node: SetBand | BucketBand): ReactNode =>
   node.kind === 'set' ? (

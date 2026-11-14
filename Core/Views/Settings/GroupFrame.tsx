@@ -15,6 +15,7 @@ import {
   type StructuralOrderMode,
   type SubGroupConfig,
   toggleHiddenBucket,
+  type ViewFlag,
   type ViewWriter,
   viewOption,
 } from '../views'
@@ -33,8 +34,11 @@ import {
 } from '@pommora/uix/Menus/MenuRows'
 import { LineRow, LineZone } from '@pommora/uix/Interactions/drag'
 import { DualSwitch } from '@pommora/uix/Controls/DualSwitch'
+import { Reveal } from '@pommora/uix/Animations/Reveal'
+import type { IconName } from '@pommora/uix/Symbols'
 import { useContainerValues } from '../Host/useContainerValues'
 import {
+  bucketGroupingOf,
   bucketKey,
   bucketOrder,
   type GroupPlan,
@@ -134,7 +138,7 @@ export function GroupFrame({
   })
 
   const group = view.group ?? { kind: 'structural' as const }
-  const { nests } = presentedKind(view.type)
+  const { nests, outlines } = presentedKind(view.type)
   const plan = useMemo(() => groupPlan(view, schema, nests), [view, schema, nests])
   const propertyOptions = schemaTargets(schema, (d) => groupable(d.type))
   const activeDef = plan.kind === 'property' ? plan.group.column.def : undefined
@@ -143,8 +147,8 @@ export function GroupFrame({
   const subDef = sub?.column.def
   const topByDate = activeDef?.type === 'dateTime'
   const subByDate = subDef?.type === 'dateTime'
-  const dateColumn =
-    plan.kind === 'property' && topByDate ? plan.group.column : subByDate ? sub?.column : undefined
+  const bucketColumn = bucketGroupingOf(plan)?.column
+  const dateColumn = topByDate || subByDate ? bucketColumn : undefined
 
   const pickGroupBy = (id: string): void => {
     if (id === NONE_OPTION.value) {
@@ -173,19 +177,28 @@ export function GroupFrame({
 
   const saveSub = (sub: SubGroupConfig | undefined): void => void save({ sub_group: sub })
 
+  const switchFooting = (icon: IconName, label: string, key: ViewFlag): React.JSX.Element => (
+    <FootingItem
+      icon={icon}
+      label={label}
+      trailing={
+        <DualSwitch
+          checked={viewOption(view, key)}
+          onChange={(next) => save({ [key]: next })}
+          ariaLabel={label}
+        />
+      }
+    />
+  )
   const footings = (
     <MenuFooting>
-      <FootingItem
-        icon="eye-off"
-        label="Hide Empty Groups"
-        trailing={
-          <DualSwitch
-            checked={viewOption(view, 'hide_empty_groups')}
-            onChange={(next) => save({ hide_empty_groups: next })}
-            ariaLabel="Hide Empty Groups"
-          />
-        }
-      />
+      {switchFooting('eye-off', 'Hide Empty Groups', 'hide_empty_groups')}
+      <Reveal
+        open={outlines && !viewOption(view, 'hide_outlines') && !!bucketColumn && !dateColumn}
+        fill
+      >
+        {switchFooting('palette', 'Colored Outlines', 'colored_outlines')}
+      </Reveal>
       <FootingItem
         icon="folder-minus"
         label="Ungrouped"
@@ -198,7 +211,10 @@ export function GroupFrame({
           />
         }
       />
-      {dateColumn && NUMERIC_FORMATS.has(styleFor(dateColumn, view, forms).date_format) && (
+      <Reveal
+        open={!!dateColumn && NUMERIC_FORMATS.has(styleFor(dateColumn, view, forms).date_format)}
+        fill
+      >
         <FootingItem
           icon="type"
           label="Separation"
@@ -211,7 +227,7 @@ export function GroupFrame({
             />
           }
         />
-      )}
+      </Reveal>
     </MenuFooting>
   )
 

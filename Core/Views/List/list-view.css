@@ -5,6 +5,7 @@
   --list-view-title-min: 120px; /* KNOB — how short a title's text gets before the row wraps or its left group scrolls */
   --list-view-wrap-gap: 14px; /* KNOB — the room between the two groups */
   --list-view-bar-width: 100px; /* KNOB — a bar-look Number's width */
+  --segment-color: var(--border-base); /* KNOB — the bar between a row's items */
   --row-first-line: var(--label-height-roomy);
 }
 .list-view .table-grid {
@@ -101,8 +102,8 @@
   margin-bottom: var(--list-view-band-end);
 }
 
-/* A nested band's rail: from under its head to its last member, at its chevron, stopping above the band end's room where its run ends on a row. */
-.list-view .table-grid.outlined .group-band .group-band:not(.band-tail) > [data-reveal] {
+/* A band's rail: from under its head to its last member, at its chevron, stopping above the band end's room where its run ends on a row; under `colored`, in its option's color where the band holds one. */
+.list-view .table-grid.outlined .group-band:not(.band-tail) > [data-reveal] {
   position: relative;
 
   &::before {
@@ -114,6 +115,9 @@
     width: var(--list-outline-width);
     border-radius: var(--list-outline-radius);
     background: var(--list-outline-color);
+  }
+  .colored &::before {
+    background: var(--band-color, var(--list-outline-color));
   }
   [data-ends-on-row] > &::before {
     bottom: calc(var(--list-outline-gap) + var(--list-view-band-end));

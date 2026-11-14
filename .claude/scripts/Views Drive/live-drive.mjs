@@ -2711,7 +2711,7 @@ async function thresholdOf(cdp, title, wrap, lo, hi) {
   return lo
 }
 
-/** The Outlines rail on every band: whether it should draw (a nested band that isn't the tail and holds a row), its color and width against the outline tokens, where it stands against its head's chevron, its top and bottom against its head and its last drawn member, how that member ends the band, and how many bands down it sits. */
+/** The Outlines rail on every band: whether it should draw (a band that isn't the tail and holds a row), its color and width against the outline tokens, where it stands against its head's chevron, its top and bottom against its head and its last drawn member, how that member ends the band, and how many bands down it sits. */
 const RAILS = `[...document.querySelectorAll('.list-view .group-band')].filter((b) => b.getClientRects().length && !b.closest('[inert]')).map((b) => {
   const reveal = b.querySelector(':scope > [data-reveal]')
   const s = reveal && getComputedStyle(reveal, '::before')
@@ -2728,7 +2728,7 @@ const RAILS = `[...document.querySelectorAll('.list-view .group-band')].filter((
   const token = reveal && (() => { const p = document.createElement('span'); p.style.background = 'var(--list-outline-color)'; reveal.appendChild(p); const c = getComputedStyle(p).backgroundColor; p.remove(); return { color: c, width: parseFloat(getComputedStyle(reveal).getPropertyValue('--list-outline-width')) } })()
   const ending = !last ? null : last.classList.contains('group-band-head') ? (lastBand.parentElement.closest('.group-band') === b ? 'a closed or empty band' : 'an open band ending on a closed band') : last.classList.contains('ghost-row') ? 'the ghost' : lastBand === b ? 'a row' : 'an open band ending on a row'
   return {
-    label: head?.querySelector('.group-band-head')?.getAttribute('aria-label') ?? 'tail', nested: !!b.parentElement.closest('.group-band'), tail: b.classList.contains('band-tail'), members, drawn, ending, levels,
+    label: head?.querySelector('.group-band-head')?.getAttribute('aria-label') ?? 'tail', tail: b.classList.contains('band-tail'), members, drawn, ending, levels,
     look: drawn && s.backgroundColor === token.color && Math.abs(parseFloat(s.width) - token.width) < 0.01,
     x: drawn ? rb.left + (parseFloat(s.left) + parseFloat(s.width) / 2) * z : null, chevron: chevron ? chevron.left + chevron.width / 2 : null,
     top: drawn ? rb.top + parseFloat(s.top) * z : null, bottom: drawn ? rb.bottom - parseFloat(s.bottom) * z : null,
@@ -2737,7 +2737,7 @@ const RAILS = `[...document.querySelectorAll('.list-view .group-band')].filter((
   }
 })`
 /** A drawn rail out of place: drawn where it shouldn't be or missing where it should, off its tokens or its chevron, or not spanning from its head's outline gap to its last member's. */
-const railErrors = (rails, outlines) => rails.filter((b) => b.drawn !== (!!outlines && b.nested && !b.tail && b.members) || (b.drawn && (!b.look || Math.abs(b.x - b.chevron) > 1.5 || Math.abs(b.top - b.wantTop) > 0.75 || Math.abs(b.bottom - b.wantBottom) > 0.75)))
+const railErrors = (rails, outlines) => rails.filter((b) => b.drawn !== (!!outlines && !b.tail && b.members) || (b.drawn && (!b.look || Math.abs(b.x - b.chevron) > 1.5 || Math.abs(b.top - b.wantTop) > 0.75 || Math.abs(b.bottom - b.wantBottom) > 0.75)))
 
 const NARROW = 620
 const WIDEST = 3000
@@ -2798,9 +2798,8 @@ async function configurations(cdp) {
       }
       decided('H-1 · H-2', `${name} — each long-titled row and the crowded row, a pixel above its wrap or scroll point, holds one line with its title at its floor, and a pixel below it ${wrap ? 'drops its right group to a second line with its title regaining its room up to its own width, or, holding no right group, scrolls its left group' : 'scrolls its left group'} with its title at its floor, its groups the wrap gap apart above it`, Object.keys(thresholds).length > 0 && Object.values(thresholds).every((x) => typeof x === 'object' && x.errors.length === 0), show(thresholds))
       await viewport(cdp, null)
-      const nests = grouping === 'sets' || grouping === 'setsSub'
       const railsOff = Object.fromEntries(Object.entries(rails).map(([k, r]) => [k, railErrors(r, outlines)]))
-      decided('G-1 · G-2', `${name} — ${outlines ? 'wide and narrow, a rail at each nested band\'s chevron from its head\'s outline gap to its last member\'s, and none at the top level, on the tail, or on an empty band' : 'no rail on any band'}`, rails.wide.length > 0 && (!outlines || !nests || rails.wide.some((b) => b.drawn)) && Object.values(railsOff).every((e) => e.length === 0), show({ railsOff, endings: rails.wide.filter((b) => b.drawn).map((b) => b.ending) }))
+      decided('G-1 · G-2', `${name} — ${outlines ? 'wide and narrow, a rail at each band\'s chevron from its head\'s outline gap to its last member\'s, and none on the tail or on an empty band' : 'no rail on any band'}`, rails.wide.length > 0 && (!outlines || grouping === 'flat' || rails.wide.some((b) => b.drawn)) && Object.values(railsOff).every((e) => e.length === 0), show({ railsOff, endings: rails.wide.filter((b) => b.drawn).map((b) => b.ending) }))
       if (pipe === 'sort') {
         const listOrder = (await readList(cdp)).rows.map((r) => r.rid)
         await showOn(cdp, surface, { ...view, id: vid(`g11c${n}table`), name: `VL Config ${n} Table`, type: 'table' })
@@ -4009,7 +4008,7 @@ async function switches(cdp) {
   }
   decided('B-5 · G-1 · H-1', 'a List draws no line between its rows, its Hide Borders stored off, and its Layout offers no switch for one but Outlines and Wrap Rows, where a Table draws them and offers Hide Borders and neither of List\'s', lines.list.borders === 0 && !lines.list.switches.includes('Hide Borders') && ['Outlines', 'Wrap Rows'].every((l) => lines.list.switches.includes(l) && !lines.table.switches.includes(l)) && lines.table.borders > 0 && lines.table.switches.includes('Hide Borders'), show(lines))
 
-  // G-1 · G-2 · each way a nested band ends its rail, at every depth of Sets nested five deep, wide and with its last row wrapped: a row, an open band ending on a row, the hover ghost, a closed band, and an open band ending on a closed one.
+  // G-1 · G-2 · each way a band ends its rail, at every depth of Sets nested five deep, wide and with its last row wrapped: a row, an open band ending on a row, the hover ghost, a closed band, and an open band ending on a closed one.
   const drop = await deepChain(cdp)
   await showOn(cdp, 'collection', listView(vid('g11railends'), 'VL Rail Ends', { property_order: LIST_ORDER, wrap_rows: true }))
   await until('the deepest band', async () => cdp.evaluate(`!!${head(DEPTHS.at(-1))}`))
@@ -4036,7 +4035,7 @@ async function switches(cdp) {
   const seen = [...new Set(drawn.map((b) => b.ending))]
   const deepest = Object.fromEntries(seen.map((e) => [e, Math.max(...drawn.filter((b) => b.ending === e).map((b) => b.levels))]))
   const endErrors = Object.fromEntries(Object.entries(ends).map(([k, r]) => [k, railErrors(r, true)]))
-  decided('G-1 · G-2', 'a nested band\'s rail ends its outline gap above its last member when that is a row, an open band ending on a row, the hover ghost, a closed band, or an open band ending on a closed one, through as many open bands as Sets nested five deep hold, wide and with the last row wrapped', ['a row', 'an open band ending on a row', 'the ghost', 'a closed or empty band', 'an open band ending on a closed band'].every((e) => seen.includes(e)) && ['an open band ending on a row', 'the ghost', 'an open band ending on a closed band'].every((e) => deepest[e] >= 4) && Object.values(endErrors).every((e) => e.length === 0), show({ deepest, endErrors }))
+  decided('G-1 · G-2', 'a band\'s rail ends its outline gap above its last member when that is a row, an open band ending on a row, the hover ghost, a closed band, or an open band ending on a closed one, through as many open bands as Sets nested five deep hold, wide and with the last row wrapped', ['a row', 'an open band ending on a row', 'the ghost', 'a closed or empty band', 'an open band ending on a closed band'].every((e) => seen.includes(e)) && ['an open band ending on a row', 'the ghost', 'an open band ending on a closed band'].every((e) => deepest[e] >= 4) && Object.values(endErrors).every((e) => e.length === 0), show({ deepest, endErrors }))
 }
 
 const TILE = (label) => visible(`[...document.querySelectorAll('button[aria-label="${label}"]')]`)

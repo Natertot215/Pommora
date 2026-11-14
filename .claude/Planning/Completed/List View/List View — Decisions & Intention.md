@@ -96,7 +96,7 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
 #### G — Outlines
 
 - **G-1 [CONFIRMED]:** Outlines should be a List-only per-view switch named **Outlines**, on for a new List view, drawn from the outline tokens the menus' and the editor's rails already read. Leaving Table without them is a design choice; nothing in the code rules them out there.
-- **G-2 [INFERRED]:** Outlines should begin one level in, since a top-level line would run down the gutter where the grip appears.
+- **G-2 [CONFIRMED]:** Outlines should draw at every band level, the top level's included, where the line runs down the gutter between a hovered row's grip dots.
 
 #### H — Wrapping
 

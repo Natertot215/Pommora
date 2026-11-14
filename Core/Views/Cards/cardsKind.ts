@@ -23,6 +23,7 @@ export const CARDS_KIND: ViewKindRecord = {
   Renderer: CardsView,
   Visibility: VisibilityFrame,
   nests: false,
+  outlines: false,
   layout: {
     leaf: 'switches',
     leafSwitches: [

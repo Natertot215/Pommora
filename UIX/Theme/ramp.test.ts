@@ -9,7 +9,15 @@ import {
   type CellKey,
 } from './colors'
 import { vars as colorVars } from './color.css'
-import { ANCHOR_CELLS, cellColor, cellPaint, cellRing, colorNameFor, solidColorCss } from './ramp'
+import {
+  ANCHOR_CELLS,
+  cellColor,
+  cellPaint,
+  cellRing,
+  chipBase,
+  colorNameFor,
+  solidColorCss,
+} from './ramp'
 
 const c = colorVars.color
 const WHITE = c.system.white
@@ -93,6 +101,14 @@ describe('cellPaint', () => {
   it('rides the label-tertiary ladder on every grey outline', () => {
     expect(cellPaint('grey-0').outline).toBe(tintAt(c.label.tertiary, 35))
     expect(cellPaint('grey-7').outline).toBe(c.label.tertiary)
+  })
+})
+
+describe('chipBase', () => {
+  it('is a cell’s painted base, the darkened one on the brightest greys, and grey-4 for no color', () => {
+    expect(chipBase('red-6')).toBe(cellColor('red-6'))
+    expect(chipBase('grey-7')).toBe(cellPaint('grey-7').base)
+    expect(chipBase('default')).toBe(cellColor('grey-4'))
   })
 })
 

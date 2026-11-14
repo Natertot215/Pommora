@@ -55,6 +55,7 @@ export function ListView({ host }: { host: ViewHostApi }): React.JSX.Element {
             'table-grid no-borders',
             text.body.standard,
             !viewOption(view, 'hide_outlines') && 'outlined',
+            viewOption(view, 'colored_outlines') && 'colored',
             viewOption(view, 'wrap_rows') && 'wraps',
           )}
         >

@@ -13,6 +13,7 @@ export const LIST_KIND: ViewKindRecord = {
   Renderer: ListView,
   Visibility: SidesFrame,
   nests: true,
+  outlines: true,
   layout: {
     leaf: 'visibility',
     footing: (view, write) => switchRows(SWITCHES, view, write),

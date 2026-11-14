@@ -4,6 +4,7 @@ import { act } from 'react'
 import type { Root } from 'react-dom/client'
 import { inlineSegment } from '@pommora/uix/Elements/segment.css'
 import { text } from '@pommora/uix/Theme'
+import { chipBase } from '@pommora/uix/Theme/ramp'
 import { ok } from '../../Contract/result'
 import { ID_KEY } from '../../Nexus/identityMark'
 import type { CollectionNode } from '../../Nexus/tree'
@@ -382,18 +383,33 @@ describe('a List row', () => {
     )
   })
 
-  it('outlines its grid unless hide_outlines, and wraps it under wrap_rows', async () => {
-    const grid = (): Element => host.querySelector('.list-view .table-grid')!
+  it('outlines its grid unless hide_outlines, colors it under colored_outlines, and wraps it under wrap_rows', async () => {
+    const worn = (): boolean[] =>
+      ['outlined', 'colored', 'wraps'].map((c) =>
+        host.querySelector('.list-view .table-grid')!.classList.contains(c),
+      )
     await renderView(root, source())
-    expect([grid().classList.contains('outlined'), grid().classList.contains('wraps')]).toEqual([
-      true,
-      false,
-    ])
-    await renderView(root, source(listView({ hide_outlines: true, wrap_rows: true })))
-    expect([grid().classList.contains('outlined'), grid().classList.contains('wraps')]).toEqual([
-      false,
-      true,
-    ])
+    expect(worn()).toEqual([true, false, false])
+    await renderView(
+      root,
+      source(listView({ hide_outlines: true, colored_outlines: true, wrap_rows: true })),
+    )
+    expect(worn()).toEqual([false, true, true])
+  })
+
+  it('an option band holds its chip’s solid for its rail, and the tail holds none', async () => {
+    await renderView(
+      root,
+      source(
+        listView({
+          group: { kind: 'property', property_id: 'prop_stage', order_mode: 'configured' },
+        }),
+      ),
+    )
+    const color = (band: string): string =>
+      host.querySelector<HTMLElement>(band)!.style.getPropertyValue('--band-color')
+    expect(color('.group-band:not(.band-tail)')).toBe(chipBase('default'))
+    expect(color('.band-tail')).toBe('')
   })
 
   it('keeps a later value’s node in place when a value appears ahead of it', async () => {

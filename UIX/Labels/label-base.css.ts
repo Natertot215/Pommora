@@ -7,7 +7,7 @@ import {
   mixAt,
   tintAt,
 } from '../Theme/colors'
-import { cellColor, cellPaint } from '../Theme/ramp'
+import { cellColor, cellPaint, chipBase } from '../Theme/ramp'
 import { vars as colorVars } from '../Theme/color.css'
 import { text } from '../Theme/typography.css'
 
@@ -92,7 +92,7 @@ const cellVariants = Object.fromEntries(
 
 export const labelColor = styleVariants({
   ...cellVariants,
-  default: variant({ base: cellColor('grey-4') }),
+  default: variant({ base: chipBase('default') }),
 } satisfies Record<ColorName, ComplexStyleRule>)
 
 // The doubled selectors are what lets a modifier hold over whatever the tint says.

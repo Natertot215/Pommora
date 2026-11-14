@@ -11,6 +11,7 @@ export interface ViewKindRecord {
   Renderer: (p: { host: ViewHostApi }) => React.JSX.Element
   Visibility: (p: VisibilityPaneProps) => React.JSX.Element
   nests: boolean
+  outlines: boolean
   /** `leaf` is the view editor's Layout pane body: the kind's Visibility pane, with `leafSwitches` as its footer, or those switches alone. `leafSwitches` are also Settings' Layout body. */
   layout: (
     | { leaf: 'visibility'; leafSwitches?: ViewSwitch[] }

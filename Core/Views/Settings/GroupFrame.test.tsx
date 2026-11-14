@@ -281,6 +281,34 @@ describe('GroupFrame rows', () => {
     expect(lastSaved().group).toEqual({ kind: 'structural' })
   })
 
+  it('Colored Outlines shows where a List outlines an option grouping at either level, and writes its flag', async () => {
+    const byStatus = {
+      group: { kind: 'property', property_id: 'prop_status', order_mode: 'configured' },
+    } as const
+    const byDate = {
+      group: { kind: 'property', property_id: 'prop_when', order_mode: 'configured' },
+    } as const
+    const sw = (): HTMLElement | null => host.querySelector('button[aria-label="Colored Outlines"]')
+    for (const without of [
+      view(byStatus),
+      view({ type: 'list' }),
+      view({ type: 'list', ...byDate }),
+      view({ type: 'list', ...byStatus, hide_outlines: true }),
+    ]) {
+      await mount(without)
+      expect(sw()).toBeNull()
+    }
+    await mount(
+      view({ type: 'list', sub_group: { property_id: 'prop_status', order_mode: 'configured' } }),
+    )
+    expect(sw()).not.toBeNull()
+    await mount(view({ type: 'list', ...byStatus }))
+    await act(async () => {
+      sw()!.click()
+    })
+    expect(lastSaved().colored_outlines).toBe(true)
+  })
+
   it('the Ungrouped footing toggles ungrouped_placement in place (dual-option control)', async () => {
     await mount(view())
     const trigger = host.querySelector('button[aria-label="Ungrouped"]') as HTMLElement

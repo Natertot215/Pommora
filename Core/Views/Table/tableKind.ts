@@ -7,6 +7,7 @@ export const TABLE_KIND: ViewKindRecord = {
   Renderer: TableView,
   Visibility: VisibilityFrame,
   nests: true,
+  outlines: false,
   layout: {
     leaf: 'visibility',
     leafSwitches: [

@@ -128,6 +128,10 @@ export const cellPaint = (key: CellKey): { base: string; outline?: string } => {
   }
 }
 
+/** The solid a chip of the color is mixed from; no color takes the default chip's grey. */
+export const chipBase = (name: ColorName): string =>
+  cellPaint(name === 'default' ? 'grey-4' : name).base
+
 /** A checkbox or switch painted in a stored color, through the chip's recipe so a greyscale row keeps its darkness offset and borrowed outline; none for no color, which inherits the Nexus's. */
 export function checkboxPaint(
   color: string | undefined,
