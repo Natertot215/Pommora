@@ -323,7 +323,7 @@ describe('ViewFrame — the panes the editor reaches', () => {
     await act(async () => {
       ;(document.querySelector('[aria-label="Edit Board"]') as HTMLElement).click()
     })
-    for (const label of ['Title Icons', 'Outlines', 'Wrap Rows'])
+    for (const label of ['Title Icons', 'Outlines', 'Wrap Rows', 'Markers'])
       expect(document.querySelector(`[role="switch"][aria-label="${label}"]`)).not.toBeNull()
     await press('Layout')
     const pane = [...document.querySelectorAll(`.${scrollFrameBody}`)].at(-1)!.parentElement!

@@ -397,6 +397,22 @@ describe('a List row', () => {
     expect(worn()).toEqual([false, true, true])
   })
 
+  it('marks each page row with one bullet under the bullet marker, a band’s head and the view without it drawing none', async () => {
+    const marked = (): number => host.querySelectorAll('.row-marker').length
+    const rows = (): Element[] => [...host.querySelectorAll('.list-view .data-row[data-rid]')]
+    const byStage = {
+      kind: 'property',
+      property_id: 'prop_stage',
+      order_mode: 'configured',
+    } as const
+    await renderView(root, source(listView({ group: byStage })))
+    expect(marked()).toBe(0)
+    await renderView(root, source(listView({ group: byStage, marker: 'bullet' })))
+    expect(host.querySelectorAll('.group-band-head').length).toBeGreaterThan(0)
+    expect(rows().map((r) => r.querySelector('.row-marker')?.textContent)).toEqual(['•', '•'])
+    expect(marked()).toBe(2)
+  })
+
   it('an option band holds its chip’s border for its rail, the default chip’s for no color, and a date band holds none', async () => {
     const [early, late] = stageDef.select_options!
     const colored = { ...stageDef, select_options: [{ ...early, color: 'red' }, late] }

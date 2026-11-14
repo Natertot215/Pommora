@@ -52,6 +52,7 @@ import { applyEditorAction, routeRightClick } from '../Menus/menu'
 import type { Seat } from './CellEditor'
 import type { HeadingLinkStyle } from '../../Settings/personalization'
 import { CheckMark, checkboxClass } from '@pommora/uix/Controls/Checkbox'
+import { Bullet } from '@pommora/uix/Elements/Bullet'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { isSecondaryClick } from '@pommora/uix/Interactions/chords'
 
@@ -256,11 +257,7 @@ function MarkerGlyph({
       </span>
     )
   if (lm.kind === 'bullet')
-    return (
-      <span className={`md-list-bullet ${GLYPH_CLASS}`} data-src={src}>
-        •
-      </span>
-    )
+    return <Bullet className={`md-list-bullet md-control ${GLYPH_CLASS}`} data-src={src} />
   const text = line.slice(lm.markerStart, lm.markerEnd)
   return (
     <span className={textMarkerClass(lm)} data-src={src}>

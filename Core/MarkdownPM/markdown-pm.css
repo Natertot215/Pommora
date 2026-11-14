@@ -16,7 +16,6 @@
   --list-gap: 4px;
   --number-zone: 1.3em;
   --task-zone: 1.8em;
-  --bullet-size: 1.25em;
 }
 
 .mdpm-shell {
@@ -487,13 +486,7 @@
   border-bottom-left-radius: 6px;
 }
 
-.md-list-bullet {
-  color: var(--label-control);
-  font-size: var(--bullet-size);
-  line-height: 1;
-  margin-right: var(--list-gap);
-}
-
+.md-list-bullet,
 .md-list-arrow {
   margin-right: var(--list-gap);
 }

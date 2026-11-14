@@ -43,6 +43,12 @@
 .table-shell .sub-band + .band-tail {
   padding-top: var(--band-clearance);
 }
+/* A root row's marker stands in its grip's slot, so it gives way to the grip a hover shows. */
+@media (hover: hover) {
+  .table-shell .table-grid > .band-tail .row-grip + .row-marker {
+    opacity: calc(1 - var(--reveal, 0));
+  }
+}
 .table-shell .group-band-head {
   /* Sticky-left keeps the group label and chevron in the gutter when columns scroll; left:0 is the grid's content start, only pinning once scrolled. */
   position: sticky;

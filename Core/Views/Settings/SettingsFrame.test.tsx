@@ -113,17 +113,30 @@ describe('SettingsFrame — the panes Settings reaches', () => {
     ).toEqual(['Left', 'Right'])
   })
 
-  it('a list view’s Layout is the type grid over its three switches in the footing, with no section between', async () => {
+  it('a list view’s Layout is the type grid over its four switches in the footing, with no section between', async () => {
     await open('Layout', { ...view, type: 'list' })
     const body = [...host.querySelectorAll(`.${scrollFrameBody}`)].at(-1)!
     expect(body.querySelector('[aria-label="Table"]')).not.toBeNull()
     expect(body.querySelector(`.${separator}`)).toBeNull()
     expect(body.querySelector('[role="switch"]')).toBeNull()
-    for (const label of ['Title Icons', 'Outlines', 'Wrap Rows'])
+    for (const label of ['Title Icons', 'Outlines', 'Wrap Rows', 'Markers'])
       expect(
         body.parentElement!.querySelector(
           `.${scrollFrameEdge} [role="switch"][aria-label="${label}"]`,
         ),
       ).not.toBeNull()
+  })
+
+  it('a list view’s Markers switch is off for no marker and writes the bullet, and on for the bullet and writes none', async () => {
+    const markers = (): HTMLElement =>
+      host.querySelector('[role="switch"][aria-label="Markers"]') as HTMLElement
+    await open('Layout', { ...view, type: 'list' })
+    expect(markers().getAttribute('aria-checked')).toBe('false')
+    await act(async () => markers().click())
+    expect(persist).toHaveBeenCalledWith({ marker: 'bullet' })
+    await open('Layout', { ...view, type: 'list', marker: 'bullet' })
+    expect(markers().getAttribute('aria-checked')).toBe('true')
+    await act(async () => markers().click())
+    expect(persist).toHaveBeenCalledWith({ marker: 'none' })
   })
 })

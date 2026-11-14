@@ -64,6 +64,10 @@ export type StructuralOrderMode = (typeof STRUCTURAL_ORDER_MODES)[number]
 const DATE_SEPARATORS = ['dash', 'slash'] as const
 export type DateSeparator = (typeof DATE_SEPARATORS)[number]
 
+/** A kind rather than a flag, so a later marker joins the bullet under the one key. */
+const MARKERS = ['none', 'bullet'] as const
+export type Marker = (typeof MARKERS)[number]
+
 /** View-level (like group_order): the one `group` slot is replaced on a Group By switch, so anything surviving the round trip can't live on the config object. */
 export interface SubGroupConfig {
   property_id: string
@@ -189,6 +193,7 @@ export const savedView = looseDecoder(
     hide_outlines: z.boolean().optional().catch(undefined),
     colored_outlines: z.boolean().optional().catch(undefined),
     wrap_rows: z.boolean().optional().catch(undefined),
+    marker: z.enum(MARKERS).optional().catch(undefined),
     sort: eachOf(sortCriterion).optional().catch(undefined),
     filter: filterGroup.optional().catch(undefined),
     filter_enabled: z.boolean().optional().catch(undefined),
@@ -212,6 +217,7 @@ type DefaultedOption =
   | ViewFlag
   | 'format'
   | 'card_banner'
+  | 'marker'
   | 'date_separator'
   | 'ungrouped_placement'
   | 'structural_order_mode'
@@ -233,6 +239,7 @@ const VIEW_DEFAULTS: ViewDefaults = {
   filter_enabled: true,
   format: 'standard',
   card_banner: 'banner',
+  marker: 'none',
   date_separator: 'dash',
   ungrouped_placement: 'bottom',
   structural_order_mode: 'custom',

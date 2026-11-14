@@ -1,4 +1,5 @@
 import { memo, useRef } from 'react'
+import { Bullet } from '@pommora/uix/Elements/Bullet'
 import { Segments } from '@pommora/uix/Elements/Segments'
 import { LineZone } from '@pommora/uix/Interactions/drag'
 import { overScrollLabel } from '@pommora/uix/Interactions/OverScroll'
@@ -24,7 +25,7 @@ import {
   rowOpen,
 } from '../Rows/RowFrame'
 import type { ViewRow } from '../viewRow'
-import { type SavedView, type Side, viewOption } from '../views'
+import { type Marker, type SavedView, type Side, viewOption } from '../views'
 import { sideFor } from './listSides'
 import '../Rows/table-shell.css'
 import './list-view.css'
@@ -32,6 +33,8 @@ import './list-view.css'
 const drawnOf = (row: ViewRow, columns: ResolvedColumn[]): ResolvedColumn[] =>
   drawnColumns(row, columns, true)
 const TITLE = cx('list-view-title', text.body.emphasized)
+const rowMarker = (marker: Marker): React.ReactNode =>
+  marker === 'bullet' && <Bullet className="row-marker" aria-hidden="true" />
 
 export function ListView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const { view, columns, ctx, styleById, dragDisabled } = host
@@ -47,6 +50,7 @@ export function ListView({ host }: { host: ViewHostApi }): React.JSX.Element {
   // ── The render ────────────────────────────────────────────────────────────
 
   const hideIcon = viewOption(view, 'hide_page_icons')
+  const marker = viewOption(view, 'marker')
   return (
     <div ref={host.viewRootRef} className="table table-shell list-view">
       <LineZone {...interactions.listZone()}>
@@ -65,6 +69,7 @@ export function ListView({ host }: { host: ViewHostApi }): React.JSX.Element {
             fill
             ghost={(padLeft) => (
               <RowLead className="ghost-worn" indent={padLeft}>
+                {rowMarker(marker)}
                 <div className="list-view-group">
                   <span className={TITLE}>
                     <GhostTitle hideIcon={hideIcon} />
@@ -87,6 +92,7 @@ export function ListView({ host }: { host: ViewHostApi }): React.JSX.Element {
                 editing={open?.mode === 'editor' && open.rowId === row.id ? open.columnId : null}
                 seatAnchor={open?.rowId === row.id ? seat.anchor.current : null}
                 hideIcon={hideIcon}
+                marker={marker}
                 dragDisabled={dragDisabled}
               />
             )}
@@ -113,6 +119,7 @@ const ListPageRow = memo(function ListPageRow({
   editing,
   seatAnchor,
   hideIcon,
+  marker,
   dragDisabled,
 }: {
   row: ViewRow
@@ -127,6 +134,7 @@ const ListPageRow = memo(function ListPageRow({
   editing: string | null
   seatAnchor: HTMLElement | null
   hideIcon: boolean
+  marker: Marker
   dragDisabled: boolean
 }): React.JSX.Element {
   const addRef = useRef<HTMLButtonElement>(null)
@@ -174,6 +182,7 @@ const ListPageRow = memo(function ListPageRow({
     <PageRow row={row} api={api} lead={lead} dragDisabled={dragDisabled}>
       <RowLead indent={padLeft} onContextMenu={pageMenu}>
         <RowGrip onMenu={pageMenu} dragDisabled={dragDisabled} />
+        {rowMarker(marker)}
         <div className="list-view-line">
           <div className={cx('list-view-group', overScrollLabel)}>
             <Segments parts={parts.left} />

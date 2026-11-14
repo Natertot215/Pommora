@@ -3957,12 +3957,15 @@ async function pane(cdp) {
 // ── Group 11 · the switches and the kind ────────────────────────────────────
 
 const switchEl = (label) => visible(`[...document.querySelectorAll('[role=switch][aria-label="${label}"]')]`)
+/** Every drawn page row's marker: its glyph, how far it hangs off its row's first item against the icon gap, and its and the grip's opacity; `root` for a row outside every band. */
+const MARKS = `[...document.querySelectorAll('.list-view .data-row[data-rid]')].filter((r) => r.getClientRects().length && !r.closest('[inert]')).map((r) => { const m = r.querySelector('.row-marker'); return { root: !!r.closest('.table-grid > .band-tail'), text: m?.textContent ?? null, gap: m ? r.querySelector('.list-view-group').getBoundingClientRect().left - m.getBoundingClientRect().right : null, want: parseFloat(getComputedStyle(r).getPropertyValue('--cell-icon-gap')), marker: m ? getComputedStyle(m).opacity : null, grip: getComputedStyle(r.querySelector('.row-grip')).opacity } })`
 const railsDrawn = async (cdp) => (await cdp.evaluate(RAILS)).filter((b) => b.drawn).length
-/** List's three switches: the key each writes, the value it writes switched on, and what the List draws for it. */
+/** List's switches: the key each writes, the value it writes switched on, and what the List draws for it. */
 const LIST_SWITCHES = [
   { label: 'Title Icons', key: 'hide_page_icons', checked: (v) => !v, draws: async (cdp) => (await readList(cdp)).rows.some((r) => r.left.parts.some((p) => p.kind === 'title' && p.icon)) },
   { label: 'Outlines', key: 'hide_outlines', checked: (v) => !v, draws: async (cdp) => (await railsDrawn(cdp)) > 0 },
   { label: 'Wrap Rows', key: 'wrap_rows', checked: (v) => !!v, draws: async (cdp) => wrapped(rowIn(await readList(cdp), 'VL Crowded')) },
+  { label: 'Markers', key: 'marker', checked: (v) => v === 'bullet', draws: async (cdp) => (await cdp.evaluate(MARKS)).some((m) => m.text !== null) },
 ]
 
 async function switches(cdp) {
@@ -3972,18 +3975,18 @@ async function switches(cdp) {
   for (const which of ['editor', 'settings']) {
     await door(cdp, which, which === 'settings' ? 'Layout' : undefined)
     const found = await cdp.evaluate(`[${LIST_SWITCHES.map((w) => `!!(${switchEl(w.label)})`).join(', ')}]`)
-    decided('F-1 · F-2 · I-5', `List's Title Icons, Outlines, and Wrap Rows sit ${which === 'editor' ? 'at the view editor\'s root, before Layout is pressed' : 'in the footing of Settings\' Layout'}`, found.every(Boolean), show(found))
+    decided('F-1 · F-2 · F-3 · I-5', `List's Title Icons, Outlines, Wrap Rows, and Markers sit ${which === 'editor' ? 'at the view editor\'s root, before Layout is pressed' : 'in the footing of Settings\' Layout'}`, found.every(Boolean), show(found))
     for (const w of LIST_SWITCHES) {
       for (const turn of [0, 1]) {
         await door(cdp, which, which === 'settings' ? 'Layout' : undefined)
         const was = viewOnDisk(V.id)?.[w.key]
         const checkedBefore = await cdp.evaluate(`(${switchEl(w.label)}).getAttribute('aria-checked') === 'true'`)
         await mouseClick(cdp, switchEl(w.label))
-        const wrote = await settles(async () => !!viewOnDisk(V.id)?.[w.key] !== !!was)
+        const wrote = await settles(async () => w.checked(viewOnDisk(V.id)?.[w.key]) !== w.checked(was))
         await closeAll(cdp)
         const now = viewOnDisk(V.id)?.[w.key]
         const drawn = await w.draws(cdp)
-        decided('F-1 · F-2 · G-1 · H-1', `through the ${which === 'settings' ? 'Settings door' : 'editor door'}, ${w.label} switched ${w.checked(now) ? 'on' : 'off'} writes ${w.key} and the List ${w.checked(now) ? 'draws' : 'stops drawing'} it`, wrote && checkedBefore === w.checked(was) && drawn === w.checked(now), show({ was, now, checkedBefore, drawn, turn }))
+        decided('F-1 · F-2 · F-3 · G-1 · H-1', `through the ${which === 'settings' ? 'Settings door' : 'editor door'}, ${w.label} switched ${w.checked(now) ? 'on' : 'off'} writes ${w.key} and the List ${w.checked(now) ? 'draws' : 'stops drawing'} it`, wrote && checkedBefore === w.checked(was) && drawn === w.checked(now), show({ was, now, checkedBefore, drawn, turn }))
       }
     }
   }
@@ -4087,18 +4090,18 @@ async function kinds(cdp) {
   const drawn = await cdp.evaluate(`Object.fromEntries(Object.entries(${show(DRAWS)}).map(([k, sel]) => [k, !!${visible('[...document.querySelectorAll(sel)]')}]))`)
   decided('A-3', 'a view saved as a Gallery, which has no renderer, draws as a Table', same(drawn, { list: false, table: true, cards: false }), show(drawn))
 
-  // G-1 · H-1 · a Table view of Sets switched to a List draws with Outlines on and Wrap Rows off.
+  // F-3 · G-1 · H-1 · a Table view of Sets switched to a List draws with Outlines on, Wrap Rows off, and Markers off.
   const FRESH = tableView(vid('g11fresh'), 'VL Fresh', { property_order: LIST_ORDER })
   await showView(cdp, FRESH)
   await door(cdp, 'settings', 'Layout')
   await mouseClick(cdp, TILE('List'))
   await settles(async () => viewOnDisk(FRESH.id)?.type === 'list')
   await closeAll(cdp)
-  const fresh = { stored: viewOnDisk(FRESH.id), rails: await railsDrawn(cdp), crowded: wrapped(rowIn(await readList(cdp), 'VL Crowded')) }
+  const fresh = { stored: viewOnDisk(FRESH.id), rails: await railsDrawn(cdp), crowded: wrapped(rowIn(await readList(cdp), 'VL Crowded')), marked: (await cdp.evaluate(MARKS)).filter((m) => m.text !== null).length }
   await door(cdp, 'settings', 'Layout')
-  fresh.switches = await cdp.evaluate(`({ outlines: (${switchEl('Outlines')})?.getAttribute('aria-checked'), wrap: (${switchEl('Wrap Rows')})?.getAttribute('aria-checked') })`)
+  fresh.switches = await cdp.evaluate(`({ outlines: (${switchEl('Outlines')})?.getAttribute('aria-checked'), wrap: (${switchEl('Wrap Rows')})?.getAttribute('aria-checked'), markers: (${switchEl('Markers')})?.getAttribute('aria-checked') })`)
   await closeAll(cdp)
-  decided('G-1 · H-1', 'a view newly switched to a List draws its rails, Outlines on, and doesn\'t wrap its crowded row, Wrap Rows off', fresh.rails > 0 && !fresh.crowded && fresh.switches.outlines === 'true' && fresh.switches.wrap === 'false' && !fresh.stored.hide_outlines && !fresh.stored.wrap_rows, show(fresh))
+  decided('F-3 · G-1 · H-1', 'a view newly switched to a List draws its rails, Outlines on, doesn\'t wrap its crowded row, Wrap Rows off, and marks no row, Markers off', fresh.rails > 0 && !fresh.crowded && fresh.marked === 0 && fresh.switches.outlines === 'true' && fresh.switches.wrap === 'false' && fresh.switches.markers === 'false' && !fresh.stored.hide_outlines && !fresh.stored.wrap_rows && !fresh.stored.marker, show(fresh))
 
   // G-3 · Colored Outlines draws an option band's rail in its chip's border, at the top level and under a Set, and a Set's rail in the outline token.
   const RAIL_COLORS = `[...document.querySelectorAll('.list-view .group-band:not(.band-tail)')].filter((b) => b.getClientRects().length).map((b) => { const reveal = b.querySelector(':scope > [data-reveal]'); const paint = (v) => { const p = document.createElement('span'); p.style.background = v; reveal.appendChild(p); const c = getComputedStyle(p).backgroundColor; p.remove(); return c }; return { option: !!b.style.getPropertyValue('--band-color'), rail: getComputedStyle(reveal, '::before').backgroundColor, band: paint('var(--band-color)'), token: paint('var(--list-outline-color)') } })`
@@ -4110,6 +4113,20 @@ async function kinds(cdp) {
   }
   const railsIn = (bands, on) => bands.some((b) => b.option) && bands.every((b) => b.rail === (on && b.option ? b.band : b.token) && (!b.option || b.band !== b.token))
   decided('G-3', 'with Colored Outlines on, each option band\'s rail draws in its chip\'s border at the top level and under a Set, a Set\'s rail keeps the outline token, and with it off every rail does', railsIn(colored.property, true) && railsIn(colored['sub-group'], true) && colored['sub-group'].some((b) => !b.option) && railsIn(colored.off, false), show(colored))
+
+  // F-3 · Markers hangs a bullet an icon's gap left of every page row, and a root row's gives way to its grip on hover.
+  await showOn(cdp, 'collection', listView(vid('g11markers'), 'VL Markers', { marker: 'bullet' }))
+  await away(cdp)
+  const marks = { rest: await cdp.evaluate(MARKS) }
+  for (const root of [true, false]) {
+    const at = marks.rest.findIndex((m) => m.root === root)
+    const row = `[...document.querySelectorAll('.list-view .data-row[data-rid]')].filter((r) => r.getClientRects().length && !r.closest('[inert]'))[${at}]`
+    await cdp.evaluate(`(${row})?.scrollIntoView({ block: 'center' })`)
+    await hover(cdp, row, 500)
+    marks[root ? 'root' : 'banded'] = (await cdp.evaluate(MARKS))[at]
+  }
+  await away(cdp)
+  decided('F-3', 'with Markers on, every page row hangs a bullet the icon gap left of its first item; a root row\'s gives way to its grip on hover, and a banded row\'s stays beside it', marks.rest.every((m) => m.text === '•' && near(m.gap, m.want, 0.75) && m.marker === '1') && marks.root?.marker === '0' && marks.root?.grip === '1' && marks.banded?.marker === '1' && marks.banded?.grip === '1', show(marks))
 
   // D-1 · a property's side is its own setting: a Table alignment moves nothing on a List, and a side aligns nothing on a Table.
   const ALIGNED = listView(vid('g11aligned'), 'VL Aligned', { ...flatVL, column_alignments: { [STAGE.id]: 'right', [DUE.id]: 'left' }, column_sides: { [COUNT.id]: 'left' } })

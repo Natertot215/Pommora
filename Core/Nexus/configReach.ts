@@ -78,6 +78,7 @@ const ROLES = {
   hide_outlines: 'none',
   colored_outlines: 'none',
   wrap_rows: 'none',
+  marker: 'none',
   sort: 'criteria',
   filter: 'rules',
   filter_enabled: 'none',

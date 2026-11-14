@@ -379,6 +379,16 @@ describe('card_banner codec', () => {
   })
 })
 
+describe('marker codec', () => {
+  const base = { id: 'view_m', name: 'M', type: 'list', property_order: [], hidden_properties: [] }
+  it('round-trips each kind, drops one it does not know, and reads an absent one as none', () => {
+    for (const kind of ['none', 'bullet'])
+      expect(savedView.parse({ ...base, marker: kind }).marker).toBe(kind)
+    expect(savedView.parse({ ...base, marker: 'number' }).marker).toBeUndefined()
+    expect(viewOption(savedView.parse(base), 'marker')).toBe('none')
+  })
+})
+
 describe('mint seam', () => {
   it('a new view stores no hidden list and shows Title alone', () => {
     const v = mintNewView('V')

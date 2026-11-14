@@ -175,8 +175,9 @@
 .cell-title-text {
   color: var(--label-primary);
 }
-/* A disclosure chevron in a table is muted. */
-.table [data-chevron] {
+/* A disclosure chevron and a row's marker in a table are muted. */
+.table [data-chevron],
+.table .row-marker {
   color: var(--label-tertiary);
 }
 /* The rail slot directly left of a row's icon: a grip or check centers on its row's first line where a surface states `--row-first-line`, and a chevron centers on its box. */
@@ -202,7 +203,8 @@
   width: var(--rail-inset);
 }
 .row-grip,
-.row-check {
+.row-check,
+.row-marker {
   top: calc(
     var(--cell-padding-y) +
     var(--row-first-line, calc(100% - 2 * var(--cell-padding-y))) /
@@ -217,4 +219,11 @@
 }
 .row-grip:active {
   cursor: grabbing;
+}
+/* A row's marker hangs an icon's gap left of its content, on the grip's line. */
+.row-marker {
+  position: absolute;
+  margin-left: calc(-1 * var(--cell-icon-gap));
+  transform: translate(-100%, -50%);
+  pointer-events: none;
 }

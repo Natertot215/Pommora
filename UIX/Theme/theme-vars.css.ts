@@ -130,6 +130,7 @@ globalStyle(':root', {
     '--list-outline-color': c.border.light,
     '--list-outline-radius': 'var(--radius-full)',
     '--list-outline-gap': '3px',
+    '--bullet-size': '1.25em',
 
     '--fade-light': '12px',
     '--fade-base': '16px',
