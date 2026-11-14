@@ -92,6 +92,7 @@ The work shares what Table, Cards, and the Properties panel each hold privately 
 
 - **F-1 [CONFIRMED]:** List should carry three switches: **Title Icons**, the one Table and Cards already share; **Outlines**; and **Wrap Rows**.
 - **F-2 [CONFIRMED]:** List's switches should sit at the root of ViewFrame's view editor, in the footing where Cards' Card Image, Card Style, and Card Scale rows sit, and inside Layout in SettingsFrame. Table's and Cards' switches should stay where they are.
+- **F-3 [CONFIRMED]:** List should carry a fourth switch, **Markers**, off for a new List view, that draws the editor's bullet, in the grip's muted color, an icon's gap left of every page row. A root-level row's bullet stands where its drag handle shows, and should give way to the handle while the row is hovered.
 
 #### G — Outlines
 
