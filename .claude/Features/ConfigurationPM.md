@@ -230,7 +230,6 @@ A Collection's own configuration, stored in its `_pagecollection.json` sidecar. 
 
 | Setting | Key | Description | Options |
 | --- | --- | --- | --- |
-| Markers | `marker` | A List view's own switch, saved on the view: draws a bullet before each of its page rows. | **None** · Bullet |
 | Show Title | `view_button` | Whether the view menu button shows the view's name beside its glyph; set from the button's right-click. | **Icon** · Labeled |
 
 The sidecar's remaining fields are structure rather than configuration: the entity's id and icon, its banner, its page and set ordering, its property assignment list, and its saved views.
