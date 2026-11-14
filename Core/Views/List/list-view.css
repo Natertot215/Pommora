@@ -5,7 +5,6 @@
   --list-view-title-min: 120px; /* KNOB — how short a title's text gets before the row wraps or its left group scrolls */
   --list-view-wrap-gap: 14px; /* KNOB — the room between the two groups */
   --list-view-bar-width: 100px; /* KNOB — a bar-look Number's width */
-  --segment-color: var(--border-base); /* KNOB — the bar between a row's items */
   --row-first-line: var(--label-height-roomy);
 }
 .list-view .table-grid {
@@ -18,6 +17,7 @@
 }
 
 .list-view-line {
+  --segment-color: var(--border-base); /* KNOB — the bar between a row's items */
   display: flex;
   align-items: center;
   gap: calc(2 * var(--cell-padding-y)) var(--list-view-wrap-gap); /* a wrapped line stands a row's rhythm below the first */
@@ -116,7 +116,7 @@
     border-radius: var(--list-outline-radius);
     background: var(--list-outline-color);
   }
-  .colored &::before {
+  .table-grid.colored &::before {
     background: var(--band-color, var(--list-outline-color));
   }
   [data-ends-on-row] > &::before {

@@ -128,9 +128,12 @@ export const cellPaint = (key: CellKey): { base: string; outline?: string } => {
   }
 }
 
-/** The solid a chip of the color is mixed from; no color takes the default chip's grey. */
+/** The cell a color name paints in when it names none. */
+const DEFAULT_CELL: CellKey = 'grey-4'
+
+/** The solid a chip of the color is mixed from. */
 export const chipBase = (name: ColorName): string =>
-  cellPaint(name === 'default' ? 'grey-4' : name).base
+  cellPaint(name === 'default' ? DEFAULT_CELL : name).base
 
 /** A checkbox or switch painted in a stored color, through the chip's recipe so a greyscale row keeps its darkness offset and borrowed outline; none for no color, which inherits the Nexus's. */
 export function checkboxPaint(
@@ -156,7 +159,7 @@ export function colorNameFor(color: string | undefined): ColorName {
 export function solidColorCss(color: string | undefined): string {
   if (!color) return 'var(--link)'
   const key = colorNameFor(color)
-  return cellColor(key === 'default' ? 'grey-4' : key)
+  return cellColor(key === 'default' ? DEFAULT_CELL : key)
 }
 
 /** `fallback` resolves to no cell, so the picker rings nothing and the accent's own cell stays assignable. */

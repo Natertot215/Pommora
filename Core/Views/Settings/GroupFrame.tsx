@@ -148,7 +148,7 @@ export function GroupFrame({
   const topByDate = activeDef?.type === 'dateTime'
   const subByDate = subDef?.type === 'dateTime'
   const bucketColumn = bucketGroupingOf(plan)?.column
-  const dateColumn = topByDate || subByDate ? bucketColumn : undefined
+  const dateColumn = bucketColumn?.type === 'dateTime' ? bucketColumn : undefined
 
   const pickGroupBy = (id: string): void => {
     if (id === NONE_OPTION.value) {
