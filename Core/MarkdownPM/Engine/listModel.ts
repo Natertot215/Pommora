@@ -4,8 +4,10 @@ import {
   ordinalOf,
   ordinalText,
   type BlockSpan,
+  type ListMarker,
   type SequencedMarker,
 } from './detect'
+import { moveRange } from './blockMove'
 import {
   lineEndOf,
   lineIndexAt,
@@ -62,9 +64,13 @@ function rolesAgainst(
   }
 }
 
-/** The items a list draws at line `i`'s depth under its parent, in order, and the last line the group's nesting reaches. Depth is quote depth and level, whatever whitespace indents a line. */
-export function siblingsAt(scan: DocScan, i: number): { items: number[]; last: number } {
-  const role = rolesAgainst(scan, i)
+/** The items a list draws at line `i`'s depth under its parent, in order, and the last line the group's nesting reaches. Depth is quote depth and level, whatever whitespace indents a line, and a `level` reads the list the line would stand in there. */
+export function siblingsAt(
+  scan: DocScan,
+  i: number,
+  level?: number,
+): { items: number[]; last: number } {
+  const role = rolesAgainst(scan, i, level)
   const above: number[] = []
   for (let k = i - 1; k >= 0; k--) {
     const r = role(k)
@@ -82,6 +88,25 @@ export function siblingsAt(scan: DocScan, i: number): { items: number[]; last: n
   return { items, last }
 }
 
+/** The item line `i` stands beside at `level`: the sibling above it, else the one below. */
+export function siblingBeside(scan: DocScan, i: number, level: number): number | undefined {
+  const { items } = siblingsAt(scan, i, level)
+  const n = items.indexOf(i)
+  return items[n - 1] ?? items[n + 1]
+}
+
+/** The marker Enter writes below `line`'s item: its own as written, a task's box emptied. The renumber filter counts a sequenced one. */
+export const continuedMarker = (line: string, lm: ListMarker): string =>
+  lm.kind === 'checkbox'
+    ? `${line.slice(lm.markerStart, lm.boxStart)}[ ] `
+    : `${line.slice(lm.markerStart, lm.markerEnd)} `
+
+/** The marker line `i`'s item takes as a sibling of line `near`'s: the one Enter writes below `near` where their types differ, and null where it keeps its own. */
+export function joinedMarker(scan: DocScan, i: number, near: number): string | null {
+  const lm = scan.markers[near]!
+  return lm.kind === scan.markers[i]!.kind ? null : continuedMarker(scan.lines[near], lm)
+}
+
 /** `to` is the last line's end, EXCLUSIVE of the trailing newline. The move logic reads only these two offsets, so it is block-type-blind. */
 export function subBlockAt(scan: DocScan, pos: number): BlockSpan {
   const first = lineIndexAt(scan, pos)
@@ -89,6 +114,27 @@ export function subBlockAt(scan: DocScan, pos: number): BlockSpan {
   let last = first
   while (last + 1 < scan.lines.length && role(last + 1) === 'nested') last++
   return { from: scan.lineStarts[first], to: lineEndOf(scan, last) }
+}
+
+/** An item's drop at `at` as a sibling of line `near`'s: its block takes `near`'s lead, and its head the marker of the list it joins, read from the sibling above the drop before the one below. */
+export function dropItem(
+  scan: DocScan,
+  block: BlockSpan,
+  at: number,
+  near: number,
+): TextEdit[] | null {
+  const head = lineIndexAt(scan, block.from)
+  const line = scan.lines[head]
+  const { markerStart, contentStart } = scan.markers[head]!
+  const { items } = siblingsAt(scan, near)
+  const above = at > scan.lineStarts[near] ? near : (items[items.indexOf(near) - 1] ?? near)
+  const marker = joinedMarker(scan, head, above)
+  const slot = {
+    at,
+    indent: scan.lines[near].slice(0, scan.markers[near]!.markerStart),
+    head: marker === null ? line : line.slice(0, markerStart) + marker + line.slice(contentStart),
+  }
+  return moveRange(scan.text, block, slot, false)
 }
 
 export function ownersOf(

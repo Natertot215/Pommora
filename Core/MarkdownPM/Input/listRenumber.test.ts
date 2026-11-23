@@ -158,6 +158,13 @@ describe('a level change recounts the run it joined and the run it left', () => 
   it('an outdented item takes its place in a run that starts past 1', () => {
     expect(at('5. a\n\t1. b\n6. c', 6, outdentListOnShiftTab)).toBe('5. a\n6. b\n7. c')
   })
+  it('an item joining a run of another type is counted into it', () => {
+    expect(at('- a\n\t1. kid\n- b', 16, indentListOnTab)).toBe('- a\n\t1. kid\n\t2. b')
+    expect(at('5. a\n\t- b\n6. c', 8, outdentListOnShiftTab)).toBe('5. a\n6. b\n7. c')
+  })
+  it('a numbered item joining a list of another type leaves its run recounted', () => {
+    expect(at('1. a\n\t- kid\n2. b\n3. c', 15, indentListOnTab)).toBe('1. a\n\t- kid\n\t- b\n2. c')
+  })
   it('switching a numbered item out of its run recounts the run below', () => {
     const doc = '- p\n\t1. a\n\t2. b\n\t\t- kid\n\t3. c'
     const b = doc.indexOf('b')

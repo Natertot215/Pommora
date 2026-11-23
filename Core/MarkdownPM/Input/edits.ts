@@ -33,6 +33,7 @@ import {
 import {
   isBlank,
   MAX_NESTING_LEVEL,
+  indentLevel,
   calloutHeadPrefixLen,
   headingParts,
   fenceBodyStart,
@@ -42,7 +43,7 @@ import {
   readsLists,
   readsListsIn,
 } from '../Engine/detect'
-import { ownersOf } from '../Engine/listModel'
+import { continuedMarker, joinedMarker, ownersOf, siblingBeside } from '../Engine/listModel'
 import { tokenize } from '../Engine/tokens'
 import { isPaint } from '../Engine/paints'
 
@@ -57,16 +58,20 @@ export interface Edit extends TextEdit {
 
 const shorthandCheckboxRe = /^([ \t]*)([-+])\[([ xX]?)\]$/
 
-function listLineAt(
-  scan: DocScan,
-  selStart: number,
-  selEnd: number,
-): { ls: number; line: string; pfx: string; lm: ListMarker } | null {
+interface ListLine {
+  k: number
+  ls: number
+  line: string
+  pfx: string
+  lm: ListMarker
+}
+
+function listLineAt(scan: DocScan, selStart: number, selEnd: number): ListLine | null {
   if (selStart !== selEnd) return null
   const k = lineIndexAt(scan, selStart)
   const lm = scan.markers[k]
   if (lm === null) return null
-  return { ls: scan.lineStarts[k], line: scan.lines[k], pfx: leadOf(scan, k), lm }
+  return { k, ls: scan.lineStarts[k], line: scan.lines[k], pfx: leadOf(scan, k), lm }
 }
 
 export function continueListOnEnter(scan: DocScan, selStart: number, selEnd: number): Edit | null {
@@ -75,13 +80,9 @@ export function continueListOnEnter(scan: DocScan, selStart: number, selEnd: num
   const { ls, line, pfx, lm } = at
   if (selStart < ls + lm.contentStart) return null
 
-  // Enter ALWAYS continues the list, even on an empty item — the exits are Shift+Enter and Backspace on the empty marker. The new item takes the marker as written, a task's box emptied, and the renumber filter counts a sequenced one.
+  // Enter ALWAYS continues the list, even on an empty item — the exits are Shift+Enter and Backspace on the empty marker.
   const indent = line.slice(pfx.length, lm.markerStart)
-  const marker =
-    lm.kind === 'checkbox'
-      ? `${line.slice(lm.markerStart, lm.boxStart)}[ ] `
-      : `${line.slice(lm.markerStart, lm.markerEnd)} `
-  const insert = `\n${pfx}${indent}${marker}`
+  const insert = `\n${pfx}${indent}${continuedMarker(line, lm)}`
   return { from: selStart, to: selStart, insert, selection: selStart + insert.length, relist: true }
 }
 
@@ -147,13 +148,38 @@ export function shiftEnterEdit(scan: DocScan, selStart: number, selEnd: number):
   return { from: selStart, to: selEnd, insert, selection: selStart + insert.length }
 }
 
+/** An item's indent, its first `cut` characters giving way to `add`. One that reaches another level takes the marker of the list it joins there, read from the sibling above it before the one below, and the caret keeps its place in the words. */
+function relevel(
+  scan: DocScan,
+  { k, ls, line, pfx, lm }: ListLine,
+  selStart: number,
+  cut: number,
+  add: string,
+): Edit {
+  const from = ls + pfx.length
+  const selection = Math.max(from, selStart + add.length - cut)
+  const indent = add + line.slice(pfx.length + cut, lm.markerStart)
+  const level = indentLevel(indent)
+  const near = level === lm.level ? undefined : siblingBeside(scan, k, level)
+  const marker = near === undefined ? null : joinedMarker(scan, k, near)
+  if (marker === null) return { from, to: from + cut, insert: add, selection, relist: true }
+  const insert = indent + marker
+  const grown = marker.length - (lm.contentStart - lm.markerStart)
+  return {
+    from,
+    to: ls + lm.contentStart,
+    insert,
+    selection: Math.max(from + insert.length, selection + grown),
+    relist: true,
+  }
+}
+
 export function indentListOnTab(scan: DocScan, selStart: number, selEnd: number): Edit | null {
   const at = listLineAt(scan, selStart, selEnd)
   if (at === null || at.lm.level >= MAX_NESTING_LEVEL) return null
-  const f = scan.fences[lineIndexAt(scan, selStart)]
+  const f = scan.fences[at.k]
   if (f && fenceBodyStart(`${at.pfx}\t`, f) > at.pfx.length) return null
-  const from = at.ls + at.pfx.length
-  return { from, to: from, insert: '\t', selection: selStart + 1, relist: true }
+  return relevel(scan, at, selStart, 0, '\t')
 }
 
 export function outdentListOnShiftTab(
@@ -164,15 +190,7 @@ export function outdentListOnShiftTab(
   const at = listLineAt(scan, selStart, selEnd)
   if (at === null) return null
   const width = /^(?:\t| {1,2})/.exec(at.line.slice(at.pfx.length))?.[0].length
-  if (width === undefined) return null
-  const from = at.ls + at.pfx.length
-  return {
-    from,
-    to: from + width,
-    insert: '',
-    selection: Math.max(from, selStart - width),
-    relist: true,
-  }
+  return width === undefined ? null : relevel(scan, at, selStart, width, '')
 }
 
 /** Where a Backspace takes the list marker of line `k`, behind its `pfx`-long prefix: the marker is one unit, so a caret anywhere past its first character takes all of it rather than leaving a stray space or half a box, and the line keeps its indent only where an item above owns it, as that item's continuation. */

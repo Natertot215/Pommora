@@ -64,7 +64,7 @@ const apply = (view: EditorView, edit: Edit | null): boolean =>
 
 const onItem = (scan: DocScan, at: number): boolean => scan.markers[lineIndexAt(scan, at)] !== null
 
-// From a caret on an item, Tab and Shift-Tab are the list's, holding at either end; over a range or off an item the key is the surface's.
+// From a caret on an item, Tab and ⌘], and Shift-Tab and ⌘[, are the list's, holding at either end; over a range or off an item the key is the surface's.
 const nest =
   (transform: (scan: DocScan, selStart: number, selEnd: number) => Edit | null) =>
   (view: EditorView): boolean => {
@@ -242,7 +242,9 @@ const joinEmptyHead = (view: EditorView): boolean => {
 /** What a list holds on every surface, ahead of what each surface binds for a key no list claims, and off a page the seated Backspace that keeps a caret out of a marker. A page's Enter and deletes hold closers, citations, and quotes a list doesn't, so its own chain keeps them. */
 export const listKeys = (scope: MarkdownScope): KeyBinding[] => [
   { key: 'Tab', run: nest(indentListOnTab) },
+  { key: 'Mod-]', run: nest(indentListOnTab) },
   { key: 'Shift-Tab', run: nest(outdentListOnShiftTab) },
+  { key: 'Mod-[', run: nest(outdentListOnShiftTab) },
   ...(scope === 'page'
     ? []
     : [

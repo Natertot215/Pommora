@@ -1,19 +1,18 @@
 import type { Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import type { BlockSpan } from '../Engine/detect'
-import { docScan, docString } from '../docCache'
+import { docScan } from '../docCache'
 import { markerIn } from '../Engine/docScan'
 import { forEachLine, shadeField, type Boundary } from './dragChrome'
 import { beginRelocateDrag, editorGestureCleanup } from './editorGesture'
 import { glyphAt, lineElementAt, textColumn } from '../lineDom'
 import { isSecondaryClick } from '@pommora/uix/Interactions/chords'
-import { subBlockAt, checkboxToggleChange } from '../Engine/listModel'
-import { moveRange } from '../Engine/blockMove'
+import { subBlockAt, checkboxToggleChange, dropItem } from '../Engine/listModel'
 
 interface Drop {
   left: number
   right: number
-  indent: string
+  near: number
 }
 
 // The page wrap boundary, except inside a box, where it is that line's own content-box right — read from the rendered element so the callout's CSS padding owns the width.
@@ -46,7 +45,7 @@ function collectBoundaries(view: EditorView, block: BlockSpan): Boundary<Drop>[]
       const slot = {
         left: (view.coordsAtPos(line.from + lm.markerStart) ?? cTop).left,
         right: lineRightEdge(view, line.from, gutterRight),
-        indent: line.text.slice(0, lm.markerStart),
+        near: k,
       }
       out.push({ at: line.from, y: cTop.top, slot })
       const end = subBlockAt(scan, line.from).to
@@ -92,8 +91,7 @@ export const listDragExtension: Extension = [
           at >= block.from && at <= block.to + 1
             ? null
             : { left: slot.left, top: y, width: slot.right - slot.left },
-        commit: ({ at, slot }) =>
-          moveRange(docString(view.state.doc), block, { at, indent: slot.indent }, false),
+        commit: ({ at, slot }) => dropItem(docScan(view.state), block, at, slot.near),
         onTap: () => clickAction(view, pos),
       })
       return true

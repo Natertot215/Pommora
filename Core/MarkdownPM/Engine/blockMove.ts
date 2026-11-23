@@ -1,9 +1,10 @@
 import { indentWidth, isBlank, type BlockSpan } from './detect'
 import { diffAsSingleReplace, lineOffsetsOf, quotePrefix, type TextEdit } from './markdownCode'
 
-export interface Slot {
+interface Slot {
   at: number
   indent?: string
+  head?: string
 }
 
 // The drop indent a block adopts is the target's lead, so dragging in or out of a callout re-prefixes correctly.
@@ -46,7 +47,10 @@ export function moveRange(
   while (fenced && blankAt(tLine)) tLine++
   if (tLine >= bStart && tLine <= bEnd + 1) return null
 
-  const blockLines = reindentBlock(lines.slice(bStart, bEnd + 1), slot.indent)
+  const blockLines = reindentBlock(
+    [slot.head ?? lines[bStart], ...lines.slice(bStart + 1, bEnd + 1)],
+    slot.indent,
+  )
   const heals = fenced || (edgeAt(bStart - 1) && edgeAt(bEnd + 1))
   let cutStart = bStart
   let cutEnd = bEnd

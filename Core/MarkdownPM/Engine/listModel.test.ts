@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { scanDoc } from './docScan'
-import { applyEdits } from './markdownCode'
-import { subBlockAt, renumberRuns, checkboxToggleChange, siblingsAt } from './listModel'
+import { applyEdits, lineIndexAt } from './markdownCode'
+import { subBlockAt, renumberRuns, checkboxToggleChange, siblingsAt, dropItem } from './listModel'
 import { moveRange } from './blockMove'
 import type { MarkdownScope } from './detect'
 import { landEdit } from '../Input/listRenumber'
@@ -35,15 +35,18 @@ describe('subBlockAt × block math', () => {
   })
 })
 
-/** Drop the item whose line contains `grab` so it starts at `at`, landed as the editor lands it. */
+/** Drag the item whose line contains `grab` beside the item whose line contains `near`: above it, or with `after` below the block it carries, landed as the editor lands it. */
 function drop(
   doc: string,
   grab: number,
-  at: number,
-  indent?: string,
+  near: number,
+  after = false,
   scope: MarkdownScope = 'page',
 ): string {
-  const changes = moveRange(doc, subBlockAt(scanDoc(doc, scope), grab), { at, indent }, false)
+  const scan = scanDoc(doc, scope)
+  const k = lineIndexAt(scan, near)
+  const at = after ? Math.min(doc.length, subBlockAt(scan, near).to + 1) : scan.lineStarts[k]
+  const changes = dropItem(scan, subBlockAt(scan, grab), at, k)
   return changes ? landEdit(doc, changes, 'move.drop', scope) : doc
 }
 
@@ -52,7 +55,7 @@ const lineStart = (doc: string, needle: string): number => doc.indexOf(needle)
 describe('a drop in a cell', () => {
   it('recounts a run between `$$` lines, which a cell reads as lines', () => {
     const doc = '$$\n1. a\n2. b\n3. c\n$$'
-    expect(drop(doc, lineStart(doc, '3. c'), lineStart(doc, '1. a'), undefined, 'lists')).toBe(
+    expect(drop(doc, lineStart(doc, '3. c'), lineStart(doc, '1. a'), false, 'lists')).toBe(
       '$$\n1. c\n2. a\n3. b\n$$',
     )
   })
@@ -89,12 +92,12 @@ describe('drag reorders source lines', () => {
     expect(drop(lone, 0, lineStart(lone, '- b'))).toBe('- y\n\npara\n\n- a\n- x\n- b')
     const lists = '- p\n  - x\n\n  - y\n\n\t- z'
     expect(drop(lists, lineStart(lists, '\t- z'), lineStart(lists, '  - y'))).toBe(
-      '- p\n  - x\n\n\t- z\n  - y',
+      '- p\n  - x\n\n  - z\n  - y',
     )
   })
   it('moves a bullet item to the end', () => {
     const doc = '- a\n- b\n- c'
-    const out = drop(doc, lineStart(doc, 'a'), doc.length)
+    const out = drop(doc, lineStart(doc, 'a'), lineStart(doc, '- c'), true)
     expect(out).toBe('- b\n- c\n- a')
   })
 })
@@ -114,11 +117,13 @@ describe('ordered list renumbers after a move', () => {
   })
   it('renumbers when moving the first item down', () => {
     const doc = '1. a\n2. b\n3. c'
-    const out = drop(doc, lineStart(doc, 'a'), doc.length)
+    const out = drop(doc, lineStart(doc, 'a'), lineStart(doc, '3. c'), true)
     expect(out).toBe('1. b\n2. c\n3. a')
     const lists = '1. a\n\n2. b\n\n3. c'
-    expect(drop(lists, 0, lists.length)).toBe('2. b\n\n3. c\n4. a')
-    expect(drop(lists, lineStart(lists, '2. b'), lists.length)).toBe('1. a\n\n3. c\n4. b')
+    expect(drop(lists, 0, lineStart(lists, '3. c'), true)).toBe('2. b\n\n3. c\n4. a')
+    expect(drop(lists, lineStart(lists, '2. b'), lineStart(lists, '3. c'), true)).toBe(
+      '1. a\n\n3. c\n4. b',
+    )
   })
   it('renumbers the whole run when an item with a continuation line moves up', () => {
     const doc = '1. a\n2. b\n3. c\n   more about c\n4. d'
@@ -145,7 +150,7 @@ describe('ordered list renumbers after a move', () => {
 describe('a drag recounts on its own surface', () => {
   it('reads fence-shaped lines in a cell as lines, moved text included', () => {
     const doc = '```\n1. a\n2. b\n```'
-    expect(drop(doc, doc.indexOf('2. b'), doc.indexOf('1. a'), undefined, 'lists')).toBe(
+    expect(drop(doc, doc.indexOf('2. b'), doc.indexOf('1. a'), false, 'lists')).toBe(
       '```\n1. b\n2. a\n```',
     )
   })
@@ -155,7 +160,7 @@ describe('a drag keeps the start of the run it lands in', () => {
   it('a list starting at 5 stays at 5 whichever way an item moves', () => {
     const doc = '5. a\n6. b\n7. c'
     expect(drop(doc, lineStart(doc, '7. c'), 0)).toBe('5. c\n6. a\n7. b')
-    expect(drop(doc, 0, doc.length)).toBe('5. b\n6. c\n7. a')
+    expect(drop(doc, 0, lineStart(doc, '7. c'), true)).toBe('5. b\n6. c\n7. a')
   })
   it('a lettered run past Z keeps its start across a drag', () => {
     const doc = 'Y. a\nZ. b\nA. c'
@@ -165,15 +170,43 @@ describe('a drag keeps the start of the run it lands in', () => {
     const doc = '1. x\n2. y\n\n5. a\n6. b'
     expect(drop(doc, 0, lineStart(doc, '5. a'))).toBe('2. y\n\n5. x\n6. a\n7. b')
   })
-  it('an item of another kind keeps its own number where it lands', () => {
+  it('an item of another type takes the marker of the list it joins, and its place in the run', () => {
     const doc = '3. x\n\nA. a\nB. b'
-    expect(drop(doc, 0, lineStart(doc, 'A. a'))).toBe('3. x\nA. a\nB. b')
+    expect(drop(doc, 0, lineStart(doc, 'A. a'))).toBe('A. x\nB. a\nC. b')
+    expect(drop(doc, 0, lineStart(doc, 'B. b'), true)).toBe('A. a\nB. b\nC. x')
+  })
+  it('a dropped item takes its sibling\u2019s lead and marker, a task\u2019s box emptied, and what it carries stays as written', () => {
+    const doc = '- [x] p\n\t- [x] kid\n\n- a\n\t→ sub'
+    expect(drop(doc, 0, lineStart(doc, '\t→ sub'), true)).toBe('- a\n\t→ sub\n\t→ p\n\t\t- [x] kid')
+    const tasks = '- x\n\n- [x] a\n- [ ] b'
+    expect(drop(tasks, 0, lineStart(tasks, '- [x] a'), true)).toBe('- [x] a\n- [ ] x\n- [ ] b')
+    const same = '- [x] x\n\n- [ ] a'
+    expect(drop(same, 0, lineStart(same, '- [ ] a'))).toBe('- [x] x\n- [ ] a')
+  })
+  it('a drop between two items reads the one above it, as Tab does, and a drop on a list\u2019s first item reads that item', () => {
+    const doc = '1. x\n\n- [x] a\n- note'
+    expect(drop(doc, 0, lineStart(doc, '- note'))).toBe('- [x] a\n- [ ] x\n- note')
+    expect(drop(doc, 0, lineStart(doc, '- [x] a'), true)).toBe('- [x] a\n- [ ] x\n- note')
+    expect(drop(doc, 0, lineStart(doc, '- [x] a'))).toBe('- [ ] x\n- [x] a\n- note')
+  })
+  it('a move among siblings of several types reads the item above its landing like any other', () => {
+    const doc = '- [ ] a\n- note\n- [x] c'
+    expect(drop(doc, lineStart(doc, '- [x] c'), lineStart(doc, '- note'))).toBe(
+      '- [ ] a\n- [x] c\n- note',
+    )
+    expect(drop(doc, 0, lineStart(doc, '- note'), true)).toBe('- note\n- a\n- [x] c')
+    const glued = '- a\n- b\n1. c\n2. d'
+    expect(drop(glued, 0, lineStart(glued, '2. d'))).toBe('- b\n1. c\n2. a\n3. d')
   })
   it('the source list closes up, and a lone item takes one blank with it', () => {
     const doc = '1. a\n2. x\n3. b\n\n1. p'
-    expect(drop(doc, lineStart(doc, '2. x'), doc.length)).toBe('1. a\n2. b\n\n1. p\n2. x')
+    expect(drop(doc, lineStart(doc, '2. x'), lineStart(doc, '1. p'), true)).toBe(
+      '1. a\n2. b\n\n1. p\n2. x',
+    )
     const lone = 'top\n\n- x\n\nend\n\n- a'
-    expect(drop(lone, lineStart(lone, '- x'), lone.length)).toBe('top\n\nend\n\n- a\n- x')
+    expect(drop(lone, lineStart(lone, '- x'), lineStart(lone, '- a'), true)).toBe(
+      'top\n\nend\n\n- a\n- x',
+    )
   })
 })
 
@@ -190,7 +223,7 @@ describe('a blank line ends a list', () => {
 describe('nested sub-block moves as a unit', () => {
   it('carries descendants with the parent', () => {
     const doc = '- a\n\t- a1\n\t- a2\n- b'
-    const out = drop(doc, lineStart(doc, '- a'), doc.length)
+    const out = drop(doc, lineStart(doc, '- a'), lineStart(doc, '- b'), true)
     expect(out).toBe('- b\n- a\n\t- a1\n\t- a2')
   })
 })
@@ -198,11 +231,15 @@ describe('nested sub-block moves as a unit', () => {
 describe('re-nesting on drop (slot.indent adopts the target depth)', () => {
   it('flattens a nested item to root when dropped at a root-indent target', () => {
     const doc = '- a\n\t- nested\n- b'
-    expect(drop(doc, lineStart(doc, 'nested'), doc.length, '')).toBe('- a\n- b\n- nested')
+    expect(drop(doc, lineStart(doc, 'nested'), lineStart(doc, '- b'), true)).toBe(
+      '- a\n- b\n- nested',
+    )
   })
   it('re-indents the whole sub-block, preserving relative nesting', () => {
     const doc = '- a\n\t- p\n\t\t- c\n- b'
-    expect(drop(doc, lineStart(doc, '- p'), doc.length, '')).toBe('- a\n- b\n- p\n\t- c')
+    expect(drop(doc, lineStart(doc, '- p'), lineStart(doc, '- b'), true)).toBe(
+      '- a\n- b\n- p\n\t- c',
+    )
   })
 })
 
@@ -256,13 +293,13 @@ describe('renumberRuns', () => {
 describe('drag inside a callout (prefix-aware)', () => {
   it('reorders a callout bullet without doubling the `>` prefix', () => {
     const doc = '> [!callout] head\n> - one\n> - two'
-    expect(drop(doc, doc.indexOf('one'), doc.length, '> ')).toBe(
+    expect(drop(doc, doc.indexOf('one'), doc.indexOf('two'), true)).toBe(
       '> [!callout] head\n> - two\n> - one',
     )
   })
   it('an item that was its whole list heals its hole as it does outside a quote', () => {
     const doc = '> 1. a\n>\n> - x\n>\n> 1. b'
-    expect(drop(doc, doc.indexOf('x'), doc.length, '> ')).toBe('> 1. a\n>\n> 1. b\n> - x')
+    expect(drop(doc, doc.indexOf('x'), doc.indexOf('1. b'), true)).toBe('> 1. a\n>\n> 1. b\n> 2. x')
   })
   it('subBlockAt does NOT swallow a top-level indented sibling across the box boundary', () => {
     const doc = '> - a\n\t- x'

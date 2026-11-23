@@ -209,6 +209,18 @@ describe('Tab on a page', () => {
   })
 })
 
+describe('⌘] and ⌘[ on an item', () => {
+  it('are Tab and Shift-Tab, the item taking the marker of the list it joins', async () => {
+    const doc = '- [ ] a\n\t- k\n- [ ] b'
+    const view = await open(doc, doc.length)
+    const mod = /Mac/.test(navigator.platform) ? { metaKey: true } : { ctrlKey: true }
+    await press(view, ']', mod)
+    expect(view.state.doc.toString()).toBe('- [ ] a\n\t- k\n\t- b')
+    await press(view, '[', mod)
+    expect(view.state.doc.toString()).toBe('- [ ] a\n\t- k\n- [ ] b')
+  })
+})
+
 describe('Backspace on a page', () => {
   it('a marker Backspace on a page lands as a delete', async () => {
     const view = await open('- ', 2)

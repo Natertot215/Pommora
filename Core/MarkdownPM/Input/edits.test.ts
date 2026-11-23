@@ -134,6 +134,22 @@ describe('list outdent (Shift+Tab)', () => {
     expect(steps).toEqual(['    - x', '  - x', '- x'])
     expect(apply('\t  - x', outdentListOnShiftTab(scanDoc('\t  - x'), 5, 5)!)).toBe('  - x')
   })
+  it('takes the marker of the list it joins, a task\u2019s box emptied', () => {
+    const doc = '- [x] a\n\t- kid'
+    const e = outdentListOnShiftTab(scanDoc(doc), doc.length, doc.length)!
+    expect(apply(doc, e)).toBe('- [x] a\n- [ ] kid')
+    expect(e.selection).toBe(doc.length + 3)
+    const inMarker = doc.indexOf('\t') + 2
+    expect(outdentListOnShiftTab(scanDoc(doc), inMarker, inMarker)!.selection).toBe(
+      '- [x] a\n- [ ] '.length,
+    )
+  })
+  it('keeps its marker where the level stays', () => {
+    const doc = '- [ ] a\n - x'
+    expect(apply(doc, outdentListOnShiftTab(scanDoc(doc), doc.length, doc.length)!)).toBe(
+      '- [ ] a\n- x',
+    )
+  })
 })
 
 describe('smart backspace (whole marker, all markers)', () => {
@@ -955,6 +971,32 @@ describe('tab indent (list nesting)', () => {
   it('ignores non-list lines and selections', () => {
     expect(indentListOnTab(scanDoc('plain text'), 5, 5)).toBeNull()
     expect(indentListOnTab(scanDoc('- item'), 2, 4)).toBeNull()
+  })
+  it('takes the marker of the list it joins, from the item above before the one below', () => {
+    const first = '- [x] a\n- [ ] \n\t- kid'
+    const caret = first.indexOf('\n\t')
+    const e = indentListOnTab(scanDoc(first), caret, caret)!
+    expect(apply(first, e)).toBe('- [x] a\n\t- \n\t- kid')
+    expect(e.selection).toBe('- [x] a\n\t- '.length)
+    const last = '- a\n\t+ kid\n- [x] done'
+    expect(apply(last, indentListOnTab(scanDoc(last), last.length, last.length)!)).toBe(
+      '- a\n\t+ kid\n\t+ done',
+    )
+    const between = '- a\n\t→ up\n- b\n\t- [ ] down'
+    const b = between.indexOf('b')
+    expect(apply(between, indentListOnTab(scanDoc(between), b, b)!)).toBe(
+      '- a\n\t→ up\n\t→ b\n\t- [ ] down',
+    )
+  })
+  it('keeps its marker alone at its new level, and its check among tasks', () => {
+    const alone = '- a\n- [x] b'
+    expect(apply(alone, indentListOnTab(scanDoc(alone), alone.length, alone.length)!)).toBe(
+      '- a\n\t- [x] b',
+    )
+    const tasks = '- a\n\t- [ ] kid\n- [x] b'
+    expect(apply(tasks, indentListOnTab(scanDoc(tasks), tasks.length, tasks.length)!)).toBe(
+      '- a\n\t- [ ] kid\n\t- [x] b',
+    )
   })
 })
 
